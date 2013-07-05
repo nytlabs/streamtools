@@ -19,16 +19,7 @@ var (
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "", "lookupd HTTP address")
 )
 
-type MessageHandler struct {
-    msgChan chan *nsq.Message
-    stopChan chan int
-}
-
-func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage){
-    self.msgChan <- message
-    responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
-}
-
+// MESSAGES
 type SyncMessage struct{
     message []byte
     t uint64
@@ -46,29 +37,51 @@ type ReadMessage struct{
     responseChan chan []SyncMessage
 }
 
+// MESSAGE HANDLER FOR THE NSQ READER
+type MessageHandler struct {
+    msgChan chan *nsq.Message
+    stopChan chan int
+}
+
+func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage){
+    self.msgChan <- message
+    responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
+}
+
+
+// function to emit synchronised messages
 func emitter(readChan chan ReadMessage, lag_time uint64){
+
+    // TODO make lag_time a command line argument
+    // TODO here 40 is the size of the bucket. This should be a command line arg
+
     c:= time.Tick(40 * time.Millisecond)
     responseChan := make(chan []SyncMessage)
 
     for now := range c {
-        
+        // get the current time in milliseconds
         cur_time := uint64( now.UnixNano() / 1000000 )
 
+        // form the read message
         readMsg := ReadMessage {
             key: cur_time - cur_time % 40 - lag_time,
             responseChan: responseChan,
         }
-
+        
+        // send the read message to the store keeper
         readChan <- readMsg
 
+        // wait for the response
         msgs := <- responseChan
 
+        // TODO load up a new stream instead of just writing to the logs
         if len(msgs) > 0 {
             fmt.Printf("recieved %d for %d \n", len(msgs), cur_time )
         }
     }
 }
 
+// function that manages a key value store in memory
 func store_keeper(writeChan chan WriteMessage, readChan chan ReadMessage){
 
     store_map := make(map[uint64][]SyncMessage)
@@ -82,61 +95,64 @@ func store_keeper(writeChan chan WriteMessage, readChan chan ReadMessage){
                     message: write.val,
                     t: write.t,
                 }
-
                 store_map[write.key] = append( store_map[write.key], msg )
                 write.responseChan <- true
+                // TODO wait for a success response before deleting
+                delete(store_map, write.key)
         }
     }
 }
 
+// function to read an NSQ channel and write to the key value store
 func writer(mh MessageHandler, writeChan chan WriteMessage){
     for{
         select{
-            case m := <-mh.msgChan:
+        case m := <-mh.msgChan:
 
-                blob, err := simplejson.NewJson(m.Body)
+            blob, err := simplejson.NewJson(m.Body)
 
-                if err != nil {
-                    log.Fatalf(err.Error())
-                }
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-                val, err := blob.Get("t").String()
-                
-                if err != nil {
-                    log.Fatalf(err.Error())
-                }
+            val, err := blob.Get("t").String()
+            
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-                msg_time, err := strconv.ParseUint(val, 0, 64)
+            msg_time, err := strconv.ParseUint(val, 0, 64)
 
-                if err != nil {
-                    log.Fatalf(err.Error())
-                }
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-                mblob, err := blob.MarshalJSON()
+            mblob, err := blob.MarshalJSON()
 
-                if err != nil {
-                    log.Fatalf(err.Error())
-                }
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-                responseChan := make(chan bool)
+            responseChan := make(chan bool)
 
-                msg := WriteMessage{
-                    t: msg_time,
-                    val: mblob,
-                    key: msg_time - msg_time % 40,
-                    responseChan: responseChan,
-                }
+            msg := WriteMessage{
+                t: msg_time,
+                val: mblob,
+                key: msg_time - msg_time % 40,
+                responseChan: responseChan,
+            }
 
-                writeChan <- msg
+            writeChan <- msg
 
-                if !<-responseChan {
-                    log.Fatalf("its broken")
-                } else {
-                    //log.Println("success")
-                }
+            success := <- responseChan
+            if !success {
+                // TODO learn about err.Error()
+                log.Fatalf("its broken")
+            }
         }
     }
 }
+
 
 func main(){
 
