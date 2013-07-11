@@ -181,7 +181,7 @@ func writer(mh MessageHandler, writeChan chan WriteMessage) {
 				log.Fatalf(err.Error())
 			}
 
-			t := time.Unix(msg_time, 0)
+			t := time.Unix(0, msg_time)
 			mblob, err := blob.MarshalJSON()
 
 			if err != nil {
