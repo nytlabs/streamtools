@@ -1,248 +1,191 @@
 package main
 
 import (
-	"container/heap"
-	"flag"
-	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
-	"log"
-	"strconv"
-	"time"
+    "log"
+    "github.com/bitly/nsq/nsq"
+    "github.com/bitly/go-simplejson"
+    "flag"
+    "strconv"
+    "time"
+    "fmt"
 )
 
 var (
-	topic            = flag.String("topic", "", "nsq topic")
-	channel          = flag.String("channel", "", "nsq topic")
-	maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
-	nsqTCPAddrs      = flag.String("nsqd-tcp-address", "", "nsqd TCP address")
-	nsqHTTPAddrs     = flag.String("nsqd-http-address", "", "nsqd HTTP address")
-	lookupdHTTPAddrs = flag.String("lookupd-http-address", "", "lookupd HTTP address")
-	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
+    topic = flag.String("topic", "", "nsq topic")
+    channel = flag.String("channel", "", "nsq topic")
+    maxInFlight = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
+    nsqTCPAddrs = flag.String("nsqd-tcp-address", "", "nsqd TCP address")
+    nsqHTTPAddrs = flag.String("nsqd-http-address", "", "nsqd HTTP address")
+    lookupdHTTPAddrs = flag.String("lookupd-http-address", "", "lookupd HTTP address")
 )
+
+// MESSAGES
+type SyncMessage struct{
+    message []byte
+    t uint64
+}
+
+type WriteMessage struct{
+    key uint64 // bucket time
+    val []byte
+    t uint64   // msg time
+    responseChan chan bool
+}
+
+type ReadMessage struct{
+    key uint64
+    responseChan chan []SyncMessage
+}
 
 // MESSAGE HANDLER FOR THE NSQ READER
 type MessageHandler struct {
-	msgChan  chan *nsq.Message
-	stopChan chan int
+    msgChan chan *nsq.Message
+    stopChan chan int
 }
 
-func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	self.msgChan <- message
-	responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
+func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage){
+    self.msgChan <- message
+    responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
 }
 
-type WriteMessage struct {
-	val          []byte
-	t            time.Time
-	responseChan chan bool
+
+// function to emit synchronised messages
+func emitter(readChan chan ReadMessage, lag_time uint64){
+
+    // TODO make lag_time a command line argument
+    // TODO here 40 is the size of the bucket. This should be a command line arg
+
+    c:= time.Tick(40 * time.Millisecond)
+    responseChan := make(chan []SyncMessage)
+
+    for now := range c {
+        // get the current time in milliseconds
+        cur_time := uint64( now.UnixNano() / 1000000 )
+
+        // form the read message
+        readMsg := ReadMessage {
+            key: cur_time - cur_time % 40 - lag_time,
+            responseChan: responseChan,
+        }
+        
+        // send the read message to the store keeper
+        readChan <- readMsg
+
+        // wait for the response
+        msgs := <- responseChan
+
+        // TODO load up a new stream instead of just writing to the logs
+        if len(msgs) > 0 {
+            fmt.Printf("recieved %d for %d \n", len(msgs), cur_time )
+        }
+    }
 }
 
-type PQMessage struct {
-	val          []byte
-	t            time.Time
-	index        int
-	killChan     chan bool
-	responseChan chan bool
-}
+// function that manages a key value store in memory
+func store_keeper(writeChan chan WriteMessage, readChan chan ReadMessage){
 
-// PRIORITY QUEUE
-// A PriorityQueue implements heap.Interface and holds Items.
-type PriorityQueue []*PQMessage
+    store_map := make(map[uint64][]SyncMessage)
 
-func (pq PriorityQueue) Len() int {
-	return len(pq)
-}
-
-func (pq PriorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].t.Before(pq[j].t)
-}
-
-func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
-}
-
-func (pq *PriorityQueue) Push(x interface{}) {
-	n := len(*pq)
-	item := x.(*PQMessage)
-	item.index = n
-	*pq = append(*pq, item)
-}
-
-func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	item.index = -1 // for safety
-	*pq = old[0 : n-1]
-	return item
-}
-
-// update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
-	heap.Remove(pq, item.index)
-	item.val = val
-	item.t = time
-	heap.Push(pq, item)
-}
-
-func emit(msg *PQMessage, lag time.Duration) {
-	emit_at := msg.t.Add(lag)
-	log.Println("Sleeping")
-	time.Sleep(emit_at.Sub(time.Now()))
-	select {
-	case <-msg.killChan:
-		// do nowt  
-		log.Printf("killed")
-	default:
-		log.Printf(
-			"### item's timestamp: %s. emitted at %s \n",
-			msg.t.Format("15:04:05"),
-			time.Now().Format("15:04:05"),
-		)
-	}
-	msg.responseChan <- true
-}
-
-func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
-
-	nextMsg := &PQMessage{
-		responseChan: make(chan bool),
-	}
-	nextMsgChan := make(chan *PQMessage, 1)
-	getNextMsg := true
-
-	for {
-		// if a message is ready, pop it and make it ready for emitting
-		if pq.Len() > 0 && getNextMsg {
-			nextMsg = heap.Pop(pq).(*PQMessage)
-			nextMsgChan <- nextMsg
-			// let's not get another message until this one is done
-			getNextMsg = false
-		}
-
-		select {
-		case inMsg := <-writeChan:
-			// if we've recieved something in the write channel, push it onto the heap
-			outMsg := &PQMessage{
-				val:          inMsg.val,
-				t:            inMsg.t,
-				killChan:     make(chan bool, 1),
-				responseChan: make(chan bool),
-			}
-			heap.Push(pq, outMsg)
-
-			// check it didn't arrive before the current next message
-			if nextMsg.val != nil {
-				if outMsg.t.Before(nextMsg.t) {
-					// if it did, kill the current emitter
-					nextMsg.killChan <- true
-					// put the old one back in the queue
-					heap.Push(pq, nextMsg)
-					// make sure the new message is loaded on the next iteration
-					getNextMsg = true
-				}
-			}
-			inMsg.responseChan <- true
-		case outMsg := <-nextMsgChan:
-			// if something is waitingto be emitted set it going
-			go emit(outMsg, lag)
-		case <-nextMsg.responseChan:
-			// make sure the next message is loaded when the current nextMsg is done
-			getNextMsg = true
-
-		}
-	}
+    for {
+        select {
+        case read := <-readChan:
+                read.responseChan <- store_map[read.key]
+        case write := <-writeChan:
+                msg := SyncMessage{
+                    message: write.val,
+                    t: write.t,
+                }
+                store_map[write.key] = append( store_map[write.key], msg )
+                write.responseChan <- true
+                // TODO wait for a success response before deleting
+                delete(store_map, write.key)
+        }
+    }
 }
 
 // function to read an NSQ channel and write to the key value store
-func writer(mh MessageHandler, writeChan chan WriteMessage) {
-	for {
-		select {
-		case m := <-mh.msgChan:
+func writer(mh MessageHandler, writeChan chan WriteMessage){
+    for{
+        select{
+        case m := <-mh.msgChan:
 
-			blob, err := simplejson.NewJson(m.Body)
+            blob, err := simplejson.NewJson(m.Body)
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			val, err := blob.Get("t").String()
+            val, err := blob.Get("t").String()
+            
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            msg_time, err := strconv.ParseUint(val, 0, 64)
 
-			msg_time, err := strconv.ParseInt(val, 0, 64)
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            mblob, err := blob.MarshalJSON()
 
-			t := time.Unix(0, msg_time)
-			mblob, err := blob.MarshalJSON()
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            responseChan := make(chan bool)
 
-			responseChan := make(chan bool)
+            msg := WriteMessage{
+                t: msg_time,
+                val: mblob,
+                key: msg_time - msg_time % 40,
+                responseChan: responseChan,
+            }
 
-			msg := WriteMessage{
-				t:            t,
-				val:          mblob,
-				responseChan: responseChan,
-			}
+            writeChan <- msg
 
-			writeChan <- msg
-
-			success := <-responseChan
-
-			if !success {
-				// TODO learn about err.Error()
-				log.Fatalf("its broken")
-			}
-		}
-	}
+            success := <- responseChan
+            if !success {
+                // TODO learn about err.Error()
+                log.Fatalf("its broken")
+            }
+        }
+    }
 }
 
-func main() {
 
-	flag.Parse()
+func main(){
 
-	r, err := nsq.NewReader(*topic, *channel)
+    flag.Parse()
 
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+    r, err := nsq.NewReader(*topic, *channel)
 
-	mh := MessageHandler{
-		msgChan:  make(chan *nsq.Message, 5),
-		stopChan: make(chan int),
-	}
+    if err != nil {
+        log.Fatal(err.Error())
+    }
 
-	wc := make(chan WriteMessage)
+    mh := MessageHandler {
+        msgChan: make(chan *nsq.Message, 5),
+        stopChan: make(chan int),
+    }
 
-	pq := &PriorityQueue{}
-	heap.Init(pq)
+    wc := make(chan WriteMessage)
+    rc := make(chan ReadMessage)
 
-	lag := time.Duration(time.Duration(*lag_time) * time.Second)
+    go store_keeper(wc, rc)
+    go writer(mh, wc)
+    go emitter(rc, 60 * 1000)
 
-	go store(wc, pq, lag)
-	go writer(mh, wc)
+    r.AddAsyncHandler(&mh)
 
-	r.AddAsyncHandler(&mh)
+    err = r.ConnectToNSQ(*nsqTCPAddrs)
+    if err != nil {
+        log.Fatalf(err.Error())
+    }
+    err = r.ConnectToLookupd(*lookupdHTTPAddrs)
+    if err != nil {
+        log.Fatalf(err.Error())
+    }
 
-	err = r.ConnectToNSQ(*nsqTCPAddrs)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	err = r.ConnectToLookupd(*lookupdHTTPAddrs)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	<-mh.stopChan
+    <-mh.stopChan
 }
