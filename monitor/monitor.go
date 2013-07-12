@@ -111,7 +111,7 @@ type FlatMessage struct {
 	responseChan chan bool
 }
 
-// function to read an NSQ channel and write to the key value store
+// reads from nsq, flattens and types the event, and puts it on writeChan
 func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
 	for {
 		select {
@@ -145,7 +145,6 @@ func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
 
 			success := <-responseChan
 			if !success {
-				// TODO learn about err.Error()
 				log.Fatalf("its broken")
 			} else {
 				log.Println("flattener heard success on the responseChan")
@@ -154,7 +153,7 @@ func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
 	}
 }
 
-// function that manages a key value store in memory
+// I just print right now.
 func printer(flatChan chan FlatMessage) {
 
 	for {
@@ -172,7 +171,6 @@ func main() {
 
 	flag.Parse()
 
-	// NSQ READER
 	r, err := nsq.NewReader(*topic, *channel)
 	if err != nil {
 		log.Fatal(err.Error())
