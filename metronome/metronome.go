@@ -3,14 +3,13 @@ package main
 import (
     "time"
     "flag"
-    "strconv"
     "log"
     "github.com/bitly/nsq/nsq"
     "bytes"
 )
 
 var (
-    waitTime = flag.String("wait", "", "lookupd HTTP address")
+    waitTime         = flag.Int("wait", 1000, "wait time in ms")
     topic            = flag.String("topic", "monitor", "nsq topic")
     channel          = flag.String("channel", "monitorreader", "nsq topic")
     maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
@@ -21,7 +20,6 @@ var (
 
 type MessageHandler struct {
     msgChan  chan *nsq.Message
-    stopChan chan int
 }
 
 func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
@@ -32,25 +30,23 @@ func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel 
 func writer(mh MessageHandler, writeChan chan []byte) {
     for {
         select {
-        case msg := <-mh.msgChan:
-            writeChan <- msg.Body
+            case msg := <-mh.msgChan:
+                writeChan <- msg.Body
         }
     }
 }
 
-func dumper(dumpChan chan int, waitTime int64){
-    c:= time.Tick( time.Duration(waitTime) * time.Millisecond)
+func dumper(dumpChan chan int, waitTime int){
+    c := time.Tick( time.Duration(waitTime) * time.Millisecond)
     for _ = range c {
         dumpChan <- 1
     }
 }
 
 func bucket(msgChan chan []byte, dumpChan chan int){
-
     msgs := []byte{}
-
-    for{
-        select{
+    for {
+        select {
             case msg := <-msgChan:
                 msgs = bytes.Join( [][]byte{msgs, msg}, []byte{'\n'} )
             case _ = <-dumpChan: 
@@ -65,20 +61,17 @@ func main(){
     flag.Parse()
 
     stopChan := make(chan int)
-    msgChan := make(chan []byte)
     dumpChan := make(chan int)
-
-    time, _ := strconv.ParseInt(*waitTime, 0, 64)
+    msgChan := make(chan []byte)
 
     r, err := nsq.NewReader(*topic, *channel)
 
     mh := MessageHandler{
-        msgChan:  make(chan *nsq.Message, 5),
-        stopChan: make(chan int),
+        msgChan: make(chan *nsq.Message, 5),
     }
 
     go bucket(msgChan, dumpChan)
-    go dumper(dumpChan, time)
+    go dumper(dumpChan, *waitTime)
     go writer(mh, msgChan)
 
     r.AddAsyncHandler(&mh)
