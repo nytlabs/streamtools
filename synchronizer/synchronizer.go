@@ -14,9 +14,9 @@ var (
 	topic            = flag.String("topic", "", "nsq topic")
 	channel          = flag.String("channel", "", "nsq topic")
 	maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
-	nsqTCPAddrs      = flag.String("nsqd-tcp-address", "", "nsqd TCP address")
-	nsqHTTPAddrs     = flag.String("nsqd-http-address", "", "nsqd HTTP address")
-	lookupdHTTPAddrs = flag.String("lookupd-http-address", "", "lookupd HTTP address")
+    nsqTCPAddrs      = flag.String("nsqd-tcp-address", "127.0.0.1:4150", "nsqd TCP address")
+    nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
+    lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
 	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
 )
 

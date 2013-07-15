@@ -24,10 +24,16 @@ func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel 
 }
 
 func writer(mh MessageHandler) {
+    count := 0
     for {
         select {
             case msg := <-mh.msgChan:
-                log.Println( string( msg.Body ) )
+                count = count + 1
+                if count % 500 == 0 {
+                    log.Println( count )
+                    log.Println( string( msg.Body ) )
+                }
+                _ = msg
         }
     }
 }
