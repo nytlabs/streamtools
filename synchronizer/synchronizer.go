@@ -18,6 +18,7 @@ var (
     nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
 	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
+    timeKey          = flag.String("key","","key that holds time")
 )
 
 
@@ -151,7 +152,7 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
     //popNow := make(chan bool)
 
     emitter := time.AfterFunc(24 * 365 * time.Hour, func(){
-        log.Println("LOL")
+        log.Println("...")
     })
 
     const layout = "2006-01-02 15:04:05 -0700"
@@ -223,7 +224,7 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
 
 // function to read an NSQ channel and write to the key value store
-func writer(mh MessageHandler, writeChan chan WriteMessage) {
+func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
 	for {
 		select {
 		case m := <-mh.msgChan:
@@ -234,19 +235,13 @@ func writer(mh MessageHandler, writeChan chan WriteMessage) {
 				log.Fatalf(err.Error())
 			}
 
-			val, err := blob.Get("t").String()
+			msg_time, err := blob.Get(timeKey).Int64()
 
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
 
-			msg_time, err := strconv.ParseInt(val, 0, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			t := time.Unix(0, msg_time)
+			t := time.Unix(0, msg_time * 1000)
 			mblob, err := blob.MarshalJSON()
 
 			if err != nil {
@@ -296,7 +291,7 @@ func main() {
 	lag := time.Duration(time.Duration(*lag_time) * time.Second)
 
 	go store(wc, pq, lag)
-	go writer(mh, wc)
+	go writer(mh, wc, *timeKey)
 
 	r.AddAsyncHandler(&mh)
     r.SetMaxInFlight(*maxInFlight)

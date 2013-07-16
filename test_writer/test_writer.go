@@ -9,7 +9,7 @@ import (
     "net"
     "math/rand"
     "io/ioutil"
-    "strconv"
+    //"strconv"
     "log"
 )
 
@@ -20,9 +20,10 @@ var (
     nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
     jsonMsgPath      = flag.String("file","","json file to send")
+    timeKey          = flag.String("key","","key that holds time")
 )
 
-func writer(tcpAddr string, topic string, msgText []byte){
+func writer(tcpAddr string, topic string, msgText []byte, timeKey string){
     
     conn, err := net.DialTimeout("tcp", tcpAddr, time.Second)
 
@@ -46,7 +47,7 @@ func writer(tcpAddr string, topic string, msgText []byte){
         batch := make([][]byte, 0)
 
         for count < 1000 {
-            a := int64( r.Float64() * 10000000000 )
+            a := int64( r.Float64() * 60000000000 )
 
             strTime := now.UnixNano() - a
             
@@ -54,7 +55,7 @@ func writer(tcpAddr string, topic string, msgText []byte){
 
             //fmt.Println(now.Format("15:04:05") + "-->" + t.Format("15:04:05"))
 
-            msgJson.Set("t",  strconv.FormatInt( strTime, 10) )
+            msgJson.Set(timeKey, int64(strTime / 1000) )
             b, _ := msgJson.Encode() 
 
             batch = append( batch, b)
@@ -86,8 +87,8 @@ func main(){
         //Do something
     }
 
-    go writer(*nsqTCPAddrs, *topic, content )
-    go writer(*nsqTCPAddrs, *topic, content )
+    go writer(*nsqTCPAddrs, *topic, content, *timeKey )
+    go writer(*nsqTCPAddrs, *topic, content, *timeKey )
 
 
     <- stopChan
