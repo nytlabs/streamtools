@@ -13,7 +13,7 @@ import (
 var (
 	topic            = flag.String("topic", "", "nsq topic")
 	channel          = flag.String("channel", "", "nsq topic")
-	maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
+	maxInFlight      = flag.Int("max-in-flight", 10, "max number of messages to allow in flight")
     nsqTCPAddrs      = flag.String("nsqd-tcp-address", "127.0.0.1:4150", "nsqd TCP address")
     nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
@@ -148,6 +148,7 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
     })*/
 
     getNext := make(chan bool)
+    //popNow := make(chan bool)
 
     emitter := time.AfterFunc(24 * 365 * time.Hour, func(){
         log.Println("LOL")
@@ -157,45 +158,33 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
     //test := time.NewTimer(time.Duration(0 * time.Second))
 
     count := 0
+    //writelastTime := time.Now()
+    //readlastTime := time.Now()
 
     for {
+
         select {
             case inMsg := <-writeChan:
+                
 
                 outMsg := &PQMessage{
                     val:          inMsg.val,
                     t:            inMsg.t,
                 }
+            
 
-                heap.Push(pq, outMsg)
+                outTime := outMsg.t.Add(lag)
+                outDur := outTime.Sub(time.Now()) 
 
-                if outMsg.t.Before(nextMsg.t){
-                    heap.Push(pq, nextMsg)
-                    nextMsg = heap.Pop(pq).(*PQMessage)
-                    emit_time = nextMsg.t.Add(lag)
-                    duration := emit_time.Sub(time.Now()) 
-
-                    emitter.Stop()
-
-                    emitter = time.AfterFunc(duration, func() {
-                        count = count + 1
-                        if count % 40 == 0 {
-                            diff := nextMsg.t.Sub( time.Now() )
-                            log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
-                        }
-                        getNext<- true
-                    })
-
-                    log.Println("REQUEUE")
-                }
-
-                inMsg.responseChan <- true
-
-            case <-getNext:
-                    if pq.Len() > 0 {
-                        nextMsg = heap.Pop(pq).(*PQMessage) 
+                if outDur > time.Duration(0 * time.Second) {
+                    heap.Push(pq, outMsg) 
+                    if outMsg.t.Before(nextMsg.t) {
+                        heap.Push(pq, nextMsg)
+                        nextMsg = heap.Pop(pq).(*PQMessage)
                         emit_time = nextMsg.t.Add(lag)
                         duration := emit_time.Sub(time.Now()) 
+
+                        emitter.Stop()
 
                         emitter = time.AfterFunc(duration, func() {
                             count = count + 1
@@ -205,20 +194,29 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
                             }
                             getNext<- true
                         })
+                    } 
+                } else {
+                    log.Println("error")
+                }
 
-                    }
-            /*case <-test.C:
-                log.Println("POP: " + nextMsg.t.Format(layout) + " IN QUEUE:" + strconv.Itoa(pq.Len()) )
 
+                inMsg.responseChan <- true
+
+            case <-getNext:
                 if pq.Len() > 0 {
                     nextMsg = heap.Pop(pq).(*PQMessage) 
                     emit_time = nextMsg.t.Add(lag)
-
                     duration := emit_time.Sub(time.Now()) 
+
                     emitter = time.AfterFunc(duration, func() {
-                        log.Println(nextMsg)
+                        count = count + 1
+                        if count % 40 == 0 {
+                            diff := nextMsg.t.Sub( time.Now() )
+                            log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
+                        }
+                        getNext<- true
                     })
-                } */
+                }
         }
     }
 }
@@ -301,6 +299,7 @@ func main() {
 	go writer(mh, wc)
 
 	r.AddAsyncHandler(&mh)
+    r.SetMaxInFlight(*maxInFlight)
 
 	err = r.ConnectToNSQ(*nsqTCPAddrs)
 	if err != nil {

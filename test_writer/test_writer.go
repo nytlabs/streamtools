@@ -8,9 +8,9 @@ import (
     "bufio"
     "net"
     "math/rand"
-  //  "fmt"
     "io/ioutil"
     "strconv"
+    "log"
 )
 
 var (
@@ -36,17 +36,33 @@ func writer(tcpAddr string, topic string, msgText []byte){
 
     rw := bufio.NewWriter(bufio.NewWriter(conn))
 
-    c := time.Tick( 300 * time.Millisecond)
+    c := time.Tick( 5 * time.Second)
     
     r := rand.New(rand.NewSource(99))
 
     for now := range c {
+        count := 0
 
-        strTime := now.UnixNano() - int64( r.Float64() * 1000000000 )
+        batch := make([][]byte, 0)
 
-        msgJson.Set("t",  strconv.FormatInt( strTime, 10) )
-        b, _ := msgJson.Encode() 
-        cmd := nsq.Publish(topic, b)
+        for count < 1000 {
+            a := int64( r.Float64() * 10000000000 )
+
+            strTime := now.UnixNano() - a
+            
+            //t := time.Unix(0, strTime)
+
+            //fmt.Println(now.Format("15:04:05") + "-->" + t.Format("15:04:05"))
+
+            msgJson.Set("t",  strconv.FormatInt( strTime, 10) )
+            b, _ := msgJson.Encode() 
+
+            batch = append( batch, b)
+            count++
+        }
+
+        log.Println("writing batch")
+        cmd, _ := nsq.MultiPublish(topic, batch)
         err := cmd.Write(rw)
         if err != nil {
             panic(err.Error())
@@ -71,6 +87,8 @@ func main(){
     }
 
     go writer(*nsqTCPAddrs, *topic, content )
+    go writer(*nsqTCPAddrs, *topic, content )
+
 
     <- stopChan
 }
