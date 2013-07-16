@@ -89,91 +89,7 @@ func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
 	heap.Push(pq, item)
 }
 
-/*
-func emit(msg *PQMessage, lag time.Duration) {
-	emit_at := msg.t.Add(lag)
-	time.Sleep(emit_at.Sub(time.Now()))
-	select {
-	case <-msg.killChan:
-		// do nowt  
-		log.Printf("killed")
-	default:
-		log.Printf(
-			"### item's timestamp: %s. emitted at %s \n",
-			msg.t.Format("15:04:05"),
-			time.Now().Format("15:04:05"),
-		)
-	}
-	msg.responseChan <- true
-}
-*/
-
 /*func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
-
-    var emit_time time.Time
-    var emit_duration time.Duration
-	nextMsg := &PQMessage{}
-    gotNextMsg := false
-
-
-    const layout = "2006-01-02 15:04:05 -0700"
-
-	for {
-        // if we don't already have a next message waiting
-        if !gotNextMsg && pq.Len() > 0 {
-            nextMsg = heap.Pop(pq).(*PQMessage)    
-            emit_time = nextMsg.t.Add(lag)
-            emit_duration = emit_time.Sub(time.Now())
-            gotNextMsg = true
-        }
-
-		select {
-		case inMsg := <-writeChan:
-            //log.Println("got inbound message")
-            //log.Println(inMsg.t.Format(layout))
-
-			// if we've recieved something in the write channel, push it onto the heap
-			outMsg := &PQMessage{
-				val:          inMsg.val,
-				t:            inMsg.t,
-			}
-			heap.Push(pq, outMsg)
-			// check it didn't arrive before the current next message
-			if gotNextMsg {
-				if outMsg.t.Before(nextMsg.t) {
-                    //log.Println("requeing")
-					// if it did, kill the current emitter
-					//nextMsg.killChan <- true
-					// put the old one back in the queue
-					heap.Push(pq, nextMsg)
-                    // get the new one 
-                    nextMsg = heap.Pop(pq).(*PQMessage)
-                    // update the emit_duration
-                    emit_time = nextMsg.t.Add(lag)
-                    emit_duration = emit_time.Sub(time.Now())
-				}
-			}
-			inMsg.responseChan <- true
-
-			//log.Println(emit_duration)
-
-        case <-time.After(emit_duration):
-            // if there is a nextMsg ready, emit it
-            if gotNextMsg {
-                // if something is waitingto be emitted set it going
-                //log.Println(emit_duration)
-                //log.Printf(
-                //    "### item's timestamp: %s. emitted at %s \n",
-                //    nextMsg.t.Format("15:04:05"),
-                //    time.Now().Format("15:04:05"),
-               // )
-                gotNextMsg = false
-            }
-        }
-	}
-}*/
-
-func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
     var emit_time time.Time
     //var emit_duration time.Duration
@@ -207,19 +123,105 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
                 inMsg.responseChan <- true
 
             case <-test.C:
-                log.Println("POP: " + nextMsg.t.Format(layout) )
+                log.Println("POP: " + nextMsg.t.Format(layout) + " IN QUEUE:" + strconv.Itoa(pq.Len()) )
 
                 if pq.Len() > 0 {
                     nextMsg = heap.Pop(pq).(*PQMessage) 
                     emit_time = nextMsg.t.Add(lag)
                     a := emit_time.Sub(time.Now()) 
                     test.Reset( a )
-
                 } 
         }
     }
-}
+}*/
 
+func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
+
+    var emit_time time.Time
+    //var emit_duration time.Duration
+    nextMsg := &PQMessage{
+        t: time.Now(),
+    }
+
+    /*emitter = time.AfterFunc(time.Duration(0 * time.Second), func() {
+        log.Println(nextMsg)
+    })*/
+
+    getNext := make(chan bool)
+
+    emitter := time.AfterFunc(24 * 365 * time.Hour, func(){
+        log.Println("LOL")
+    })
+
+    const layout = "2006-01-02 15:04:05 -0700"
+    //test := time.NewTimer(time.Duration(0 * time.Second))
+
+    count := 0
+
+    for {
+        select {
+            case inMsg := <-writeChan:
+
+                outMsg := &PQMessage{
+                    val:          inMsg.val,
+                    t:            inMsg.t,
+                }
+
+                heap.Push(pq, outMsg)
+
+                if outMsg.t.Before(nextMsg.t){
+                    heap.Push(pq, nextMsg)
+                    nextMsg = heap.Pop(pq).(*PQMessage)
+                    emit_time = nextMsg.t.Add(lag)
+                    duration := emit_time.Sub(time.Now()) 
+
+                    emitter.Stop()
+
+                    emitter = time.AfterFunc(duration, func() {
+                        count = count + 1
+                        if count % 40 == 0 {
+                            diff := nextMsg.t.Sub( time.Now() )
+                            log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
+                        }
+                        getNext<- true
+                    })
+
+                    log.Println("REQUEUE")
+                }
+
+                inMsg.responseChan <- true
+
+            case <-getNext:
+                    if pq.Len() > 0 {
+                        nextMsg = heap.Pop(pq).(*PQMessage) 
+                        emit_time = nextMsg.t.Add(lag)
+                        duration := emit_time.Sub(time.Now()) 
+
+                        emitter = time.AfterFunc(duration, func() {
+                            count = count + 1
+                            if count % 40 == 0 {
+                                diff := nextMsg.t.Sub( time.Now() )
+                                log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
+                            }
+                            getNext<- true
+                        })
+
+                    }
+            /*case <-test.C:
+                log.Println("POP: " + nextMsg.t.Format(layout) + " IN QUEUE:" + strconv.Itoa(pq.Len()) )
+
+                if pq.Len() > 0 {
+                    nextMsg = heap.Pop(pq).(*PQMessage) 
+                    emit_time = nextMsg.t.Add(lag)
+
+                    duration := emit_time.Sub(time.Now()) 
+                    emitter = time.AfterFunc(duration, func() {
+                        log.Println(nextMsg)
+                    })
+                } */
+        }
+    }
+}
 
 
 // function to read an NSQ channel and write to the key value store
