@@ -20,6 +20,7 @@ var (
 	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
 )
 
+
 // MESSAGE HANDLER FOR THE NSQ READER
 type MessageHandler struct {
 	msgChan  chan *nsq.Message
@@ -88,9 +89,9 @@ func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
 	heap.Push(pq, item)
 }
 
+/*
 func emit(msg *PQMessage, lag time.Duration) {
 	emit_at := msg.t.Add(lag)
-	log.Println("Sleeping")
 	time.Sleep(emit_at.Sub(time.Now()))
 	select {
 	case <-msg.killChan:
@@ -105,57 +106,121 @@ func emit(msg *PQMessage, lag time.Duration) {
 	}
 	msg.responseChan <- true
 }
+*/
 
-func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
+/*func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
-	nextMsg := &PQMessage{
-		responseChan: make(chan bool),
-	}
-	nextMsgChan := make(chan *PQMessage, 1)
-	getNextMsg := true
+    var emit_time time.Time
+    var emit_duration time.Duration
+	nextMsg := &PQMessage{}
+    gotNextMsg := false
+
+
+    const layout = "2006-01-02 15:04:05 -0700"
 
 	for {
-		// if a message is ready, pop it and make it ready for emitting
-		if pq.Len() > 0 && getNextMsg {
-			nextMsg = heap.Pop(pq).(*PQMessage)
-			nextMsgChan <- nextMsg
-			// let's not get another message until this one is done
-			getNextMsg = false
-		}
+        // if we don't already have a next message waiting
+        if !gotNextMsg && pq.Len() > 0 {
+            nextMsg = heap.Pop(pq).(*PQMessage)    
+            emit_time = nextMsg.t.Add(lag)
+            emit_duration = emit_time.Sub(time.Now())
+            gotNextMsg = true
+        }
 
 		select {
 		case inMsg := <-writeChan:
+            //log.Println("got inbound message")
+            //log.Println(inMsg.t.Format(layout))
+
 			// if we've recieved something in the write channel, push it onto the heap
 			outMsg := &PQMessage{
 				val:          inMsg.val,
 				t:            inMsg.t,
-				killChan:     make(chan bool, 1),
-				responseChan: make(chan bool),
 			}
 			heap.Push(pq, outMsg)
-
 			// check it didn't arrive before the current next message
-			if nextMsg.val != nil {
+			if gotNextMsg {
 				if outMsg.t.Before(nextMsg.t) {
+                    //log.Println("requeing")
 					// if it did, kill the current emitter
-					nextMsg.killChan <- true
+					//nextMsg.killChan <- true
 					// put the old one back in the queue
 					heap.Push(pq, nextMsg)
-					// make sure the new message is loaded on the next iteration
-					getNextMsg = true
+                    // get the new one 
+                    nextMsg = heap.Pop(pq).(*PQMessage)
+                    // update the emit_duration
+                    emit_time = nextMsg.t.Add(lag)
+                    emit_duration = emit_time.Sub(time.Now())
 				}
 			}
 			inMsg.responseChan <- true
-		case outMsg := <-nextMsgChan:
-			// if something is waitingto be emitted set it going
-			go emit(outMsg, lag)
-		case <-nextMsg.responseChan:
-			// make sure the next message is loaded when the current nextMsg is done
-			getNextMsg = true
 
-		}
+			//log.Println(emit_duration)
+
+        case <-time.After(emit_duration):
+            // if there is a nextMsg ready, emit it
+            if gotNextMsg {
+                // if something is waitingto be emitted set it going
+                //log.Println(emit_duration)
+                //log.Printf(
+                //    "### item's timestamp: %s. emitted at %s \n",
+                //    nextMsg.t.Format("15:04:05"),
+                //    time.Now().Format("15:04:05"),
+               // )
+                gotNextMsg = false
+            }
+        }
 	}
+}*/
+
+func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
+
+    var emit_time time.Time
+    //var emit_duration time.Duration
+    nextMsg := &PQMessage{
+        t: time.Now(),
+    }
+    const layout = "2006-01-02 15:04:05 -0700"
+    test := time.NewTimer(time.Duration(0 * time.Second))
+
+    for {
+
+        select {
+            case inMsg := <-writeChan:
+
+                outMsg := &PQMessage{
+                    val:          inMsg.val,
+                    t:            inMsg.t,
+                }
+
+                heap.Push(pq, outMsg)
+
+                if outMsg.t.Before(nextMsg.t){
+                    heap.Push(pq, nextMsg)
+                    nextMsg = heap.Pop(pq).(*PQMessage)
+                    emit_time = nextMsg.t.Add(lag)
+                    a := emit_time.Sub(time.Now()) 
+                    test.Reset( a )
+                    log.Println("REQUEUE: " + a.String() )
+                }
+
+                inMsg.responseChan <- true
+
+            case <-test.C:
+                log.Println("POP: " + nextMsg.t.Format(layout) )
+
+                if pq.Len() > 0 {
+                    nextMsg = heap.Pop(pq).(*PQMessage) 
+                    emit_time = nextMsg.t.Add(lag)
+                    a := emit_time.Sub(time.Now()) 
+                    test.Reset( a )
+
+                } 
+        }
+    }
 }
+
+
 
 // function to read an NSQ channel and write to the key value store
 func writer(mh MessageHandler, writeChan chan WriteMessage) {
