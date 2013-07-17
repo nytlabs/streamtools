@@ -90,95 +90,45 @@ func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
 	heap.Push(pq, item)
 }
 
-/*func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
-
-    var emit_time time.Time
-    //var emit_duration time.Duration
-    nextMsg := &PQMessage{
-        t: time.Now(),
-    }
-    const layout = "2006-01-02 15:04:05 -0700"
-    test := time.NewTimer(time.Duration(0 * time.Second))
-
-    for {
-
-        select {
-            case inMsg := <-writeChan:
-
-                outMsg := &PQMessage{
-                    val:          inMsg.val,
-                    t:            inMsg.t,
-                }
-
-                heap.Push(pq, outMsg)
-
-                if outMsg.t.Before(nextMsg.t){
-                    heap.Push(pq, nextMsg)
-                    nextMsg = heap.Pop(pq).(*PQMessage)
-                    emit_time = nextMsg.t.Add(lag)
-                    a := emit_time.Sub(time.Now()) 
-                    test.Reset( a )
-                    log.Println("REQUEUE: " + a.String() )
-                }
-
-                inMsg.responseChan <- true
-
-            case <-test.C:
-                log.Println("POP: " + nextMsg.t.Format(layout) + " IN QUEUE:" + strconv.Itoa(pq.Len()) )
-
-                if pq.Len() > 0 {
-                    nextMsg = heap.Pop(pq).(*PQMessage) 
-                    emit_time = nextMsg.t.Add(lag)
-                    a := emit_time.Sub(time.Now()) 
-                    test.Reset( a )
-                } 
-        }
-    }
-}*/
-
 func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
     var emit_time time.Time
-    //var emit_duration time.Duration
     nextMsg := &PQMessage{
         t: time.Now(),
     }
 
-    /*emitter = time.AfterFunc(time.Duration(0 * time.Second), func() {
-        log.Println(nextMsg)
-    })*/
-
     getNext := make(chan bool)
-    //popNow := make(chan bool)
 
     emitter := time.AfterFunc(24 * 365 * time.Hour, func(){
         log.Println("...")
     })
 
     const layout = "2006-01-02 15:04:05 -0700"
-    //test := time.NewTimer(time.Duration(0 * time.Second))
 
     count := 0
-    //writelastTime := time.Now()
-    //readlastTime := time.Now()
+    heapCount := 0
 
     for {
-
         select {
             case inMsg := <-writeChan:
                 
-
                 outMsg := &PQMessage{
                     val:          inMsg.val,
                     t:            inMsg.t,
                 }
             
-
                 outTime := outMsg.t.Add(lag)
                 outDur := outTime.Sub(time.Now()) 
 
                 if outDur > time.Duration(0 * time.Second) {
                     heap.Push(pq, outMsg) 
+                    
+                    heapCount ++
+
+                    if heapCount % 500 == 0{
+                        log.Println( "HEAP: " + strconv.Itoa(pq.Len()))
+                    }
+
                     if outMsg.t.Before(nextMsg.t) {
                         heap.Push(pq, nextMsg)
                         nextMsg = heap.Pop(pq).(*PQMessage)
@@ -197,9 +147,9 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
                         })
                     } 
                 } else {
-                    log.Println("error")
-                }
+                    log.Println("error: " + outDur.String() + " message reads: " + outMsg.t.Format(layout) )
 
+                }
 
                 inMsg.responseChan <- true
 
@@ -241,7 +191,7 @@ func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
 				log.Fatalf(err.Error())
 			}
 
-			t := time.Unix(0, msg_time * 1000)
+			t := time.Unix(0, msg_time * 1000 * 1000)
 			mblob, err := blob.MarshalJSON()
 
 			if err != nil {
@@ -296,10 +246,6 @@ func main() {
 	r.AddAsyncHandler(&mh)
     r.SetMaxInFlight(*maxInFlight)
 
-	err = r.ConnectToNSQ(*nsqTCPAddrs)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
 	err = r.ConnectToLookupd(*lookupdHTTPAddrs)
 	if err != nil {
 		log.Fatalf(err.Error())
