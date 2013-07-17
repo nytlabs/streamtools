@@ -46,8 +46,8 @@ func writer(tcpAddr string, topic string, msgText []byte, timeKey string){
 
         batch := make([][]byte, 0)
 
-        for count < 1000 {
-            a := int64( r.Float64() * 60000000000 )
+        for count < 10 {
+            a := int64( r.Float64() * 10000000000 )
 
             strTime := now.UnixNano() - a
             
@@ -55,7 +55,7 @@ func writer(tcpAddr string, topic string, msgText []byte, timeKey string){
 
             //fmt.Println(now.Format("15:04:05") + "-->" + t.Format("15:04:05"))
 
-            msgJson.Set(timeKey, int64(strTime / 1000) )
+            msgJson.Set(timeKey, int64(strTime / 1000000) )
             b, _ := msgJson.Encode() 
 
             batch = append( batch, b)
