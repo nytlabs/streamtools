@@ -13,12 +13,14 @@ import (
 var (
 	topic            = flag.String("topic", "", "nsq topic")
 	channel          = flag.String("channel", "", "nsq topic")
-	maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
-	nsqTCPAddrs      = flag.String("nsqd-tcp-address", "", "nsqd TCP address")
-	nsqHTTPAddrs     = flag.String("nsqd-http-address", "", "nsqd HTTP address")
-	lookupdHTTPAddrs = flag.String("lookupd-http-address", "", "lookupd HTTP address")
+	maxInFlight      = flag.Int("max-in-flight", 10, "max number of messages to allow in flight")
+    nsqTCPAddrs      = flag.String("nsqd-tcp-address", "127.0.0.1:4150", "nsqd TCP address")
+    nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
+    lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
 	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
+    timeKey          = flag.String("key","","key that holds time")
 )
+
 
 // MESSAGE HANDLER FOR THE NSQ READER
 type MessageHandler struct {
@@ -88,77 +90,91 @@ func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
 	heap.Push(pq, item)
 }
 
-func emit(msg *PQMessage, lag time.Duration) {
-	emit_at := msg.t.Add(lag)
-	log.Println("Sleeping")
-	time.Sleep(emit_at.Sub(time.Now()))
-	select {
-	case <-msg.killChan:
-		// do nowt  
-		log.Printf("killed")
-	default:
-		log.Printf(
-			"### item's timestamp: %s. emitted at %s \n",
-			msg.t.Format("15:04:05"),
-			time.Now().Format("15:04:05"),
-		)
-	}
-	msg.responseChan <- true
-}
-
 func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
-	nextMsg := &PQMessage{
-		responseChan: make(chan bool),
-	}
-	nextMsgChan := make(chan *PQMessage, 1)
-	getNextMsg := true
+    var emit_time time.Time
+    nextMsg := &PQMessage{
+        t: time.Now(),
+    }
 
-	for {
-		// if a message is ready, pop it and make it ready for emitting
-		if pq.Len() > 0 && getNextMsg {
-			nextMsg = heap.Pop(pq).(*PQMessage)
-			nextMsgChan <- nextMsg
-			// let's not get another message until this one is done
-			getNextMsg = false
-		}
+    getNext := make(chan bool)
 
-		select {
-		case inMsg := <-writeChan:
-			// if we've recieved something in the write channel, push it onto the heap
-			outMsg := &PQMessage{
-				val:          inMsg.val,
-				t:            inMsg.t,
-				killChan:     make(chan bool, 1),
-				responseChan: make(chan bool),
-			}
-			heap.Push(pq, outMsg)
+    emitter := time.AfterFunc(24 * 365 * time.Hour, func(){
+        log.Println("...")
+    })
 
-			// check it didn't arrive before the current next message
-			if nextMsg.val != nil {
-				if outMsg.t.Before(nextMsg.t) {
-					// if it did, kill the current emitter
-					nextMsg.killChan <- true
-					// put the old one back in the queue
-					heap.Push(pq, nextMsg)
-					// make sure the new message is loaded on the next iteration
-					getNextMsg = true
-				}
-			}
-			inMsg.responseChan <- true
-		case outMsg := <-nextMsgChan:
-			// if something is waitingto be emitted set it going
-			go emit(outMsg, lag)
-		case <-nextMsg.responseChan:
-			// make sure the next message is loaded when the current nextMsg is done
-			getNextMsg = true
+    const layout = "2006-01-02 15:04:05 -0700"
 
-		}
-	}
+    count := 0
+    heapCount := 0
+
+    for {
+        select {
+            case inMsg := <-writeChan:
+                
+                outMsg := &PQMessage{
+                    val:          inMsg.val,
+                    t:            inMsg.t,
+                }
+            
+                outTime := outMsg.t.Add(lag)
+                outDur := outTime.Sub(time.Now()) 
+
+                if outDur > time.Duration(0 * time.Second) {
+                    heap.Push(pq, outMsg) 
+                    
+                    heapCount ++
+
+                    if heapCount % 500 == 0{
+                        log.Println( "HEAP: " + strconv.Itoa(pq.Len()))
+                    }
+
+                    if outMsg.t.Before(nextMsg.t) {
+                        heap.Push(pq, nextMsg)
+                        nextMsg = heap.Pop(pq).(*PQMessage)
+                        emit_time = nextMsg.t.Add(lag)
+                        duration := emit_time.Sub(time.Now()) 
+
+                        emitter.Stop()
+
+                        emitter = time.AfterFunc(duration, func() {
+                            count = count + 1
+                            if count % 40 == 0 {
+                                diff := nextMsg.t.Sub( time.Now() )
+                                log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
+                            }
+                            getNext<- true
+                        })
+                    } 
+                } else {
+                    log.Println("error: " + outDur.String() + " message reads: " + outMsg.t.Format(layout) )
+
+                }
+
+                inMsg.responseChan <- true
+
+            case <-getNext:
+                if pq.Len() > 0 {
+                    nextMsg = heap.Pop(pq).(*PQMessage) 
+                    emit_time = nextMsg.t.Add(lag)
+                    duration := emit_time.Sub(time.Now()) 
+
+                    emitter = time.AfterFunc(duration, func() {
+                        count = count + 1
+                        if count % 40 == 0 {
+                            diff := nextMsg.t.Sub( time.Now() )
+                            log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
+                        }
+                        getNext<- true
+                    })
+                }
+        }
+    }
 }
 
+
 // function to read an NSQ channel and write to the key value store
-func writer(mh MessageHandler, writeChan chan WriteMessage) {
+func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
 	for {
 		select {
 		case m := <-mh.msgChan:
@@ -169,19 +185,13 @@ func writer(mh MessageHandler, writeChan chan WriteMessage) {
 				log.Fatalf(err.Error())
 			}
 
-			val, err := blob.Get("t").String()
+			msg_time, err := blob.Get(timeKey).Int64()
 
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
 
-			msg_time, err := strconv.ParseInt(val, 0, 64)
-
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			t := time.Unix(0, msg_time)
+			t := time.Unix(0, msg_time * 1000 * 1000)
 			mblob, err := blob.MarshalJSON()
 
 			if err != nil {
@@ -231,14 +241,11 @@ func main() {
 	lag := time.Duration(time.Duration(*lag_time) * time.Second)
 
 	go store(wc, pq, lag)
-	go writer(mh, wc)
+	go writer(mh, wc, *timeKey)
 
 	r.AddAsyncHandler(&mh)
+    r.SetMaxInFlight(*maxInFlight)
 
-	err = r.ConnectToNSQ(*nsqTCPAddrs)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
 	err = r.ConnectToLookupd(*lookupdHTTPAddrs)
 	if err != nil {
 		log.Fatalf(err.Error())
