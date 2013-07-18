@@ -189,17 +189,21 @@ func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
     for {
         select {
         case m := <-mh.msgChan:
+            
+            reject := false
 
             blob, err := simplejson.NewJson(m.Body)
 
             if err != nil {
-                log.Fatalf(err.Error())
+                reject = true
+                log.Println(err.Error())
             }
 
             msg_time, err := blob.Get(timeKey).Int64()
 
             if err != nil {
-                log.Fatalf(err.Error())
+                reject = true
+                log.Println(err.Error())
             }
 
             // milliseconds
@@ -207,7 +211,8 @@ func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
             mblob, err := blob.MarshalJSON()
 
             if err != nil {
-                log.Fatalf(err.Error())
+                reject = true
+                log.Println(err.Error())
             }
 
             responseChan := make(chan bool)
@@ -218,13 +223,15 @@ func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
                 responseChan: responseChan,
             }
 
-            writeChan <- msg
-
+            if !reject {
+                writeChan <- msg
+            }
+            
             success := <-responseChan
 
             if !success {
                 // TODO learn about err.Error()
-                log.Fatalf("its broken")
+                log.Println("its broken")
             }
         }
     }
