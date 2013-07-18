@@ -1,50 +1,60 @@
 package main
 
 import (
-	"container/heap"
-	"flag"
-	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
-	"log"
-	"strconv"
-	"time"
+    "container/heap"
+    "flag"
+    "github.com/bitly/go-simplejson"
+    "github.com/bitly/nsq/nsq"
+    "log"
+    "strconv"
+    "time"
+    //"net"
+    //"bufio"
+    "net/http"
+   // "io"
+    "bytes"
+    "io/ioutil"
 )
 
 var (
-	topic            = flag.String("topic", "", "nsq topic")
-	channel          = flag.String("channel", "", "nsq topic")
-	maxInFlight      = flag.Int("max-in-flight", 10, "max number of messages to allow in flight")
-    nsqTCPAddrs      = flag.String("nsqd-tcp-address", "127.0.0.1:4150", "nsqd TCP address")
-    nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
+    // for input
+    topic            = flag.String("topic", "", "nsq topic")
+    channel          = flag.String("channel", "", "nsq topic")
+    maxInFlight      = flag.Int("max-in-flight", 10, "max number of messages to allow in flight")
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
-	lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
+    // for output
+    outNsqTCPAddrs   = flag.String("out-nsqd-tcp-address", "127.0.0.1:4151", "out nsqd TCP address")
+    outTopic         = flag.String("out-topic", "", "nsq topic")
+    outChannel       = flag.String("out-channel", "", "nsq channel")
+
+    lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
     timeKey          = flag.String("key","","key that holds time")
 )
 
 
 // MESSAGE HANDLER FOR THE NSQ READER
 type MessageHandler struct {
-	msgChan  chan *nsq.Message
-	stopChan chan int
+    msgChan  chan *nsq.Message
+    stopChan chan int
 }
 
 func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-	self.msgChan <- message
-	responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
+    self.msgChan <- message
+    responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
 }
 
 type WriteMessage struct {
-	val          []byte
-	t            time.Time
-	responseChan chan bool
+    val          []byte
+    t            time.Time
+    responseChan chan bool
 }
 
 type PQMessage struct {
-	val          []byte
-	t            time.Time
-	index        int
-	killChan     chan bool
-	responseChan chan bool
+    val          []byte
+    t            time.Time
+    index        int
+    killChan     chan bool
+    responseChan chan bool
 }
 
 // PRIORITY QUEUE
@@ -52,45 +62,45 @@ type PQMessage struct {
 type PriorityQueue []*PQMessage
 
 func (pq PriorityQueue) Len() int {
-	return len(pq)
+    return len(pq)
 }
 
 func (pq PriorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
-	return pq[i].t.Before(pq[j].t)
+    // We want Pop to give us the highest, not lowest, priority so we use greater than here.
+    return pq[i].t.Before(pq[j].t)
 }
 
 func (pq PriorityQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
-	pq[i].index = i
-	pq[j].index = j
+    pq[i], pq[j] = pq[j], pq[i]
+    pq[i].index = i
+    pq[j].index = j
 }
 
 func (pq *PriorityQueue) Push(x interface{}) {
-	n := len(*pq)
-	item := x.(*PQMessage)
-	item.index = n
-	*pq = append(*pq, item)
+    n := len(*pq)
+    item := x.(*PQMessage)
+    item.index = n
+    *pq = append(*pq, item)
 }
 
 func (pq *PriorityQueue) Pop() interface{} {
-	old := *pq
-	n := len(old)
-	item := old[n-1]
-	item.index = -1 // for safety
-	*pq = old[0 : n-1]
-	return item
+    old := *pq
+    n := len(old)
+    item := old[n-1]
+    item.index = -1 // for safety
+    *pq = old[0 : n-1]
+    return item
 }
 
 // update modifies the priority and value of an Item in the queue.
 func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
-	heap.Remove(pq, item.index)
-	item.val = val
-	item.t = time
-	heap.Push(pq, item)
+    heap.Remove(pq, item.index)
+    item.val = val
+    item.t = time
+    heap.Push(pq, item)
 }
 
-func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
+func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag time.Duration) {
 
     var emit_time time.Time
     nextMsg := &PQMessage{
@@ -107,7 +117,6 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
     count := 0
     heapCount := 0
-
     for {
         select {
             case inMsg := <-writeChan:
@@ -138,6 +147,7 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
                         emitter.Stop()
 
                         emitter = time.AfterFunc(duration, func() {
+                            out<-nextMsg.val
                             count = count + 1
                             if count % 40 == 0 {
                                 diff := nextMsg.t.Sub( time.Now() )
@@ -160,6 +170,7 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
                     duration := emit_time.Sub(time.Now()) 
 
                     emitter = time.AfterFunc(duration, func() {
+                        out<-nextMsg.val
                         count = count + 1
                         if count % 40 == 0 {
                             diff := nextMsg.t.Sub( time.Now() )
@@ -175,81 +186,158 @@ func store(writeChan chan WriteMessage, pq *PriorityQueue, lag time.Duration) {
 
 // function to read an NSQ channel and write to the key value store
 func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
-	for {
-		select {
-		case m := <-mh.msgChan:
+    for {
+        select {
+        case m := <-mh.msgChan:
 
-			blob, err := simplejson.NewJson(m.Body)
+            blob, err := simplejson.NewJson(m.Body)
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			msg_time, err := blob.Get(timeKey).Int64()
+            msg_time, err := blob.Get(timeKey).Int64()
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			t := time.Unix(0, msg_time * 1000 * 1000)
-			mblob, err := blob.MarshalJSON()
+            // milliseconds
+            t := time.Unix(0, msg_time * 1000 * 1000)
+            mblob, err := blob.MarshalJSON()
 
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
+            if err != nil {
+                log.Fatalf(err.Error())
+            }
 
-			responseChan := make(chan bool)
+            responseChan := make(chan bool)
 
-			msg := WriteMessage{
-				t:            t,
-				val:          mblob,
-				responseChan: responseChan,
-			}
+            msg := WriteMessage{
+                t:            t,
+                val:          mblob,
+                responseChan: responseChan,
+            }
 
-			writeChan <- msg
+            writeChan <- msg
 
-			success := <-responseChan
+            success := <-responseChan
 
-			if !success {
-				// TODO learn about err.Error()
-				log.Fatalf("its broken")
-			}
-		}
-	}
+            if !success {
+                // TODO learn about err.Error()
+                log.Fatalf("its broken")
+            }
+        }
+    }
+}
+
+/*func emitter(tcpAddr string, topic string, out chan []byte){
+    outCount := 0 
+    for{
+        select{
+        case msg := <- out:
+            outCount ++
+            if outCount % 50 == 0{
+                log.Println("OUT: " + strconv.Itoa(outCount) )
+            }
+            test := bytes.NewReader(msg)
+            _, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
+            if err != nil {
+                log.Println(err.Error())
+            }
+        }
+    }
+}
+
+func emitter(tcpAddr string, topic string, out chan []byte){
+    outCount := 0 
+    for{
+        select{
+        case msg := <- out:
+            outCount ++
+            if outCount % 50 == 0{
+                log.Println("OUT: " + strconv.Itoa(outCount) )
+            }
+            test := bytes.NewReader(msg)
+            _, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
+            if err != nil {
+                log.Println(err.Error())
+            }
+        }
+    }
+}*/
+
+func emitter(tcpAddr string, topic string, out chan []byte){
+    outCount := 0 
+
+    /*conn, err := net.DialTimeout("tcp", tcpAddr, time.Second)
+
+    if err != nil {
+        panic(err.Error())
+    }*/
+
+    //conn.Write(nsq.MagicV2)
+    //rw := bufio.NewWriter(bufio.NewWriter(conn))
+
+    for{
+        select{
+        case msg := <- out:
+            outCount ++
+            if outCount % 50 == 0{
+                log.Println("OUT: " + strconv.Itoa(outCount) )
+            }
+            test := bytes.NewReader(msg)
+            resp, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
+            if err != nil {
+                log.Println(err.Error())
+            }
+            defer resp.Body.Close()
+            body, err := ioutil.ReadAll(resp.Body)
+            _ = body
+            /*cmd, _ := nsq.MultiPublish(topic, [][]byte{msg})
+            err := cmd.Write(rw)
+            if err != nil {
+                panic(err.Error())
+            }
+            err = rw.Flush()*/
+
+        }
+    }
 }
 
 func main() {
 
-	flag.Parse()
+    flag.Parse()
 
-	r, err := nsq.NewReader(*topic, *channel)
+    r, err := nsq.NewReader(*topic, *channel)
 
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+    if err != nil {
+        log.Fatal(err.Error())
+    }
 
-	mh := MessageHandler{
-		msgChan:  make(chan *nsq.Message, 5),
-		stopChan: make(chan int),
-	}
+    mh := MessageHandler{
+        msgChan:  make(chan *nsq.Message, 5),
+        stopChan: make(chan int),
+    }
 
-	wc := make(chan WriteMessage)
+    wc := make(chan WriteMessage)
+    oc := make(chan []byte, 1000)
 
-	pq := &PriorityQueue{}
-	heap.Init(pq)
+    pq := &PriorityQueue{}
+    heap.Init(pq)
 
-	lag := time.Duration(time.Duration(*lag_time) * time.Second)
+    lag := time.Duration(time.Duration(*lag_time) * time.Second)
 
-	go store(wc, pq, lag)
-	go writer(mh, wc, *timeKey)
+    go store(wc, oc, pq, lag)
+    go writer(mh, wc, *timeKey)
+    go emitter(*outNsqTCPAddrs, *outTopic, oc)
 
-	r.AddAsyncHandler(&mh)
+    r.AddAsyncHandler(&mh)
     r.SetMaxInFlight(*maxInFlight)
 
-	err = r.ConnectToLookupd(*lookupdHTTPAddrs)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+    err = r.ConnectToLookupd(*lookupdHTTPAddrs)
+    if err != nil {
+        log.Fatalf(err.Error())
+    }
 
-	<-mh.stopChan
+    <-mh.stopChan
 }
