@@ -46,7 +46,7 @@ func writer(tcpAddr string, topic string, msgText []byte, timeKey string){
 
         batch := make([][]byte, 0)
 
-        for count < 10 {
+        for count < 1000 {
             a := int64( r.Float64() * 10000000000 )
 
             strTime := now.UnixNano() - a

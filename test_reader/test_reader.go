@@ -4,6 +4,8 @@ import (
     "flag"
     "log"
     "github.com/bitly/nsq/nsq"
+    "github.com/bitly/go-simplejson"
+    "time"
 )
 
 var (
@@ -12,6 +14,7 @@ var (
     nsqTCPAddrs      = flag.String("nsqd-tcp-address", "127.0.0.1:4150", "nsqd TCP address")
     nsqHTTPAddrs     = flag.String("nsqd-http-address", "127.0.0.1:4151", "nsqd HTTP address")
     lookupdHTTPAddrs = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd HTTP address")
+    timeKey          = flag.String("key","","key that holds time")
 )
 
 type MessageHandler struct {
@@ -23,17 +26,22 @@ func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel 
     responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
 }
 
-func writer(mh MessageHandler) {
-    count := 0
+func writer(mh MessageHandler, timeKey string) {
+    const layout = "15:04:05"
+
     for {
         select {
             case msg := <-mh.msgChan:
-                count = count + 1
-                if count % 500 == 0 {
-                    log.Println( count )
-                    log.Println( string( msg.Body ) )
+                blob, err := simplejson.NewJson(msg.Body)
+                if err == nil {
+                    //log.Println(string(msg.Body))
+                    //log.Fatalf(err.Error())
+                    msg_time, _ := blob.Get(timeKey).Int64()
+
+                    t := time.Unix(0, msg_time * 1000 * 1000)
+
+                    log.Println(t.Format(layout) )
                 }
-                _ = msg
         }
     }
 }
@@ -50,7 +58,7 @@ func main(){
         msgChan: make(chan *nsq.Message, 5),
     }
 
-    go writer(mh)
+    go writer(mh, *timeKey)
 
     r.AddAsyncHandler(&mh)
 
