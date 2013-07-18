@@ -27,7 +27,7 @@ func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel 
 }
 
 func writer(mh MessageHandler, timeKey string) {
-    const layout = "15:04:05"
+    const layout = "2006-01-02 15:04:05 -0700"
 
     for {
         select {
