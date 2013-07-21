@@ -149,7 +149,7 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
                         emitter = time.AfterFunc(duration, func() {
                             out<-nextMsg.val
                             count = count + 1
-                            if count % 40 == 0 {
+                            if count % 250 == 0 {
                                 diff := nextMsg.t.Sub( time.Now() )
                                 log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
                             }
@@ -172,7 +172,7 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
                     emitter = time.AfterFunc(duration, func() {
                         out<-nextMsg.val
                         count = count + 1
-                        if count % 40 == 0 {
+                        if count % 250 == 0 {
                             diff := nextMsg.t.Sub( time.Now() )
                             log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
                         }
@@ -237,44 +237,10 @@ func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
     }
 }
 
-/*func emitter(tcpAddr string, topic string, out chan []byte){
-    outCount := 0 
-    for{
-        select{
-        case msg := <- out:
-            outCount ++
-            if outCount % 50 == 0{
-                log.Println("OUT: " + strconv.Itoa(outCount) )
-            }
-            test := bytes.NewReader(msg)
-            _, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
-            if err != nil {
-                log.Println(err.Error())
-            }
-        }
-    }
-}
-
 func emitter(tcpAddr string, topic string, out chan []byte){
     outCount := 0 
-    for{
-        select{
-        case msg := <- out:
-            outCount ++
-            if outCount % 50 == 0{
-                log.Println("OUT: " + strconv.Itoa(outCount) )
-            }
-            test := bytes.NewReader(msg)
-            _, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
-            if err != nil {
-                log.Println(err.Error())
-            }
-        }
-    }
-}*/
 
-func emitter(tcpAddr string, topic string, out chan []byte){
-    outCount := 0 
+    client := &http.Client{}
 
     /*conn, err := net.DialTimeout("tcp", tcpAddr, time.Second)
 
@@ -289,17 +255,22 @@ func emitter(tcpAddr string, topic string, out chan []byte){
         select{
         case msg := <- out:
             outCount ++
-            if outCount % 50 == 0{
+            if outCount % 250 == 0{
                 log.Println("OUT: " + strconv.Itoa(outCount) )
             }
             test := bytes.NewReader(msg)
-            resp, err := http.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
+            resp, err := client.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
             if err != nil {
                 log.Println(err.Error())
             }
-            defer resp.Body.Close()
             body, err := ioutil.ReadAll(resp.Body)
-            _ = body
+            
+            if string(body) != "OK" {
+                log.Println(body)
+            }
+
+            resp.Body.Close()
+
             /*cmd, _ := nsq.MultiPublish(topic, [][]byte{msg})
             err := cmd.Write(rw)
             if err != nil {
@@ -322,12 +293,12 @@ func main() {
     }
 
     mh := MessageHandler{
-        msgChan:  make(chan *nsq.Message, 5),
+        msgChan:  make(chan *nsq.Message),
         stopChan: make(chan int),
     }
 
     wc := make(chan WriteMessage)
-    oc := make(chan []byte, 1000)
+    oc := make(chan []byte)
 
     pq := &PriorityQueue{}
     heap.Init(pq)
