@@ -27,6 +27,12 @@ var (
 
     lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
     timeKey          = flag.String("key","","key that holds time")
+
+    lateMsgCount    int
+    lastStoreDiff   time.Duration
+    jsonErr         int
+    emitError       int
+    emitCount       int
 )
 
 type WriteMessage struct {
@@ -99,15 +105,10 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
         log.Println("...")
     })
 
-    const layout = "2006-01-02 15:04:05 -0700"
-
-    count := 0
-    heapCount := 0
-    errorCount := 0 
     for {
         select {
             case inMsg := <-writeChan:
-                
+
                 outMsg := &PQMessage{
                     val:          inMsg.val,
                     t:            inMsg.t,
@@ -118,13 +119,6 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
 
                 if outDur > time.Duration(0 * time.Second) {
                     heap.Push(pq, outMsg) 
-                    
-                    heapCount ++
-
-                    if heapCount % 500 == 0{
-                        log.Println( "HEAP: " + strconv.Itoa(pq.Len()))
-                    }
-
                     if outMsg.t.Before(nextMsg.t) {
                         heap.Push(pq, nextMsg)
                         nextMsg = heap.Pop(pq).(*PQMessage)
@@ -132,40 +126,24 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
                         duration := emit_time.Sub(time.Now()) 
 
                         emitter.Stop()
-
                         emitter = time.AfterFunc(duration, func() {
+                            lastStoreDiff = nextMsg.t.Sub( time.Now() )
                             out<-nextMsg.val
-                            count = count + 1
-                            if count % 250 == 0 {
-                                diff := nextMsg.t.Sub( time.Now() )
-                                log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
-                            }
                             getNext<- true
                         })
                     } 
                 } else {
-                    errorCount++
-                    if errorCount % 250 == 0 {
-                        log.Println("error: " + outDur.String() + " message reads: " + outMsg.t.Format(layout) )
-                    }
-
+                    lateMsgCount ++
                 }
-
-                //inMsg.responseChan <- true
 
             case <-getNext:
                 if pq.Len() > 0 {
                     nextMsg = heap.Pop(pq).(*PQMessage) 
                     emit_time = nextMsg.t.Add(lag)
                     duration := emit_time.Sub(time.Now()) 
-
                     emitter = time.AfterFunc(duration, func() {
+                        lastStoreDiff = nextMsg.t.Sub( time.Now() )
                         out<-nextMsg.val
-                        count = count + 1
-                        if count % 250 == 0 {
-                            diff := nextMsg.t.Sub( time.Now() )
-                            log.Println("POP: " + diff.String() + "IN QUEUE:" + strconv.Itoa(pq.Len()) )
-                        }
                         getNext<- true
                     })
                 }
@@ -174,26 +152,28 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
 }
 
 func emitter(tcpAddr string, topic string, out chan []byte){
-    outCount := 0 
 
     client := &http.Client{}
 
     for{
         select{
         case msg := <- out:
-            outCount ++
-            if outCount % 250 == 0{
-                log.Println("OUT: " + strconv.Itoa(outCount) )
-            }
-            test := bytes.NewReader(msg)
-            resp, err := client.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", test)
+
+            msgReader := bytes.NewReader(msg)
+            resp, err := client.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", msgReader)
+
             if err != nil {
                 log.Println(err.Error())
             }
+
             body, err := ioutil.ReadAll(resp.Body)
             
             if string(body) != "OK" {
-                log.Println(body)
+                log.Println(string(body))
+                log.Println(err.Error())
+                emitError ++ 
+            } else {
+                emitCount ++
             }
 
             resp.Body.Close()
@@ -202,46 +182,43 @@ func emitter(tcpAddr string, topic string, out chan []byte){
 }
 
 type SyncHandler struct{
-    writeChan chan WriteMessage
+    msgChan chan *nsq.Message
     timeKey string
 }
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
-
-    blob, err := simplejson.NewJson(m.Body)
-
-    if err != nil {
-        log.Println(err.Error())
-        return nil
-    }
-
-    msg_time, err := blob.Get(self.timeKey).Int64()
-
-    if err != nil {
-        log.Println(err.Error())
-        return nil
-    }
-
-    // milliseconds
-    t := time.Unix(0, msg_time * 1000 * 1000)
-    mblob, err := blob.MarshalJSON()
-
-    if err != nil {
-        log.Println(err.Error())
-        return nil
-    }
-
-    responseChan := make(chan bool)
-
-    msg := WriteMessage{
-        t:            t,
-        val:          mblob,
-        responseChan: responseChan,
-    }
-
-    self.writeChan <- msg
-
+    self.msgChan <- m
     return nil
+}
+
+func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey string){
+    for{
+        select{
+        case m := <- msgChan:
+            blob, err := simplejson.NewJson(m.Body)
+            if err != nil{
+                jsonErr ++ 
+                log.Println(err.Error())
+                break
+            }
+
+            msgTime, err := blob.Get(timeKey).Int64()
+            if err != nil{
+                jsonErr ++ 
+                log.Println(err.Error())
+                break
+            }
+
+            ms := time.Unix(0, msgTime * 1000 * 1000)
+
+            msg := WriteMessage{
+                t:      ms,
+                val:    m.Body,
+            }
+
+            storeChan <- msg
+        }
+    }
 }
 
 
@@ -249,35 +226,48 @@ func main() {
 
     flag.Parse()
 
-    stop := make(chan bool)
-    wc := make(chan WriteMessage, 500000)
-    oc := make(chan []byte)
+    wc := make(chan *nsq.Message, 500000) // SyncHandler to HandleJSON
+    sc := make(chan WriteMessage)         // HandleJSON to Store
+    oc := make(chan []byte)               // Store to Emitter
+
+    lag := time.Duration(time.Duration(*lag_time) * time.Second)
     pq := &PriorityQueue{}
     heap.Init(pq)
 
-    lag := time.Duration(time.Duration(*lag_time) * time.Second)
-
-    go store(wc, oc, pq, lag)
+    go HandleJSON(wc, sc, *timeKey)
+    go store(sc, oc, pq, lag)
     go emitter(*outNsqTCPAddrs, *outTopic, oc)
 
+    r, _ := nsq.NewReader(*topic, *channel)
+    r.SetMaxInFlight(*maxInFlight)
 
-    for j := 0; j < 10; j++ {
-        go func(){
-            r, _ := nsq.NewReader(*topic, *channel)
-            r.SetMaxInFlight(*maxInFlight)
-
-            for i := 0; i < 5; i++ {
-                sh := SyncHandler{
-                    writeChan: wc,
-                    timeKey: *timeKey,
-                }
-                r.AddHandler(&sh)
-            }
-
-            _ = r.ConnectToLookupd(*lookupdHTTPAddrs)
-        }()
+    for i := 0; i < 500; i++ {
+        sh := SyncHandler{
+            msgChan: wc,
+            timeKey: *timeKey,
+        }
+        r.AddHandler(&sh)
     }
 
-    <-stop
+    _ = r.ConnectToLookupd(*lookupdHTTPAddrs)
+
+    go func(){
+        for{
+            log.Printf("\033[2J\033[1;1H")
+            log.Println("messages recieved:  " + strconv.FormatUint(r.MessagesReceived, 10 ))
+            log.Println("messaged finished:  " + strconv.FormatUint(r.MessagesFinished, 10 ))
+            log.Println("buffered JSON chan: " + strconv.Itoa(len(wc)))
+            log.Println("JSON error:         " + strconv.Itoa(jsonErr))
+            log.Println("priority queue len: " + strconv.Itoa(pq.Len()))
+            log.Println("store precision:    " + lastStoreDiff.String())
+            log.Println("late messages:      " + strconv.Itoa(lateMsgCount))
+            log.Println("emit errors:        " + strconv.Itoa(emitError))
+            log.Println("emit count:         " + strconv.Itoa(emitCount))
+
+            time.Sleep(500 * time.Millisecond)
+        }
+    }()
+
+    <-r.ExitChan
 
 }
