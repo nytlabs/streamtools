@@ -208,20 +208,18 @@ type SyncHandler struct{
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
 
-    reject := false
-
     blob, err := simplejson.NewJson(m.Body)
 
     if err != nil {
-        reject = true
         log.Println(err.Error())
+        return nil
     }
 
     msg_time, err := blob.Get(self.timeKey).Int64()
 
     if err != nil {
-        reject = true
         log.Println(err.Error())
+        return nil
     }
 
     // milliseconds
@@ -229,8 +227,8 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
     mblob, err := blob.MarshalJSON()
 
     if err != nil {
-        reject = true
         log.Println(err.Error())
+        return nil
     }
 
     responseChan := make(chan bool)
@@ -241,9 +239,7 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
         responseChan: responseChan,
     }
 
-    if !reject {
-        self.writeChan <- msg
-    }
+    self.writeChan <- msg
 
     return nil
 }
