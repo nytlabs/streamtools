@@ -266,18 +266,20 @@ func main() {
 
 
     for j := 0; j < 10; j++ {
-        r, _ := nsq.NewReader(*topic, *channel)
-        r.SetMaxInFlight(*maxInFlight)
+        go func(){
+            r, _ := nsq.NewReader(*topic, *channel)
+            r.SetMaxInFlight(*maxInFlight)
 
-        for i := 0; i < 5; i++ {
-            sh := SyncHandler{
-                writeChan: wc,
-                timeKey: *timeKey,
+            for i := 0; i < 5; i++ {
+                sh := SyncHandler{
+                    writeChan: wc,
+                    timeKey: *timeKey,
+                }
+                r.AddHandler(&sh)
             }
-            r.AddHandler(&sh)
-        }
 
-        _ = r.ConnectToLookupd(*lookupdHTTPAddrs)
+            _ = r.ConnectToLookupd(*lookupdHTTPAddrs)
+        }()
     }
 
     <-stop
