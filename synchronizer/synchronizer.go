@@ -4,14 +4,12 @@ import (
     "container/heap"
     "flag"
     "github.com/bitly/go-simplejson"
-    "github.com/bitly/nsq/nsq"
+    //"github.com/bitly/nsq/nsq"
+    "github.com/bitly/nsq/tree/v0.2.21/nsq"
     "log"
     "strconv"
     "time"
-    //"net"
-    //"bufio"
     "net/http"
-   // "io"
     "bytes"
     "io/ioutil"
 )
@@ -30,18 +28,6 @@ var (
     lag_time         = flag.Int("lag", 10, "lag before emitting in seconds")
     timeKey          = flag.String("key","","key that holds time")
 )
-
-
-// MESSAGE HANDLER FOR THE NSQ READER
-type MessageHandler struct {
-    msgChan  chan *nsq.Message
-    stopChan chan int
-}
-
-func (self *MessageHandler) HandleMessage(message *nsq.Message, responseChannel chan *nsq.FinishedMessage) {
-    self.msgChan <- message
-    responseChannel <- &nsq.FinishedMessage{message.Id, 0, true}
-}
 
 type WriteMessage struct {
     val          []byte
@@ -117,6 +103,7 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
 
     count := 0
     heapCount := 0
+    errorCount := 0 
     for {
         select {
             case inMsg := <-writeChan:
@@ -157,11 +144,14 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
                         })
                     } 
                 } else {
-                    log.Println("error: " + outDur.String() + " message reads: " + outMsg.t.Format(layout) )
+                    errorCount++
+                    if errorCount % 250 == 0 {
+                        log.Println("error: " + outDur.String() + " message reads: " + outMsg.t.Format(layout) )
+                    }
 
                 }
 
-                inMsg.responseChan <- true
+                //inMsg.responseChan <- true
 
             case <-getNext:
                 if pq.Len() > 0 {
@@ -183,73 +173,10 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
     }
 }
 
-
-// function to read an NSQ channel and write to the key value store
-func writer(mh MessageHandler, writeChan chan WriteMessage, timeKey string) {
-    for {
-        select {
-        case m := <-mh.msgChan:
-            
-            reject := false
-
-            blob, err := simplejson.NewJson(m.Body)
-
-            if err != nil {
-                reject = true
-                log.Println(err.Error())
-            }
-
-            msg_time, err := blob.Get(timeKey).Int64()
-
-            if err != nil {
-                reject = true
-                log.Println(err.Error())
-            }
-
-            // milliseconds
-            t := time.Unix(0, msg_time * 1000 * 1000)
-            mblob, err := blob.MarshalJSON()
-
-            if err != nil {
-                reject = true
-                log.Println(err.Error())
-            }
-
-            responseChan := make(chan bool)
-
-            msg := WriteMessage{
-                t:            t,
-                val:          mblob,
-                responseChan: responseChan,
-            }
-
-            if !reject {
-                writeChan <- msg
-            }
-            
-            success := <-responseChan
-
-            if !success {
-                // TODO learn about err.Error()
-                log.Println("its broken")
-            }
-        }
-    }
-}
-
 func emitter(tcpAddr string, topic string, out chan []byte){
     outCount := 0 
 
     client := &http.Client{}
-
-    /*conn, err := net.DialTimeout("tcp", tcpAddr, time.Second)
-
-    if err != nil {
-        panic(err.Error())
-    }*/
-
-    //conn.Write(nsq.MagicV2)
-    //rw := bufio.NewWriter(bufio.NewWriter(conn))
 
     for{
         select{
@@ -270,52 +197,89 @@ func emitter(tcpAddr string, topic string, out chan []byte){
             }
 
             resp.Body.Close()
-
-            /*cmd, _ := nsq.MultiPublish(topic, [][]byte{msg})
-            err := cmd.Write(rw)
-            if err != nil {
-                panic(err.Error())
-            }
-            err = rw.Flush()*/
-
         }
     }
 }
+
+type SyncHandler struct{
+    writeChan chan WriteMessage
+    timeKey string
+}
+
+func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
+
+    reject := false
+
+    blob, err := simplejson.NewJson(m.Body)
+
+    if err != nil {
+        reject = true
+        log.Println(err.Error())
+    }
+
+    msg_time, err := blob.Get(self.timeKey).Int64()
+
+    if err != nil {
+        reject = true
+        log.Println(err.Error())
+    }
+
+    // milliseconds
+    t := time.Unix(0, msg_time * 1000 * 1000)
+    mblob, err := blob.MarshalJSON()
+
+    if err != nil {
+        reject = true
+        log.Println(err.Error())
+    }
+
+    responseChan := make(chan bool)
+
+    msg := WriteMessage{
+        t:            t,
+        val:          mblob,
+        responseChan: responseChan,
+    }
+
+    if !reject {
+        self.writeChan <- msg
+    }
+
+    return nil
+}
+
 
 func main() {
 
     flag.Parse()
 
-    r, err := nsq.NewReader(*topic, *channel)
-
-    if err != nil {
-        log.Fatal(err.Error())
-    }
-
-    mh := MessageHandler{
-        msgChan:  make(chan *nsq.Message),
-        stopChan: make(chan int),
-    }
-
-    wc := make(chan WriteMessage)
+    stop := make(chan bool)
+    wc := make(chan WriteMessage, 500000)
     oc := make(chan []byte)
-
     pq := &PriorityQueue{}
     heap.Init(pq)
 
     lag := time.Duration(time.Duration(*lag_time) * time.Second)
 
     go store(wc, oc, pq, lag)
-    go writer(mh, wc, *timeKey)
     go emitter(*outNsqTCPAddrs, *outTopic, oc)
 
-    r.AddAsyncHandler(&mh)
-    r.SetMaxInFlight(*maxInFlight)
 
-    err = r.ConnectToLookupd(*lookupdHTTPAddrs)
-    if err != nil {
-        log.Fatalf(err.Error())
+    for j := 0; j < 10; j++ {
+        r, _ := nsq.NewReader(*topic, *channel)
+        r.SetMaxInFlight(*maxInFlight)
+
+        for i := 0; i < 5; i++ {
+            sh := SyncHandler{
+                writeChan: wc,
+                timeKey: *timeKey,
+            }
+            r.AddHandler(&sh)
+        }
+
+        _ = r.ConnectToLookupd(*lookupdHTTPAddrs)
     }
 
-    <-mh.stopChan
+    <-stop
+
 }
