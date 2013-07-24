@@ -1,17 +1,16 @@
 package main
 
 import (
-    "container/heap"
-    "flag"
-    "github.com/bitly/go-simplejson"
-    //"github.com/bitly/nsq/nsq"
-    "github.com/bitly/nsq/tree/v0.2.21/nsq"
-    "log"
-    "strconv"
-    "time"
-    "net/http"
-    "bytes"
-    "io/ioutil"
+	"bytes"
+	"container/heap"
+	"flag"
+	"github.com/bitly/go-simplejson"
+	"github.com/bitly/nsq/nsq"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 var (
@@ -33,66 +32,17 @@ var (
     jsonErr         int
     emitError       int
     emitCount       int
+    nextPopTime     time.Time
+    firingTimeDiff  time.Duration
 )
 
 type WriteMessage struct {
-    val          []byte
-    t            time.Time
-    responseChan chan bool
+	val          []byte
+	t            time.Time
+	responseChan chan bool
 }
 
-type PQMessage struct {
-    val          []byte
-    t            time.Time
-    index        int
-    killChan     chan bool
-    responseChan chan bool
-}
-
-// PRIORITY QUEUE
-// A PriorityQueue implements heap.Interface and holds Items.
-type PriorityQueue []*PQMessage
-
-func (pq PriorityQueue) Len() int {
-    return len(pq)
-}
-
-func (pq PriorityQueue) Less(i, j int) bool {
-    // We want Pop to give us the highest, not lowest, priority so we use greater than here.
-    return pq[i].t.Before(pq[j].t)
-}
-
-func (pq PriorityQueue) Swap(i, j int) {
-    pq[i], pq[j] = pq[j], pq[i]
-    pq[i].index = i
-    pq[j].index = j
-}
-
-func (pq *PriorityQueue) Push(x interface{}) {
-    n := len(*pq)
-    item := x.(*PQMessage)
-    item.index = n
-    *pq = append(*pq, item)
-}
-
-func (pq *PriorityQueue) Pop() interface{} {
-    old := *pq
-    n := len(old)
-    item := old[n-1]
-    item.index = -1 // for safety
-    *pq = old[0 : n-1]
-    return item
-}
-
-// update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
-    heap.Remove(pq, item.index)
-    item.val = val
-    item.t = time
-    heap.Push(pq, item)
-}
-
-func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag time.Duration) {
+/*func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag time.Duration) {
 
     var emit_time time.Time
     nextMsg := &PQMessage{
@@ -105,10 +55,12 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
         log.Println("...")
     })
 
+    const layout = "2006-01-02 15:04:05 -0700"
+
     for {
         select {
             case inMsg := <-writeChan:
-
+                
                 outMsg := &PQMessage{
                     val:          inMsg.val,
                     t:            inMsg.t,
@@ -119,37 +71,98 @@ func store(writeChan chan WriteMessage, out chan []byte, pq *PriorityQueue, lag 
 
                 if outDur > time.Duration(0 * time.Second) {
                     heap.Push(pq, outMsg) 
+
                     if outMsg.t.Before(nextMsg.t) {
                         heap.Push(pq, nextMsg)
                         nextMsg = heap.Pop(pq).(*PQMessage)
                         emit_time = nextMsg.t.Add(lag)
+                        nextPopTime = emit_time
                         duration := emit_time.Sub(time.Now()) 
 
                         emitter.Stop()
+
                         emitter = time.AfterFunc(duration, func() {
-                            lastStoreDiff = nextMsg.t.Sub( time.Now() )
                             out<-nextMsg.val
+                            lastStoreDiff = nextMsg.t.Sub( time.Now() )
                             getNext<- true
                         })
                     } 
                 } else {
-                    lateMsgCount ++
+                    lateMsgCount++
                 }
 
             case <-getNext:
                 if pq.Len() > 0 {
                     nextMsg = heap.Pop(pq).(*PQMessage) 
                     emit_time = nextMsg.t.Add(lag)
+                    nextPopTime = emit_time
                     duration := emit_time.Sub(time.Now()) 
+
                     emitter = time.AfterFunc(duration, func() {
-                        lastStoreDiff = nextMsg.t.Sub( time.Now() )
                         out<-nextMsg.val
+                        lastStoreDiff = nextMsg.t.Sub( time.Now() )
                         getNext<- true
                     })
                 }
         }
     }
+}*/
+
+func store(inChan chan WriteMessage, outChan chan []byte, pq *PriorityQueue, lag time.Duration) {
+
+    sleepTimer := time.NewTimer(time.Duration(0))
+    var outMsg interface{}
+    outMsg = nil
+
+    for {
+        select {
+        case <-sleepTimer.C:
+            if outMsg != nil {
+                outChan <- outMsg.(*PQMessage).val
+                lastStoreDiff = outMsg.(*PQMessage).t.Sub( time.Now() )
+            }
+
+            if pq.Len() > 0 {
+                outMsg = heap.Pop(pq).(*PQMessage)
+                emit_time := outMsg.(*PQMessage).t.Add(lag)
+                nextPopTime = emit_time
+                duration := emit_time.Sub(time.Now())
+                sleepTimer.Reset(duration)
+            } else {
+                outMsg = nil
+            }
+
+        case msg := <-inChan:
+            qMsg := &PQMessage{
+                val: msg.val,
+                t:   msg.t,
+            }
+
+            outTime := qMsg.t.Add(lag)
+            outDur := outTime.Sub(time.Now()) 
+
+            if outDur > time.Duration(0 * time.Second) {
+
+                if outMsg == nil || qMsg.t.Before(outMsg.(*PQMessage).t) {
+                    emit_time := qMsg.t.Add(lag)
+                    nextPopTime = emit_time
+                    duration := emit_time.Sub(time.Now())
+                    sleepTimer.Reset(duration)
+                    if outMsg != nil{
+                        heap.Push(pq, outMsg)
+                    }
+                    outMsg = qMsg
+                } else {
+                    heap.Push(pq, qMsg)
+                }
+
+            } else {
+                lateMsgCount ++ 
+            }
+        }
+    }
 }
+
 
 func emitter(tcpAddr string, topic string, out chan []byte){
 
@@ -163,7 +176,7 @@ func emitter(tcpAddr string, topic string, out chan []byte){
             resp, err := client.Post("http://" + tcpAddr + "/put?topic=" + topic,"data/multi-part", msgReader)
 
             if err != nil {
-                log.Println(err.Error())
+                log.Fatalf(err.Error())
             }
 
             body, err := ioutil.ReadAll(resp.Body)
@@ -221,10 +234,10 @@ func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey 
     }
 }
 
-
 func main() {
+    const layout = "Jan 2, 2006 at 3:04pm (MST)"
 
-    flag.Parse()
+	flag.Parse()
 
     wc := make(chan *nsq.Message, 500000) // SyncHandler to HandleJSON
     sc := make(chan WriteMessage)         // HandleJSON to Store
@@ -241,7 +254,7 @@ func main() {
     r, _ := nsq.NewReader(*topic, *channel)
     r.SetMaxInFlight(*maxInFlight)
 
-    for i := 0; i < 500; i++ {
+    for i := 0; i < 5; i++ {
         sh := SyncHandler{
             msgChan: wc,
             timeKey: *timeKey,
@@ -260,11 +273,12 @@ func main() {
             log.Println("JSON error:         " + strconv.Itoa(jsonErr))
             log.Println("priority queue len: " + strconv.Itoa(pq.Len()))
             log.Println("store precision:    " + lastStoreDiff.String())
+            log.Println("firing time diff:   " + firingTimeDiff.String() )
             log.Println("late messages:      " + strconv.Itoa(lateMsgCount))
             log.Println("emit errors:        " + strconv.Itoa(emitError))
             log.Println("emit count:         " + strconv.Itoa(emitCount))
-
-            time.Sleep(500 * time.Millisecond)
+            log.Println("next emit time:     " + nextPopTime.Format(layout))
+            time.Sleep(100 * time.Millisecond)
         }
     }()
 
