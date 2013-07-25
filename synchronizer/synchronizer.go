@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+    "fmt"
 )
 
 var (
@@ -33,7 +34,19 @@ var (
     emitError       int
     emitCount       int
     nextPopTime     time.Time
-    firingTimeDiff  time.Duration
+    mostOff         time.Duration
+
+    coffg5s          int
+    coff1to5s        int
+    coff100msto1s    int
+    coff10msto100ms  int
+    coff1msto10ms    int
+    coffl1ms         int
+    s5              = time.Duration(5 * time.Second)
+    s1              = time.Duration(1 * time.Second)
+    ms100           = time.Duration(100 * time.Millisecond)
+    ms10            = time.Duration(10 * time.Millisecond)
+    ms1             = time.Duration(1 * time.Millisecond)
 )
 
 type WriteMessage struct {
@@ -42,26 +55,56 @@ type WriteMessage struct {
 	responseChan chan bool
 }
 
+func OffStat(last time.Duration, lag time.Duration){
+    lastStoreDiff = last
+
+    if lastStoreDiff < mostOff {
+        mostOff = lastStoreDiff
+    }
+
+    posOff := -(lastStoreDiff + lag) 
+
+    if posOff >= s5 {
+        coffg5s ++ 
+    } else if posOff < s5 && posOff >= s1 {
+        coff1to5s++
+    } else if posOff < s1 && posOff >= ms100 {
+        coff100msto1s ++
+    } else if posOff < ms100 && posOff >= ms10 {
+        coff10msto100ms ++
+    } else if posOff < ms10 && posOff >= ms1{
+        coff1msto10ms ++
+    } else if posOff < ms1 {
+        coffl1ms ++ 
+    }
+}
+
 func store(inChan chan WriteMessage, outChan chan []byte, pq *PriorityQueue, lag time.Duration) {
 
-    sleepTimer := time.NewTimer(time.Duration(0))
+    sleepTimer := time.AfterFunc(24 * 365 * time.Hour, func(){})
     var outMsg interface{}
+    getNext := make(chan bool)
     outMsg = nil
 
     for {
         select {
-        case <-sleepTimer.C:
-            if outMsg != nil {
-                outChan <- outMsg.(*PQMessage).val
-                lastStoreDiff = outMsg.(*PQMessage).t.Sub( time.Now() )
-            }
+        case <-getNext:
 
             if pq.Len() > 0 {
                 outMsg = heap.Pop(pq).(*PQMessage)
                 emit_time := outMsg.(*PQMessage).t.Add(lag)
                 nextPopTime = emit_time
                 duration := emit_time.Sub(time.Now())
-                sleepTimer.Reset(duration)
+
+                sleepTimer.Stop()
+                sleepTimer = time.AfterFunc(duration, func() {
+                    if outMsg != nil {
+                        outChan <- outMsg.(*PQMessage).val
+                        OffStat( outMsg.(*PQMessage).t.Sub( time.Now() ), lag )
+                        getNext <- true
+                    }
+                })
+
             } else {
                 outMsg = nil
             }
@@ -81,11 +124,19 @@ func store(inChan chan WriteMessage, outChan chan []byte, pq *PriorityQueue, lag
                     emit_time := qMsg.t.Add(lag)
                     nextPopTime = emit_time
                     duration := emit_time.Sub(time.Now())
-                    sleepTimer.Reset(duration)
                     if outMsg != nil{
                         heap.Push(pq, outMsg)
                     }
                     outMsg = qMsg
+
+                    sleepTimer.Stop()
+                    sleepTimer = time.AfterFunc(duration, func() {
+                        if outMsg != nil {
+                            outChan <- outMsg.(*PQMessage).val
+                            OffStat( outMsg.(*PQMessage).t.Sub( time.Now() ), lag )
+                            getNext <- true
+                        }
+                    })
                 } else {
                     heap.Push(pq, qMsg)
                 }
@@ -157,13 +208,17 @@ func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey 
             }
 
             ms := time.Unix(0, msgTime * 1000 * 1000)
-
+            responseChan := make(chan bool)
             msg := WriteMessage{
                 t:      ms,
                 val:    m.Body,
+                responseChan: responseChan,
             }
 
+            time.Sleep(1 * time.Millisecond)
+
             storeChan <- msg
+
         }
     }
 }
@@ -200,18 +255,59 @@ func main() {
 
     go func(){
         for{
+            total := coffg5s          +
+                     coff1to5s        +
+                     coff100msto1s    +
+                     coff10msto100ms  +
+                     coff1msto10ms    +
+                     coffl1ms         
+
+            offg5s          := float64(coffg5s)          / float64(total)
+            off1to5s        := float64(coff1to5s)        / float64(total)
+            off100msto1s    := float64(coff100msto1s)    / float64(total)
+            off10msto100ms  := float64(coff10msto100ms)  / float64(total)
+            off1msto10ms    := float64(coff1msto10ms)    / float64(total)
+            offl1ms         := float64(coffl1ms)         / float64(total)
+
+            logStr := fmt.Sprintf("\n"+
+                "messages recieved:  %s\n" +
+                "messaged finished:  %s\n" +
+                "buffered JSON chan: %s\n" +
+                "JSON error:         %s\n" +
+                "priority queue len: %s\n" +
+                "store precision:    %s\n" +
+                "most imprecise:     %s\n" +
+                "late messages:      %s\n" +
+                "emit errors:        %s\n" +
+                "emit count:         %s\n" +
+                "next emit time:     %s\n" +
+                "t > 5s:             %s\n" +
+                "5s > t >= 1s:       %s\n" + 
+                "1s > t >= 100ms:    %s\n" + 
+                "100ms > t >= 10ms:  %s\n" + 
+                "10ms > t >= 1ms:    %s\n" + 
+                "t < 1ms:            %s\n",
+                strconv.FormatUint(r.MessagesReceived, 10 ), 
+                strconv.FormatUint(r.MessagesFinished, 10 ),
+                strconv.Itoa(len(wc)),
+                strconv.Itoa(jsonErr),
+                strconv.Itoa(pq.Len()), 
+                (lag + lastStoreDiff).String(), 
+                (lag + mostOff).String(),
+                strconv.Itoa(lateMsgCount),
+                strconv.Itoa(emitError),
+                strconv.Itoa(emitCount),
+                nextPopTime.Format(layout),
+                strconv.FormatFloat(offg5s,'g',2, 64),
+                strconv.FormatFloat(off1to5s,'g',2, 64),
+                strconv.FormatFloat(off100msto1s,'g',2, 64),
+                strconv.FormatFloat(off10msto100ms,'g',2, 64),
+                strconv.FormatFloat(off1msto10ms,'g',2, 64),
+                strconv.FormatFloat(offl1ms,'g',2, 64))
+
             log.Printf("\033[2J\033[1;1H")
-            log.Println("messages recieved:  " + strconv.FormatUint(r.MessagesReceived, 10 ))
-            log.Println("messaged finished:  " + strconv.FormatUint(r.MessagesFinished, 10 ))
-            log.Println("buffered JSON chan: " + strconv.Itoa(len(wc)))
-            log.Println("JSON error:         " + strconv.Itoa(jsonErr))
-            log.Println("priority queue len: " + strconv.Itoa(pq.Len()))
-            log.Println("store precision:    " + lastStoreDiff.String())
-            log.Println("firing time diff:   " + firingTimeDiff.String() )
-            log.Println("late messages:      " + strconv.Itoa(lateMsgCount))
-            log.Println("emit errors:        " + strconv.Itoa(emitError))
-            log.Println("emit count:         " + strconv.Itoa(emitCount))
-            log.Println("next emit time:     " + nextPopTime.Format(layout))
+            log.Println(logStr)
+
             time.Sleep(100 * time.Millisecond)
         }
     }()
