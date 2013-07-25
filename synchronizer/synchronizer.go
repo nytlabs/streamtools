@@ -1,16 +1,16 @@
 package main
 
 import (
-	"bytes"
-	"container/heap"
-	"flag"
-	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
-	"io/ioutil"
-	"log"
-	"net/http"
-	"strconv"
-	"time"
+    "bytes"
+    "container/heap"
+    "flag"
+    "github.com/bitly/go-simplejson"
+    "github.com/bitly/nsq/nsq"
+    "io/ioutil"
+    "log"
+    "net/http"
+    "strconv"
+    "time"
     "fmt"
 )
 
@@ -33,7 +33,7 @@ var (
     jsonErr         int
     emitError       int
     emitCount       int
-    nextPopTime     time.Time
+    nextPopTime     time.Duration
     mostOff         time.Duration
 
     coffg5s          int
@@ -47,14 +47,11 @@ var (
     ms100           = time.Duration(100 * time.Millisecond)
     ms10            = time.Duration(10 * time.Millisecond)
     ms1             = time.Duration(1 * time.Millisecond)
+    pqLen            int
 )
 
-type WriteMessage struct {
-	val          []byte
-	t            time.Time
-	responseChan chan bool
-}
-
+// tallies counts of how far imprecise emitted messages are from 
+// their timestamp. 
 func OffStat(last time.Duration, lag time.Duration){
     lastStoreDiff = last
 
@@ -79,80 +76,45 @@ func OffStat(last time.Duration, lag time.Duration){
     }
 }
 
-func store(inChan chan WriteMessage, outChan chan []byte, pq *PriorityQueue, lag time.Duration) {
+// checks to see if any messages on the PQ should be emitted then sends them to the emitter
+func Store(in chan *PQMessage, out chan []byte, lag time.Duration){
+    pq := &PriorityQueue{}
+    heap.Init(pq)
 
-    sleepTimer := time.AfterFunc(24 * 365 * time.Hour, func(){})
-    var outMsg interface{}
-    getNext := make(chan bool)
-    outMsg = nil
-
+    emitTick := time.NewTimer(100 * time.Hour)
+    emitTime := time.Now().Add(100 * time.Hour)
     for {
-        select {
-        case <-getNext:
+        select{
+            case _ = <- emitTick.C:
+                outMsg := heap.Pop(pq).(*PQMessage)
+                OffStat( outMsg.t.Sub( time.Now() ), lag )
+                out <- outMsg.val
 
-            if pq.Len() > 0 {
-                outMsg = heap.Pop(pq).(*PQMessage)
-                emit_time := outMsg.(*PQMessage).t.Add(lag)
-                nextPopTime = emit_time
-                duration := emit_time.Sub(time.Now())
-
-                sleepTimer.Stop()
-                sleepTimer = time.AfterFunc(duration, func() {
-                    if outMsg != nil {
-                        outChan <- outMsg.(*PQMessage).val
-                        OffStat( outMsg.(*PQMessage).t.Sub( time.Now() ), lag )
-                        getNext <- true
-                    }
-                })
-
-            } else {
-                outMsg = nil
-            }
-
-        case msg := <-inChan:
-            qMsg := &PQMessage{
-                val: msg.val,
-                t:   msg.t,
-            }
-
-            outTime := qMsg.t.Add(lag)
-            outDur := outTime.Sub(time.Now()) 
-
-            if outDur > time.Duration(0 * time.Second) {
-
-                if outMsg == nil || qMsg.t.Before(outMsg.(*PQMessage).t) {
-                    emit_time := qMsg.t.Add(lag)
-                    nextPopTime = emit_time
-                    duration := emit_time.Sub(time.Now())
-                    if outMsg != nil{
-                        heap.Push(pq, outMsg)
-                    }
-                    outMsg = qMsg
-
-                    sleepTimer.Stop()
-                    sleepTimer = time.AfterFunc(duration, func() {
-                        if outMsg != nil {
-                            outChan <- outMsg.(*PQMessage).val
-                            OffStat( outMsg.(*PQMessage).t.Sub( time.Now() ), lag )
-                            getNext <- true
-                        }
-                    })
-                } else {
-                    heap.Push(pq, qMsg)
+                if pq.Len() > 0 {
+                    delay := lag - time.Now().Sub( pq.Peek().(*PQMessage).t ) 
+                    emitTick.Reset( delay )
+                    nextPopTime = delay
+                    emitTime = time.Now().Add(delay)
                 }
 
-            } else {
-                lateMsgCount ++ 
-            }
+                pqLen = pq.Len()
+
+            case msg := <- in:
+                heap.Push(pq, msg)
+                if pq.Peek().(*PQMessage).t.Before(emitTime) {
+                    delay := lag - time.Now().Sub( pq.Peek().(*PQMessage).t ) 
+                    emitTick.Reset( delay )
+                    nextPopTime = delay
+                    emitTime = time.Now().Add(delay)
+                }
         }
     }
+
 }
 
-
-func emitter(tcpAddr string, topic string, out chan []byte){
-
+// accept msg from Popper and POST to NSQ
+func Emitter(tcpAddr string, topic string, out chan []byte){
     client := &http.Client{}
-
     for{
         select{
         case msg := <- out:
@@ -167,7 +129,6 @@ func emitter(tcpAddr string, topic string, out chan []byte){
             body, err := ioutil.ReadAll(resp.Body)
             
             if string(body) != "OK" {
-                log.Println(string(body))
                 log.Println(err.Error())
                 emitError ++ 
             } else {
@@ -179,6 +140,7 @@ func emitter(tcpAddr string, topic string, out chan []byte){
     }
 }
 
+// synchronous handler for NSQ reader
 type SyncHandler struct{
     msgChan chan *nsq.Message
     timeKey string
@@ -189,7 +151,8 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
     return nil
 }
 
-func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey string){
+// takes msg from nsq reader, parses JSON, creates a PQMessage to put in the priority queue
+func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, lag time.Duration){
     for{
         select{
         case m := <- msgChan:
@@ -208,17 +171,26 @@ func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey 
             }
 
             ms := time.Unix(0, msgTime * 1000 * 1000)
-            responseChan := make(chan bool)
-            msg := WriteMessage{
+
+            msg := &PQMessage{
                 t:      ms,
                 val:    m.Body,
-                responseChan: responseChan,
             }
 
-            time.Sleep(1 * time.Millisecond)
+            // block for a short time so that we don't render the PQ useless 
+            // and block our msg emitting
+            time.Sleep(100 * time.Microsecond)
 
-            storeChan <- msg
+            outTime := msg.t.Add(lag)
+            outDur := outTime.Sub(time.Now()) 
 
+            // if this message shouldn't have already been emitted, add to PQ
+            if outDur > time.Duration( 0 * time.Second) {
+                //heap.Push(pq, msg)
+                store <- msg
+            } else {
+                lateMsgCount ++ 
+            }
         }
     }
 }
@@ -226,19 +198,17 @@ func HandleJSON(msgChan chan *nsq.Message, storeChan chan WriteMessage, timeKey 
 func main() {
     const layout = "Jan 2, 2006 at 3:04pm (MST)"
 
-	flag.Parse()
+    flag.Parse()
 
-    wc := make(chan *nsq.Message, 500000) // SyncHandler to HandleJSON
-    sc := make(chan WriteMessage)         // HandleJSON to Store
+    wc := make(chan *nsq.Message, 500000) // SyncHandler to Pusher
     oc := make(chan []byte)               // Store to Emitter
+    sc := make(chan *PQMessage,1000)
 
     lag := time.Duration(time.Duration(*lag_time) * time.Second)
-    pq := &PriorityQueue{}
-    heap.Init(pq)
 
-    go HandleJSON(wc, sc, *timeKey)
-    go store(sc, oc, pq, lag)
-    go emitter(*outNsqTCPAddrs, *outTopic, oc)
+    go Pusher(sc, wc, *timeKey, lag)            // accepts msgs from nsq handler, pushes to PQ
+    go Store(sc, oc, lag)                      // pops msgs from PQ
+    go Emitter(*outNsqTCPAddrs, *outTopic, oc)  // accepts msgs from Popper, POSTs to NSQ
 
     r, _ := nsq.NewReader(*topic, *channel)
     r.SetMaxInFlight(*maxInFlight)
@@ -291,20 +261,20 @@ func main() {
                 strconv.FormatUint(r.MessagesFinished, 10 ),
                 strconv.Itoa(len(wc)),
                 strconv.Itoa(jsonErr),
-                strconv.Itoa(pq.Len()), 
+                strconv.Itoa(pqLen), 
                 (lag + lastStoreDiff).String(), 
                 (lag + mostOff).String(),
                 strconv.Itoa(lateMsgCount),
                 strconv.Itoa(emitError),
                 strconv.Itoa(emitCount),
-                nextPopTime.Format(layout),
+                nextPopTime.String(),
                 strconv.FormatFloat(offg5s,'g',2, 64),
                 strconv.FormatFloat(off1to5s,'g',2, 64),
                 strconv.FormatFloat(off100msto1s,'g',2, 64),
                 strconv.FormatFloat(off10msto100ms,'g',2, 64),
                 strconv.FormatFloat(off1msto10ms,'g',2, 64),
                 strconv.FormatFloat(offl1ms,'g',2, 64))
-
+    
             log.Printf("\033[2J\033[1;1H")
             log.Println(logStr)
 
