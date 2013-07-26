@@ -89,7 +89,7 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 	for {
 		select {
 		// on emit tick, pop a message off PQ and queue next msg
-		case _ = <-emitTick.C:
+		case _ = <-emitTick.C: //TODO don't need the underscore
 			outMsg := heap.Pop(pq).(*PQMessage)
 			OffStat(outMsg.t.Sub(time.Now()), lag) // logging
 			out <- outMsg.val
@@ -107,7 +107,7 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 		// reset timer accordingly.
 		case msg := <-in:
 			heap.Push(pq, msg)
-			if pq.Peek().(*PQMessage).t.Before(emitTime) || pq.Len() == 0 {
+			if pq.Peek().(*PQMessage).t.Before(emitTime) || pq.Len() == 0 { // TODO reverse order
 				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
 				emitTick.Reset(delay)
 				nextPopTime = delay //logging
