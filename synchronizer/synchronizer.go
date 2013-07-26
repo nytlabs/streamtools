@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"container/heap"
 	"flag"
-	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/bitly/nsq/nsq"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -28,54 +26,8 @@ var (
 
 	lag_time = flag.Int("lag", 10, "lag before emitting in seconds")
 	timeKey  = flag.String("key", "", "key that holds time")
-
-	// for logging
-	lateMsgCount    int
-	lastStoreDiff   time.Duration
-	jsonErr         int
-	emitError       int
-	emitCount       int
-	nextPopTime     time.Duration
-	mostOff         time.Duration
-	coffg5s         int
-	coff1to5s       int
-	coff100msto1s   int
-	coff10msto100ms int
-	coff1msto10ms   int
-	coffl1ms        int
-	s5              = time.Duration(5 * time.Second)
-	s1              = time.Duration(1 * time.Second)
-	ms100           = time.Duration(100 * time.Millisecond)
-	ms10            = time.Duration(10 * time.Millisecond)
-	ms1             = time.Duration(1 * time.Millisecond)
-	pqLen           int
 )
 
-// tallies counts of how far imprecise emitted messages are from
-// their timestamp.
-func OffStat(last time.Duration, lag time.Duration) {
-	lastStoreDiff = last
-
-	if lastStoreDiff < mostOff {
-		mostOff = lastStoreDiff
-	}
-
-	posOff := -(lastStoreDiff + lag)
-
-	if posOff >= s5 {
-		coffg5s++
-	} else if posOff < s5 && posOff >= s1 {
-		coff1to5s++
-	} else if posOff < s1 && posOff >= ms100 {
-		coff100msto1s++
-	} else if posOff < ms100 && posOff >= ms10 {
-		coff10msto100ms++
-	} else if posOff < ms10 && posOff >= ms1 {
-		coff1msto10ms++
-	} else if posOff < ms1 {
-		coffl1ms++
-	}
-}
 
 // checks to see if any messages on the PQ should be emitted then sends them to the emitter
 func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
@@ -89,28 +41,24 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 	for {
 		select {
 		// on emit tick, pop a message off PQ and queue next msg
-		case _ = <-emitTick.C: //TODO don't need the underscore
+		case <-emitTick.C:
 			outMsg := heap.Pop(pq).(*PQMessage)
-			OffStat(outMsg.t.Sub(time.Now()), lag) // logging
 			out <- outMsg.val
 
 			if pq.Len() > 0 {
 				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
 				emitTick.Reset(delay)
-				nextPopTime = delay //logging
 				emitTime = time.Now().Add(delay)
 			}
 
-			pqLen = pq.Len() //logging
 
 		// insert msg into PQ. if msg needs a more recent pop time than the current pq.Peek()
 		// reset timer accordingly.
 		case msg := <-in:
 			heap.Push(pq, msg)
-			if pq.Peek().(*PQMessage).t.Before(emitTime) || pq.Len() == 0 { // TODO reverse order
+			if  pq.Len() == 0 || pq.Peek().(*PQMessage).t.Before(emitTime) {
 				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
 				emitTick.Reset(delay)
-				nextPopTime = delay //logging
 				emitTime = time.Now().Add(delay)
 			}
 		}
@@ -136,10 +84,7 @@ func Emitter(tcpAddr string, topic string, out chan []byte) {
 
 			if string(body) != "OK" {
 				log.Println(err.Error())
-				emitError++
-			} else {
-				emitCount++
-			}
+            }
 
 			resp.Body.Close()
 		}
@@ -164,43 +109,37 @@ func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, la
 		case m := <-msgChan:
 			blob, err := simplejson.NewJson(m.Body)
 			if err != nil {
-				jsonErr++
 				log.Println(err.Error())
 				break
 			}
 
 			msgTime, err := blob.Get(timeKey).Int64()
 			if err != nil {
-				jsonErr++
 				log.Println(err.Error())
 				break
 			}
 
 			ms := time.Unix(0, msgTime*1000*1000)
 
+			// if this message should have already been emitted, break
+			outDur := ms.Add(lag).Sub(time.Now())
+			if outDur <= time.Duration(0*time.Second) {
+                break
+            }
+
 			msg := &PQMessage{
 				t:   ms,
 				val: m.Body,
 			}
 
-			// stagging msg insert prevents CPU monopolization / timing errors
+			// staggering msg insert prevents CPU monopolization / timing errors
 			time.Sleep(100 * time.Microsecond)
-
-			outTime := msg.t.Add(lag)
-			outDur := outTime.Sub(time.Now())
-
-			// if this message shouldn't have already been emitted, add to PQ
-			if outDur > time.Duration(0*time.Second) {
-				store <- msg
-			} else {
-				lateMsgCount++
-			}
+            store <- msg
 		}
 	}
 }
 
 func main() {
-	const layout = "Jan 2, 2006 at 3:04pm (MST)"
 
 	flag.Parse()
 
@@ -229,66 +168,6 @@ func main() {
 	}
 
 	_ = r.ConnectToLookupd(*lookupdHTTPAddrs)
-
-	//logging
-	go func() {
-		for {
-			total := coffg5s +
-				coff1to5s +
-				coff100msto1s +
-				coff10msto100ms +
-				coff1msto10ms +
-				coffl1ms
-
-			offg5s := float64(coffg5s) / float64(total)
-			off1to5s := float64(coff1to5s) / float64(total)
-			off100msto1s := float64(coff100msto1s) / float64(total)
-			off10msto100ms := float64(coff10msto100ms) / float64(total)
-			off1msto10ms := float64(coff1msto10ms) / float64(total)
-			offl1ms := float64(coffl1ms) / float64(total)
-
-			logStr := fmt.Sprintf("\n"+
-				"messages recieved:  %s\n"+
-				"messaged finished:  %s\n"+
-				"buffered JSON chan: %s\n"+
-				"JSON error:         %s\n"+
-				"priority queue len: %s\n"+
-				"store precision:    %s\n"+
-				"most imprecise:     %s\n"+
-				"late messages:      %s\n"+
-				"emit errors:        %s\n"+
-				"emit count:         %s\n"+
-				"next emit time:     %s\n"+
-				"t > 5s:             %s\n"+
-				"5s > t >= 1s:       %s\n"+
-				"1s > t >= 100ms:    %s\n"+
-				"100ms > t >= 10ms:  %s\n"+
-				"10ms > t >= 1ms:    %s\n"+
-				"t < 1ms:            %s\n",
-				strconv.FormatUint(r.MessagesReceived, 10),
-				strconv.FormatUint(r.MessagesFinished, 10),
-				strconv.Itoa(len(wc)),
-				strconv.Itoa(jsonErr),
-				strconv.Itoa(pqLen),
-				(lag + lastStoreDiff).String(),
-				(lag + mostOff).String(),
-				strconv.Itoa(lateMsgCount),
-				strconv.Itoa(emitError),
-				strconv.Itoa(emitCount),
-				nextPopTime.String(),
-				strconv.FormatFloat(offg5s, 'g', 2, 64),
-				strconv.FormatFloat(off1to5s, 'g', 2, 64),
-				strconv.FormatFloat(off100msto1s, 'g', 2, 64),
-				strconv.FormatFloat(off10msto100ms, 'g', 2, 64),
-				strconv.FormatFloat(off1msto10ms, 'g', 2, 64),
-				strconv.FormatFloat(offl1ms, 'g', 2, 64))
-
-			log.Printf("\033[2J\033[1;1H")
-			log.Println(logStr)
-
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
 
 	<-r.ExitChan
 
