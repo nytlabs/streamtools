@@ -28,7 +28,6 @@ var (
 	timeKey  = flag.String("key", "", "key that holds time")
 )
 
-
 // checks to see if any messages on the PQ should be emitted then sends them to the emitter
 func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 	pq := &PriorityQueue{}
@@ -51,12 +50,11 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 				emitTime = time.Now().Add(delay)
 			}
 
-
 		// insert msg into PQ. if msg needs a more recent pop time than the current pq.Peek()
 		// reset timer accordingly.
 		case msg := <-in:
 			heap.Push(pq, msg)
-			if  pq.Len() == 0 || pq.Peek().(*PQMessage).t.Before(emitTime) {
+			if pq.Len() == 0 || pq.Peek().(*PQMessage).t.Before(emitTime) {
 				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
 				emitTick.Reset(delay)
 				emitTime = time.Now().Add(delay)
@@ -84,7 +82,7 @@ func Emitter(tcpAddr string, topic string, out chan []byte) {
 
 			if string(body) != "OK" {
 				log.Println(err.Error())
-            }
+			}
 
 			resp.Body.Close()
 		}
@@ -124,8 +122,8 @@ func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, la
 			// if this message should have already been emitted, break
 			outDur := ms.Add(lag).Sub(time.Now())
 			if outDur <= time.Duration(0*time.Second) {
-                break
-            }
+				break
+			}
 
 			msg := &PQMessage{
 				t:   ms,
@@ -134,7 +132,7 @@ func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, la
 
 			// staggering msg insert prevents CPU monopolization / timing errors
 			time.Sleep(100 * time.Microsecond)
-            store <- msg
+			store <- msg
 		}
 	}
 }
