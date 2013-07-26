@@ -107,7 +107,7 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 		// reset timer accordingly.
 		case msg := <-in:
 			heap.Push(pq, msg)
-			if pq.Peek().(*PQMessage).t.Before(emitTime) {
+			if pq.Peek().(*PQMessage).t.Before(emitTime) || pq.Len() == 0 {
 				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
 				emitTick.Reset(delay)
 				nextPopTime = delay //logging
