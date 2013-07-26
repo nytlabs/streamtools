@@ -33,35 +33,26 @@ func Store(in chan *PQMessage, out chan []byte, lag time.Duration) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
-	// ugly: set a time far in the future so that we will force a timer reset on initial message
-	// could be interface{} and we could do a check for nil/time.Timer (?)
-	emitTick := time.NewTimer(365 * 24 * time.Hour)  // time between events
-	emitTime := time.Now().Add(365 * 24 * time.Hour) // keeps track of when to Reset() timer
+	emitTick := time.NewTimer(100 * time.Millisecond)
 	for {
 		select {
-		// on emit tick, pop a message off PQ and queue next msg
 		case <-emitTick.C:
-			outMsg := heap.Pop(pq).(*PQMessage)
-			out <- outMsg.val
-
-			if pq.Len() > 0 {
-				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
-				emitTick.Reset(delay)
-				emitTime = time.Now().Add(delay)
-			}
-
-		// insert msg into PQ. if msg needs a more recent pop time than the current pq.Peek()
-		// reset timer accordingly.
 		case msg := <-in:
 			heap.Push(pq, msg)
-			if pq.Len() == 0 || pq.Peek().(*PQMessage).t.Before(emitTime) {
-				delay := lag - time.Now().Sub(pq.Peek().(*PQMessage).t)
-				emitTick.Reset(delay)
-				emitTime = time.Now().Add(delay)
+		}
+
+		now := time.Now()
+		for {
+			item, diff := pq.PeekAndShift(now)
+			if item == nil {
+				if !emitTick.Reset(diff) {
+					emitTick = time.NewTimer(diff)
+				}
+				break
 			}
+			out <- item.(*PQMessage).val
 		}
 	}
-
 }
 
 // accept msg from Popper and POST to NSQ
@@ -117,11 +108,9 @@ func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, la
 				break
 			}
 
-			ms := time.Unix(0, msgTime*1000*1000)
-
+			ms := time.Unix(0, int64(time.Duration(msgTime)*time.Millisecond))
 			// if this message should have already been emitted, break
-			outDur := ms.Add(lag).Sub(time.Now())
-			if outDur <= time.Duration(0*time.Second) {
+			if ms.After(time.Now()) {
 				break
 			}
 
@@ -130,8 +119,6 @@ func Pusher(store chan *PQMessage, msgChan chan *nsq.Message, timeKey string, la
 				val: m.Body,
 			}
 
-			// staggering msg insert prevents CPU monopolization / timing errors
-			time.Sleep(100 * time.Microsecond)
 			store <- msg
 		}
 	}
@@ -141,12 +128,9 @@ func main() {
 
 	flag.Parse()
 
-	// would like to buffer from sc
-	// buffer on wc allows us to read as fast as we can from NSQ and control the inserts
-	// into the store.
-	wc := make(chan *nsq.Message, 500000) // SyncHandler to Pusher
-	sc := make(chan *PQMessage, 1000)     // Pusher to Store
-	oc := make(chan []byte)               // Store to Emitter
+	wc := make(chan *nsq.Message, 1) // SyncHandler to Pusher
+	sc := make(chan *PQMessage, 1)   // Pusher to Store
+	oc := make(chan []byte)          // Store to Emitter
 
 	lag := time.Duration(time.Duration(*lag_time) * time.Second)
 
