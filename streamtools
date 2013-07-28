@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+# start a screen server
+screen -dmS "streamtools"
+
+# set nsqlookupd in window 0
+screen -S "streamtools" -p 0 -X exec nsqlookupd
+
+# set nsqd in window 1
+screen -S "streamtools" -X screen
+screen -S "streamtools" -p 1 -X exec nsqd --lookupd-tcp-address=127.0.0.1:4160
+
+# set nsqadmin in window 2
+screen -S "streamtools" -X screen
+screen -S "streamtools" -p 2 -X exec nsqadmin --lookupd-http-address=127.0.0.1:4161
+
+
+
