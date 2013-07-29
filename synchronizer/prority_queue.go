@@ -47,18 +47,16 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-func (pq PriorityQueue) Peek() interface{} {
-	if pq.Len() > 0 {
-		return pq[0]
-	} else {
-		return nil
+func (pq *PriorityQueue) PeekAndShift(max time.Time) (interface{}, time.Duration) {
+	if pq.Len() == 0 {
+		return nil, 0
 	}
-}
 
-// update modifies the priority and value of an Item in the queue.
-func (pq *PriorityQueue) update(item *PQMessage, val []byte, time time.Time) {
-	heap.Remove(pq, item.index)
-	item.val = val
-	item.t = time
-	heap.Push(pq, item)
+	item := (*pq)[0]
+	if item.t.After(max) {
+		return nil, item.t.Sub(max)
+	}
+	heap.Remove(pq, 0)
+
+	return item, 0
 }
