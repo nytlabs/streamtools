@@ -6,10 +6,11 @@ import (
 	"github.com/bitly/nsq/nsq"
 	"log"
 	"reflect"
+    "net/http"
+    "net/url"
 )
 
 var (
-	json             = flag.String("json", "{\"a\":6.2, \"b\":{ \"c\": 3, \"g\": { \"h\": \"POO\"} }, \"d\": \"catz\", \"e\":[14,15], \"f\": 8.0, \"i\": [{ \"j\": \"poop\"},{ \"j\": \"pop\",\"k\": true }], \"m\": null, \"n\": [\"egg\",\"chicken\",\"gravy\" ] }", "json blob to be parsed")
 	topic            = flag.String("topic", "monitor", "nsq topic")
 	channel          = flag.String("channel", "monitorreader", "nsq topic")
 	maxInFlight      = flag.Int("max-in-flight", 1000, "max number of messages to allow in flight")
@@ -112,7 +113,7 @@ type FlatMessage struct {
 }
 
 // reads from nsq, flattens and types the event, and puts it on writeChan
-func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
+func jsonFlattener(mh MessageHandler, writeChan chan FlatMessage) {
 	for {
 		select {
 		case m := <-mh.msgChan:
@@ -123,9 +124,6 @@ func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
 			if err != nil {
 				log.Fatalf(err.Error())
 			}
-
-			// log.Printf("json=%s", *json)
-			log.Printf("parsed= %s", blob)
 
 			mblob, err := blob.Map()
 			if err != nil {
@@ -153,18 +151,22 @@ func json_flattener(mh MessageHandler, writeChan chan FlatMessage) {
 	}
 }
 
-// I just print right now.
-func printer(flatChan chan FlatMessage) {
+func store(flatChan chan FlatMessage) {
+
+    typeStore := make(map[string]string)
 
 	for {
-		select {
-		case flat := <-flatChan:
-			for k, v := range flat.data {
-				log.Printf("k= %v\tt= %v", k, v)
-			}
-			flat.responseChan <- true
-		}
-	}
+		select{
+        case flat := <-flatChan:
+            for k, v := range flat.data{
+                typeStore[k] = v
+            }
+        }
+    }
+}
+
+func GetHandler(w http.ResponseWriter, r *http.Request) {
+    reqParams, err := url.ParseQuery(r.URL.RawQuery)
 }
 
 func main() {
@@ -182,8 +184,8 @@ func main() {
 	}
 
 	fc := make(chan FlatMessage)
-	go json_flattener(mh, fc)
-	go printer(fc)
+	go jsonFlattener(mh, fc)
+	go store(fc)
 	r.AddAsyncHandler(&mh)
 
 	err = r.ConnectToNSQ(*nsqTCPAddrs)
@@ -194,6 +196,12 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
+
+    http.HandleFunc("/get", GetHandler)
+    go func() {
+        log.Fatal(http.ListenAndServe(*httpAddress, nil))
+    }()
+
 
 	<-mh.stopChan
 
