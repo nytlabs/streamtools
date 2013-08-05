@@ -5,9 +5,9 @@ import (
 	"github.com/bitly/go-simplejson"
 	"github.com/bitly/nsq/nsq"
 	"log"
+	"net/http"
+	"net/url"
 	"reflect"
-    "net/http"
-    "net/url"
 )
 
 var (
@@ -153,20 +153,16 @@ func jsonFlattener(mh MessageHandler, writeChan chan FlatMessage) {
 
 func store(flatChan chan FlatMessage) {
 
-    typeStore := make(map[string]string)
+	typeStore := make(map[string]string)
 
 	for {
-		select{
-        case flat := <-flatChan:
-            for k, v := range flat.data{
-                typeStore[k] = v
-            }
-        }
-    }
-}
-
-func GetHandler(w http.ResponseWriter, r *http.Request) {
-    reqParams, err := url.ParseQuery(r.URL.RawQuery)
+		select {
+		case flat := <-flatChan:
+			for k, v := range flat.data {
+				typeStore[k] = v
+			}
+		}
+	}
 }
 
 func main() {
@@ -196,12 +192,6 @@ func main() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
-    http.HandleFunc("/get", GetHandler)
-    go func() {
-        log.Fatal(http.ListenAndServe(*httpAddress, nil))
-    }()
-
 
 	<-mh.stopChan
 
