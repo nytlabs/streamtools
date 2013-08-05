@@ -1,4 +1,4 @@
-STREAMTOOLS - Sinks
+STREAMTOOLS - Export
 ===================
 
 Various ways of delivering or visualising streams.
