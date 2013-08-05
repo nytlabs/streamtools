@@ -1,4 +1,4 @@
-STREAMTOOLS - Filters
+STREAMTOOLS - Filter
 =====================
 
 Filter a stream in various manners

@@ -20,8 +20,10 @@ _cgo_export.*
 _testmain.go
 
 *.exe
-
-# emacs temp files
-*~
+.*
+!.gitignore
 
 *.dat
+# Emacs temp files
+*~
+\#*#
