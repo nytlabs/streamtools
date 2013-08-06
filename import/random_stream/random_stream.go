@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	topic        = flag.String("topic", "random", "nsq topic")
-	jsonMsgPath  = flag.String("file", "test.json", "json file to send")
-	timeKey      = flag.String("key", "t", "key that holds time")
+	topic       = flag.String("topic", "random", "nsq topic")
+	jsonMsgPath = flag.String("file", "test.json", "json file to send")
+	timeKey     = flag.String("key", "t", "key that holds time")
 
 	nsqHTTPAddrs = "127.0.0.1:4151"
 )
@@ -34,16 +34,15 @@ func writer() {
 		strTime := now.UnixNano() - a
 		msgJson.Set(*timeKey, int64(strTime/1000000))
 
-        msgJson.Set("a", 10)
+		msgJson.Set("a", 10)
 
-        b := make([]int, rand.Intn(10))
+		b := make([]int, rand.Intn(10))
 
-        for i, _ := range b{
-            b[i] = rand.Intn(100)
-        }
+		for i, _ := range b {
+			b[i] = rand.Intn(100)
+		}
 
-        msgJson.Set("b", b)
-
+		msgJson.Set("b", b)
 
 		outMsg, _ := msgJson.Encode()
 		msgReader := bytes.NewReader(outMsg)
