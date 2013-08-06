@@ -51,8 +51,11 @@ func Writer(outChan chan int) {
 	for {
 		select {
 		case l := <-outChan:
-			msg := []byte("{\"len_" + *arrayKey + "\":" + string(l) + "}")
-			frameType, data, err := w.Publish(*outTopic, msg)
+            // TODO make this simplejson.NewJson([]byte{'{}'})
+            msg,_ := simplejson.NewJson([]byte("{}"))
+            msg.Set("len_" + *arrayKey, l)
+            outMsg, _ := msg.Encode()
+			frameType, data, err := w.Publish(*outTopic, outMsg)
 			if err != nil {
 				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
 			}

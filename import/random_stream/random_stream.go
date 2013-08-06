@@ -1,5 +1,5 @@
-// Fakes a stream of data at your convenience. Doesn't yet quite generate random stream.
-// Takes a string as input and puts a random-time-offset message on an nsq.
+// Fakes a stream of data at your convenience.
+// This contains a random time stamp, and random length array of random integers
 
 package main
 
