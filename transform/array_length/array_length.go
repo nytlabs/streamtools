@@ -37,7 +37,6 @@ func GetLength (msgChan chan *nsq.Message, outChan chan int) {
                     log.Fatal(err.Error())
                 }
                 l := len(arr)
-                log.Println(l)
                 outChan <- l
         }
     }
@@ -65,8 +64,13 @@ func Writer (outChan chan int) {
 func main() {
 
     flag.Parse()
-    channel := "length:"+*arrayKey
-    r, _ := nsq.NewReader(*inTopic, channel)
+    channel := "length_"+*arrayKey
+    r, err := nsq.NewReader(*inTopic, channel)
+    if err != nil {
+        log.Println(*inTopic)
+        log.Println(channel)
+        log.Fatal(err.Error())
+    }
 
     msgChan := make(chan *nsq.Message)
     outChan := make(chan int)
@@ -78,5 +82,8 @@ func main() {
        msgChan: msgChan,
     }
     r.AddHandler(&sh)
+    _ = r.ConnectToLookupd(lookupdHTTPAddrs)
+
+    <- r.ExitChan
 }
 
