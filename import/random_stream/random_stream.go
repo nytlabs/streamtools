@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	topic        = flag.String("topic", "test", "nsq topic")
-	nsqHTTPAddrs = flag.String("nsqd-tcp-address", "127.0.0.1:4151", "nsqd TCP address")
+	topic        = flag.String("topic", "random", "nsq topic")
 	jsonMsgPath  = flag.String("file", "test.json", "json file to send")
 	timeKey      = flag.String("key", "t", "key that holds time")
+
+	nsqHTTPAddrs = "127.0.0.1:4151"
 )
 
 func writer(msgText []byte) {
@@ -35,7 +36,7 @@ func writer(msgText []byte) {
 		msgJson.Set(*timeKey, int64(strTime/1000000))
 		outMsg, _ := msgJson.Encode()
 		msgReader := bytes.NewReader(outMsg)
-		resp, err := client.Post("http://"+*nsqHTTPAddrs+"/put?topic="+*topic, "data/multi-part", msgReader)
+		resp, err := client.Post("http://"+nsqHTTPAddrs+"/put?topic="+*topic, "data/multi-part", msgReader)
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
