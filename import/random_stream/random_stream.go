@@ -6,7 +6,6 @@ package main
 import (
 	"flag"
 	"github.com/bitly/go-simplejson"
-	"io/ioutil"
 	"math/rand"
 	"time"
 	//"strconv"
@@ -23,8 +22,8 @@ var (
 	nsqHTTPAddrs = "127.0.0.1:4151"
 )
 
-func writer(msgText []byte) {
-	msgJson, _ := simplejson.NewJson(msgText)
+func writer() {
+	msgJson, _ := simplejson.NewJson([]byte("{}"))
 	client := &http.Client{}
 
 	c := time.Tick(5 * time.Second)
@@ -34,6 +33,18 @@ func writer(msgText []byte) {
 		a := int64(r.Float64() * 10000000000)
 		strTime := now.UnixNano() - a
 		msgJson.Set(*timeKey, int64(strTime/1000000))
+
+        msgJson.Set("a", 10)
+
+        b := make([]int, rand.Intn(10))
+
+        for i, _ := range b{
+            b[i] = rand.Intn(100)
+        }
+
+        msgJson.Set("b", b)
+
+
 		outMsg, _ := msgJson.Encode()
 		msgReader := bytes.NewReader(outMsg)
 		resp, err := client.Post("http://"+nsqHTTPAddrs+"/put?topic="+*topic, "data/multi-part", msgReader)
@@ -50,13 +61,7 @@ func main() {
 
 	stopChan := make(chan int)
 
-	content, err := ioutil.ReadFile(*jsonMsgPath)
-
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	go writer(content)
+	go writer()
 
 	<-stopChan
 }
