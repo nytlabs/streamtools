@@ -11,12 +11,18 @@ var (
 	nsqdAddr         = "127.0.0.1:4150"
 )
 
+type STFunc func(inChan chan simplejson.Json, outChan chan simplejson.Json)
+
 type SyncHandler struct {
-	msgChan chan *nsq.Message
+	msgChan chan simplejson.Json
 }
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
-	self.msgChan <- m
+	blob, err := simplejson.NewJson(m.Body)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	self.msgChan <- *blob
 	return nil
 }
 
@@ -38,21 +44,27 @@ func nsqWriter(outTopic string, outChan chan simplejson.Json) {
 	}
 }
 
-func TransferBlock(inTopic string, outTopic string, channel string, f func(msgChan chan *nsq.Message, outChan chan simplejson.Json)) {
+func nsqReader(inTopic string, channel string, outChan chan simplejson.Json) {
 	r, err := nsq.NewReader(inTopic, channel)
 	if err != nil {
 		log.Println(inTopic)
 		log.Println(channel)
 		log.Fatal(err.Error())
 	}
-	msgChan := make(chan *nsq.Message)
-	outChan := make(chan simplejson.Json)
-	go f(msgChan, outChan)
-	go nsqWriter(outTopic, outChan)
 	sh := SyncHandler{
-		msgChan: msgChan,
+		msgChan: outChan,
 	}
 	r.AddHandler(&sh)
 	_ = r.ConnectToLookupd(lookupdHTTPAddrs)
 	<-r.ExitChan
+}
+
+func TransferBlock(inTopic string, outTopic string, channel string, f STFunc){
+	ex := make(chan bool)
+	inChan := make(chan simplejson.Json)
+	outChan := make(chan simplejson.Json)
+	go nsqReader(inTopic, channel, inChan)
+	go f(inChan, outChan)
+	go nsqWriter(outTopic, outChan)
+	<-ex
 }

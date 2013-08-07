@@ -4,7 +4,6 @@ import (
 	"log"
 	"reflect"
 	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
 )
 
 // flattenType returns a map of flatten keys of the incoming dictionary, and
@@ -82,31 +81,27 @@ func prettyPrintJsonType(value interface{}) string {
 
 // convertMapToJson simply takes a map of strings to strings,
 // and converts it to a simplejson.Json object.
-func convertMapToJson(m map[string]string) simplejson.Json {
+func convertMapToJson(m map[string]string) *simplejson.Json {
 	msg, _ := simplejson.NewJson([]byte("{}"))
 	for k, v := range m {
 		msg.Set(k, v)
 	}
-	return *msg
+	return msg
 }
 
 // InferType reads from an incoming channel msgChan, flattens and
 // types the event, and puts it on another channel outChan.
-func InferType(msgChan chan *nsq.Message, outChan chan simplejson.Json) {
+var InferType STFunc = func(inChan chan simplejson.Json, outChan chan simplejson.Json) {
 	for {
 		select {
-		case m := <-msgChan:
-			blob, err := simplejson.NewJson(m.Body)
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-			mblob, err := blob.Map()
+		case m := <-inChan:
+			blob, err := m.Map()
 			if err != nil {
 				log.Fatalln(err)
 			}
-			flat := flattenType(mblob, "")
+			flat := flattenType(blob, "")
 			msg := convertMapToJson(flat)
-			outChan <- msg
+			outChan <- *msg
 		}
 	}
 }
