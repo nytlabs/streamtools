@@ -1,23 +1,15 @@
-package main
+package streamtools
 
 import (
-	"flag"
-	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
 	"log"
 	"reflect"
+	"github.com/bitly/go-simplejson"
+	"github.com/bitly/nsq/nsq"
 )
 
-var (
-	inTopic          = flag.String("in_topic", "", "topic to read from")
-	outTopic         = flag.String("out_topic", "", "topic to write to")
-	lookupdHTTPAddrs = "127.0.0.1:4161"
-	nsqdAddr         = "127.0.0.1:4150"
-)
-
-// FlattenType returns a map of flatten keys of the incoming dictionary, and
+// flattenType returns a map of flatten keys of the incoming dictionary, and
 // values as the corresponding JSON types.
-func FlattenType(d map[string]interface{}, p string) map[string]string {
+func flattenType(d map[string]interface{}, p string) map[string]string {
 	out := make(map[string]string)
 	for key, value := range d {
 		new_p := ""
@@ -33,7 +25,7 @@ func FlattenType(d map[string]interface{}, p string) map[string]string {
 			// got an object
 			s, ok := value.(map[string]interface{})
 			if ok {
-				for k, v := range FlattenType(s, new_p) {
+				for k, v := range flattenType(s, new_p) {
 					out[k] = v
 				}
 			} else {
@@ -48,7 +40,7 @@ func FlattenType(d map[string]interface{}, p string) map[string]string {
 					if reflect.TypeOf(d2).Kind() == reflect.Map {
 						s2, ok := d2.(map[string]interface{})
 						if ok {
-							for k, v := range FlattenType(s2, new_p) {
+							for k, v := range flattenType(s2, new_p) {
 								out[k] = v
 							}
 						} else {
@@ -57,7 +49,7 @@ func FlattenType(d map[string]interface{}, p string) map[string]string {
 					} else {
 						// array here contains non-objects, so just save element type and break
 						// note JSON doesn't require arrays have uniform type, but we'll assume it does
-						out[key] = "Array[ " + PrettyPrintJsonType(d2) + " ]"
+						out[key] = "Array[ " + prettyPrintJsonType(d2) + " ]"
 						break
 					}
 				}
@@ -66,15 +58,15 @@ func FlattenType(d map[string]interface{}, p string) map[string]string {
 			}
 		} else {
 			// got a basic type: Number, Boolean, or String
-			out[new_p] = PrettyPrintJsonType(value)
+			out[new_p] = prettyPrintJsonType(value)
 		}
 	}
 	return out
 }
 
-// PrettyPrintJsonType accepts a variable (of type interface{}) and
+// prettyPrintJsonType accepts a variable (of type interface{}) and
 // returns a human-readable string of "Number", "Boolean", "String", or "UNKNOWN".
-func PrettyPrintJsonType(value interface{}) string {
+func prettyPrintJsonType(value interface{}) string {
 	switch t := value.(type) {
 	case float64:
 		return "Number"
@@ -88,9 +80,9 @@ func PrettyPrintJsonType(value interface{}) string {
 	return "UNKNOWN"
 }
 
-// ConvertMapToJson simply takes a map of strings to strings,
+// convertMapToJson simply takes a map of strings to strings,
 // and converts it to a simplejson.Json object.
-func ConvertMapToJson(m map[string]string) simplejson.Json {
+func convertMapToJson(m map[string]string) simplejson.Json {
 	msg, _ := simplejson.NewJson([]byte("{}"))
 	for k, v := range m {
 		msg.Set(k, v)
@@ -112,62 +104,9 @@ func InferType(msgChan chan *nsq.Message, outChan chan simplejson.Json) {
 			if err != nil {
 				log.Fatalln(err)
 			}
-			flat := FlattenType(mblob, "")
-			obj := ConvertMapToJson(flat)
-			outChan <- obj
+			flat := flattenType(mblob, "")
+			msg := convertMapToJson(flat)
+			outChan <- msg
 		}
 	}
 }
-
-///// begin generic streamtools block code /////
-
-type SyncHandler struct {
-	msgChan chan *nsq.Message
-}
-
-func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
-	self.msgChan <- m
-	return nil
-}
-
-func Writer(outChan chan simplejson.Json) {
-	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdAddr)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	for {
-		select {
-		case l := <-outChan:
-			outMsg, _ := l.Encode()
-			frameType, data, err := w.Publish(*outTopic, outMsg)
-			if err != nil {
-				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
-			}
-		}
-	}
-
-}
-
-func main() {
-	flag.Parse()
-	channel := "type_inferencer"
-	r, err := nsq.NewReader(*inTopic, channel)
-	if err != nil {
-		log.Println(*inTopic)
-		log.Println(channel)
-		log.Fatal(err.Error())
-	}
-	msgChan := make(chan *nsq.Message)
-	outChan := make(chan simplejson.Json)
-	go InferType(msgChan, outChan)
-	go Writer(outChan)
-	sh := SyncHandler{
-		msgChan: msgChan,
-	}
-	r.AddHandler(&sh)
-	_ = r.ConnectToLookupd(lookupdHTTPAddrs)
-	<-r.ExitChan
-}
-
-///// end generic streamtools block code /////
