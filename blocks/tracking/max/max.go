@@ -1,5 +1,5 @@
-// This binary reads from an nsq stream, and writes to another stream
-// the corresponding messages with flattened keys and JSON type.
+// This binary reads from an nsq stream, and writes to a store which
+// serves it contents as JSON on HTTP.
 package main
 
 import (

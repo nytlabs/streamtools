@@ -11,8 +11,6 @@ var (
 	nsqdAddr         = "127.0.0.1:4150"
 )
 
-type STFunc func(inChan chan simplejson.Json, outChan chan simplejson.Json)
-
 type SyncHandler struct {
 	msgChan chan simplejson.Json
 }
@@ -57,24 +55,4 @@ func nsqReader(inTopic string, channel string, outChan chan simplejson.Json) {
 	r.AddHandler(&sh)
 	_ = r.ConnectToLookupd(lookupdHTTPAddrs)
 	<-r.ExitChan
-}
-
-func TransferBlock(inTopic string, outTopic string, channel string, f STFunc) {
-	ex := make(chan bool)
-	inChan := make(chan simplejson.Json)
-	outChan := make(chan simplejson.Json)
-	go nsqReader(inTopic, channel, inChan)
-	go f(inChan, outChan)
-	go nsqWriter(outTopic, outChan)
-	<-ex
-}
-
-type STTrackingFunc func(inChan chan simplejson.Json, route string, port int)
-
-func TrackingBlock(inTopic string, channel string, route string, port int, f STTrackingFunc) {
-	ex := make(chan bool)
-	inChan := make(chan simplejson.Json)
-	go nsqReader(inTopic, channel, inChan)
-	go f(inChan, route, port)
-	<-ex
 }

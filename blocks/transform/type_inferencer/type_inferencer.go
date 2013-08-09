@@ -15,6 +15,5 @@ var (
 
 func main() {
 	flag.Parse()
-	// var InferType streamtools.STFunc = streamtools.InferType
 	streamtools.TransferBlock(*inTopic, *outTopic, *channel, streamtools.InferType)
 }

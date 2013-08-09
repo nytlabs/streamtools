@@ -91,7 +91,7 @@ func convertStringMapToJson(m map[string]string) *simplejson.Json {
 
 // InferType reads from an incoming channel msgChan, flattens and
 // types the event, and puts it on another channel outChan.
-var InferType STFunc = func(inChan chan simplejson.Json, outChan chan simplejson.Json) {
+var InferType TransferFunction = func(inChan chan simplejson.Json, outChan chan simplejson.Json) {
 	for {
 		select {
 		case m := <-inChan:

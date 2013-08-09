@@ -1,6 +1,7 @@
 package streamtools
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
@@ -22,26 +23,34 @@ func NewStore() *Store {
 
 // convertMapToJson simply takes a map of strings to strings,
 // and converts it to a simplejson.Json object.
-func convertMapToJson(m map[string]interface{}) *simplejson.Json {
-	msg, _ := simplejson.NewJson([]byte("{}"))
-	for k, v := range m {
-		msg.Set(k, v)
-	}
-	return msg
-}
+// func convertMapToJson(m map[string]interface{}) *simplejson.Json {
+// 	msg, _ := simplejson.NewJson([]byte("{}"))
+// for k, v := range m {
+// 	switch v := v.(type) {
+// 	case map[string]interface{}:
+// 		msg.Set(k, convertMapToJson(v))
+// 	case []interface{}:
+// 	case int, float32, float64:
+// 	case string:
+// 	case bool:
+// 	case nil:
+// 	}
+// 	msg.Set(k, v)
+// }
+// 	return msg
+// }
 
 func (self Store) prettyPrintData() string {
-	return "dummy"
+	b, err := json.Marshal(self.data)
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	return string(b)
 }
 
 func (self Store) httpHandler(w http.ResponseWriter, r *http.Request) {
-	//	fmt.Fprintf(w, "Store sez hi %s!", self.data)
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprint(w, self.data)
-	//	fmt.Fprint(w, self.prettyPrintData())
-	// for k, _ := range self.data {
-	// 	fmt.Fprintf(w, k)
-	// }
+	fmt.Fprint(w, self.prettyPrintData())
 }
 
 func (self Store) serveHTTP(route string, port int) {
@@ -74,7 +83,6 @@ func (self Store) storeMax(d map[string]interface{}, s map[string]interface{}) {
 		case []interface{}:
 			// got an array
 			m := maxInSlice(v)
-			log.Printf("key=%s: array got max=%v", k, m)
 			if !math.IsNaN(m) {
 				vv, _ := s[k].(float64)
 				s[k] = math.Max(m, vv)

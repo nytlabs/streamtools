@@ -44,7 +44,7 @@ func maxInSlice(s interface{}) float64 {
 	return max
 }
 
-var TrackMax STTrackingFunc = func(inChan chan simplejson.Json, route string, port int) {
+var TrackMax TrackingFunction = func(inChan chan simplejson.Json, route string, port int) {
 	store := NewStore()
 	go store.serveHTTP(route, port)
 	for {
@@ -54,7 +54,6 @@ var TrackMax STTrackingFunc = func(inChan chan simplejson.Json, route string, po
 			if err != nil {
 				log.Fatalln(err)
 			}
-			log.Println(blob)
 			store.storeMax(blob, nil)
 		}
 	}
