@@ -16,7 +16,9 @@ var (
 	maxInFlight      = flag.Int("max-in-flight", 100, "max number of messages to allow in flight")
 )
 
-type SyncHandler struct{}
+type SyncHandler struct{
+	h hub
+}
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
 	h.broadcast <- string(m.Body)
@@ -65,13 +67,6 @@ type hub struct {
 	unregister  chan *connection
 }
 
-var h = hub{
-	broadcast:   make(chan string),
-	register:    make(chan *connection),
-	unregister:  make(chan *connection),
-	connections: make(map[*connection]bool),
-}
-
 func (h *hub) run() {
 	for {
 		select {
@@ -97,6 +92,13 @@ func (h *hub) run() {
 func main() {
 	flag.Parse()
 
+	var h = hub{
+		broadcast:   make(chan string),
+		register:    make(chan *connection),
+		unregister:  make(chan *connection),
+		connections: make(map[*connection]bool),
+	}
+
 	go h.run()
 
 	r, err := nsq.NewReader(*inTopic, channelName)
@@ -105,7 +107,9 @@ func main() {
 	}
 
 	r.SetMaxInFlight(*maxInFlight)
-	r.AddHandler(&SyncHandler{})
+	r.AddHandler(&SyncHandler{
+		h: &h
+	})
 
 	err = r.ConnectToLookupd(lookupdHTTPAddrs)
 	if err != nil {
