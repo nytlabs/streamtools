@@ -59,12 +59,22 @@ func nsqReader(inTopic string, channel string, outChan chan simplejson.Json) {
 	<-r.ExitChan
 }
 
-func TransferBlock(inTopic string, outTopic string, channel string, f STFunc){
+func TransferBlock(inTopic string, outTopic string, channel string, f STFunc) {
 	ex := make(chan bool)
 	inChan := make(chan simplejson.Json)
 	outChan := make(chan simplejson.Json)
 	go nsqReader(inTopic, channel, inChan)
 	go f(inChan, outChan)
 	go nsqWriter(outTopic, outChan)
+	<-ex
+}
+
+type STTrackingFunc func(inChan chan simplejson.Json, route string, port int)
+
+func TrackingBlock(inTopic string, channel string, route string, port int, f STTrackingFunc) {
+	ex := make(chan bool)
+	inChan := make(chan simplejson.Json)
+	go nsqReader(inTopic, channel, inChan)
+	go f(inChan, route, port)
 	<-ex
 }

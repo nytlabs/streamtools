@@ -24,6 +24,7 @@ _testmain.go
 !.gitignore
 
 *.dat
+*.dat.tmp
 # Emacs temp files
 *~
 \#*#

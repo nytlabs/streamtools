@@ -1,9 +1,9 @@
 package streamtools
 
 import (
+	"github.com/bitly/go-simplejson"
 	"log"
 	"reflect"
-	"github.com/bitly/go-simplejson"
 )
 
 // flattenType returns a map of flatten keys of the incoming dictionary, and
@@ -79,9 +79,9 @@ func prettyPrintJsonType(value interface{}) string {
 	return "UNKNOWN"
 }
 
-// convertMapToJson simply takes a map of strings to strings,
+// convertStringMapToJson simply takes a map of strings to strings,
 // and converts it to a simplejson.Json object.
-func convertMapToJson(m map[string]string) *simplejson.Json {
+func convertStringMapToJson(m map[string]string) *simplejson.Json {
 	msg, _ := simplejson.NewJson([]byte("{}"))
 	for k, v := range m {
 		msg.Set(k, v)
@@ -100,7 +100,7 @@ var InferType STFunc = func(inChan chan simplejson.Json, outChan chan simplejson
 				log.Fatalln(err)
 			}
 			flat := flattenType(blob, "")
-			msg := convertMapToJson(flat)
+			msg := convertStringMapToJson(flat)
 			outChan <- *msg
 		}
 	}

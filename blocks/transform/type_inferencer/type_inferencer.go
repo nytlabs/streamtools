@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	inTopic          = flag.String("in_topic", "", "topic to read from")
-	outTopic         = flag.String("out_topic", "", "topic to write to")
-	channel          = flag.String("channel", "type_inferencer", "nsq reader name")
+	inTopic  = flag.String("in_topic", "", "topic to read from")
+	outTopic = flag.String("out_topic", "", "topic to write to")
+	channel  = flag.String("channel", "type_inferencer", "nsq reader name")
 )
 
 func main() {
