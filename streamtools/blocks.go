@@ -8,7 +8,8 @@ import (
 
 var (
 	lookupdHTTPAddrs = "127.0.0.1:4161"
-	nsqdAddr         = "127.0.0.1:4150"
+	nsqdHTTPAddrs    = "127.0.0.1:4150"
+	nsqdTCPAddrs     = "127.0.0.1:4150"
 )
 
 type SyncHandler struct {
@@ -26,7 +27,7 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
 
 func nsqWriter(outTopic string, outChan chan simplejson.Json) {
 	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdAddr)
+	err := w.ConnectToNSQ(nsqdHTTPAddrs)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

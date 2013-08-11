@@ -25,3 +25,13 @@ func TrackingBlock(inTopic string, channel string, route string, port int, f Tra
 	go f(inChan, route, port)
 	<-ex
 }
+
+type ExportFunction func(inChan chan simplejson.Json)
+
+func ExportBlock(inTopic string, channel string, f ExportFunction) {
+	ex := make(chan bool)
+	inChan := make(chan simplejson.Json)
+	go nsqReader(inTopic, channel, inChan)
+	go f(inChan)
+	<-ex
+}
