@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// StreamToStdOut simply prints the JSON string of each message.
 var StreamToStdOut ExportFunction = func(inChan chan simplejson.Json) {
 	for {
 		select {
