@@ -79,16 +79,6 @@ func prettyPrintJsonType(value interface{}) string {
 	return "UNKNOWN"
 }
 
-// convertStringMapToJson simply takes a map of strings to strings,
-// and converts it to a simplejson.Json object.
-func convertStringMapToJson(m map[string]string) *simplejson.Json {
-	msg, _ := simplejson.NewJson([]byte("{}"))
-	for k, v := range m {
-		msg.Set(k, v)
-	}
-	return msg
-}
-
 // InferType reads from an incoming channel msgChan, flattens and
 // types the event, and puts it on another channel outChan.
 var InferType TransferFunction = func(inChan chan simplejson.Json, outChan chan simplejson.Json) {
@@ -100,7 +90,7 @@ var InferType TransferFunction = func(inChan chan simplejson.Json, outChan chan 
 				log.Fatalln(err)
 			}
 			flat := flattenType(blob, "")
-			msg := convertStringMapToJson(flat)
+			msg := convertStringMapToSimplejson(flat)
 			outChan <- *msg
 		}
 	}

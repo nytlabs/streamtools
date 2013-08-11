@@ -21,29 +21,10 @@ func NewStore() *Store {
 	}
 }
 
-// convertMapToJson simply takes a map of strings to strings,
-// and converts it to a simplejson.Json object.
-// func convertMapToJson(m map[string]interface{}) *simplejson.Json {
-// 	msg, _ := simplejson.NewJson([]byte("{}"))
-// for k, v := range m {
-// 	switch v := v.(type) {
-// 	case map[string]interface{}:
-// 		msg.Set(k, convertMapToJson(v))
-// 	case []interface{}:
-// 	case int, float32, float64:
-// 	case string:
-// 	case bool:
-// 	case nil:
-// 	}
-// 	msg.Set(k, v)
-// }
-// 	return msg
-// }
-
 func (self Store) prettyPrintData() string {
 	b, err := json.Marshal(self.data)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 	}
 	return string(b)
 }
