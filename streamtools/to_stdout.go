@@ -16,7 +16,7 @@ func ToStdout(inChan chan simplejson.Json, ruleChan chan *simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			_, err = fmt.Println(os.Stdout, string(out))
+			_, err = fmt.Fprintln(os.Stdout, string(out))
 			if err != nil {
 				log.Fatal(err.Error())
 			}
