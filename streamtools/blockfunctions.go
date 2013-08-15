@@ -12,8 +12,9 @@ import (
 // generic block
 
 type block struct {
-	ruleChan chan *simplejson.Json
+	RuleChan chan simplejson.Json
 	sigChan  chan os.Signal
+	name     string
 }
 
 func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +27,7 @@ func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	b.ruleChan <- rule
+	b.RuleChan <- *rule
 	fmt.Fprintf(w, "thanks buddy")
 }
 
@@ -36,27 +37,27 @@ func (b *block) listenForRules() {
 	http.ListenAndServe(":8080", nil)
 }
 
-func newBlock() *block {
+func newBlock(name string) *block {
 	return &block{
-		ruleChan: make(chan *simplejson.Json),
+		RuleChan: make(chan simplejson.Json, 1),
 		sigChan:  make(chan os.Signal),
+		name:     name,
 	}
 }
 
 // inBlocks only have an input from stream tools
 
-type inBlockRoutine func(inChan chan simplejson.Json, ruleChan chan *simplejson.Json)
+type inBlockRoutine func(inChan chan simplejson.Json, RuleChan chan simplejson.Json)
 
 type inBlock struct {
 	*block // embeds the block type, giving us updateRule and the sigChan for free
 	inChan chan simplejson.Json
 	f      inBlockRoutine
-	name   string
 }
 
 func (b *inBlock) Run(topic string) {
 	// set block function going
-	go b.f(b.inChan, b.ruleChan)
+	go b.f(b.inChan, b.RuleChan)
 	// connect to NSQ
 	go nsqReader(topic, b.name, b.inChan)
 	// set the rule server going
@@ -66,25 +67,24 @@ func (b *inBlock) Run(topic string) {
 }
 
 func NewInBlock(f inBlockRoutine, name string) *inBlock {
-	b := newBlock()
+	b := newBlock(name)
 	inChan := make(chan simplejson.Json)
-	return &inBlock{b, inChan, f, name}
+	return &inBlock{b, inChan, f}
 }
 
 // outBlocks only have an output to streamtools
 
-type outBlockRoutine func(outChan chan simplejson.Json, ruleChan chan *simplejson.Json)
+type outBlockRoutine func(outChan chan simplejson.Json, RuleChan chan simplejson.Json)
 
 type outBlock struct {
 	*block  // embeds the block type, giving us updateRule and the sigChan for free
 	outChan chan simplejson.Json
 	f       outBlockRoutine
-	name    string
 }
 
 func (b *outBlock) Run(topic string) {
 	// set block function going
-	go b.f(b.outChan, b.ruleChan)
+	go b.f(b.outChan, b.RuleChan)
 	// connect to NSQ
 	log.Println("starting topic:", topic, "with channel:", b.name)
 	go nsqWriter(topic, b.name, b.outChan)
@@ -95,13 +95,69 @@ func (b *outBlock) Run(topic string) {
 }
 
 func NewOutBlock(f outBlockRoutine, name string) *outBlock {
-	b := newBlock()
+	b := newBlock(name)
 	outChan := make(chan simplejson.Json)
-	return &outBlock{b, outChan, f, name}
+	return &outBlock{b, outChan, f}
 }
 
-//
+// state blocks only have inbound data, but also have an API for data
 
-type stateBlockRoutine func(inChan chan simplejson.Json, ruleChan chan *http.Request, readChan chan *http.Request)
+type stateBlockRoutine func(inChan chan simplejson.Json, RuleChan chan simplejson.Json, queryChan chan stateQuery)
 
-type inOutBlockRoutine func(inChan chan simplejson.Json, outChan chan simplejson.Json, ruleChan chan *http.Request)
+type stateBlock struct {
+	*block
+	inChan    chan simplejson.Json
+	queryChan chan stateQuery // for requests to query the state
+	f         stateBlockRoutine
+}
+
+func (b *stateBlock) Run(topic string) {
+	go b.f(b.inChan, b.RuleChan, b.queryChan)
+	go b.listenForRules()
+	go b.listenForStateQuery()
+	<-b.sigChan
+}
+
+type stateQuery struct {
+	query        simplejson.Json
+	responseChan chan simplejson.Json
+}
+
+func (b *stateBlock) queryState(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	query, err := simplejson.NewJson(body)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	q := stateQuery{
+		query:        *query,
+		responseChan: make(chan simplejson.Json),
+	}
+	b.queryChan <- q
+	// block until the response
+	response := <-q.responseChan
+	msg, err := response.Encode()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	fmt.Fprintf(w, string(msg))
+}
+
+func (b *stateBlock) listenForStateQuery() {
+	http.HandleFunc("/state", b.queryState)
+}
+
+func NewStateBlock(f stateBlockRoutine, name string) *stateBlock {
+	b := newBlock(name)
+	inChan := make(chan simplejson.Json)
+	queryChan := make(chan stateQuery)
+	return &stateBlock{b, inChan, queryChan, f}
+}
+
+// transfer blocks have both inbound and outbound data
+
+type transferBlockRoutine func(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan *http.Request)
