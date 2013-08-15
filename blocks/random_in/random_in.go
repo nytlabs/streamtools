@@ -12,5 +12,5 @@ var (
 func main() {
 	flag.Parse()
 	random := streamtools.NewOutBlock(streamtools.Random, "random_stream")
-	random.Run(*topic)
+	random.Run(*topic, "8081")
 }

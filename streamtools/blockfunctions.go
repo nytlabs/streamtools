@@ -33,8 +33,12 @@ func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
 
 func (b *block) listenForRules() {
 	// listen for rule changes
-	http.HandleFunc("/", b.updateRule)
-	http.ListenAndServe(":8080", nil)
+	http.HandleFunc("/rules", b.updateRule)
+}
+
+func (b *block) StartServer(port string) {
+	log.Println("starting server on port: ", port)
+	http.ListenAndServe(":"+port, nil)
 }
 
 func newBlock(name string) *block {
@@ -55,13 +59,14 @@ type inBlock struct {
 	f      inBlockRoutine
 }
 
-func (b *inBlock) Run(topic string) {
+func (b *inBlock) Run(topic string, port string) {
 	// set block function going
 	go b.f(b.inChan, b.RuleChan)
 	// connect to NSQ
 	go nsqReader(topic, b.name, b.inChan)
 	// set the rule server going
-	go b.listenForRules()
+	b.listenForRules()
+	go b.StartServer(port)
 	// block until an os.signal
 	<-b.sigChan
 }
@@ -82,14 +87,15 @@ type outBlock struct {
 	f       outBlockRoutine
 }
 
-func (b *outBlock) Run(topic string) {
+func (b *outBlock) Run(topic string, port string) {
 	// set block function going
 	go b.f(b.outChan, b.RuleChan)
 	// connect to NSQ
 	log.Println("starting topic:", topic, "with channel:", b.name)
 	go nsqWriter(topic, b.name, b.outChan)
 	// set the rule server going
-	go b.listenForRules()
+	b.listenForRules()
+	go b.StartServer(port)
 	// block until an os.signal
 	<-b.sigChan
 }
@@ -111,30 +117,34 @@ type stateBlock struct {
 	f         stateBlockRoutine
 }
 
-func (b *stateBlock) Run(topic string) {
+func (b *stateBlock) Run(topic string, port string) {
 	go b.f(b.inChan, b.RuleChan, b.queryChan)
-	go b.listenForRules()
-	go b.listenForStateQuery()
+	go nsqReader(topic, b.name, b.inChan)
+	b.listenForStateQuery()
+	b.listenForRules()
+	go b.StartServer(port)
 	<-b.sigChan
 }
 
 type stateQuery struct {
-	query        simplejson.Json
+	//query        simplejson.Json
 	responseChan chan simplejson.Json
 }
 
 func (b *stateBlock) queryState(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	query, err := simplejson.NewJson(body)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	/*
+		body, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+		query, err := simplejson.NewJson(body)
+		if err != nil {
+			log.Println(body)
+			log.Fatalf(err.Error())
+		}
+	*/
 	q := stateQuery{
-		query:        *query,
 		responseChan: make(chan simplejson.Json),
 	}
 	b.queryChan <- q

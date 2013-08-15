@@ -13,15 +13,16 @@ var (
 )
 
 func main() {
+	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 	min := streamtools.NewStateBlock(streamtools.Min, "min")
 	// make sure the block has a key waiting for it
-	rule, err := simplejson.NewJson([]byte{})
+	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	rule.Set("key", key)
+	rule.Set("key", *key)
 	min.RuleChan <- *rule
 	// set it going
-	min.Run(*topic)
+	min.Run(*topic, "8080")
 }

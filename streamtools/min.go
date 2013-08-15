@@ -30,11 +30,12 @@ func Min(inChan chan simplejson.Json, ruleChan chan simplejson.Json, queryChan c
 				log.Fatal(err.Error())
 			}
 		case query = <-queryChan:
-			out, err := simplejson.NewJson([]byte{})
+			out, err := simplejson.NewJson([]byte("{}"))
 			if err != nil {
 				log.Fatal(err.Error())
 			}
 			out.Set("min", minval)
+			query.responseChan <- *out
 		case msg := <-inChan:
 			val, err := msg.Get(key).Float64()
 			if err != nil {
