@@ -1,0 +1,48 @@
+Streamtools setup
+
+
+Go:
+===
+
+Install
+
+Setup environment:
+http://golang.org/doc/code.html
+
+
+
+NSQ:
+====
+
+Binary:
+http://bitly.github.io/nsq/deployment/installing.html
+
+Put ./bin and ./share contents into /usr/local/bin and usr/local/share respectively
+
+Run:
+nsqlookupd
+nsqd --lookupd-tcp-address=127.0.0.1:4160
+nsqadmin --lookupd-http-address=127.0.0.1:4161
+More info: http://bitly.github.io/nsq/overview/quick_start.html
+
+Admin console:
+http://127.0.0.1:4171/
+
+
+
+
+
+
+Streamtools:
+============
+
+
+cd <Go Dir>/src/streamtools/import/random_stream
+go build
+
+
+
+Needed:
+Make file to get dependencies and build all
+
+
