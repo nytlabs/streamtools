@@ -40,9 +40,5 @@ Streamtools:
 cd <Go Dir>/src/streamtools/import/random_stream
 go build
 
-
-
-Needed:
-Make file to get dependencies and build all
-
-
+go install <package>
+^ doesn't work with individual files
