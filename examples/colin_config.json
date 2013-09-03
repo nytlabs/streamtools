@@ -1,0 +1,34 @@
+// make a time series of clicks to a specific page
+{
+    "blocks": [
+        {
+            "block": "fromNSQ",
+            "inTopic": "event_tracker_pages",
+            "outTopic": "pageviews",
+        },
+        {
+            "block":"filterByKeyValue",
+            "inTopic": "pageviews",
+            "outTopic": "filteredPageViews",
+            "key":"cms.article.url",
+            "value":"http://www.nytimes.com/2013/08/16/world/middleeast/egypt.html",
+        },
+        {
+            "block":"count",
+            "inTopic": "filteredPageViews",
+            "name": "urlCount", // only necessary for the pollBlock to work
+            "countKey": "count", // only necessary for the min block to work
+        },
+        {
+            "block": "pollBlock",
+            "targetName": "urlCount",
+            "interval": 2, // seconds
+            "outTopic": "pageViewCount",
+        },
+        {
+            "block": "toCSV",
+            "inTopic": "pageViewCount",
+            "filename": "pageviewcount.csv"
+        },
+    ]
+}
