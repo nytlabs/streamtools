@@ -1,7 +1,8 @@
 STREAMTOOLS
 ===========
 
-A set of tools for dealing with streams of JSON, using NSQ as a backend.
+A set of tools for dealing with streams of JSON, using NSQ as a backend. The tools are envisaged as a set of binaries, not unlike the standard \*NIX tools, except with NSQ (a distributed queueing system) in place of unix pipes. Each tool is thought of as a block and can be connected together with other blocks to form complex data processing systems.
+
 
 How to build a new block
 ========================
