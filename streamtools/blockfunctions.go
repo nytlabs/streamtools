@@ -91,8 +91,8 @@ func (b *outBlock) Run(topic string, port string) {
 	// set block function going
 	go b.f(b.outChan, b.RuleChan)
 	// connect to NSQ
-	log.Println("starting topic:", topic, "with channel:", b.name)
-	go nsqWriter(topic, b.name, b.outChan)
+	log.Println("starting topic:", topic)
+	go nsqWriter(topic, b.outChan)
 	// set the rule server going
 	b.listenForRules()
 	go b.StartServer(port)

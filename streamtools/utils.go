@@ -38,7 +38,7 @@ func nsqReader(topic string, channel string, writeChan chan simplejson.Json) {
 	<-r.ExitChan
 }
 
-func nsqWriter(topic string, channel string, readChan chan simplejson.Json) {
+func nsqWriter(topic string, readChan chan simplejson.Json) {
 
 	w := nsq.NewWriter(0)
 	err := w.ConnectToNSQ(nsqdHTTPAddrs)

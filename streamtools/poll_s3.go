@@ -40,7 +40,7 @@ func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 	log.Println("bucket", bucketName)
 	log.Println("prefix:", prefix)
 	log.Println("gzip flag:", gzipFlag)
-	log.Println("poll interval:", d)
+	log.Println("poll interval:", d, "s")
 
 	// The AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are used.
 	auth, err := aws.EnvAuth()
@@ -54,7 +54,7 @@ func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 	for {
 		select {
 		case t := <-ticker.C:
-			log.Println(t)
+			log.Println("checking", bucketName, ":", prefix)
 			// Open Bucket
 			s := s3.New(auth, aws.USEast)
 			bucket := s.Bucket(bucketName)
@@ -62,7 +62,6 @@ func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println(list.Contents)
 			for _, v := range list.Contents {
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
@@ -89,6 +88,7 @@ func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 				}
 
 			}
+			log.Println("done emitting")
 		case <-ruleChan:
 		}
 	}

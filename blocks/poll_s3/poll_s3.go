@@ -16,7 +16,7 @@ var (
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
+	//log.SetFlags(log.Lshortfile)
 	flag.Parse()
 	S3PollBlock := streamtools.NewOutBlock(streamtools.PollS3, "S3Poller")
 	rule, err := simplejson.NewJson([]byte("{}"))
