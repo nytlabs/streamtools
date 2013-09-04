@@ -3,9 +3,17 @@ package streamtools
 import (
 	"github.com/bitly/go-simplejson"
 	"log"
+	"strings"
 )
 
-func DemuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan simplejson.Json) {
+func cleanTopicName(topic string) string {
+	// TODO
+	// Valid topic and channel names are characters [.a-zA-Z0-9_-] and 1 < length <= 32
+	topic = strings.Replace(topic, ":", "-", -1)
+	return topic
+}
+
+func DeMuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan simplejson.Json) {
 
 	rules := <-RuleChan
 
@@ -22,6 +30,8 @@ func DemuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, Rul
 			if err != nil {
 				log.Fatal(err.Error())
 			}
+			outTopic = cleanTopicName(outTopic)
+			log.Println("writing to topic:", outTopic)
 			outMsg, err := simplejson.NewJson([]byte("{}"))
 			if err != nil {
 				log.Fatal(err.Error())
@@ -29,7 +39,6 @@ func DemuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, Rul
 			outMsg.Set("_StreamtoolsTopic", outTopic)
 			outMsg.Set("_StreamtoolsData", msg)
 			outChan <- *outMsg
-
 		}
 
 	}
