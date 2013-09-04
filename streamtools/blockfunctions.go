@@ -194,3 +194,14 @@ func NewTransferBlock(f transferBlockRoutine, name string) *transferBlock {
 	outChan := make(chan simplejson.Json)
 	return &transferBlock{b, inChan, outChan, f}
 }
+
+// a seperate type of run for the multiple outputs
+func (b *transferBlock) DeMuxRun(inTopic string, port string) {
+	go b.f(b.inChan, b.outChan, b.RuleChan)
+	go nsqReader(inTopic, b.name, b.inChan)
+	go deMuxWriter(b.outChan)
+	b.listenForRules()
+	go b.StartServer(port)
+	<-b.sigChan
+
+}

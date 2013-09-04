@@ -56,3 +56,26 @@ func nsqWriter(topic string, readChan chan simplejson.Json) {
 		}
 	}
 }
+
+func deMuxWriter(readChan chan simplejson.Json) {
+	w := nsq.NewWriter(0)
+	err := w.ConnectToNSQ(nsqdHTTPAddrs)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	for {
+		select {
+		case msg := <-readChan:
+			topic, err := msg.Get("_StreamtoolsTopic").String()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			origMsg := msg.Get("_StreamtoolsData")
+			outMsg, _ := origMsg.Encode()
+			frameType, data, err := w.Publish(topic, outMsg)
+			if err != nil {
+				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
+			}
+		}
+	}
+}
