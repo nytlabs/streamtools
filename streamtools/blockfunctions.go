@@ -170,4 +170,27 @@ func NewStateBlock(f stateBlockRoutine, name string) *stateBlock {
 
 // transfer blocks have both inbound and outbound data
 
-type transferBlockRoutine func(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan *http.Request)
+type transferBlockRoutine func(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan simplejson.Json)
+
+type transferBlock struct {
+	*block
+	inChan  chan simplejson.Json
+	outChan chan simplejson.Json
+	f       transferBlockRoutine
+}
+
+func (b *transferBlock) Run(inTopic string, outTopic string, port string) {
+	go b.f(b.inChan, b.outChan, b.RuleChan)
+	go nsqReader(inTopic, b.name, b.inChan)
+	go nsqWriter(outTopic, b.outChan)
+	b.listenForRules()
+	go b.StartServer(port)
+	<-b.sigChan
+}
+
+func NewTransferBlock(f transferBlockRoutine, name string) *transferBlock {
+	b := newBlock(name)
+	inChan := make(chan simplejson.Json)
+	outChan := make(chan simplejson.Json)
+	return &transferBlock{b, inChan, outChan, f}
+}
