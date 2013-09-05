@@ -37,7 +37,11 @@ func DeMuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, Rul
 				log.Fatal(err.Error())
 			}
 			outMsg.Set("_StreamtoolsTopic", outTopic)
-			outMsg.Set("_StreamtoolsData", msg)
+			msgMap, err := msg.Map()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			outMsg.Set("_StreamtoolsData", msgMap)
 			outChan <- *outMsg
 		}
 

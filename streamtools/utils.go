@@ -66,6 +66,7 @@ func deMuxWriter(readChan chan simplejson.Json) {
 	for {
 		select {
 		case msg := <-readChan:
+			log.Println(msg)
 			topic, err := msg.Get("_StreamtoolsTopic").String()
 			if err != nil {
 				log.Fatal(err.Error())
