@@ -71,7 +71,12 @@ func deMuxWriter(readChan chan simplejson.Json) {
 				log.Fatal(err.Error())
 			}
 			origMsg := msg.Get("_StreamtoolsData")
-			outMsg, _ := origMsg.Encode()
+			log.Println("origMsg:", origMsg)
+			outMsg, err := origMsg.Encode()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			log.Println("outMsg:", string(outMsg))
 			frameType, data, err := w.Publish(topic, outMsg)
 			if err != nil {
 				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
