@@ -26,7 +26,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	rule.Set("command", command)
+	rule.Set("command", *command)
 	block.RuleChan <- rule
 	block.Run(*readTopic, *writeTopic, "8080")
 }
