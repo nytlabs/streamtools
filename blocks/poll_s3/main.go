@@ -27,6 +27,6 @@ func main() {
 	rule.Set("bucketname", *bucket)
 	rule.Set("prefix", *prefix)
 	rule.Set("gzipFlag", *gzip)
-	S3PollBlock.RuleChan <- *rule
+	S3PollBlock.RuleChan <- rule
 	S3PollBlock.Run(*writeTopic, "8080")
 }

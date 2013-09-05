@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	rule.Set("SQSEndpoint", *SQSEndpoint)
-	SQSBlock.RuleChan <- *rule
+	SQSBlock.RuleChan <- rule
 	SQSBlock.Run(*writeTopic, "8080")
 
 }

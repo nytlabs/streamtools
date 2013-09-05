@@ -22,7 +22,7 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	rule.Set("key", *key)
-	min.RuleChan <- *rule
+	min.RuleChan <- rule
 	// set it going
 	min.Run(*topic, "8080")
 }

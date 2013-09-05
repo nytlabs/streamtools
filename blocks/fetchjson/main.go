@@ -32,6 +32,6 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	rule.Set("endpoint", *endpoint)
-	block.RuleChan <- *rule
+	block.RuleChan <- rule
 	block.Run(*readTopic, *writeTopic, "8080")
 }

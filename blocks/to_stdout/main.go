@@ -12,5 +12,5 @@ var (
 func main() {
 	flag.Parse()
 	to_stdout := streamtools.NewInBlock(streamtools.ToStdout, "to_stdout")
-	to_stdout.Run(*topic)
+	to_stdout.Run(*topic, "8080")
 }

@@ -79,7 +79,7 @@ func deleteMessage(SQSEndpoint string, ReceiptHandle string) {
 	}
 }
 
-func FromSQS(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
+func FromSQS(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 	rules := <-ruleChan
 
@@ -102,7 +102,7 @@ func FromSQS(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 					if err != nil {
 						log.Fatal(err.Error())
 					}
-					outChan <- *out
+					outChan <- out
 					deleteMessage(SQSEndpoint, m.ReceiptHandle[i])
 				}
 				timer.Reset(time.Duration(10) * time.Millisecond)

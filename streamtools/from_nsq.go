@@ -7,7 +7,7 @@ import (
 )
 
 type readWriteHandler struct {
-	outChan chan simplejson.Json
+	outChan chan *simplejson.Json
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
@@ -15,11 +15,11 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	self.outChan <- *out
+	self.outChan <- out
 	return nil
 }
 
-func FromNSQ(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
+func FromNSQ(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 	rules := <-ruleChan
 

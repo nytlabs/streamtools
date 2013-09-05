@@ -22,6 +22,6 @@ func main() {
 	}
 	rule.Set("readTopic", *readTopic)
 	rule.Set("lookupdAddr", *lookupdAddr)
-	fromNSQBlock.RuleChan <- *rule
+	fromNSQBlock.RuleChan <- rule
 	fromNSQBlock.Run(*writeTopic, "8080")
 }

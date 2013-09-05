@@ -13,7 +13,7 @@ var (
 	fail bool = false
 )
 
-func getKeyMapping(rules simplejson.Json) map[string]string {
+func getKeyMapping(rules *simplejson.Json) map[string]string {
 	out := map[string]string{}
 	a, err := rules.Get("keymappings").Array()
 	if err != nil {
@@ -28,7 +28,7 @@ func getKeyMapping(rules simplejson.Json) map[string]string {
 	return out
 }
 
-func FetchJSON(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan simplejson.Json) {
+func FetchJSON(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 
 	/*
 			   key mappings are expected like
@@ -86,7 +86,7 @@ func FetchJSON(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleCh
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			outChan <- *out
+			outChan <- out
 
 		}
 	}

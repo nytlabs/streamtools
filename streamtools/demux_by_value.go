@@ -13,7 +13,7 @@ func cleanTopicName(topic string) string {
 	return topic
 }
 
-func DeMuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, RuleChan chan simplejson.Json) {
+func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 
 	rules := <-RuleChan
 
@@ -42,7 +42,7 @@ func DeMuxByValue(inChan chan simplejson.Json, outChan chan simplejson.Json, Rul
 				log.Fatal(err.Error())
 			}
 			outMsg.Set("_StreamtoolsData", msgMap)
-			outChan <- *outMsg
+			outChan <- outMsg
 		}
 
 	}

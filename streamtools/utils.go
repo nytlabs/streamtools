@@ -13,7 +13,7 @@ var (
 )
 
 type SyncHandler struct {
-	msgChan chan simplejson.Json
+	msgChan chan *simplejson.Json
 }
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
@@ -21,11 +21,11 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	self.msgChan <- *blob
+	self.msgChan <- blob
 	return nil
 }
 
-func nsqReader(topic string, channel string, writeChan chan simplejson.Json) {
+func nsqReader(topic string, channel string, writeChan chan *simplejson.Json) {
 	r, err := nsq.NewReader(topic, channel)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -38,7 +38,7 @@ func nsqReader(topic string, channel string, writeChan chan simplejson.Json) {
 	<-r.ExitChan
 }
 
-func nsqWriter(topic string, readChan chan simplejson.Json) {
+func nsqWriter(topic string, readChan chan *simplejson.Json) {
 
 	w := nsq.NewWriter(0)
 	err := w.ConnectToNSQ(nsqdHTTPAddrs)
@@ -57,7 +57,7 @@ func nsqWriter(topic string, readChan chan simplejson.Json) {
 	}
 }
 
-func deMuxWriter(readChan chan simplejson.Json) {
+func deMuxWriter(readChan chan *simplejson.Json) {
 	w := nsq.NewWriter(0)
 	err := w.ConnectToNSQ(nsqdHTTPAddrs)
 	if err != nil {

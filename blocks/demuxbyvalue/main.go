@@ -23,6 +23,6 @@ func main() {
 		log.Fatal(err.Error())
 	}
 	rule.Set("key", *key)
-	deMuxByValueBlock.RuleChan <- *rule
+	deMuxByValueBlock.RuleChan <- rule
 	deMuxByValueBlock.DeMuxRun(*readTopic, "8080")
 }

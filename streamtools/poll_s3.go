@@ -14,7 +14,7 @@ var (
 	scanner *bufio.Scanner
 )
 
-func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
+func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 	rules := <-ruleChan
 	d, err := rules.Get("duration").Int()
@@ -83,7 +83,7 @@ func PollS3(outChan chan simplejson.Json, ruleChan chan simplejson.Json) {
 						if err != nil {
 							log.Fatal(err.Error())
 						}
-						outChan <- *out
+						outChan <- out
 					}
 				}
 
