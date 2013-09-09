@@ -2,7 +2,7 @@ package streamtools
 
 import (
 	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
+    "github.com/bitly/go-nsq"
 	"log"
 )
 
