@@ -1,8 +1,8 @@
 package streamtools
 
 import (
-	"github.com/bitly/go-simplejson"
 	"github.com/bitly/go-nsq"
+	"github.com/bitly/go-simplejson"
 	"log"
 )
 
@@ -40,8 +40,7 @@ func nsqReader(topic string, channel string, writeChan chan *simplejson.Json) {
 
 func nsqWriter(topic string, readChan chan *simplejson.Json) {
 
-	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdHTTPAddrs)
+	w := nsq.NewWriter(nsqdHTTPAddrs)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
