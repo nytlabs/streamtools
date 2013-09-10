@@ -9,7 +9,6 @@ import (
 
 var (
 	keymapping = flag.String("keymapping", "", "data key to query parameter mapping json")
-	writeTopic = flag.String("write_topic", "", "topic to write to")
 	readTopic  = flag.String("read_topic", "", "topic to write to")
 	endpoint   = flag.String("endpoint", "", "endpoint")
 )
@@ -20,10 +19,9 @@ func main() {
 	flag.Parse()
 
 	log.Println("reading from", *readTopic)
-	log.Println("writing to", *writeTopic)
 	log.Println("using endpoint", *endpoint)
 
-	block := streamtools.NewTransferBlock(streamtools.FetchJSON, "fetch_json")
+	block := streamtools.NewInBlock(streamtools.ToHTTP, "http_get")
 
 	keymappingjson := `{"keymappings":` + *keymapping + "}"
 
@@ -33,5 +31,5 @@ func main() {
 	}
 	rule.Set("endpoint", *endpoint)
 	block.RuleChan <- rule
-	block.Run(*readTopic, *writeTopic, "8080")
+	block.Run(*readTopic, "8080")
 }
