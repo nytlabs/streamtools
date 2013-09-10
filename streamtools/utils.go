@@ -1,8 +1,8 @@
 package streamtools
 
 import (
+	"github.com/bitly/go-nsq"
 	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
 	"log"
 )
 
@@ -40,11 +40,7 @@ func nsqReader(topic string, channel string, writeChan chan *simplejson.Json) {
 
 func nsqWriter(topic string, readChan chan *simplejson.Json) {
 
-	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdHTTPAddrs)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	w := nsq.NewWriter(nsqdHTTPAddrs)
 	for {
 		select {
 		case msg := <-readChan:
@@ -58,11 +54,7 @@ func nsqWriter(topic string, readChan chan *simplejson.Json) {
 }
 
 func deMuxWriter(readChan chan *simplejson.Json) {
-	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdHTTPAddrs)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	w := nsq.NewWriter(nsqdHTTPAddrs)
 	for {
 		select {
 		case msg := <-readChan:
