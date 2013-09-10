@@ -89,7 +89,12 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 			}
 			log.Println("done emitting")
-		case <-ruleChan:
+		case rule := <-ruleChan:
+			prefix, err = rule.Get("prefix").String()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			log.Println("got updated prefix:", prefix)
 		}
 	}
 

@@ -18,6 +18,7 @@ type block struct {
 }
 
 func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
+	log.Println("heard new rule request")
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -25,6 +26,7 @@ func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
 	}
 	rule, err := simplejson.NewJson(body)
 	if err != nil {
+		log.Println(body)
 		log.Fatalf(err.Error())
 	}
 	b.RuleChan <- rule
