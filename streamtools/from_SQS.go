@@ -39,8 +39,6 @@ func PollSQS(SQSEndpoint string) Message {
 
 	c := aws4.Client{Keys: keys}
 
-	log.Println("[FROMSQS] querying", SQSEndpoint+query.Encode())
-
 	resp, err := c.Get(SQSEndpoint + query.Encode())
 	if err != nil {
 		log.Fatal(err.Error())
@@ -51,7 +49,7 @@ func PollSQS(SQSEndpoint string) Message {
 	body, err := ioutil.ReadAll(resp.Body)
 	err = xml.Unmarshal(body, &v)
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 	return v
 
@@ -70,8 +68,6 @@ func deleteMessage(SQSEndpoint string, ReceiptHandle string) {
 	}
 
 	c := aws4.Client{Keys: keys}
-
-	log.Println("querying", SQSEndpoint+query.Encode())
 
 	_, err := c.Get(SQSEndpoint + query.Encode())
 	if err != nil {
@@ -110,7 +106,6 @@ func FromSQS(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 				}
 				timer.Reset(time.Duration(10) * time.Millisecond)
 			} else {
-				log.Println("[FROMSQS] waiting 10 seconds")
 				timer.Reset(time.Duration(10) * time.Second)
 			}
 

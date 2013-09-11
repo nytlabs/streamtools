@@ -63,6 +63,8 @@ func FetchJSON(inChan chan *simplejson.Json, outChan chan *simplejson.Json, Rule
 				keys := strings.Split(msgKey, ".")
 				value, err := msg.GetPath(keys...).String()
 				if err != nil {
+					log.Println(keys)
+					log.Println(msg)
 					log.Fatal(err.Error())
 				}
 				params.Set(queryKey, value)
