@@ -36,7 +36,9 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	defer res.Body.Close()
 
 	var body bytes.Buffer
-	crlf := []byte{125, 10}
+	// these are the possible delimiters
+	d1 := []byte{125, 10} // this is }\n
+	d2 := []byte{13, 10}  // this is CRLF
 
 	for {
 		select {
@@ -48,13 +50,23 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			body.Write(buffer)
-			if bytes.Equal(crlf, buffer[p-2:p]) {
-				msg, err := simplejson.NewJson(body.Bytes())
-				if err != nil {
-					log.Fatal(err.Error())
+			body.Write(buffer[:p])
+			if bytes.Equal(d1, buffer[p-2:p]) { // ended with }\n
+				for i, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
+					if len(blob) > 0 {
+						msg, err := simplejson.NewJson(blob)
+						if err != nil {
+							log.Println(i)
+							log.Println(blob)
+							log.Println(string(blob))
+							log.Fatal(err.Error())
+						}
+						log.Println(msg)
+						outChan <- msg
+					}
 				}
-				outChan <- msg
+				body.Reset()
+			} else if bytes.Equal(d2, buffer[p-2:p]) { // ended with CRLF which we don't care about
 				body.Reset()
 			}
 		}
