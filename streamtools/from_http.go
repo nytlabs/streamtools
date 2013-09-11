@@ -1,6 +1,7 @@
 package streamtools
 
 import (
+	"bytes"
 	"github.com/bitly/go-simplejson"
 	"log"
 	"net/http"
@@ -34,25 +35,27 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	}
 	defer res.Body.Close()
 
+	var body bytes.Buffer
+	crlf := []byte{125, 10}
+
 	for {
 		select {
 		case <-ruleChan:
 
 		default:
-			body := make([]byte, 1024)
-			_, err := res.Body.Read(body)
+			buffer := make([]byte, 5*1024)
+			p, err := res.Body.Read(buffer)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err.Error())
 			}
-			// TODO worry about better detection of end of body
-			idx := strings.LastIndex(string(body), "}")
-			if idx != -1 {
-				msg, err := simplejson.NewJson(body[:idx+1])
+			body.Write(buffer)
+			if bytes.Equal(crlf, buffer[p-2:p]) {
+				msg, err := simplejson.NewJson(body.Bytes())
 				if err != nil {
-					log.Println(string(body))
 					log.Fatal(err.Error())
 				}
 				outChan <- msg
+				body.Reset()
 			}
 		}
 	}
