@@ -49,6 +49,7 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			if idx != -1 {
 				msg, err := simplejson.NewJson(body[:idx+1])
 				if err != nil {
+					log.Println(string(body))
 					log.Fatal(err.Error())
 				}
 				outChan <- msg

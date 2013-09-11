@@ -17,8 +17,8 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	flag.Parse()
 
-	log.Println("writing to", *writeTopic)
-	log.Println("using endpoint", *endpoint)
+	log.Println("[HTTPSTREAM] writing to", *writeTopic)
+	log.Println("[HTTPSTREAM] using endpoint", *endpoint)
 
 	block := streamtools.NewOutBlock(streamtools.FromHTTP, "fromHTTP")
 
