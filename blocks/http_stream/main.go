@@ -23,6 +23,9 @@ func main() {
 	block := streamtools.NewOutBlock(streamtools.FromHTTP, "fromHTTP")
 
 	rule, err := simplejson.NewJson([]byte("{}"))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 	rule.Set("endpoint", *endpoint)
 	rule.Set("auth", *auth)
 	block.RuleChan <- rule
