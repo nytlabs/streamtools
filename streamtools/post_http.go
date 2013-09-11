@@ -12,7 +12,7 @@ func PostHTTP(inChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 
 	rules := <-RuleChan
 	keymapping := getKeyMapping(rules)
-	log.Println("using the folloing as the keymapping:", keymapping)
+	log.Println("[HTTPPOST] using the folloing as the keymapping:", keymapping)
 	endpoint, err := rules.Get("endpoint").String()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -35,7 +35,6 @@ func PostHTTP(inChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 				body.Set(queryKey, value)
 			}
 
-			log.Println("calling", endpoint, "with body", body)
 			// TODO maybe check the response ?
 			postBody, err := body.Encode()
 			if err != nil {

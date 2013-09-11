@@ -37,10 +37,10 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 		log.Fatal(err.Error())
 	}
 
-	log.Println("bucket", bucketName)
-	log.Println("prefix:", prefix)
-	log.Println("gzip flag:", gzipFlag)
-	log.Println("poll interval:", d, "s")
+	log.Println("[POLLS3] bucket", bucketName)
+	log.Println("[POLLS3] prefix:", prefix)
+	log.Println("[POLLS3] gzip flag:", gzipFlag)
+	log.Println("[POLLS3] poll interval:", d, "s")
 
 	// The AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are used.
 	auth, err := aws.EnvAuth()
@@ -54,7 +54,7 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	for {
 		select {
 		case t := <-ticker.C:
-			log.Println("checking", bucketName, ":", prefix)
+			log.Println("[POLLS3] checking", bucketName, ":", prefix)
 			// Open Bucket
 			s := s3.New(auth, aws.USEast)
 			bucket := s.Bucket(bucketName)
@@ -62,14 +62,14 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println("found", len(list.Contents), "files")
+			log.Println("[POLLS3] found", len(list.Contents), "files")
 			for _, v := range list.Contents {
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
 					log.Fatal(err.Error())
 				}
 				if lm.After(t.Add(-sampleDuration)) {
-					log.Println("emitting", v.Key)
+					log.Println("[POLLS3] emitting", v.Key)
 					br, _ := bucket.GetReader(v.Key)
 					defer br.Close()
 					if gzipFlag {
@@ -89,13 +89,13 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 				}
 
 			}
-			log.Println("done emitting")
+			log.Println("[POLLS3] done emitting")
 		case rule := <-ruleChan:
 			prefix, err = rule.Get("prefix").String()
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println("got updated prefix:", prefix)
+			log.Println("[POLLS3] got updated prefix:", prefix)
 		}
 	}
 

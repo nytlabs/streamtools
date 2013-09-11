@@ -19,7 +19,7 @@ func Date(outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 	// emit today immediately TODO is this cool?
 	today := now.Add(-time.Duration(12) * time.Hour).Round(time.Duration(24) * time.Hour)
 	msgJson.Set("date", today.Format(fmtString))
-	log.Println("emitting", msgJson)
+	log.Println("[DATEIN] emitting", msgJson)
 	outChan <- msgJson
 	tomorrow := now.Add(time.Duration(12) * time.Hour).Round(time.Duration(24) * time.Hour)
 	d := tomorrow.Sub(now)

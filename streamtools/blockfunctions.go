@@ -18,7 +18,6 @@ type block struct {
 }
 
 func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
-	log.Println("heard new rule request")
 	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -26,7 +25,6 @@ func (b *block) updateRule(w http.ResponseWriter, r *http.Request) {
 	}
 	rule, err := simplejson.NewJson(body)
 	if err != nil {
-		log.Println(body)
 		log.Fatalf(err.Error())
 	}
 	b.RuleChan <- rule
@@ -39,7 +37,6 @@ func (b *block) listenForRules() {
 }
 
 func (b *block) StartServer(port string) {
-	log.Println("starting server on port: ", port)
 	http.ListenAndServe(":"+port, nil)
 }
 
@@ -93,7 +90,6 @@ func (b *outBlock) Run(topic string, port string) {
 	// set block function going
 	go b.f(b.outChan, b.RuleChan)
 	// connect to NSQ
-	log.Println("starting topic:", topic)
 	go nsqWriter(topic, b.outChan)
 	// set the rule server going
 	b.listenForRules()

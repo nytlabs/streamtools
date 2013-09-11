@@ -45,7 +45,7 @@ func FetchJSON(inChan chan *simplejson.Json, outChan chan *simplejson.Json, Rule
 	*/
 	rules := <-RuleChan
 	keymapping := getKeyMapping(rules)
-	log.Println("using the folloing as the keymapping:", keymapping)
+	log.Println("[FETCHJSON] using the folloing as the keymapping:", keymapping)
 	endpoint, err := rules.Get("endpoint").String()
 	if err != nil {
 		log.Fatal(err)
@@ -56,7 +56,6 @@ func FetchJSON(inChan chan *simplejson.Json, outChan chan *simplejson.Json, Rule
 
 		case <-RuleChan:
 		case msg := <-inChan:
-			log.Println(msg)
 
 			params := url.Values{}
 
@@ -64,16 +63,13 @@ func FetchJSON(inChan chan *simplejson.Json, outChan chan *simplejson.Json, Rule
 				keys := strings.Split(msgKey, ".")
 				value, err := msg.GetPath(keys...).String()
 				if err != nil {
-					log.Println(msg)
-					log.Println(msgKey)
-					log.Println(keys)
-					log.Println(err.Error())
+					log.Fatal(err.Error())
 				}
 				params.Set(queryKey, value)
 			}
 
 			fullUrl := endpoint + params.Encode()
-			log.Println("calling", fullUrl)
+			log.Println("[FETCHJSON] calling", fullUrl)
 			resp, err := http.Get(fullUrl)
 			if err != nil {
 				log.Fatal(err.Error())

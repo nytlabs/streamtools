@@ -39,7 +39,7 @@ func PollSQS(SQSEndpoint string) Message {
 
 	c := aws4.Client{Keys: keys}
 
-	log.Println("querying", SQSEndpoint+query.Encode())
+	log.Println("[FROMSQS] querying", SQSEndpoint+query.Encode())
 
 	resp, err := c.Get(SQSEndpoint + query.Encode())
 	if err != nil {

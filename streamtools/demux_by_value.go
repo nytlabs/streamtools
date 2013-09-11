@@ -31,7 +31,6 @@ func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 				log.Fatal(err.Error())
 			}
 			outTopic = cleanTopicName(outTopic)
-			log.Println("writing to topic:", outTopic)
 			outMsg, err := simplejson.NewJson([]byte("{}"))
 			if err != nil {
 				log.Fatal(err.Error())
