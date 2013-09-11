@@ -81,13 +81,16 @@ func deleteMessage(SQSEndpoint string, ReceiptHandle string) {
 
 func FromSQS(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
+	log.Println("[FROMSQS] AccessKey:", AWSAccessKeyId)
+	log.Println("[FROMSQS] AccessSecret:", AWSAccessSecret)
+
 	rules := <-ruleChan
 
 	SQSEndpoint, err := rules.Get("SQSEndpoint").String()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	log.Println("Listening to", SQSEndpoint)
+	log.Println("[FROMSQS] Listening to", SQSEndpoint)
 
 	timer := time.NewTimer(1)
 
@@ -107,7 +110,7 @@ func FromSQS(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 				}
 				timer.Reset(time.Duration(10) * time.Millisecond)
 			} else {
-				log.Println("waiting 10 seconds")
+				log.Println("[FROMSQS] waiting 10 seconds")
 				timer.Reset(time.Duration(10) * time.Second)
 			}
 
