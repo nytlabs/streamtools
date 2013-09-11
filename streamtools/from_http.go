@@ -50,6 +50,10 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
+			// catch odd little buffers
+			if p < 2 {
+				break
+			}
 			body.Write(buffer[:p])
 			if bytes.Equal(d1, buffer[p-2:p]) { // ended with }\n
 				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
