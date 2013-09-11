@@ -52,16 +52,12 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			}
 			body.Write(buffer[:p])
 			if bytes.Equal(d1, buffer[p-2:p]) { // ended with }\n
-				for i, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
+				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
 					if len(blob) > 0 {
 						msg, err := simplejson.NewJson(blob)
 						if err != nil {
-							log.Println(i)
-							log.Println(blob)
-							log.Println(string(blob))
 							log.Fatal(err.Error())
 						}
-						log.Println(msg)
 						outChan <- msg
 					}
 				}
