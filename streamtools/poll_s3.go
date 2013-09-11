@@ -62,6 +62,7 @@ func PollS3(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
+			log.Println("found", len(list.Contents), "files")
 			for _, v := range list.Contents {
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
