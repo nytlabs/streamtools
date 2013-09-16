@@ -1,8 +1,8 @@
 package streamtools
 
 import (
+	"github.com/bitly/go-nsq"
 	"github.com/bitly/go-simplejson"
-	"github.com/bitly/nsq/nsq"
 	"log"
 )
 
@@ -13,7 +13,7 @@ var (
 )
 
 type SyncHandler struct {
-	msgChan chan simplejson.Json
+	msgChan chan *simplejson.Json
 }
 
 func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
@@ -21,11 +21,11 @@ func (self *SyncHandler) HandleMessage(m *nsq.Message) error {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	self.msgChan <- *blob
+	self.msgChan <- blob
 	return nil
 }
 
-func nsqReader(topic string, channel string, writeChan chan simplejson.Json) {
+func nsqReader(topic string, channel string, writeChan chan *simplejson.Json) {
 	r, err := nsq.NewReader(topic, channel)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -38,17 +38,35 @@ func nsqReader(topic string, channel string, writeChan chan simplejson.Json) {
 	<-r.ExitChan
 }
 
-func nsqWriter(topic string, channel string, readChan chan simplejson.Json) {
+func nsqWriter(topic string, readChan chan *simplejson.Json) {
 
-	w := nsq.NewWriter(0)
-	err := w.ConnectToNSQ(nsqdHTTPAddrs)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	w := nsq.NewWriter(nsqdHTTPAddrs)
 	for {
 		select {
 		case msg := <-readChan:
 			outMsg, _ := msg.Encode()
+			frameType, data, err := w.Publish(topic, outMsg)
+			if err != nil {
+				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
+			}
+		}
+	}
+}
+
+func deMuxWriter(readChan chan *simplejson.Json) {
+	w := nsq.NewWriter(nsqdHTTPAddrs)
+	for {
+		select {
+		case msg := <-readChan:
+			topic, err := msg.Get("_StreamtoolsTopic").String()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			origMsg := msg.Get("_StreamtoolsData")
+			outMsg, err := origMsg.Encode()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 			frameType, data, err := w.Publish(topic, outMsg)
 			if err != nil {
 				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())

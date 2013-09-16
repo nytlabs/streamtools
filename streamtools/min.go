@@ -7,13 +7,13 @@ import (
 )
 
 var (
-	params simplejson.Json
+	params *simplejson.Json
 	key    string
 	query  stateQuery
 	minval float64
 )
 
-func Min(inChan chan simplejson.Json, ruleChan chan simplejson.Json, queryChan chan stateQuery) {
+func Min(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryChan chan stateQuery) {
 	// initialise the min at +ve infinity
 	minval = math.Inf(1)
 	// block until we recieve a rule
@@ -35,7 +35,7 @@ func Min(inChan chan simplejson.Json, ruleChan chan simplejson.Json, queryChan c
 				log.Fatal(err.Error())
 			}
 			out.Set("min", minval)
-			query.responseChan <- *out
+			query.responseChan <- out
 		case msg := <-inChan:
 			val, err := msg.Get(key).Float64()
 			if err != nil {

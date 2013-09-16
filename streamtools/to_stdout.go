@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func ToStdout(inChan chan simplejson.Json, ruleChan chan *simplejson.Json) {
+func ToStdout(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	for {
 		select {
 		case <-ruleChan:
