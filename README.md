@@ -1,36 +1,17 @@
-stream_tools
-============
+STREAMTOOLS
+===========
 
-Tools for working with streams of data. Heavily using golang and [NSQ](https://github.com/bitly/nsq).
+A set of tools for dealing with streams of JSON, using NSQ as a backend. The tools are envisaged as a set of binaries, not unlike the standard \*NIX tools, except with NSQ (a distributed queueing system) in place of unix pipes. Each tool is thought of as a block and can be connected together with other blocks to form complex data processing systems.
 
-Tools are currently organized in the following categories:
 
-#### IMPORT
-Creates a stream.
+How to build a new block
+========================
 
-_e.g. `poll_to_streamtools`, `csv_to_streamtools`, `nsq_to_streamtools`, etc._
+There are four types of blocks, each represented as an interface:
 
-#### EXPORT
-Non-stream output.
+* InBlock - only have inbound connections (i.e. a sink block)
+* OutBlock - only have outbound connections (i.e. a source block)
+* InOutBlock - have both inbound and outbound connections (i.e. a transform block)
+* StateBlock - has an internal state (i.e. min, max etc)
 
-_e.g. `streamtools_to_vega`, `streamtools_to_ws`, etc._
-
-#### TIMING
-Takes stream input, and outputs stream with modified time-order of messages.
-
-_e.g. `synchronizer`, `metronome`, etc._
-
-#### FILTER
-Takes stream input, and outputs stream filtered by conditions.
-
-_e.g. `filter_by_key`, `sampler`, `rate_limiter`, etc._
-
-#### TRANSFORM
-Takes stream input, and outputs new stream of messages. Single-in-single-out.
-
-_e.g. `feature_extractor`, `type_inferencer`, etc._
-
-#### TRACKING
-Takes stream input, maintains state that is continuously updated on each input message. No output.
-
-_e.g. `distribution`, `boundedness`, etc._
+To make a new block, implement the appropriate interface in the `streamtools` package, then make a binary in `blocks/yourBlock/`. 
