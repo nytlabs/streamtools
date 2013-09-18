@@ -15,10 +15,12 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	log.Println("grouping by", branchString)
 	afterSeconds, err := rules.Get("after").Int()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	log.Println("emitting after", afterSeconds, "seconds")
 
 	after := time.Duration(afterSeconds) * time.Second
 	branch := strings.Split(branchString, ".")
@@ -33,6 +35,8 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 		case msg := <-inChan:
 			id, err := msg.GetPath(branch...).String()
 			if err != nil {
+				log.Println(branch)
+				log.Println(msg)
 				log.Fatal(err.Error())
 			}
 			if len(bunches[id]) > 0 {
@@ -40,6 +44,7 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 			} else {
 				bunches[id] = []*simplejson.Json{msg}
 			}
+			log.Println(len(bunches))
 
 			val, err := simplejson.NewJson([]byte("{}"))
 			if err != nil {
@@ -86,8 +91,10 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 				if err != nil {
 					log.Fatal(err.Error())
 				}
+				log.Println("emitting bunch with id:", id)
 				outMsg.Set("bundle", bunches[id])
 				outChan <- outMsg
+				delete(bunches, id)
 			}
 		}
 	}
