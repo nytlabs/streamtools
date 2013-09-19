@@ -9,7 +9,7 @@ import (
 )
 
 type PQMessage struct {
-	val   []byte
+	val   *[]byte
 	t     time.Time
 	index int
 	data  simplejson.Json

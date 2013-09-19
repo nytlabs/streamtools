@@ -44,7 +44,6 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 			} else {
 				bunches[id] = []*simplejson.Json{msg}
 			}
-			log.Println(len(bunches))
 
 			val, err := simplejson.NewJson([]byte("{}"))
 			if err != nil {
@@ -59,10 +58,11 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 			}
 
 			queueMessage := &PQMessage{
-				val: blob,
+				val: &blob,
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
+			log.Println(len(bunches))
 		case <-waitTimer.C:
 		}
 		for {
@@ -73,7 +73,7 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 				break
 			}
 			v := pqMsg.(*PQMessage).val
-			queueMessage, err := simplejson.NewJson(v)
+			queueMessage, err := simplejson.NewJson(*v)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
