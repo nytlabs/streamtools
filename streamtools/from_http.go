@@ -60,6 +60,7 @@ func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 					if len(blob) > 0 {
 						msg, err := simplejson.NewJson(blob)
 						if err != nil {
+							log.Println("Error decoding JSON from stream:", url)
 							log.Fatal(err.Error())
 						}
 						outChan <- msg
