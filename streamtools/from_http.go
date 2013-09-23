@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+/*
+FromHTTP creates a long lived connection to a streaming HTTP endpoint, emitting
+fully formed JSON whenever it finds one.
+*/
 func FromHTTP(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 	rule := <-ruleChan
