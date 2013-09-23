@@ -3,7 +3,7 @@ package streamtools
 import (
 	"encoding/xml"
 	"github.com/bitly/go-simplejson"
-	"github.com/mrallen1/aws4"
+	"github.com/mikedewar/aws4"
 	"io/ioutil"
 	"log"
 	"net/url"
