@@ -8,21 +8,22 @@ import (
 )
 
 var (
-	topic  = flag.String("topic", "", "topic to read from")
-	window = flag.Float64("window", 10, "size of window in seconds")
+	topic    = flag.String("topic", "", "topic to read from")
+	window   = flag.Float64("window", 10, "size of window in seconds")
+	rulePort = flag.String("port", "8080", "port to listen for new rules on")
 )
 
 func main() {
 	log.SetFlags(log.Lshortfile)
 	flag.Parse()
-	min := streamtools.NewStateBlock(streamtools.Count, "min")
+	block := streamtools.NewStateBlock(streamtools.Count, "count")
 	// make sure the block has a key waiting for it
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 	rule.Set("window", *window)
-	min.RuleChan <- rule
+	block.RuleChan <- rule
 	// set it going
-	min.Run(*topic, "8080")
+	block.Run(*topic, *rulePort)
 }

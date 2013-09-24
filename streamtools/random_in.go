@@ -32,8 +32,9 @@ func Random(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			}
 			msgJson.Set("b", b)
 
-			idx := rand.Intn(len(options))
-			msgJson.Set("option", options[idx])
+			idx0 := rand.Intn(len(options))
+			idx1 := rand.Intn(len(options))
+			msgJson.Set("option", options[idx0])
 
 			nestJson, _ := simplejson.NewJson([]byte("{}"))
 			l := rand.Intn(20) + 10
@@ -45,6 +46,7 @@ func Random(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			nestJson.Set("d", strings.Join(d, " ")+".")
 			nestJson.Set("e", rand.Float32()*8888)
 			nestJson.Set("f", rand.Float32()-rand.Float32()*32)
+			nestJson.Set("nestedOption", options[idx1])
 			msgJson.Set("c", nestJson)
 			msgJson.Set("e", rand.Float32()*8888)
 
