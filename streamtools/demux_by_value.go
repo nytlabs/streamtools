@@ -34,6 +34,8 @@ func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 		case msg := <-inChan:
 			outTopic, err := getKey(key, msg).String()
 			if err != nil {
+				log.Println(key)
+				log.Println(msg)
 				log.Fatal(err.Error())
 			}
 			outTopic = cleanTopicName(outTopic)
