@@ -5,39 +5,38 @@ import (
 	"log"
 )
 
-func maskJSON(mask map[string]interface{}, input map[string]interface{}) map[string]interface{} {
-	t := make(map[string]interface{})
-	for k, _ := range mask {
-		switch input[k].(type) {
+func maskJSON(mask *simplejson.Json, input *simplejson.Json) *simplejson.Json {
+	t, _ := simplejson.NewJson([]byte(`{}`))
+
+	maskMap, err := mask.Map()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	inputMap, err := input.Map()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	for k, _ := range maskMap {
+		switch inputMap[k].(type) {
 		case map[string]interface{}:
-			t[k] = maskJSON(mask[k].(map[string]interface{}), input[k].(map[string]interface{}))
+			t.Set(k, maskJSON(mask.Get(k), input.Get(k)))
 		default:
-			t[k] = input[k]
+			t.Set(k, input.Get(k))
 		}
 	}
 	return t
 }
 
 func Mask(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
-	mask := make(map[string]interface{})
+	mask, _ := simplejson.NewJson([]byte(`{}`))
 	for {
 		select {
 		case inputRule := <-RuleChan:
-			m, err := inputRule.Map()
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-			mask = m
-
+			mask = inputRule
 		case msg := <-inChan:
-			m, err := msg.Map()
-			if err != nil {
-				log.Fatalf(err.Error())
-			}
-
-			var t interface{}
-			t = maskJSON(mask, m)
-			outChan <- t.(*simplejson.Json)
+			outChan <- maskJSON(mask, msg)
 		}
 	}
 }
