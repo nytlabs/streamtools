@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/mikedewar/stream_tools/streamtools"
+	"github.com/nytlabs/stream_tools/streamtools"
 )
 
 var (

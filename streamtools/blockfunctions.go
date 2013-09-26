@@ -52,10 +52,6 @@ func newBlock(name string) *block {
 	}
 }
 
-
-
-
-
 // inBlocks only have an input from stream tools
 type inBlock struct {
 	*block // embeds the block type, giving us updateRule and the sigChan for free
@@ -71,7 +67,7 @@ Run does everything necessary to set the inBlock running.
 
 It starts the inBlockRoutine, which recives messages on the block's inChan channel. It also
 connects to the NSQ service, and starts listening on the block's port for new rules. Send this
-block an os.Signal to stop it. 
+block an os.Signal to stop it.
 */
 func (b *inBlock) Run(topic string, port string) {
 	// set block function going
@@ -86,19 +82,14 @@ func (b *inBlock) Run(topic string, port string) {
 }
 
 /*
-NewInBlock creates and initialises an InBlock. It contains, in addition to the generic block, 
-an inChan channel which is shared with the supplied inBlockRoutine. 
+NewInBlock creates and initialises an InBlock. It contains, in addition to the generic block,
+an inChan channel which is shared with the supplied inBlockRoutine.
 */
 func NewInBlock(f inBlockRoutine, name string) *inBlock {
 	b := newBlock(name)
 	inChan := make(chan *simplejson.Json)
 	return &inBlock{b, inChan, f}
 }
-
-
-
-
-
 
 // outBlocks only have an output to streamtools
 type outBlock struct {
@@ -113,10 +104,10 @@ type outBlockRoutine func(outChan chan *simplejson.Json, RuleChan chan *simplejs
 /*
 Run does everything necessary to set the outblock running.
 
-It starts the outBlockRoutine, which sends messages to the block's outChan channel. 
+It starts the outBlockRoutine, which sends messages to the block's outChan channel.
 
 It also connects to the NSQ service, and starts listening on the block's port for new rules. Send this
-block an os.Signal to stop it. 
+block an os.Signal to stop it.
 */
 func (b *outBlock) Run(topic string, port string) {
 	// set block function going
@@ -131,18 +122,14 @@ func (b *outBlock) Run(topic string, port string) {
 }
 
 /*
-NewOutBlock creates and initialises an outBlock. It contains, in addition to the generic block, 
-an outChan channel which is shared with the supplied outBlockRoutine. 
+NewOutBlock creates and initialises an outBlock. It contains, in addition to the generic block,
+an outChan channel which is shared with the supplied outBlockRoutine.
 */
 func NewOutBlock(f outBlockRoutine, name string) *outBlock {
 	b := newBlock(name)
 	outChan := make(chan *simplejson.Json)
 	return &outBlock{b, outChan, f}
 }
-
-
-
-
 
 // state blocks only have inbound data, but maintain a state which you can query via HTTP
 type stateBlock struct {
@@ -158,11 +145,11 @@ type stateBlockRoutine func(inChan chan *simplejson.Json, RuleChan chan *simplej
 /*
 Run does everything necessary to set the stateBlock running.
 
-It starts the supplied stateBlockRoutine, which recieves messages on the block's inChan channel, and creates a 
-handler on the block's server, accessed via /state, that returns JSON describing the block's current state. 
+It starts the supplied stateBlockRoutine, which recieves messages on the block's inChan channel, and creates a
+handler on the block's server, accessed via /state, that returns JSON describing the block's current state.
 
 It also connects to the NSQ service, and starts listening on the block's port for new rules. Send this
-block an os.Signal to stop it. 
+block an os.Signal to stop it.
 */
 func (b *stateBlock) Run(topic string, port string) {
 	go b.f(b.inChan, b.RuleChan, b.queryChan)
@@ -199,8 +186,8 @@ func (b *stateBlock) listenForStateQuery() {
 }
 
 /*
-NewStateBlock creates and initialises a stateBlock. It contains, in addition to the generic block, 
-the inChan channel and the queryChan channel, both of which are shared with the supplied stateBlockRoutine. 
+NewStateBlock creates and initialises a stateBlock. It contains, in addition to the generic block,
+the inChan channel and the queryChan channel, both of which are shared with the supplied stateBlockRoutine.
 */
 func NewStateBlock(f stateBlockRoutine, name string) *stateBlock {
 	b := newBlock(name)
@@ -208,8 +195,6 @@ func NewStateBlock(f stateBlockRoutine, name string) *stateBlock {
 	queryChan := make(chan stateQuery)
 	return &stateBlock{b, inChan, queryChan, f}
 }
-
-
 
 // transfer blocks have both inbound and outbound data
 type transferBlock struct {
@@ -226,10 +211,10 @@ type transferBlockRoutine func(inChan chan *simplejson.Json, outChan chan *simpl
 Run does everything necessary to set the transferBlock running.
 
 It starts the supplied transferBlockRoutine, which recieves messages on the block's inChan channel and writes
-messages on the block's outChan channel. 
+messages on the block's outChan channel.
 
 It also connects to the NSQ service, and starts listening on the block's port for new rules. Send this
-block an os.Signal to stop it. 
+block an os.Signal to stop it.
 */
 func (b *transferBlock) Run(inTopic string, outTopic string, port string) {
 	go b.f(b.inChan, b.outChan, b.RuleChan)
@@ -241,8 +226,8 @@ func (b *transferBlock) Run(inTopic string, outTopic string, port string) {
 }
 
 /*
-NewTransferBlock creates and initialises a transfeBlock. It contains, in addition to the generic block, 
-the inChan channel and the queryChan channel, both of which are shared with the supplied stateBlockRoutine. 
+NewTransferBlock creates and initialises a transfeBlock. It contains, in addition to the generic block,
+the inChan channel and the queryChan channel, both of which are shared with the supplied stateBlockRoutine.
 */
 func NewTransferBlock(f transferBlockRoutine, name string) *transferBlock {
 	b := newBlock(name)
