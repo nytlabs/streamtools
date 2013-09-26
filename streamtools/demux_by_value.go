@@ -13,6 +13,12 @@ func cleanTopicName(topic string) string {
 	return topic
 }
 
+func getKey(key string, json *simplejson.Json) *simplejson.Json {
+	keys := strings.Split(key, ".")
+	value := json.GetPath(keys...)
+	return value
+}
+
 func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 
 	rules := <-RuleChan
@@ -26,8 +32,10 @@ func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 		select {
 		case <-RuleChan:
 		case msg := <-inChan:
-			outTopic, err := msg.Get(key).String()
+			outTopic, err := getKey(key, msg).String()
 			if err != nil {
+				log.Println(key)
+				log.Println(msg)
 				log.Fatal(err.Error())
 			}
 			outTopic = cleanTopicName(outTopic)
