@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/bitly/go-simplejson"
-	"github.com/nytlabs/stream_tools/streamtools"
+	"github.com/nytlabs/streamtools/streamtools"
 	"log"
 )
 
