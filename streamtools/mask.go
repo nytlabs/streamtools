@@ -5,12 +5,12 @@ import (
 	"log"
 )
 
-func MaskJSON(mask map[string]interface{}, input map[string]interface{}) map[string]interface{} {
+func maskJSON(mask map[string]interface{}, input map[string]interface{}) map[string]interface{} {
 	t := make(map[string]interface{})
 	for k, _ := range mask {
 		switch input[k].(type) {
 		case map[string]interface{}:
-			t[k] = MaskJSON(mask[k].(map[string]interface{}), input[k].(map[string]interface{}))
+			t[k] = maskJSON(mask[k].(map[string]interface{}), input[k].(map[string]interface{}))
 		default:
 			t[k] = input[k]
 		}
@@ -36,7 +36,7 @@ func Mask(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan 
 			}
 
 			var t interface{}
-			t = MaskJSON(mask, m)
+			t = maskJSON(mask, m)
 			outChan <- t.(*simplejson.Json)
 		}
 	}
