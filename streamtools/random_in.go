@@ -15,7 +15,7 @@ var (
 
 func Random(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	msgJson, _ := simplejson.NewJson([]byte("{}"))
-	c := time.Tick(5 * time.Second)
+	c := time.Tick(1 * time.Second)
 	r := rand.New(rand.NewSource(99))
 
 	for {
