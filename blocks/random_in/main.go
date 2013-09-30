@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"github.com/nytlabs/streamtools/streamtools"
-	"log"
-	"os"
 )
 
 var (
@@ -15,12 +13,7 @@ var (
 func main() {
 	flag.Parse()
 
-	log.SetPrefix(" [" + *name + "] ")
-	logfile, err := os.Create(*name + ".log")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	log.SetOutput(logfile)
+	streamtools.SetupLogger(name)
 
 	random := streamtools.NewOutBlock(streamtools.Random, *name)
 	random.Run(*topic, "8081")
