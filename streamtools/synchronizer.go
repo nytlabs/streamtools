@@ -15,12 +15,12 @@ func Synchronizer(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 
 	timeKey, err := params.Get("key").String()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	lag, err := params.Get("lag").Int()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	lagTime := time.Duration(time.Duration(lag) * time.Second)
