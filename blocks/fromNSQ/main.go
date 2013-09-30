@@ -11,6 +11,7 @@ var (
 	readTopic   = flag.String("read_topic", "", "NSQ topic to read from")
 	writeTopic  = flag.String("write_topic", "", "streamtools topic to write to")
 	lookupdAddr = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd address")
+	maxInFlight = flag.Float64("max-in-flight", 1, "how many messages will be transferred at a time")
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 	}
 	rule.Set("readTopic", *readTopic)
 	rule.Set("lookupdAddr", *lookupdAddr)
+	rule.Set("maxInFlight", *maxInFlight)
 	fromNSQBlock.RuleChan <- rule
 	fromNSQBlock.Run(*writeTopic, "8080")
 }

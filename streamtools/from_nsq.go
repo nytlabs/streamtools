@@ -1,8 +1,8 @@
 package streamtools
 
 import (
+	"github.com/bitly/go-nsq"
 	"github.com/bitly/go-simplejson"
-    "github.com/bitly/go-nsq"
 	"log"
 )
 
@@ -25,11 +25,13 @@ func FromNSQ(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 
 	readTopic, err := rules.Get("readTopic").String()
 	lookupdAddr, err := rules.Get("lookupdAddr").String()
+	maxInFlight, err := rules.Get("maxInFlight").Int()
 
 	reader, err := nsq.NewReader(readTopic, "fromNSQ")
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	reader.SetMaxInFlight(maxInFlight)
 
 	h := readWriteHandler{outChan}
 	reader.AddHandler(h)
