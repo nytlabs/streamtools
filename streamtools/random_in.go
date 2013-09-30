@@ -2,6 +2,7 @@ package streamtools
 
 import (
 	"github.com/bitly/go-simplejson"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -51,6 +52,7 @@ func Random(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 			msgJson.Set("e", rand.Float32()*8888)
 
 			outChan <- msgJson
+			log.Println("emitted random blob")
 
 		case <-ruleChan:
 		}

@@ -8,14 +8,16 @@ import (
 )
 
 var (
-	readTopic = flag.String("read_topic", "", "topic to read from")
+	readTopic = flag.String("read-topic", "", "topic to read from")
 	key       = flag.String("key", "", "key to demux on")
+	name      = flag.String("name", "demux-by-value", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 
 	flag.Parse()
+	streamtools.SetupLogger(name)
+
 	deMuxByValueBlock := streamtools.NewTransferBlock(streamtools.DeMuxByValue, "demux_by_value")
 
 	rule, err := simplejson.NewJson([]byte("{}"))

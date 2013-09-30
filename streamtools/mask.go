@@ -10,12 +10,12 @@ func maskJSON(mask *simplejson.Json, input *simplejson.Json) *simplejson.Json {
 
 	maskMap, err := mask.Map()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	inputMap, err := input.Map()
 	if err != nil {
-		log.Println(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	for k, _ := range maskMap {
@@ -30,7 +30,7 @@ func maskJSON(mask *simplejson.Json, input *simplejson.Json) *simplejson.Json {
 }
 
 func Mask(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
-	mask, _ := simplejson.NewJson([]byte(`{}`))
+	mask := <-RuleChan
 	for {
 		select {
 		case inputRule := <-RuleChan:
