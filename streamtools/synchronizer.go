@@ -34,6 +34,7 @@ func Synchronizer(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 		case msg := <-inChan:
 			msgTime, err := msg.Get(timeKey).Int64()
 			if err != nil {
+				log.Println("failed looking for", timeKey)
 				log.Fatalf(err.Error())
 			}
 
