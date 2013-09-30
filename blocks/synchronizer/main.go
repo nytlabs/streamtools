@@ -8,8 +8,7 @@ import (
 )
 
 var (
-	topic      = flag.String("topic", "", "topic to read from")
-	lagTime    = flag.Int64("lag", 10, "duration of lag to synchronize in seconds")
+	lagTime    = flag.Float64("lag", 10, "duration of lag to synchronize in seconds")
 	timeKey    = flag.String("key", "", "json key to use for time")
 	readTopic  = flag.String("read_topic", "", "topic to write to")
 	writeTopic = flag.String("write_topic", "", "topic to write to")
