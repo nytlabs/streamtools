@@ -14,12 +14,13 @@ var (
 	prefix       = flag.String("prefix", "", "s3 prefix")
 	gzip         = flag.Bool("gzip_flag", true, "set to false if the files on S3 aren't gzipped")
 	rulePort     = flag.String("rule_port", "8080", "port to listen for new rules on")
+	name         = flag.String("name", "poll-s3", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
-	S3PollBlock := streamtools.NewOutBlock(streamtools.PollS3, "S3Poller")
+	streamtools.SetupLogger(name)
+	block := streamtools.NewOutBlock(streamtools.PollS3, *name)
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {
 		log.Fatal(err.Error())
@@ -28,6 +29,6 @@ func main() {
 	rule.Set("bucketname", *bucket)
 	rule.Set("prefix", *prefix)
 	rule.Set("gzipFlag", *gzip)
-	S3PollBlock.RuleChan <- rule
-	S3PollBlock.Run(*writeTopic, *rulePort)
+	block.RuleChan <- rule
+	block.Run(*writeTopic, *rulePort)
 }

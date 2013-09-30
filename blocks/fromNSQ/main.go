@@ -8,15 +8,18 @@ import (
 )
 
 var (
-	readTopic   = flag.String("read_topic", "", "NSQ topic to read from")
-	writeTopic  = flag.String("write_topic", "", "streamtools topic to write to")
+	readTopic   = flag.String("read-topic", "", "NSQ topic to read from")
+	writeTopic  = flag.String("write-topic", "", "streamtools topic to write to")
 	lookupdAddr = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd address")
 	maxInFlight = flag.Float64("max-in-flight", 1, "how many messages will be transferred at a time")
+	name        = flag.String("name", "from-NSQ", "name of block")
 )
 
 func main() {
 	flag.Parse()
-	fromNSQBlock := streamtools.NewOutBlock(streamtools.FromNSQ, "fromNSQ")
+	streamtools.SetupLogger(name)
+
+	fromNSQBlock := streamtools.NewOutBlock(streamtools.FromNSQ, *name)
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {
 		log.Fatal(err.Error())

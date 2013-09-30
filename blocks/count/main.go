@@ -11,11 +11,13 @@ var (
 	topic    = flag.String("topic", "", "topic to read from")
 	window   = flag.Float64("window", 10, "size of window in seconds")
 	rulePort = flag.String("port", "8080", "port to listen for new rules on")
+	name     = flag.String("name", "count", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
+
 	flag.Parse()
+	streamtools.SetupLogger(name)
 	block := streamtools.NewStateBlock(streamtools.Count, "count")
 	// make sure the block has a key waiting for it
 	rule, err := simplejson.NewJson([]byte("{}"))

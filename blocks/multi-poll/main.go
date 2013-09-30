@@ -12,12 +12,13 @@ var (
 	writeTopic   = flag.String("write-topic", "", "streamtools topic to write to")
 	endpoints    = flag.String("endpoint", "", `in the form [{"endpoint":"http://bla.com", "name":"bla"}]`)
 	rulePort     = flag.String("rule_port", "8080", "port to listen for new rules on")
+	name         = flag.String("name", "multi-poll-http", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
-	block := streamtools.NewOutBlock(streamtools.MultiPollHttp, "httpPoller")
+	streamtools.SetupLogger(name)
+	block := streamtools.NewOutBlock(streamtools.MultiPollHttp, *name)
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {
 		log.Fatal(err.Error())

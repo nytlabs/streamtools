@@ -7,10 +7,11 @@ import (
 
 var (
 	topic = flag.String("topic", "", "topic to read from")
+	name  = flag.String("name", "to-stdout", "name of block")
 )
 
 func main() {
 	flag.Parse()
-	to_stdout := streamtools.NewInBlock(streamtools.ToStdout, "to_stdout")
-	to_stdout.Run(*topic, "8080")
+	block := streamtools.NewInBlock(streamtools.ToStdout, *name)
+	block.Run(*topic, "8080")
 }

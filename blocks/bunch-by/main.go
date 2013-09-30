@@ -10,13 +10,14 @@ import (
 var (
 	key        = flag.String("key", "", "create bunches according to this key")
 	after      = flag.Float64("after", 1800, "number of seconds to wait for no activity before emitting")
-	readTopic  = flag.String("read_topic", "", "topic to read from")
-	writeTopic = flag.String("write_topic", "", "topic to write to")
+	readTopic  = flag.String("read-topic", "", "topic to read from")
+	writeTopic = flag.String("write-topic", "", "topic to write to")
+	name       = flag.String("name", "bunch-by", "name of block")
 )
 
 func main() {
 
-	log.SetFlags(log.Lshortfile)
+	streamtools.SetupLogger(name)
 
 	flag.Parse()
 

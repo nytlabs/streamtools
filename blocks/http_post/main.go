@@ -9,19 +9,19 @@ import (
 
 var (
 	keymapping = flag.String("keymapping", "", "data key to query parameter mapping json")
-	readTopic  = flag.String("read_topic", "", "topic to write to")
+	readTopic  = flag.String("read-topic", "", "topic to read from")
 	endpoint   = flag.String("endpoint", "", "endpoint")
+	name       = flag.String("name", "http-post", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
-
 	flag.Parse()
+	streamtools.SetupLogger(name)
 
 	log.Println("reading from", *readTopic)
 	log.Println("using endpoint", *endpoint)
 
-	block := streamtools.NewInBlock(streamtools.PostHTTP, "http_post")
+	block := streamtools.NewInBlock(streamtools.PostHTTP, *name)
 
 	keymappingjson := `{"keymappings":` + *keymapping + "}"
 
