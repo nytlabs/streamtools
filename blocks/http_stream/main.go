@@ -8,19 +8,20 @@ import (
 )
 
 var (
-	writeTopic = flag.String("write_topic", "", "topic to write to")
+	writeTopic = flag.String("write-topic", "", "topic to write to")
 	endpoint   = flag.String("endpoint", "", "endpoint to listen")
 	auth       = flag.String("auth", "", "optional usr:pwd string")
+	name       = flag.String("name", "from-http", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
+	streamtools.SetupLogger(name)
 
-	log.Println("[HTTPSTREAM] writing to", *writeTopic)
-	log.Println("[HTTPSTREAM] using endpoint", *endpoint)
+	log.Println("writing to", *writeTopic)
+	log.Println("using endpoint", *endpoint)
 
-	block := streamtools.NewOutBlock(streamtools.FromHTTP, "fromHTTP")
+	block := streamtools.NewOutBlock(streamtools.FromHTTP, *name)
 
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {

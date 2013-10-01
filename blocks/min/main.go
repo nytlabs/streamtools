@@ -10,12 +10,13 @@ import (
 var (
 	topic = flag.String("topic", "", "topic to read from")
 	key   = flag.String("key", "", "key whose value you would like to find the minimum of")
+	name  = flag.String("name", "min", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
-	min := streamtools.NewStateBlock(streamtools.Min, "min")
+	streamtools.SetupLogger(name)
+	min := streamtools.NewStateBlock(streamtools.Min, *name)
 	// make sure the block has a key waiting for it
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {

@@ -8,17 +8,17 @@ import (
 )
 
 var (
-	topic      = flag.String("topic", "", "topic to read from")
-	lagTime    = flag.Int64("lag", 10, "duration of lag to synchronize in seconds")
+	lagTime    = flag.Float64("lag", 10, "duration of lag to synchronize in seconds")
 	timeKey    = flag.String("key", "", "json key to use for time")
-	readTopic  = flag.String("read_topic", "", "topic to write to")
-	writeTopic = flag.String("write_topic", "", "topic to write to")
+	readTopic  = flag.String("read-topic", "", "topic to write to")
+	writeTopic = flag.String("write-topic", "", "topic to write to")
+	name       = flag.String("name", "synchroniser", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 	flag.Parse()
-	block := streamtools.NewTransferBlock(streamtools.Synchronizer, "synchronizer")
+	streamtools.SetupLogger(name)
+	block := streamtools.NewTransferBlock(streamtools.Synchronizer, *name)
 	// make sure the block has a key waiting for it
 	rule, err := simplejson.NewJson([]byte("{}"))
 	if err != nil {

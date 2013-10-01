@@ -9,21 +9,23 @@ import (
 
 var (
 	keymapping = flag.String("keymapping", "", "data key to query parameter mapping json")
-	writeTopic = flag.String("write_topic", "", "topic to write to")
-	readTopic  = flag.String("read_topic", "", "topic to write to")
+	writeTopic = flag.String("write-topic", "", "topic to write to")
+	readTopic  = flag.String("read-topic", "", "topic to read from")
 	endpoint   = flag.String("endpoint", "", "endpoint")
+	name       = flag.String("name", "fetch-json", "name of block")
 )
 
 func main() {
-	log.SetFlags(log.Lshortfile)
 
 	flag.Parse()
+
+	streamtools.SetupLogger(name)
 
 	log.Println("reading from", *readTopic)
 	log.Println("writing to", *writeTopic)
 	log.Println("using endpoint", *endpoint)
 
-	block := streamtools.NewTransferBlock(streamtools.FetchJSON, "fetch_json")
+	block := streamtools.NewTransferBlock(streamtools.FetchJSON, *name)
 
 	keymappingjson := `{"keymappings":` + *keymapping + "}"
 

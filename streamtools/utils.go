@@ -4,6 +4,7 @@ import (
 	"github.com/bitly/go-nsq"
 	"github.com/bitly/go-simplejson"
 	"log"
+	"os"
 )
 
 var (
@@ -73,4 +74,13 @@ func deMuxWriter(readChan chan *simplejson.Json) {
 			}
 		}
 	}
+}
+
+func SetupLogger(name *string) {
+	log.SetPrefix(" [" + *name + "] ")
+	logfile, err := os.Create(*name + ".log")
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.SetOutput(logfile)
 }
