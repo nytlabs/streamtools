@@ -44,7 +44,7 @@ func maskJSON(mask *simplejson.Json, input *simplejson.Json) *simplejson.Json {
 // And an incoming message looks like:
 //	{"a":24, "b":{"c":"test", "d":[1,3,4]}, "f":5, "x":{"y":5, "z":10}}
 // The resulting object after the application of Mask would be:
-//	{"a":24, "b":{"d":[1,3,4]}, "x":{"y":5, "z":10}
+//	{"a":24, "b":{"d":[1,3,4]}, "x":{"y":5, "z":10}}
 func Mask(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 	mask := <-RuleChan
 	for {
