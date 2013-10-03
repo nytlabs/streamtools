@@ -35,8 +35,6 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 		case msg := <-inChan:
 			id, err := msg.GetPath(branch...).String()
 			if err != nil {
-				log.Println(branch)
-				log.Println(msg)
 				log.Fatal(err.Error())
 			}
 			if len(bunches[id]) > 0 {
@@ -62,7 +60,6 @@ func Bunch(inChan chan *simplejson.Json, outChan chan *simplejson.Json, RuleChan
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
-			log.Println(len(bunches))
 		case <-waitTimer.C:
 		}
 		for {
