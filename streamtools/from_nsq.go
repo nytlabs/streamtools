@@ -26,8 +26,9 @@ func FromNSQ(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json) {
 	readTopic, err := rules.Get("readTopic").String()
 	lookupdAddr, err := rules.Get("lookupdAddr").String()
 	maxInFlight, err := rules.Get("maxInFlight").Int()
+	readChannel, err := rules.Get("readChannel").String()
 
-	reader, err := nsq.NewReader(readTopic, "fromNSQ")
+	reader, err := nsq.NewReader(readTopic, readChannel)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
