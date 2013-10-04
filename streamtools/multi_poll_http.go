@@ -28,6 +28,7 @@ func MultiPollHttp(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json
 		log.Fatal(err.Error())
 	}
 	endpointsString, err := rules.Get("endpoints").String()
+	log.Println("using", endpointsString)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
