@@ -13,6 +13,7 @@ var (
 	lookupdAddr = flag.String("lookupd-http-address", "127.0.0.1:4161", "lookupd address")
 	maxInFlight = flag.Float64("max-in-flight", 1, "how many messages will be transferred at a time")
 	name        = flag.String("name", "from-NSQ", "name of block")
+	readChannel = flag.String("read-channel","fromNSQ","name of channel")
 )
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 	rule.Set("readTopic", *readTopic)
 	rule.Set("lookupdAddr", *lookupdAddr)
 	rule.Set("maxInFlight", *maxInFlight)
+	rule.Set("readChannel", *readChannel)
+	
 	fromNSQBlock.RuleChan <- rule
 	fromNSQBlock.Run(*writeTopic, "8080")
 }
