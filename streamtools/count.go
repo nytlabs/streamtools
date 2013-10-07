@@ -41,7 +41,6 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 				log.Fatal(err.Error())
 			}
 			heap.Push(pq, queueMessage)
-			log.Println(len(*pq))
 		case <-waitTimer.C:
 		}
 		for {
