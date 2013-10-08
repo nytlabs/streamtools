@@ -28,6 +28,7 @@ func MultiPollHttp(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json
 		log.Fatal(err.Error())
 	}
 	endpointsString, err := rules.Get("endpoints").String()
+	log.Println("using", endpointsString)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -48,7 +49,7 @@ func MultiPollHttp(outChan chan *simplejson.Json, ruleChan chan *simplejson.Json
 		case <-ticker.C:
 			out, err := simplejson.NewJson([]byte("{}"))
 			for i, rule := range endpointsSlice {
-				log.Println("[MULTIPOLLHTTP] polling", rule.Endpoint)
+				log.Println("polling", rule.Endpoint)
 				resp, err := http.Get(rule.Endpoint)
 				if err != nil {
 					log.Fatal(err.Error())

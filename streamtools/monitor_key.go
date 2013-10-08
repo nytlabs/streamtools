@@ -27,7 +27,8 @@ func MonitorKey(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, qu
 
 			k, err := getKey(key, msg).String()
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Println(err.Error())
+				break
 			}
 			if val, ok := set[k]; ok {
 				val.count += 1

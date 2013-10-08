@@ -34,9 +34,8 @@ func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 		case msg := <-inChan:
 			outTopic, err := getKey(key, msg).String()
 			if err != nil {
-				log.Println(key)
-				log.Println(msg)
-				log.Fatal(err.Error())
+				log.Println("MISSING:", key)
+				log.Println(err.Error())
 			}
 			outTopic = cleanTopicName(outTopic)
 			outMsg, err := simplejson.NewJson([]byte("{}"))
@@ -51,7 +50,5 @@ func DeMuxByValue(inChan chan *simplejson.Json, outChan chan *simplejson.Json, R
 			outMsg.Set("_StreamtoolsData", msgMap)
 			outChan <- outMsg
 		}
-
 	}
-
 }
