@@ -83,7 +83,10 @@ func ToWebSocket(inChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 		log.Fatalf(err.Error())
 	}
 
-	wsConfig.Protocol = []string{"base64"}
+	// wsConfig.Protocol = []string{"binary"}
+	// currently not specifying a protocol which works with Chrome but not node packages.
+	// at some point stupid handshake nonsense may need to be addressed
+	// https://github.com/border/golang-china/blob/master/pkg/websocket/server.go
 
 	http.Handle(wsHandle, websocket.Server{
 		Handler: func(ws *websocket.Conn) {
