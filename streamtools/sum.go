@@ -68,7 +68,7 @@ func Sum(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryChan
 			if pqMsg == nil {
 				// either the queue is empty, or it's not time to emit
 				if diff == 0 {
-					diff = time.Duration(5) * time.Second
+					diff = time.Duration(500) * time.Millisecond
 				}
 				waitTimer.Reset(diff)
 				break

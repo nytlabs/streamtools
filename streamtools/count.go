@@ -49,7 +49,7 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 				// either the queue is empty, or it's not time to emit
 				if diff == 0 {
 					// then the queue is empty. Pause for 5 seconds before checking again
-					diff = time.Duration(5)*time.Second
+					diff = time.Duration(500) * time.Millisecond
 				}
 				waitTimer.Reset(diff)
 				break
