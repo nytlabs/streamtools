@@ -67,8 +67,8 @@ func (h *wsServer) run() {
 // ToWebSocket emits all messages from a topic into a base64 encoded websocket handle
 func ToWebSocket(inChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 	rules := <-RuleChan
-	wsPort, err := rules.Get("port").String()
-	wsHandle, err := rules.Get("handle").String()
+	wsPort, err := rules.Get("wsport").String()
+	wsHandle, err := rules.Get("wshandle").String()
 
 	var wsConfig *websocket.Config
 	var h = wsServer{

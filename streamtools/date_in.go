@@ -24,13 +24,13 @@ func Date(outChan chan *simplejson.Json, RuleChan chan *simplejson.Json) {
 			emit <- time.Now()
 		case t := <-emit:
 			msgJson.Set("date", t.Format(fmtString))
-			log.Println("[DATEIN] emitting", msgJson)
+			log.Println("emitting", msgJson)
 			outChan <- msgJson
 
 			tomorrow := time.Date(t.Year(), t.Month(), t.Day()+1, 0, 0, 0, 0, utcLoc)
 			d := tomorrow.Sub(t)
 			timer.Reset(d)
-			log.Println("[DATEIN] Next emit time in", d)
+			log.Println("next emit time in", d)
 		}
 	}
 }
