@@ -1,15 +1,17 @@
 package streamtools
 
 import (
+	"bytes"
 	"container/heap"
+	"encoding/binary"
 	"github.com/bitly/go-simplejson"
 	"log"
 	"time"
 )
 
-func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryChan chan stateQuery) {
+func Sum(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryChan chan stateQuery) {
 	// block until we recieve a rule
-	params = <-ruleChan
+	params := <-ruleChan
 	windowSeconds, err := params.Get("window").Float64()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -17,10 +19,16 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 	window := time.Duration(windowSeconds) * time.Second
 	waitTimer := time.NewTimer(100 * time.Millisecond)
 
+	key, err := params.Get("key").String()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
-	emptyByte := make([]byte, 0)
+	// store the sum of the values in the PQ
+	sum := 0.0
 
 	for {
 		select {
@@ -30,11 +38,23 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			out.Set("count", len(*pq))
+			out.Set("sum", sum)
 			query.responseChan <- out
-		case <-inChan:
+		case msg := <-inChan:
+			val, err := getKey(key, msg).Float64()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			log.Println("adding", val)
+			sum += val
+
+			// convert val to bytes for the queue
+			buf := new(bytes.Buffer)
+			err = binary.Write(buf, binary.LittleEndian, val)
+			valBytes := buf.Bytes()
+
 			queueMessage := &PQMessage{
-				val: &emptyByte,
+				val: &valBytes,
 				t:   time.Now(),
 			}
 			if err != nil {
@@ -48,12 +68,22 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 			if pqMsg == nil {
 				// either the queue is empty, or it's not time to emit
 				if diff == 0 {
-					// then the queue is empty. Pause for 5 seconds before checking again
 					diff = time.Duration(500) * time.Millisecond
 				}
 				waitTimer.Reset(diff)
 				break
 			}
+
+			// decode the val so we can subtract it from the sum
+			var val float64
+			valBytes := pqMsg.(*PQMessage).val
+			buf := bytes.NewBuffer(*valBytes)
+			err := binary.Read(buf, binary.LittleEndian, &val)
+			if err != nil {
+				log.Println("binary.Read failed:", err)
+			}
+			log.Println("subtracting", val)
+			sum -= val
 		}
 	}
 }
