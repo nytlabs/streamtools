@@ -77,6 +77,7 @@ func deMuxWriter(readChan chan *simplejson.Json) {
 }
 
 func SetupLogger(name *string) {
+	//log.SetFlags(log.Lshortfile)
 	log.SetPrefix(" [" + *name + "] ")
 	logfile, err := os.Create(*name + ".log")
 	if err != nil {
