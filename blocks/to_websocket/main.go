@@ -9,8 +9,9 @@ import (
 var (
 	topic  = flag.String("topic", "", "topic to read from")
 	name   = flag.String("name", "to-websocket", "name of block")
-	port   = flag.String("port", "8888", "port to serve websocket")
-	handle = flag.String("handle", "/ws", "handle to serve websocket on eg: /ws")
+	port   = flag.String("port", "8080", "rule port")
+	wsport   = flag.String("ws-port", "8888", "port to serve websocket")
+	wshandle = flag.String("ws-handle", "/ws", "handle to serve websocket on eg: /ws")
 )
 
 func main() {
@@ -18,9 +19,9 @@ func main() {
 	block := streamtools.NewInBlock(streamtools.ToWebSocket, *name)
 
 	rule, _ := simplejson.NewJson([]byte("{}"))
-	rule.Set("port", *port)
-	rule.Set("handle", *handle)
+	rule.Set("wsport", *wsport)
+	rule.Set("wshandle", *wshandle)
 	block.RuleChan <- rule
 
-	block.Run(*topic, "8080")
+	block.Run(*topic, *port)
 }
