@@ -47,6 +47,10 @@ func Count(inChan chan *simplejson.Json, ruleChan chan *simplejson.Json, queryCh
 			pqMsg, diff := pq.PeekAndShift(time.Now(), window)
 			if pqMsg == nil {
 				// either the queue is empty, or it's not time to emit
+				if diff == 0 {
+					// then the queue is empty. Pause for 5 seconds before checking again
+					diff = 5
+				}
 				waitTimer.Reset(diff)
 				break
 			}
