@@ -1,9 +1,9 @@
 package streamtools
 
 import (
+	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
-	"time"
 )
 
 type LastSeenBlock struct {
