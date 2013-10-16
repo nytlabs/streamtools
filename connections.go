@@ -15,6 +15,7 @@ func (b Connection) blockRoutine() {
 	for {
 		select {
 		case msg := <-b.inChan:
+			log.Println("recieved a message")
 			lastSeen = msg
 			b.outChan <- msg
 		case query := <-b.queryChan:
