@@ -68,6 +68,7 @@ func (self *hub) CreateConnection(from string, to string) {
 	conn.setInChan(self.blockMap[from].getOutChan())
 	conn.setOutChan(self.blockMap[to].getInChan())
 	self.connectionMap[conn.getID()] = conn
+	go conn.blockRoutine()
 }
 
 func (self *hub) CreateBlock(blockType string) {
