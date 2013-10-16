@@ -41,4 +41,11 @@ func buildLibrary() {
 		blockDescription: "poll block tells you what the last message is",
 	}
 
+	library["tolog"] = BlockTemplate{
+		blockType:        "tolog",
+		blockFactory:	  NewToLog,
+		blockDescription: "prints messages in log",
+	}
+
+
 }
