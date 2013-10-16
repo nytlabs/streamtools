@@ -23,10 +23,10 @@ type hub struct {
 }
 
 func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprintln(w, "hello! this is streamtools")
+	fmt.Fprintln(w, "hello! this is streamtools")
 }
 
-func (self *hub) createHandler(w htti.ResponseWriter, r *http.Request) {
+func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("could not parse form on /create")
@@ -35,8 +35,8 @@ func (self *hub) createHandler(w htti.ResponseWriter, r *http.Request) {
 	if blockType, ok := r.Form["blockType"]; ok {
 		self.CreateBlock(blockType[0])
 	} else {
-        log.Println("no blocktype specified")
-    }
+		log.Println("no blocktype specified")
+	}
 }
 
 func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
@@ -61,16 +61,14 @@ func (self *hub) Run() {
 	http.HandleFunc("/create", self.createHandler)
 	http.HandleFunc("/connect", self.connectHandler)
 
-    log.Println("starting stream tools on port", *port)
-	err := http.ListenAndServe(":" + *port, nil)
-)
-
-type StreamtoolsQuery struct {
-	w http.ResponseWriter
-	r *http.Request
+	log.Println("starting stream tools on port", *port)
+	err := http.ListenAndServe(":"+*port, nil)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 }
 
-func Run(){
-    h := hub{}
+func Run() {
+	h := hub{}
 	h.Run()
 }
