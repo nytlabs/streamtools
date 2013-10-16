@@ -1,7 +1,6 @@
 package streamtools
 
 import (
-	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
 )
@@ -15,12 +14,11 @@ func (b Connection) blockRoutine() {
 	for {
 		select {
 		case msg := <-b.inChan:
-			log.Println("recieved a message")
 			lastSeen = msg
 			b.outChan <- msg
-		case query := <-b.queryChan:
+		case <-b.queryChan:
 			log.Println("recieved query")
-			fmt.Fprintln(query.w, lastSeen)
+			log.Println(lastSeen)
 		}
 	}
 }

@@ -19,7 +19,7 @@ type BlockTemplate struct {
 type BlockLibrary map[string]BlockTemplate
 
 func buildLibrary() {
-	log.Println("building library")
+	log.Println("building block library")
 	library = make(map[string]BlockTemplate)
 
 	// BLOCKS

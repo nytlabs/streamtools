@@ -1,7 +1,6 @@
 package streamtools
 
 import (
-	"fmt"
 	"github.com/bitly/go-simplejson"
 	"log"
 )
@@ -11,24 +10,15 @@ type LastSeenBlock struct {
 }
 
 func (b LastSeenBlock) blockRoutine() {
-	log.Println("starting LastSeen block")
+	log.Println("starting block")
 	lastSeen, _ := simplejson.NewJson([]byte("{}"))
 	for {
 		select {
 		case msg := <-b.inChan:
-			log.Println("lastseen got a message")
 			lastSeen = msg
 		case query := <-b.queryChan:
 			log.Println("recieved query")
-			out, err := lastSeen.MarshalJSON()
-			if err != nil {
-				log.Println(err.Error())
-			}
-			log.Println(string(out))
-			_, err = fmt.Fprintf(query.w, string(out))
-			if err != nil {
-				log.Println(err.Error())
-			}
+			query.responseChan <- lastSeen
 		}
 	}
 }

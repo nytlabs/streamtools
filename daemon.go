@@ -3,6 +3,7 @@ package streamtools
 import (
 	"flag"
 	"fmt"
+	"github.com/bitly/go-simplejson"
 	"log"
 	"net/http"
 	"strings"
@@ -14,8 +15,8 @@ var (
 )
 
 type query struct {
-	w http.ResponseWriter
-	r *http.Request
+	r            *http.Request
+	responseChan chan *simplejson.Json
 }
 
 type hub struct {
@@ -59,8 +60,16 @@ func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("sending query to", id)
 	// get the relevant block's query channel
 	queryChan := self.blockMap[id].getQueryChan()
+	responseChan := make(chan *simplejson.Json)
 	// submit the query
-	queryChan <- query{w, r}
+	queryChan <- query{r, responseChan}
+	// wait for the response
+	response := <-responseChan
+	out, err := response.MarshalJSON()
+	if err != nil {
+		log.Println(err.Error())
+	}
+	fmt.Fprint(w, string(out))
 }
 
 func (self *hub) CreateConnection(from string, to string) {
