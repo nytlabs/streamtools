@@ -23,3 +23,15 @@ func (b Connection) blockRoutine() {
 		}
 	}
 }
+
+func NewConnection() Block {
+	// create an empty ticker
+	b := new(Connection)
+	// specify the type for library
+	b.blockType = "connection"
+	// get the id
+	b.ID = <-idChan
+	// note that whoever makes the connection must bless
+	// the struct with channels before running it
+	return b
+}
