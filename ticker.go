@@ -16,12 +16,10 @@ func (b TickerBlock) blockRoutine() {
 	outMsg, _ := simplejson.NewJson([]byte("{}"))
 	for {
 		select {
-		case <-b.inChan:
-		case <-b.ruleChan:
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
 			log.Println("hello")
-			//t.outChan <- outMsg
+			b.outChan <- outMsg
 		}
 	}
 }

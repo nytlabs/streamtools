@@ -10,7 +10,6 @@ type Block interface {
 	getID() string
 }
 
-
 type AbstractBlock struct {
 	name      string
 	ID        string
@@ -18,10 +17,10 @@ type AbstractBlock struct {
 	inChan    chan *simplejson.Json
 	outChan   chan *simplejson.Json
 	ruleChan  chan *simplejson.Json
+	queryChan chan StreamtoolsQuery
 }
 
-
-func (self *AbstractBlock) getID() string{
+func (self *AbstractBlock) getID() string {
 	return self.ID
 }
 
