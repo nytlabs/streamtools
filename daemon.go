@@ -48,6 +48,7 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("could not parse form on /connect")
 	}
+	log.Println(r.Form)
 	from := r.Form["from"][0]
 	to := r.Form["to"][0]
 	self.CreateConnection(from, to)

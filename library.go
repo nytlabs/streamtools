@@ -34,4 +34,10 @@ func buildLibrary() {
 		blockFactory:     NewTicker,
 		blockDescription: "outputs the time every n seconds",
 	}
+	library["lastseen"] = BlockTemplate{
+		blockType:        "lastseen",
+		blockFactory:     NewLastSeen,
+		blockDescription: "poll block tells you what the last message is",
+	}
+
 }
