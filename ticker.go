@@ -18,7 +18,6 @@ func (b TickerBlock) blockRoutine() {
 		select {
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
-			log.Println("hello")
 			b.outChan <- outMsg
 		}
 	}
