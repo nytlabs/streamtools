@@ -8,7 +8,6 @@ import (
 )
 
 var (
-	h      hub
 	idChan chan string
 	port   = flag.String("port", "7070", "stream tools port")
 )
@@ -18,40 +17,58 @@ type StreamtoolsQuery struct {
 	r *http.Request
 }
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "hello! This is streamtools.")
+type hub struct {
+	connectionMap map[string]Connection
+	blockMap      map[string]Block
 }
 
-func createHandler(w http.ResponseWriter, r *http.Request) {
+func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "hello! this is streamtools")
+}
+
+func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("could not parse form on /create")
 	}
+
 	if blockType, ok := r.Form["blockType"]; ok {
-		h.CreateBlock(blockType[0])
+		self.CreateBlock(blockType[0])
 	} else {
-		log.Println("no blockType specified")
+		log.Println("no blocktype specified")
 	}
 }
 
-func connectHandler(w http.ResponseWriter, r *http.Request) {
+func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func Run() {
+func (self *hub) CreateBlock(blockType string) {
+	block := NewBlock(blockType)
+	self.blockMap[blockType+"_"+block.getID()] = block
+	go block.blockRoutine()
+}
+
+func (self *hub) Run() {
 	idChan = make(chan string)
 	go IDService(idChan)
 	buildLibrary()
-	h = hub{
-		connectionMap: make(map[string]*Connection),
-		blockMap:      make(map[string]*Block),
-	}
-	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/create", createHandler)
-	http.HandleFunc("/connect", connectHandler)
-	log.Println("starting streamtools server on port", port)
+
+	self.connectionMap = make(map[string]Connection)
+	self.blockMap = make(map[string]Block)
+
+	http.HandleFunc("/", self.rootHandler)
+	http.HandleFunc("/create", self.createHandler)
+	http.HandleFunc("/connect", self.connectHandler)
+
+	log.Println("starting stream tools on port", *port)
 	err := http.ListenAndServe(":"+*port, nil)
 	if err != nil {
-		log.Println(err)
+		log.Fatalf(err.Error())
 	}
+}
+
+func Run() {
+	h := hub{}
+	h.Run()
 }
