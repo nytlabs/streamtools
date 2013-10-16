@@ -77,17 +77,24 @@ func (self *hub) CreateBlock(blockType string) {
 }
 
 func (self *hub) Run() {
+
+	// start the ID Service
 	idChan = make(chan string)
 	go IDService(idChan)
+
+	// start the library service
 	buildLibrary()
 
+	// initialise the connection and block maps
 	self.connectionMap = make(map[string]Block)
 	self.blockMap = make(map[string]Block)
 
+	// instantiate the base handlers
 	http.HandleFunc("/", self.rootHandler)
 	http.HandleFunc("/create", self.createHandler)
 	http.HandleFunc("/connect", self.connectHandler)
 
+	// start the http server
 	log.Println("starting stream tools on port", *port)
 	err := http.ListenAndServe(":"+*port, nil)
 	if err != nil {

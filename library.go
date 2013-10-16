@@ -21,6 +21,14 @@ type BlockLibrary map[string]BlockTemplate
 func buildLibrary() {
 	log.Println("building library")
 	library = make(map[string]BlockTemplate)
+
+	// BLOCKS
+	library["connection"] = BlockTemplate{
+		blockType:        "connection",
+		blockFactory:     NewConnection,
+		blockDescription: "connects to blocks",
+	}
+
 	library["ticker"] = BlockTemplate{
 		blockType:        "ticker",
 		blockFactory:     NewTicker,
