@@ -34,6 +34,7 @@ func buildLibrary() {
 		blockFactory:     NewTicker,
 		blockDescription: "outputs the time every n seconds",
 	}
+
 	library["lastseen"] = BlockTemplate{
 		blockType:        "lastseen",
 		blockFactory:     NewLastSeen,

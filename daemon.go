@@ -48,14 +48,14 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("could not parse form on /connect")
 	}
-	log.Println(r.Form)
 	from := r.Form["from"][0]
 	to := r.Form["to"][0]
+	log.Println("connecting", from, "to", to)
 	self.CreateConnection(from, to)
 }
 
 func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.Split(r.URL.Path, "/")[1]
+	id := strings.Split(r.URL.Path, "/")[2]
 	log.Println("sending query to", id)
 	// get the relevant block's query channel
 	queryChan := self.blockMap[id].getQueryChan()
