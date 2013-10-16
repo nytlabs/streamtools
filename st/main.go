@@ -1,10 +1,9 @@
 package main
 
 import (
-    "github.com/nytlabs/streamtools"
+	"github.com/nytlabs/streamtools"
 )
 
-func main(){
-    streamtools.Run()
-
+func main() {
+	streamtools.Run()
 }
