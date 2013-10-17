@@ -21,7 +21,6 @@ func (b RouteExample) blockRoutine() {
 		select {
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
-			log.Println("route example tick happened")
 			broadcast(b.outChans, outMsg)
 		case routeResp := <-b.routes["getRule"]:
 			outMsg, _ := simplejson.NewJson([]byte(`{"period":` + strconv.Itoa(period) + `}`))

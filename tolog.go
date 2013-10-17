@@ -14,7 +14,6 @@ func (b ToLogBlock) blockRoutine() {
 	for {
 		select {
 		case msg := <-b.inChan:
-			log.Println(b.ID, "recieved message")
 			msgStr, err := msg.MarshalJSON()
 			if err != nil {
 				log.Println("wow bad json")

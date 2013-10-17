@@ -119,7 +119,13 @@ func (self *hub) CreateConnection(from string, to string) {
 }
 
 func (self *hub) CreateBlock(blockType string, id string) {
-	block := NewBlock(blockType)
+	blockTemplate, ok := library[blockType]
+	if !ok {
+		log.Fatal("couldn't find block", blockType)
+	}
+	block := blockTemplate.blockFactory()
+	block.initOutChans()
+
 	block.setID(id)
 	self.blockMap[id] = block
 

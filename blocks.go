@@ -2,7 +2,6 @@ package streamtools
 
 import (
 	"github.com/bitly/go-simplejson"
-	"log"
 )
 
 // Block is the basic interface for processing units in streamtools
@@ -80,7 +79,6 @@ func (self *AbstractBlock) getRoutes() []string {
 }
 
 func (self *AbstractBlock) setInChan(inChan chan *simplejson.Json) {
-	log.Println("setting in block of", self.ID, "to", inChan)
 	self.inChan = inChan
 }
 
@@ -90,28 +88,14 @@ func (self *AbstractBlock) setID(id string) {
 
 func (self *AbstractBlock) setOutChan(toBlockID string, outChan chan *simplejson.Json) {
 	self.outChans[toBlockID] = outChan
-	log.Println(self.ID, "'s out channels are now:", self.outChans)
 }
 
 func (self *AbstractBlock) createOutChan(toBlockID string) chan *simplejson.Json {
-	log.Println("setting out channel of", self.ID)
 	outChan := make(chan *simplejson.Json)
 	self.outChans[toBlockID] = outChan
-	log.Println(self.ID, "'s out channels are now:", self.outChans)
 	return outChan
 }
 
 func (self *AbstractBlock) initOutChans() {
 	self.outChans = make(map[string]chan *simplejson.Json)
-}
-
-// NewBlock returns a block from the block factory specified in the library
-func NewBlock(blockType string) Block {
-	blockTemplate, ok := library[blockType]
-	if !ok {
-		log.Fatal("couldn't find block", blockType)
-	}
-	block := blockTemplate.blockFactory()
-	block.initOutChans()
-	return block
 }
