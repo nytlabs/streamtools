@@ -16,7 +16,7 @@ func (b LastSeenBlock) blockRoutine() {
 		select {
 		case msg := <-b.inChan:
 			lastSeen = msg
-		case query := <-b.queryChan:
+		case query := <-b.routes["query"]:
 			log.Println("recieved query")
 			query.responseChan <- lastSeen
 		}
@@ -26,10 +26,10 @@ func (b LastSeenBlock) blockRoutine() {
 func NewLastSeen() Block {
 	// create an empty block
 	b := new(LastSeenBlock)
-	// set the type
-	b.blockType = "lastseen"
 	// set the queryChan
-	b.queryChan = make(chan query)
+	b.routes = map[string]chan routeResponse{
+		"query": make(chan routeResponse),
+	}
 	// set the inChan
 	b.inChan = make(chan *simplejson.Json)
 	return b

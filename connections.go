@@ -2,7 +2,6 @@ package streamtools
 
 import (
 	"github.com/bitly/go-simplejson"
-	"log"
 )
 
 type Connection struct {
@@ -16,9 +15,8 @@ func (b Connection) blockRoutine() {
 		case msg := <-b.inChan:
 			lastSeen = msg
 			b.outChan <- msg
-		case <-b.queryChan:
-			log.Println("recieved query")
-			log.Println(lastSeen)
+		case query := <-b.routes["query"]:
+			query.responseChan <- lastSeen
 		}
 	}
 }
@@ -30,6 +28,10 @@ func NewConnection() Block {
 	b.blockType = "connection"
 	// get the id
 	b.ID = <-idChan
+	//
+	b.routes = map[string]chan routeResponse{
+		"query": make(chan routeResponse),
+	}
 	// note that whoever makes the connection must bless
 	// the struct with channels before running it
 	return b

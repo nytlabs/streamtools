@@ -10,25 +10,27 @@ import (
 )
 
 var (
+	// channel that returns the next ID
 	idChan chan string
-	port   = flag.String("port", "7070", "stream tools port")
+	// port that streamtools reuns on
+	port = flag.String("port", "7070", "stream tools port")
 )
 
-type query struct {
-	r            *http.Request
-	responseChan chan *simplejson.Json
-}
-
+// hub keeps track of all the blocks and connections
 type hub struct {
 	connectionMap map[string]Block
 	blockMap      map[string]Block
 }
 
+// routeResponse is passed into a block to query via established handlers
 type routeResponse struct {
 	msg          *simplejson.Json
 	responseChan chan *simplejson.Json
 }
 
+// HANDLERS
+
+// The rootHandler returns information about the whole system
 func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
@@ -37,6 +39,7 @@ func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// The createHandler creates new blocks
 func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -57,6 +60,7 @@ func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// The connectHandler connects together two blocks
 func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -68,23 +72,7 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 	self.CreateConnection(from, to)
 }
 
-/*func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.Split(r.URL.Path, "/")[2]
-	log.Println("sending query to", id)
-	// get the relevant block's query channel
-	queryChan := self.blockMap[id].getQueryChan()
-	responseChan := make(chan *simplejson.Json)
-	// submit the query
-	queryChan <- query{r, responseChan}
-	// wait for the response
-	response := <-responseChan
-	out, err := response.MarshalJSON()
-	if err != nil {
-		log.Println(err.Error())
-	}
-	fmt.Fprint(w, string(out))
-}*/
-
+// The routeHandler deals with any incoming message sent to an arbitrary block endpoint
 func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.Split(r.URL.Path, "/")[2]
 	route := strings.Split(r.URL.Path, "/")[3]
