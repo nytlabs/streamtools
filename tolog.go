@@ -14,7 +14,11 @@ func (b ToLogBlock) blockRoutine() {
     for {
         select {
         case msg := <- b.inChan:
-            log.Println(msg)
+            msgStr, err := msg.MarshalJSON()
+            if err != nil{
+                log.Println("wow bad json")
+            }
+            log.Println(string(msgStr))
         }
     }
 }
@@ -24,8 +28,6 @@ func NewToLog() Block {
     b := new(ToLogBlock)
     // specify the type for library
     b.blockType = "tolog"
-    // get the id
-    b.ID = <-idChan
     // make the outChan
     b.inChan = make(chan *simplejson.Json)
     b.outChan = make(chan *simplejson.Json)

@@ -28,8 +28,6 @@ func NewLastSeen() Block {
 	b := new(LastSeenBlock)
 	// set the type
 	b.blockType = "lastseen"
-	// set the id
-	b.ID = <-idChan
 	// set the queryChan
 	b.queryChan = make(chan query)
 	// set the inChan

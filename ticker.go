@@ -28,8 +28,6 @@ func NewTicker() Block {
 	b := new(TickerBlock)
 	// specify the type for library
 	b.blockType = "ticker"
-	// get the id
-	b.ID = <-idChan
 	// make the outChan
 	b.outChan = make(chan *simplejson.Json)
 	return b
