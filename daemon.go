@@ -106,7 +106,10 @@ func (self *hub) libraryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (self *hub) CreateConnection(from string, to string) {
-	conn := NewBlock("connection")
+	conn := library["connection"].blockFactory()
+	conn.initOutChans()
+	id := <-idChan
+	conn.setID(id)
 
 	fromChan := self.blockMap[from].createOutChan(conn.getID())
 	conn.setInChan(fromChan)
