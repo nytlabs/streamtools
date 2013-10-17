@@ -1,4 +1,4 @@
-package streamtools
+package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
@@ -28,10 +28,9 @@ func NewConnection() Block {
 	// specify the type for library
 	b.blockType = "connection"
 	// get the id
-	b.ID = <-idChan
 	//
-	b.routes = map[string]chan routeResponse{
-		"query": make(chan routeResponse),
+	b.routes = map[string]chan RouteResponse{
+		"query": make(chan RouteResponse),
 	}
 	// note that whoever makes the connection must bless
 	// the struct with channels before running it

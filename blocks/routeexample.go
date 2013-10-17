@@ -1,4 +1,4 @@
-package streamtools
+package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
@@ -57,11 +57,11 @@ func NewRouteExample() Block {
 	// specify the type for library
 	b.blockType = "RouteExample"
 	//routes
-	b.routes = map[string]chan routeResponse{
-		"setRule":  make(chan routeResponse),
-		"getRule":  make(chan routeResponse),
-		"hello":    make(chan routeResponse),
-		"writeMsg": make(chan routeResponse),
+	b.routes = map[string]chan RouteResponse{
+		"setRule":  make(chan RouteResponse),
+		"getRule":  make(chan RouteResponse),
+		"hello":    make(chan RouteResponse),
+		"writeMsg": make(chan RouteResponse),
 	}
 	return b
 }

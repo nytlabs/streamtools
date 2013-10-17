@@ -1,4 +1,4 @@
-package streamtools
+package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
@@ -12,10 +12,10 @@ type Block interface {
 	initOutChans()
 	// a set of accessors are provided so that a block creator can access certain aspects of a block
 	getID() string
-	getBlockType() string
+	GetBlockType() string
 	getInChan() chan *simplejson.Json
 	getOutChans() map[string]chan *simplejson.Json
-	getRouteChan(string) chan routeResponse
+	GetRouteChan(string) chan RouteResponse
 	getRoutes() []string
 	// some aspects of a block can also be set by the block creator
 	setInChan(chan *simplejson.Json)
@@ -35,7 +35,13 @@ type AbstractBlock struct {
 	// the outChan sends messages from this block elsewhere
 	outChans map[string]chan *simplejson.Json
 	// the routes map is used to define arbitrary streamtools endpoints for this block
-	routes map[string]chan routeResponse
+	routes map[string]chan RouteResponse
+}
+
+// RouteResponse is passed into a block to query via established handlers
+type RouteResponse struct {
+	Msg          *simplejson.Json
+	ResponseChan chan *simplejson.Json
 }
 
 // SIMPLE GETTERS AND SETTERS
@@ -44,7 +50,7 @@ func (self *AbstractBlock) getID() string {
 	return self.ID
 }
 
-func (self *AbstractBlock) getBlockType() string {
+func (self *AbstractBlock) GetBlockType() string {
 	return self.blockType
 }
 
@@ -59,7 +65,7 @@ func (self *AbstractBlock) getOutChans() map[string]chan *simplejson.Json {
 // ROUTES
 
 // returns a channel specified by an endpoint name
-func (self *AbstractBlock) getRouteChan(name string) chan routeResponse {
+func (self *AbstractBlock) GetRouteChan(name string) chan RouteResponse {
 	if val, ok := self.routes[name]; ok {
 		return val
 	}

@@ -1,9 +1,10 @@
-package streamtools
+package daemon
 
 import (
 	"flag"
 	"fmt"
 	"github.com/bitly/go-simplejson"
+	"github.com/nytlabs/streamtools/blocks"
 	"log"
 	"net/http"
 	"strings"
@@ -18,14 +19,8 @@ var (
 
 // hub keeps track of all the blocks and connections
 type hub struct {
-	connectionMap map[string]Block
-	blockMap      map[string]Block
-}
-
-// routeResponse is passed into a block to query via established handlers
-type routeResponse struct {
-	msg          *simplejson.Json
-	responseChan chan *simplejson.Json
+	connectionMap map[string]blocks.Block
+	blockMap      map[string]blocks.Block
 }
 
 // HANDLERS
@@ -35,7 +30,7 @@ func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range self.blockMap {
-		fmt.Fprintln(w, id+":", block.getBlockType())
+		fmt.Fprintln(w, id+":", block.GetBlockType())
 	}
 }
 
@@ -87,10 +82,10 @@ func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
 		msg = nil
 	}
 	responseChan := make(chan *simplejson.Json)
-	blockRouteChan := self.blockMap[id].getRouteChan(route)
-	blockRouteChan <- routeResponse{
-		msg:          msg,
-		responseChan: responseChan,
+	blockRouteChan := self.blockMap[id].GetRouteChan(route)
+	blockRouteChan <- blocks.RouteResponse{
+		Msg:          msg,
+		ResponseChan: responseChan,
 	}
 	blockMsg := <-responseChan
 	out, err := blockMsg.MarshalJSON()

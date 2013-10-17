@@ -1,4 +1,4 @@
-package streamtools
+package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
@@ -27,8 +27,8 @@ func NewLastSeen() Block {
 	// create an empty block
 	b := new(LastSeenBlock)
 	// set the queryChan
-	b.routes = map[string]chan routeResponse{
-		"query": make(chan routeResponse),
+	b.routes = map[string]chan RouteResponse{
+		"query": make(chan RouteResponse),
 	}
 	// set the inChan
 	b.inChan = make(chan *simplejson.Json)

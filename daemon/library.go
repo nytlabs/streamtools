@@ -1,7 +1,8 @@
-package streamtools
+package daemon
 
 import (
 	"encoding/json"
+	"github.com/nytlabs/streamtools/blocks"
 	"log"
 )
 
@@ -13,7 +14,7 @@ var (
 // A block template is a definition of a sprcific block
 type BlockTemplate struct {
 	blockType        string
-	blockFactory     func() Block
+	blockFactory     func() blocks.Block
 	blockDescription string
 }
 
@@ -65,7 +66,7 @@ func buildLibrary() {
 		i++
 	}
 	lj, err := json.Marshal(blockList)
-	if err != nil{
+	if err != nil {
 		log.Println(err.Error())
 	}
 	libraryBlob = string(lj)
