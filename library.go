@@ -64,6 +64,9 @@ func buildLibrary() {
 		blockList[i] = blockMeta
 		i++
 	}
-	lj, _ := json.Marshal(blockList)
+	lj, err := json.Marshal(blockList)
+	if err != nil{
+		log.Println(err.Error())
+	}
 	libraryBlob = string(lj)
 }
