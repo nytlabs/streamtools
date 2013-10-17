@@ -14,6 +14,9 @@ type Block interface {
 	getQueryChan() chan query
 	setOutChan(chan *simplejson.Json)
 	setInChan(chan *simplejson.Json)
+	getRouteChan(string) chan routeResponse
+	getRoutes() []string
+	setID(string)
 }
 
 type AbstractBlock struct {
@@ -24,6 +27,7 @@ type AbstractBlock struct {
 	outChan   chan *simplejson.Json
 	ruleChan  chan *simplejson.Json
 	queryChan chan query
+	routes    map[string]chan routeResponse
 }
 
 func (self *AbstractBlock) getID() string {
@@ -52,6 +56,27 @@ func (self *AbstractBlock) setInChan(inChan chan *simplejson.Json) {
 
 func (self *AbstractBlock) setOutChan(outChan chan *simplejson.Json) {
 	self.outChan = outChan
+}
+
+// TODO return a proper error on this if key is not found.
+func (self *AbstractBlock) getRouteChan(name string) chan routeResponse {
+	if val, ok := self.routes[name]; ok {
+		return val
+	}
+	return nil
+}
+
+func (self *AbstractBlock) setID(id string) {
+	self.ID = id
+}
+
+func (self *AbstractBlock) getRoutes() []string {
+	// TODO can this be faster?
+	routeNames := make([]string, 0)
+	for name, _ := range self.routes {
+		routeNames = append(routeNames, name)
+	}
+	return routeNames
 }
 
 func NewBlock(blockType string) Block {
