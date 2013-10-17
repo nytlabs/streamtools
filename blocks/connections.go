@@ -8,7 +8,7 @@ type Connection struct {
 	AbstractBlock
 }
 
-func (b Connection) blockRoutine() {
+func (b Connection) BlockRoutine() {
 	lastSeen, _ := simplejson.NewJson([]byte("{}"))
 	for {
 		select {
@@ -17,7 +17,7 @@ func (b Connection) blockRoutine() {
 
 			broadcast(b.outChans, msg)
 		case query := <-b.routes["query"]:
-			query.responseChan <- lastSeen
+			query.ResponseChan <- lastSeen
 		}
 	}
 }

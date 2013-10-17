@@ -11,7 +11,7 @@ type RouteExample struct {
 	AbstractBlock
 }
 
-func (b RouteExample) blockRoutine() {
+func (b RouteExample) BlockRoutine() {
 	period := 1000
 
 	log.Println("starting Route Example block")
@@ -24,12 +24,12 @@ func (b RouteExample) blockRoutine() {
 			broadcast(b.outChans, outMsg)
 		case routeResp := <-b.routes["getRule"]:
 			outMsg, _ := simplejson.NewJson([]byte(`{"period":` + strconv.Itoa(period) + `}`))
-			routeResp.responseChan <- outMsg
+			routeResp.ResponseChan <- outMsg
 		case routeResp := <-b.routes["setRule"]:
-			p, err := routeResp.msg.Get("period").Int()
+			p, err := routeResp.Msg.Get("period").Int()
 			if err != nil {
 				respMsg, _ := simplejson.NewJson([]byte(`{"status":"NOT OK"}`))
-				routeResp.responseChan <- respMsg
+				routeResp.ResponseChan <- respMsg
 				break
 			}
 
@@ -37,16 +37,16 @@ func (b RouteExample) blockRoutine() {
 			ticker = time.NewTicker(time.Duration(period) * time.Millisecond)
 
 			respMsg, _ := simplejson.NewJson([]byte(`{"status":"OK"}`))
-			routeResp.responseChan <- respMsg
+			routeResp.ResponseChan <- respMsg
 
 		case routeResp := <-b.routes["hello"]:
 			respMsg, _ := simplejson.NewJson([]byte(`{"HELLO":"WORLD"}`))
-			routeResp.responseChan <- respMsg
+			routeResp.ResponseChan <- respMsg
 		case routeResp := <-b.routes["writeMsg"]:
-			w, _ := routeResp.msg.Get("message").String()
+			w, _ := routeResp.Msg.Get("message").String()
 			log.Println(w)
 			respMsg, _ := simplejson.NewJson([]byte(`{"status":"OK"}`))
-			routeResp.responseChan <- respMsg
+			routeResp.ResponseChan <- respMsg
 		}
 	}
 }

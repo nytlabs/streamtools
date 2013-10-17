@@ -9,7 +9,7 @@ type LastSeenBlock struct {
 	AbstractBlock
 }
 
-func (b LastSeenBlock) blockRoutine() {
+func (b LastSeenBlock) BlockRoutine() {
 	log.Println("starting block")
 	lastSeen, _ := simplejson.NewJson([]byte("{}"))
 	for {
@@ -18,7 +18,7 @@ func (b LastSeenBlock) blockRoutine() {
 			lastSeen = msg
 		case query := <-b.routes["query"]:
 			log.Println("recieved query")
-			query.responseChan <- lastSeen
+			query.ResponseChan <- lastSeen
 		}
 	}
 }

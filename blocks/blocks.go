@@ -6,22 +6,22 @@ import (
 
 // Block is the basic interface for processing units in streamtools
 type Block interface {
-	// blockRoutine is the central processing routine for a block. All the work gets done in here
-	blockRoutine()
+	// BlockRoutine is the central processing routine for a block. All the work gets done in here
+	BlockRoutine()
 	// init routines TODO should just be init
-	initOutChans()
+	InitOutChans()
 	// a set of accessors are provided so that a block creator can access certain aspects of a block
-	getID() string
+	GetID() string
 	GetBlockType() string
-	getInChan() chan *simplejson.Json
+	GetInChan() chan *simplejson.Json
 	getOutChans() map[string]chan *simplejson.Json
 	GetRouteChan(string) chan RouteResponse
-	getRoutes() []string
+	GetRoutes() []string
 	// some aspects of a block can also be set by the block creator
-	setInChan(chan *simplejson.Json)
-	setID(string)
-	setOutChan(string, chan *simplejson.Json)
-	createOutChan(string) chan *simplejson.Json
+	SetInChan(chan *simplejson.Json)
+	SetID(string)
+	SetOutChan(string, chan *simplejson.Json)
+	CreateOutChan(string) chan *simplejson.Json
 }
 
 // The AbstractBlock struct defines the attributes a block must have
@@ -46,7 +46,7 @@ type RouteResponse struct {
 
 // SIMPLE GETTERS AND SETTERS
 
-func (self *AbstractBlock) getID() string {
+func (self *AbstractBlock) GetID() string {
 	return self.ID
 }
 
@@ -54,7 +54,7 @@ func (self *AbstractBlock) GetBlockType() string {
 	return self.blockType
 }
 
-func (self *AbstractBlock) getInChan() chan *simplejson.Json {
+func (self *AbstractBlock) GetInChan() chan *simplejson.Json {
 	return self.inChan
 }
 
@@ -73,8 +73,8 @@ func (self *AbstractBlock) GetRouteChan(name string) chan RouteResponse {
 	return nil
 }
 
-// getRoutes returns all of the route names specified by the block
-func (self *AbstractBlock) getRoutes() []string {
+// GetRoutes returns all of the route names specified by the block
+func (self *AbstractBlock) GetRoutes() []string {
 	routeNames := make([]string, len(self.routes))
 	i := 0
 	for name, _ := range self.routes {
@@ -84,24 +84,24 @@ func (self *AbstractBlock) getRoutes() []string {
 	return routeNames
 }
 
-func (self *AbstractBlock) setInChan(inChan chan *simplejson.Json) {
+func (self *AbstractBlock) SetInChan(inChan chan *simplejson.Json) {
 	self.inChan = inChan
 }
 
-func (self *AbstractBlock) setID(id string) {
+func (self *AbstractBlock) SetID(id string) {
 	self.ID = id
 }
 
-func (self *AbstractBlock) setOutChan(toBlockID string, outChan chan *simplejson.Json) {
+func (self *AbstractBlock) SetOutChan(toBlockID string, outChan chan *simplejson.Json) {
 	self.outChans[toBlockID] = outChan
 }
 
-func (self *AbstractBlock) createOutChan(toBlockID string) chan *simplejson.Json {
+func (self *AbstractBlock) CreateOutChan(toBlockID string) chan *simplejson.Json {
 	outChan := make(chan *simplejson.Json)
 	self.outChans[toBlockID] = outChan
 	return outChan
 }
 
-func (self *AbstractBlock) initOutChans() {
+func (self *AbstractBlock) InitOutChans() {
 	self.outChans = make(map[string]chan *simplejson.Json)
 }

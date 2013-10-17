@@ -28,31 +28,31 @@ func buildLibrary() {
 	// BLOCKS
 	library["connection"] = BlockTemplate{
 		blockType:        "connection",
-		blockFactory:     NewConnection,
+		blockFactory:     blocks.NewConnection,
 		blockDescription: "connects to blocks",
 	}
 
 	library["ticker"] = BlockTemplate{
 		blockType:        "ticker",
-		blockFactory:     NewTicker,
+		blockFactory:     blocks.NewTicker,
 		blockDescription: "outputs the time every n seconds",
 	}
 
 	library["lastseen"] = BlockTemplate{
 		blockType:        "lastseen",
-		blockFactory:     NewLastSeen,
+		blockFactory:     blocks.NewLastSeen,
 		blockDescription: "poll block tells you what the last message is",
 	}
 
 	library["tolog"] = BlockTemplate{
 		blockType:        "tolog",
-		blockFactory:     NewToLog,
+		blockFactory:     blocks.NewToLog,
 		blockDescription: "prints messages in log",
 	}
 
 	library["routeexample"] = BlockTemplate{
 		blockType:        "routeexample",
-		blockFactory:     NewRouteExample,
+		blockFactory:     blocks.NewRouteExample,
 		blockDescription: "an example for routing.",
 	}
 

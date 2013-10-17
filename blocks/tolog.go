@@ -9,7 +9,7 @@ type ToLogBlock struct {
 	AbstractBlock
 }
 
-func (b ToLogBlock) blockRoutine() {
+func (b ToLogBlock) BlockRoutine() {
 	log.Println("starting to log block")
 	for {
 		select {
