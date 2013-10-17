@@ -24,6 +24,11 @@ type hub struct {
 	blockMap      map[string]Block
 }
 
+type routeResponse struct {
+	msg          *simplejson.Json
+	responseChan chan *simplejson.Json
+}
+
 func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
@@ -38,7 +43,15 @@ func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("could not parse form on /create")
 	}
 	if blockType, ok := r.Form["blockType"]; ok {
-		self.CreateBlock(blockType[0])
+
+		var id string
+		if blockId, ok := r.Form["id"]; ok {
+			id = blockId[0]
+		} else {
+			id = <-idChan
+		}
+		self.CreateBlock(blockType[0], id)
+
 	} else {
 		log.Println("no blocktype specified")
 	}
@@ -55,7 +68,7 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 	self.CreateConnection(from, to)
 }
 
-func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
+/*func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.Split(r.URL.Path, "/")[2]
 	log.Println("sending query to", id)
 	// get the relevant block's query channel
@@ -70,6 +83,34 @@ func (self *hub) queryHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 	}
 	fmt.Fprint(w, string(out))
+}*/
+
+func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
+	id := strings.Split(r.URL.Path, "/")[2]
+	route := strings.Split(r.URL.Path, "/")[3]
+
+	err := r.ParseForm()
+	var respData string
+	for k, _ := range r.Form {
+		respData = k
+	}
+	msg, err := simplejson.NewJson([]byte(respData))
+	if err != nil {
+		msg = nil
+	}
+	responseChan := make(chan *simplejson.Json)
+	blockRouteChan := self.blockMap[id].getRouteChan(route)
+	blockRouteChan <- routeResponse{
+		msg:          msg,
+		responseChan: responseChan,
+	}
+	blockMsg := <-responseChan
+	out, err := blockMsg.MarshalJSON()
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	fmt.Fprint(w, string(out))
 }
 
 func (self *hub) CreateConnection(from string, to string) {
@@ -80,10 +121,16 @@ func (self *hub) CreateConnection(from string, to string) {
 	go conn.blockRoutine()
 }
 
-func (self *hub) CreateBlock(blockType string) {
+func (self *hub) CreateBlock(blockType string, id string) {
 	block := NewBlock(blockType)
-	self.blockMap[block.getID()] = block
-	http.HandleFunc("/blocks/"+block.getID()+"/query", self.queryHandler)
+	block.setID(id)
+	self.blockMap[id] = block
+
+	routeNames := block.getRoutes()
+	for _, routeName := range routeNames {
+		http.HandleFunc("/blocks/"+block.getID()+"/"+routeName, self.routeHandler)
+	}
+
 	go block.blockRoutine()
 }
 
