@@ -43,13 +43,13 @@ func buildLibrary() {
 
 	library["tolog"] = BlockTemplate{
 		blockType:        "tolog",
-		blockFactory:	  NewToLog,
+		blockFactory:     NewToLog,
 		blockDescription: "prints messages in log",
 	}
 
 	library["routeexample"] = BlockTemplate{
 		blockType:        "routeexample",
-		blockFactory:	  NewRouteExample,
+		blockFactory:     NewRouteExample,
 		blockDescription: "an example for routing.",
 	}
 }

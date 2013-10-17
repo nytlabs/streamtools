@@ -19,15 +19,14 @@ type query struct {
 	responseChan chan *simplejson.Json
 }
 
-
 type hub struct {
 	connectionMap map[string]Block
 	blockMap      map[string]Block
 }
 
 type routeResponse struct {
-	msg 		  *simplejson.Json
-	responseChan  chan *simplejson.Json
+	msg          *simplejson.Json
+	responseChan chan *simplejson.Json
 }
 
 func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -46,10 +45,10 @@ func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 	if blockType, ok := r.Form["blockType"]; ok {
 
 		var id string
-		if blockId, ok := r.Form["id"]; ok {		
+		if blockId, ok := r.Form["id"]; ok {
 			id = blockId[0]
 		} else {
-			id = <- idChan
+			id = <-idChan
 		}
 		self.CreateBlock(blockType[0], id)
 
@@ -87,25 +86,25 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 }*/
 
 func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
-	id 	  := strings.Split(r.URL.Path, "/")[2]
+	id := strings.Split(r.URL.Path, "/")[2]
 	route := strings.Split(r.URL.Path, "/")[3]
-	
+
 	err := r.ParseForm()
 	var respData string
 	for k, _ := range r.Form {
 		respData = k
 	}
-	msg, err := simplejson.NewJson( []byte(respData) )
-	if err != nil{
+	msg, err := simplejson.NewJson([]byte(respData))
+	if err != nil {
 		msg = nil
 	}
 	responseChan := make(chan *simplejson.Json)
-	blockRouteChan := self.blockMap[id].getRouteChan(route)	
+	blockRouteChan := self.blockMap[id].getRouteChan(route)
 	blockRouteChan <- routeResponse{
-		msg: msg,
+		msg:          msg,
 		responseChan: responseChan,
 	}
-	blockMsg := <- responseChan
+	blockMsg := <-responseChan
 	out, err := blockMsg.MarshalJSON()
 	if err != nil {
 		log.Println(err.Error())
@@ -129,7 +128,7 @@ func (self *hub) CreateBlock(blockType string, id string) {
 
 	routeNames := block.getRoutes()
 	for _, routeName := range routeNames {
-		http.HandleFunc("/blocks/" + block.getID()+ "/" + routeName, self.routeHandler )
+		http.HandleFunc("/blocks/"+block.getID()+"/"+routeName, self.routeHandler)
 	}
 
 	go block.blockRoutine()
