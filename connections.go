@@ -2,6 +2,7 @@ package streamtools
 
 import (
 	"github.com/bitly/go-simplejson"
+	"log"
 )
 
 type Connection struct {
@@ -14,7 +15,9 @@ func (b Connection) blockRoutine() {
 		select {
 		case msg := <-b.inChan:
 			lastSeen = msg
-			b.outChan <- msg
+			log.Println(b.outChans)
+
+			broadcast(b.outChans, msg)
 		case query := <-b.routes["query"]:
 			query.responseChan <- lastSeen
 		}

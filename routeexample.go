@@ -21,7 +21,8 @@ func (b RouteExample) blockRoutine() {
 		select {
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
-			b.outChan <- outMsg
+			log.Println("route example tick happened")
+			broadcast(b.outChans, outMsg)
 		case routeResp := <-b.routes["getRule"]:
 			outMsg, _ := simplejson.NewJson([]byte(`{"period":` + strconv.Itoa(period) + `}`))
 			routeResp.responseChan <- outMsg
@@ -56,8 +57,6 @@ func NewRouteExample() Block {
 	b := new(RouteExample)
 	// specify the type for library
 	b.blockType = "RouteExample"
-	// make the outChan
-	b.outChan = make(chan *simplejson.Json)
 	//routes
 	b.routes = map[string]chan routeResponse{
 		"setRule":  make(chan routeResponse),

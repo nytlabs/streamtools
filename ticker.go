@@ -18,7 +18,9 @@ func (b TickerBlock) blockRoutine() {
 		select {
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
-			b.outChan <- outMsg
+			for _, oc := range b.outChans {
+				oc <- outMsg
+			}
 		}
 	}
 }
@@ -28,7 +30,5 @@ func NewTicker() Block {
 	b := new(TickerBlock)
 	// specify the type for library
 	b.blockType = "ticker"
-	// make the outChan
-	b.outChan = make(chan *simplejson.Json)
 	return b
 }
