@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/nytlabs/streamtools"
+	"github.com/nytlabs/streamtools/daemon"
 )
 
 func main() {
-	streamtools.Run()
+	daemon.Run()
 }

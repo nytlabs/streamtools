@@ -1,9 +1,10 @@
-package streamtools
+package daemon
 
 import (
 	"flag"
 	"fmt"
 	"github.com/bitly/go-simplejson"
+	"github.com/nytlabs/streamtools/blocks"
 	"log"
 	"net/http"
 	"strings"
@@ -18,14 +19,8 @@ var (
 
 // hub keeps track of all the blocks and connections
 type hub struct {
-	connectionMap map[string]Block
-	blockMap      map[string]Block
-}
-
-// routeResponse is passed into a block to query via established handlers
-type routeResponse struct {
-	msg          *simplejson.Json
-	responseChan chan *simplejson.Json
+	connectionMap map[string]blocks.Block
+	blockMap      map[string]blocks.Block
 }
 
 // HANDLERS
@@ -35,7 +30,7 @@ func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range self.blockMap {
-		fmt.Fprintln(w, id+":", block.getBlockType())
+		fmt.Fprintln(w, id+":", block.GetBlockType())
 	}
 }
 
@@ -86,13 +81,13 @@ func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		msg = nil
 	}
-	responseChan := make(chan *simplejson.Json)
-	blockRouteChan := self.blockMap[id].getRouteChan(route)
-	blockRouteChan <- routeResponse{
-		msg:          msg,
-		responseChan: responseChan,
+	ResponseChan := make(chan *simplejson.Json)
+	blockRouteChan := self.blockMap[id].GetRouteChan(route)
+	blockRouteChan <- blocks.RouteResponse{
+		Msg:          msg,
+		ResponseChan: ResponseChan,
 	}
-	blockMsg := <-responseChan
+	blockMsg := <-ResponseChan
 	out, err := blockMsg.MarshalJSON()
 	if err != nil {
 		log.Println(err.Error())
@@ -106,29 +101,38 @@ func (self *hub) libraryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (self *hub) CreateConnection(from string, to string) {
-	conn := NewBlock("connection")
+	conn := library["connection"].blockFactory()
+	conn.InitOutChans()
+	id := <-idChan
+	conn.SetID(id)
 
-	fromChan := self.blockMap[from].createOutChan(conn.getID())
-	conn.setInChan(fromChan)
+	fromChan := self.blockMap[from].CreateOutChan(conn.GetID())
+	conn.SetInChan(fromChan)
 
-	toChan := self.blockMap[to].getInChan()
-	conn.setOutChan(to, toChan)
+	toChan := self.blockMap[to].GetInChan()
+	conn.SetOutChan(to, toChan)
 
-	self.connectionMap[conn.getID()] = conn
-	go conn.blockRoutine()
+	self.connectionMap[conn.GetID()] = conn
+	go conn.BlockRoutine()
 }
 
 func (self *hub) CreateBlock(blockType string, id string) {
-	block := NewBlock(blockType)
-	block.setID(id)
+	blockTemplate, ok := library[blockType]
+	if !ok {
+		log.Fatal("couldn't find block", blockType)
+	}
+	block := blockTemplate.blockFactory()
+	block.InitOutChans()
+
+	block.SetID(id)
 	self.blockMap[id] = block
 
-	routeNames := block.getRoutes()
+	routeNames := block.GetRoutes()
 	for _, routeName := range routeNames {
-		http.HandleFunc("/blocks/"+block.getID()+"/"+routeName, self.routeHandler)
+		http.HandleFunc("/blocks/"+block.GetID()+"/"+routeName, self.routeHandler)
 	}
 
-	go block.blockRoutine()
+	go block.BlockRoutine()
 }
 
 func (self *hub) Run() {
@@ -141,8 +145,8 @@ func (self *hub) Run() {
 	buildLibrary()
 
 	// initialise the connection and block maps
-	self.connectionMap = make(map[string]Block)
-	self.blockMap = make(map[string]Block)
+	self.connectionMap = make(map[string]blocks.Block)
+	self.blockMap = make(map[string]blocks.Block)
 
 	// instantiate the base handlers
 	http.HandleFunc("/", self.rootHandler)

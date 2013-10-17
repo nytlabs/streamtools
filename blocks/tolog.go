@@ -1,4 +1,4 @@
-package streamtools
+package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
@@ -9,12 +9,11 @@ type ToLogBlock struct {
 	AbstractBlock
 }
 
-func (b ToLogBlock) blockRoutine() {
+func (b ToLogBlock) BlockRoutine() {
 	log.Println("starting to log block")
 	for {
 		select {
 		case msg := <-b.inChan:
-			log.Println(b.ID, "recieved message")
 			msgStr, err := msg.MarshalJSON()
 			if err != nil {
 				log.Println("wow bad json")
