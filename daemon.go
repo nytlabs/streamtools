@@ -103,8 +103,13 @@ func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
 
 func (self *hub) CreateConnection(from string, to string) {
 	conn := NewBlock("connection")
-	conn.setInChan(self.blockMap[from].getOutChan())
-	conn.setOutChan(self.blockMap[to].getInChan())
+
+	fromChan := self.blockMap[from].createOutChan(conn.getID())
+	conn.setInChan(fromChan)
+
+	toChan := self.blockMap[to].getInChan()
+	conn.setOutChan(to, toChan)
+
 	self.connectionMap[conn.getID()] = conn
 	go conn.blockRoutine()
 }
