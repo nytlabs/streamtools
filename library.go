@@ -1,11 +1,13 @@
 package streamtools
 
 import (
+	"encoding/json"
 	"log"
 )
 
 var (
-	library BlockLibrary
+	library     BlockLibrary
+	libraryBlob string
 )
 
 // A block template is a definition of a sprcific block
@@ -52,4 +54,16 @@ func buildLibrary() {
 		blockFactory:     NewRouteExample,
 		blockDescription: "an example for routing.",
 	}
+
+	// create a json blob that contains the library block list
+	blockList := make([]map[string]string, len(library))
+	i := 0
+	for k, v := range library {
+		blockMeta := make(map[string]string)
+		blockMeta[k] = v.blockDescription
+		blockList[i] = blockMeta
+		i++
+	}
+	lj, _ := json.Marshal(blockList)
+	libraryBlob = string(lj)
 }
