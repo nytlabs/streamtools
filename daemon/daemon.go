@@ -1,7 +1,6 @@
 package daemon
 
 import (
-	"flag"
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
@@ -13,12 +12,10 @@ import (
 var (
 	// channel that returns the next ID
 	idChan chan string
-	// port that streamtools reuns on
-	port = flag.String("port", "7070", "stream tools port")
 )
 
-// hub keeps track of all the blocks and connections
-type hub struct {
+// Daemon keeps track of all the blocks and connections
+type Daemon struct {
 	connectionMap map[string]blocks.Block
 	blockMap      map[string]blocks.Block
 }
@@ -26,7 +23,7 @@ type hub struct {
 // HANDLERS
 
 // The rootHandler returns information about the whole system
-func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
+func (self *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range self.blockMap {
@@ -35,7 +32,7 @@ func (self *hub) rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // The createHandler creates new blocks
-func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
+func (self *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("could not parse form on /create")
@@ -56,7 +53,7 @@ func (self *hub) createHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // The connectHandler connects together two blocks
-func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
+func (self *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("could not parse form on /connect")
@@ -68,7 +65,7 @@ func (self *hub) connectHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
-func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
+func (self *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.Split(r.URL.Path, "/")[2]
 	route := strings.Split(r.URL.Path, "/")[3]
 
@@ -96,11 +93,11 @@ func (self *hub) routeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(out))
 }
 
-func (self *hub) libraryHandler(w http.ResponseWriter, r *http.Request) {
+func (self *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, libraryBlob)
 }
 
-func (self *hub) CreateConnection(from string, to string) {
+func (self *Daemon) CreateConnection(from string, to string) {
 	conn := library["connection"].blockFactory()
 	conn.InitOutChans()
 	id := <-idChan
@@ -116,7 +113,7 @@ func (self *hub) CreateConnection(from string, to string) {
 	go conn.BlockRoutine()
 }
 
-func (self *hub) CreateBlock(blockType string, id string) {
+func (self *Daemon) CreateBlock(blockType string, id string) {
 	blockTemplate, ok := library[blockType]
 	if !ok {
 		log.Fatal("couldn't find block", blockType)
@@ -135,7 +132,7 @@ func (self *hub) CreateBlock(blockType string, id string) {
 	go block.BlockRoutine()
 }
 
-func (self *hub) Run() {
+func (self *Daemon) Run(port string) {
 
 	// start the ID Service
 	idChan = make(chan string)
@@ -155,14 +152,9 @@ func (self *hub) Run() {
 	http.HandleFunc("/library", self.libraryHandler)
 
 	// start the http server
-	log.Println("starting stream tools on port", *port)
-	err := http.ListenAndServe(":"+*port, nil)
+	log.Println("starting stream tools on port", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-}
-
-func Run() {
-	h := hub{}
-	h.Run()
 }
