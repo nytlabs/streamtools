@@ -26,6 +26,14 @@ func BuildLibrary() {
 		Routine: Ticker,
 	}
 
+	Library["connection"] = Block{
+		Template: &BlockTemplate{
+			BlockType:  "connection",
+			RouteNames: []string{"last_seen"},
+		},
+		Routine: Connection,
+	}
+
 	Library["tolog"] = Block{
 		Template: &BlockTemplate{
 			BlockType:  "tolog",

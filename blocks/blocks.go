@@ -17,7 +17,7 @@ type BlockTemplate struct {
 }
 
 type BlockDefinition struct {
-	Template BlockTemplate
+	Template *BlockTemplate
 	ID       string
 	InChan   chan *simplejson.Json
 	OutChans map[string]chan *simplejson.Json
@@ -37,12 +37,13 @@ func NewBlock(name string, ID string) *BlockDefinition {
 	d := Library[name].Template
 
 	routes := make(map[string]chan RouteResponse)
+
 	for _, name := range d.RouteNames {
 		routes[name] = make(chan RouteResponse)
 	}
 
 	b := &BlockDefinition{
-		Template: *d,
+		Template: d,
 		ID:       ID,
 		InChan:   make(chan *simplejson.Json),
 		OutChans: make(map[string]chan *simplejson.Json),

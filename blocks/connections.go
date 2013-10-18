@@ -11,7 +11,7 @@ func Connection(b *BlockDefinition) {
 		case msg := <-b.InChan:
 			lastSeen = msg
 			broadcast(b.OutChans, msg)
-		case query := <-b.Routes["query"]:
+		case query := <-b.Routes["last_seen"]:
 			query.ResponseChan <- lastSeen
 		}
 	}
