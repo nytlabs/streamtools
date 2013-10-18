@@ -6,11 +6,7 @@ import (
 	"time"
 )
 
-type TickerBlock struct {
-	AbstractBlock
-}
-
-func (b TickerBlock) BlockRoutine() {
+func Ticker(b *BlockDefinition) {
 	log.Println("starting Ticker block")
 	ticker := time.NewTicker(time.Duration(2) * time.Second)
 	outMsg, _ := simplejson.NewJson([]byte("{}"))
@@ -18,17 +14,9 @@ func (b TickerBlock) BlockRoutine() {
 		select {
 		case tick := <-ticker.C:
 			outMsg.Set("t", tick)
-			for _, oc := range b.outChans {
+			for _, oc := range b.OutChans {
 				oc <- outMsg
 			}
 		}
 	}
-}
-
-func NewTicker() Block {
-	// create an empty ticker
-	b := new(TickerBlock)
-	// specify the type for library
-	b.blockType = "ticker"
-	return b
 }
