@@ -16,7 +16,7 @@ var (
 
 // hub keeps track of all the blocks and connections
 type Daemon struct {
-	blockMap      map[string]*blocks.BlockDefinition
+	blockMap      map[string]*blocks.Block
 }
 
 // The rootHandler returns information about the whole system
@@ -94,7 +94,7 @@ func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "libraryBlob")
 }
 
-func (d *Daemon) createRoutes(b *blocks.BlockDefinition){
+func (d *Daemon) createRoutes(b *blocks.Block){
 	for _, routeName := range b.Template.RouteNames {
 		log.Println("creating route /blocks/"+b.ID+"/"+routeName)
 		http.HandleFunc("/blocks/"+b.ID+"/"+routeName, d.routeHandler)
@@ -139,7 +139,7 @@ func (d *Daemon) Run(port string) {
 	blocks.BuildLibrary()
 
 	// initialise the block maps
-	d.blockMap = make(map[string]*blocks.BlockDefinition)
+	d.blockMap = make(map[string]*blocks.Block)
 
 	// instantiate the base handlers
 	http.HandleFunc("/", d.rootHandler)

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func Ticker(b *BlockDefinition) {
+func Ticker(b *Block) {
 	log.Println("starting Ticker block")
 	ticker := time.NewTicker(time.Duration(2) * time.Second)
 	outMsg, _ := simplejson.NewJson([]byte("{}"))

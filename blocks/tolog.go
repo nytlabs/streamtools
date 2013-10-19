@@ -4,7 +4,7 @@ import (
 	"log"
 )
 
-func ToLog(b *BlockDefinition) {
+func ToLog(b *Block) {
 	log.Println("starting to log block")
 	for {
 		select {

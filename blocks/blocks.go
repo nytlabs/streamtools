@@ -5,18 +5,14 @@ import (
 )
 
 // Block is the basic interface for processing units in streamtools
-type Block struct {
-	Template *BlockTemplate
+type BlockTemplate struct {
+	BlockType  string
+	RouteNames []string
 	// BlockRoutine is the central processing routine for a block. All the work gets done in here
 	Routine BlockRoutine
 }
 
-type BlockTemplate struct {
-	BlockType  string
-	RouteNames []string
-}
-
-type BlockDefinition struct {
+type Block struct {
 	Template *BlockTemplate
 	ID       string
 	InChan   chan *simplejson.Json
@@ -24,7 +20,7 @@ type BlockDefinition struct {
 	Routes   map[string]chan RouteResponse
 }
 
-type BlockRoutine func(*BlockDefinition)
+type BlockRoutine func(*Block)
 
 // RouteResponse is passed into a block to query via established handlers
 type RouteResponse struct {
@@ -32,18 +28,15 @@ type RouteResponse struct {
 	ResponseChan chan *simplejson.Json
 }
 
-func NewBlock(name string, ID string) *BlockDefinition {
-
-	d := Library[name].Template
-
+func NewBlock(name string, ID string) *Block {
 	routes := make(map[string]chan RouteResponse)
 
-	for _, name := range d.RouteNames {
+	for _, name := range Library[name].RouteNames {
 		routes[name] = make(chan RouteResponse)
 	}
 
-	b := &BlockDefinition{
-		Template: d,
+	b := &Block{
+		Template: Library[name],
 		ID:       ID,
 		InChan:   make(chan *simplejson.Json),
 		OutChans: make(map[string]chan *simplejson.Json),

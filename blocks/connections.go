@@ -4,7 +4,7 @@ import (
 	"github.com/bitly/go-simplejson"
 )
 
-func Connection(b *BlockDefinition) {
+func Connection(b *Block) {
 	lastSeen, _ := simplejson.NewJson([]byte("{}"))
 	for {
 		select {
