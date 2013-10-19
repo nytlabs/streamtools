@@ -42,6 +42,11 @@ func BuildLibrary() {
 			RouteNames: []string{},
 			Routine: Random,
 		},
+		&BlockTemplate{
+			BlockType: "count",
+			RouteNames: []string{"params", "count"},
+			Routine: Count,
+		},
 	}
 
 	for _, t := range templates {

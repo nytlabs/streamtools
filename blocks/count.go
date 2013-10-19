@@ -8,9 +8,11 @@ import (
 )
 
 func Count(b *Block) {
+    log.Println("starting count block")
     // block until we recieve a rule
     params := <-b.Routes["params"]
     windowSeconds, err := params.Msg.Get("window").Float64()
+    params.ResponseChan <- nil
     if err != nil {
         log.Fatal(err.Error())
     }

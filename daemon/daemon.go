@@ -87,7 +87,7 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(err.Error())
 	}
 
-	fmt.Fprint(w, string(out))
+	fmt.Fprintln(w, string(out))
 }
 
 func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
