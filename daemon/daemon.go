@@ -104,7 +104,7 @@ func (d *Daemon) createRoutes(b *blocks.Block){
 func (d *Daemon) CreateConnection(from string, to string) {
 
 	ID := <-idChan
-	conn := blocks.NewBlock("connection", ID)
+	conn, _ := blocks.NewBlock("connection", ID)
 
 	// channel from the inbound block to the connection
 	fromBlock := d.blockMap[from]
@@ -123,7 +123,7 @@ func (d *Daemon) CreateConnection(from string, to string) {
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {
-	b := blocks.NewBlock(name, ID)
+	b, _ := blocks.NewBlock(name, ID)
 	d.createRoutes(b)
 	d.blockMap[b.ID] = b
 	go blocks.Library[name].Routine(b)

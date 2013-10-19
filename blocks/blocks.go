@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
+    "errors"
 )
 
 // Block is the basic interface for processing units in streamtools
@@ -28,8 +29,12 @@ type RouteResponse struct {
 	ResponseChan chan *simplejson.Json
 }
 
-func NewBlock(name string, ID string) *Block {
+func NewBlock(name string, ID string) (*Block, error) {
 	routes := make(map[string]chan RouteResponse)
+
+    if _, ok := Library[name]; !ok {
+        return nil, errors.New("cannot find " + name + " in the Library") 
+    }
 
 	for _, name := range Library[name].RouteNames {
 		routes[name] = make(chan RouteResponse)
@@ -43,5 +48,5 @@ func NewBlock(name string, ID string) *Block {
 		Routes:   routes,
 	}
 
-	return b
+	return b, nil
 }

@@ -37,6 +37,11 @@ func BuildLibrary() {
 			RouteNames: []string{},
 			Routine: ToLog,
 		},
+		&BlockTemplate{
+			BlockType: "random",
+			RouteNames: []string{},
+			Routine: Random,
+		},
 	}
 
 	for _, t := range templates {
