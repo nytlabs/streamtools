@@ -5,6 +5,11 @@ import (
     "errors"
 )
 
+const(
+	CREATE_OUT_CHAN = iota
+	DELETE_OUT_CHAN = iota
+)
+
 // Block is the basic interface for processing units in streamtools
 type BlockTemplate struct {
 	BlockType  string
@@ -19,6 +24,13 @@ type Block struct {
 	InChan   chan *simplejson.Json
 	OutChans map[string]chan *simplejson.Json
 	Routes   map[string]chan RouteResponse
+	AddChan  chan *OutChanMsg
+}
+
+type OutChanMsg struct{
+	Action int
+	OutChan chan *simplejson.Json
+	ID string
 }
 
 type BlockRoutine func(*Block)
@@ -46,6 +58,7 @@ func NewBlock(name string, ID string) (*Block, error) {
 		InChan:   make(chan *simplejson.Json),
 		OutChans: make(map[string]chan *simplejson.Json),
 		Routes:   routes,
+		AddChan:  make(chan *OutChanMsg),
 	}
 
 	return b, nil

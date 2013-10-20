@@ -14,6 +14,11 @@ func ToLog(b *Block) {
 				log.Println("wow bad json")
 			}
 			log.Println(string(msgStr))
+		case msg := <- b.AddChan:
+			switch msg.Action {
+			case CREATE_OUT_CHAN:
+				b.OutChans[msg.ID] = msg.OutChan
+			}
 		}
 	}
 }

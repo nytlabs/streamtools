@@ -102,31 +102,46 @@ func (d *Daemon) createRoutes(b *blocks.Block){
 }
 
 func (d *Daemon) CreateConnection(from string, to string) {
-
 	ID := <-idChan
 	conn, _ := blocks.NewBlock("connection", ID)
-
-	// channel from the inbound block to the connection
-	fromBlock := d.blockMap[from]
-	inChan := make(chan *simplejson.Json)
-	fromBlock.OutChans[ID] = inChan
-	conn.InChan = inChan
-
-	// channel from the connection to the outbound block
-	toBlock := d.blockMap[to]
-	inChan = toBlock.InChan
-	conn.OutChans[toBlock.ID] = inChan
-
 	d.createRoutes(conn)
 	d.blockMap[conn.ID] = conn
-	go blocks.Library["connection"].Routine(conn)
+
+	c, _ := blocks.NewBlock("connection", ID)
+	for k, v := range conn.Routes {
+		c.Routes[k] = v
+	}
+	c.InChan = conn.InChan
+	c.AddChan = conn.AddChan
+	go blocks.Library["connection"].Routine(c)
+
+	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
+		Action: blocks.CREATE_OUT_CHAN,
+		OutChan: conn.InChan,
+		ID: conn.ID,
+	}
+
+	d.blockMap[conn.ID].AddChan <- &blocks.OutChanMsg{
+		Action: blocks.CREATE_OUT_CHAN,
+		OutChan: d.blockMap[to].InChan,
+		ID: to,
+	}
+
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {
 	b, _ := blocks.NewBlock(name, ID)
 	d.createRoutes(b)
 	d.blockMap[b.ID] = b
-	go blocks.Library[name].Routine(b)
+
+	c, _ := blocks.NewBlock(name, ID)
+	for k, v := range b.Routes {
+		c.Routes[k] = v
+	}
+	c.InChan = b.InChan
+	c.AddChan = b.AddChan
+
+	go blocks.Library[name].Routine(c)
 }
 
 func (d *Daemon) Run(port string) {
