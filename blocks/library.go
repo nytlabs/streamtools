@@ -18,29 +18,29 @@ func BuildLibrary() {
 
 	templates := []*BlockTemplate{
 		&BlockTemplate{
-			BlockType: "ticker",
+			BlockType:  "ticker",
 			RouteNames: []string{},
-			Routine: Ticker,
+			Routine:    Ticker,
 		},
 		&BlockTemplate{
-			BlockType: "connection",
+			BlockType:  "connection",
 			RouteNames: []string{"last_seen"},
-			Routine: Connection,
+			Routine:    Connection,
 		},
 		&BlockTemplate{
-			BlockType: "tolog",
+			BlockType:  "tolog",
 			RouteNames: []string{},
-			Routine: ToLog,
+			Routine:    ToLog,
 		},
 		&BlockTemplate{
-			BlockType: "random",
+			BlockType:  "random",
 			RouteNames: []string{},
-			Routine: Random,
+			Routine:    Random,
 		},
 		&BlockTemplate{
-			BlockType: "count",
+			BlockType:  "count",
 			RouteNames: []string{"params", "count"},
-			Routine: Count,
+			Routine:    Count,
 		},
 	}
 

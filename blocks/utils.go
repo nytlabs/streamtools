@@ -10,9 +10,9 @@ func broadcast(channels map[string]chan *simplejson.Json, msg *simplejson.Json) 
 	}
 }
 
-func updateOutChans(msg *OutChanMsg, b *Block){
-    switch msg.Action {
-    case CREATE_OUT_CHAN:
-        b.OutChans[msg.ID] = msg.OutChan
-    }
+func updateOutChans(msg *OutChanMsg, b *Block) {
+	switch msg.Action {
+	case CREATE_OUT_CHAN:
+		b.OutChans[msg.ID] = msg.OutChan
+	}
 }

@@ -16,7 +16,7 @@ var (
 
 // Daemon keeps track of all the blocks and connections
 type Daemon struct {
-	blockMap      map[string]*blocks.Block
+	blockMap map[string]*blocks.Block
 }
 
 // The rootHandler returns information about the whole system
@@ -93,52 +93,52 @@ func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "libraryBlob")
 }
 
-func (d *Daemon) createRoutes(b *blocks.Block){
+func (d *Daemon) createRoutes(b *blocks.Block) {
 	for _, routeName := range blocks.Library[b.BlockType].RouteNames {
-		log.Println("creating route /blocks/"+b.ID+"/"+routeName)
+		log.Println("creating route /blocks/" + b.ID + "/" + routeName)
 		http.HandleFunc("/blocks/"+b.ID+"/"+routeName, d.routeHandler)
 	}
 }
 
 func (d *Daemon) CreateConnection(from string, to string) {
 	ID := <-idChan
-	d.CreateBlock("connection",ID)
+	d.CreateBlock("connection", ID)
 
 	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
-		Action: blocks.CREATE_OUT_CHAN,
+		Action:  blocks.CREATE_OUT_CHAN,
 		OutChan: d.blockMap[ID].InChan,
-		ID: ID,
+		ID:      ID,
 	}
 
 	d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
-		Action: blocks.CREATE_OUT_CHAN,
+		Action:  blocks.CREATE_OUT_CHAN,
 		OutChan: d.blockMap[to].InChan,
-		ID: to,
+		ID:      to,
 	}
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {
 	// TODO: Clean this up.
-	// 
+	//
 	// In order to avoid data races the blocks held in daemon's blockMap
 	// are not the same blocks held in each block routine. When CreateBlock
 	// is called, we actually create two blocks: one to store in daemon's
 	// blockMap and one to send to the block routine.
-	// 
+	//
 	// The block stored in daemon's blockmap doesn't make use of OutChans as
-	// a block's OutChans can be dynamically modified when connections are 
+	// a block's OutChans can be dynamically modified when connections are
 	// added or deleted. All of the other fields, such as ID, name, and all
 	// the channels that go into the block (inChan, Routes) are the SAME
 	// in both the daemon blockMap block and the blockroutine block.
 	//
 	// Becauase of this very minor difference it would be a huge semantic help
-	// if the type going to the blockroutines was actually different than the 
+	// if the type going to the blockroutines was actually different than the
 	// type being kept in daemon's blockmap.
 	//
 	// Modifications to blocks in daemon's blockMap will obviously not
 	// proliferate to blockroutines and all changes (such as adding outchans)
 	// can only be done through messages. A future daemon block type might
-	// want to restrict how daemon blocks can be used, such as creating 
+	// want to restrict how daemon blocks can be used, such as creating
 	// getters and no setters. Or perhaps a setter automatically takes care
 	// of sending a message to the blockroutine to emulate the manipulation
 	// of a single variable.
@@ -154,7 +154,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	for k, v := range b.Routes {
 		c.Routes[k] = v
 	}
-	
+
 	c.InChan = b.InChan
 	c.AddChan = b.AddChan
 
@@ -162,7 +162,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	c.OutChans = make(map[string]chan *simplejson.Json)
 
 	go blocks.Library[name].Routine(c)
-	
+
 	log.Println("started block \"" + ID + "\" of type " + name)
 }
 
@@ -185,8 +185,8 @@ func (d *Daemon) Run(port string) {
 	http.HandleFunc("/library", d.libraryHandler)
 
 	// start the http server
-	log.Println("starting stream tools on port",  port)
-	err := http.ListenAndServe(":"+ port, nil)
+	log.Println("starting stream tools on port", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

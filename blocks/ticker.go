@@ -13,7 +13,7 @@ func Ticker(b *Block) {
 			outMsg, _ := simplejson.NewJson([]byte("{}"))
 			outMsg.Set("t", tick)
 			broadcast(b.OutChans, outMsg)
-		case msg := <- b.AddChan:
+		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}
 	}

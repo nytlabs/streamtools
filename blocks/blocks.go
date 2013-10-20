@@ -1,11 +1,11 @@
 package blocks
 
 import (
+	"errors"
 	"github.com/bitly/go-simplejson"
-    "errors"
 )
 
-const(
+const (
 	CREATE_OUT_CHAN = iota
 	DELETE_OUT_CHAN = iota
 )
@@ -20,17 +20,17 @@ type BlockTemplate struct {
 
 type Block struct {
 	BlockType string
-	ID       string
-	InChan   chan *simplejson.Json
-	OutChans map[string]chan *simplejson.Json
-	Routes   map[string]chan RouteResponse
-	AddChan  chan *OutChanMsg
+	ID        string
+	InChan    chan *simplejson.Json
+	OutChans  map[string]chan *simplejson.Json
+	Routes    map[string]chan RouteResponse
+	AddChan   chan *OutChanMsg
 }
 
-type OutChanMsg struct{
-	Action int
+type OutChanMsg struct {
+	Action  int
 	OutChan chan *simplejson.Json
-	ID string
+	ID      string
 }
 
 type BlockRoutine func(*Block)
@@ -44,9 +44,9 @@ type RouteResponse struct {
 func NewBlock(name string, ID string) (*Block, error) {
 	routes := make(map[string]chan RouteResponse)
 
-    if _, ok := Library[name]; !ok {
-        return nil, errors.New("cannot find " + name + " in the Library") 
-    }
+	if _, ok := Library[name]; !ok {
+		return nil, errors.New("cannot find " + name + " in the Library")
+	}
 
 	for _, name := range Library[name].RouteNames {
 		routes[name] = make(chan RouteResponse)
@@ -54,10 +54,10 @@ func NewBlock(name string, ID string) (*Block, error) {
 
 	b := &Block{
 		BlockType: name,
-		ID:       ID,
-		InChan:   make(chan *simplejson.Json),
-		Routes:   routes,
-		AddChan:  make(chan *OutChanMsg),
+		ID:        ID,
+		InChan:    make(chan *simplejson.Json),
+		Routes:    routes,
+		AddChan:   make(chan *OutChanMsg),
 	}
 
 	return b, nil

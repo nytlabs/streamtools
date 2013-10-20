@@ -1,6 +1,6 @@
 package blocks
 
-import(
+import (
 	"log"
 )
 
@@ -13,7 +13,7 @@ func ToLog(b *Block) {
 				log.Println("wow bad json")
 			}
 			log.Println(string(msgStr))
-		case msg := <- b.AddChan:
+		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}
 	}

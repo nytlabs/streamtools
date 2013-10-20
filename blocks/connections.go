@@ -13,7 +13,7 @@ func Connection(b *Block) {
 			broadcast(b.OutChans, msg)
 		case query := <-b.Routes["last_seen"]:
 			query.ResponseChan <- lastSeen
-		case msg := <- b.AddChan:
+		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}
 	}
