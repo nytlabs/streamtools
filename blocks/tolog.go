@@ -1,11 +1,10 @@
 package blocks
 
-import (
+import(
 	"log"
 )
 
 func ToLog(b *Block) {
-	log.Println("starting to log block")
 	for {
 		select {
 		case msg := <-b.InChan:
@@ -15,10 +14,7 @@ func ToLog(b *Block) {
 			}
 			log.Println(string(msgStr))
 		case msg := <- b.AddChan:
-			switch msg.Action {
-			case CREATE_OUT_CHAN:
-				b.OutChans[msg.ID] = msg.OutChan
-			}
+			updateOutChans(msg, b)
 		}
 	}
 }

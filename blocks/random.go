@@ -3,7 +3,6 @@ package blocks
 
 import (
     "github.com/bitly/go-simplejson"
-    "log"
     "math/rand"
     "strings"
     "time"
@@ -16,7 +15,6 @@ var (
 )
 
 func Random(b *Block) {
-    log.Println("starting Random block")
     msg, _ := simplejson.NewJson([]byte("{}"))
     c := time.Tick(1 * time.Second)
     r := rand.New(rand.NewSource(99))

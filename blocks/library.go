@@ -12,11 +12,6 @@ var (
 // A block library is a collection of possible block templates
 type BlockLibrary map[string]*BlockTemplate
 
-// TODO: library should probably become a struct at some point...
-func register(t *BlockTemplate){
-	Library[t.BlockType] = t
-}
-
 func BuildLibrary() {
 	log.Println("building block library")
 	Library = make(map[string]*BlockTemplate)

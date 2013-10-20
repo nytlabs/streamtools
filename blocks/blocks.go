@@ -19,7 +19,7 @@ type BlockTemplate struct {
 }
 
 type Block struct {
-	Template *BlockTemplate
+	BlockType string
 	ID       string
 	InChan   chan *simplejson.Json
 	OutChans map[string]chan *simplejson.Json
@@ -53,10 +53,9 @@ func NewBlock(name string, ID string) (*Block, error) {
 	}
 
 	b := &Block{
-		Template: Library[name],
+		BlockType: name,
 		ID:       ID,
 		InChan:   make(chan *simplejson.Json),
-		OutChans: make(map[string]chan *simplejson.Json),
 		Routes:   routes,
 		AddChan:  make(chan *OutChanMsg),
 	}

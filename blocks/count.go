@@ -3,12 +3,11 @@ package blocks
 import (
     "container/heap"
     "github.com/bitly/go-simplejson"
-    "log"
     "time"
+    "log"
 )
 
 func Count(b *Block) {
-    log.Println("starting count block")
     // block until we recieve a rule
     params := <-b.Routes["params"]
     windowSeconds, err := params.Msg.Get("window").Float64()
