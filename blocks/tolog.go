@@ -5,7 +5,6 @@ import (
 )
 
 func ToLog(b *Block) {
-	log.Println("starting to log block")
 	for {
 		select {
 		case msg := <-b.InChan:
@@ -14,6 +13,8 @@ func ToLog(b *Block) {
 				log.Println("wow bad json")
 			}
 			log.Println(string(msgStr))
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		}
 	}
 }

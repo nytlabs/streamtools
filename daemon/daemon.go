@@ -14,9 +14,9 @@ var (
 	idChan chan string
 )
 
-// hub keeps track of all the blocks and connections
+// Daemon keeps track of all the blocks and connections
 type Daemon struct {
-	blockMap      map[string]*blocks.Block
+	blockMap map[string]*blocks.Block
 }
 
 // The rootHandler returns information about the whole system
@@ -24,7 +24,7 @@ func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range d.blockMap {
-		fmt.Fprintln(w, id+":", block.Template.BlockType)
+		fmt.Fprintln(w, id+":", block.BlockType)
 	}
 }
 
@@ -57,7 +57,6 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	from := r.Form["from"][0]
 	to := r.Form["to"][0]
-	log.Println("connecting", from, "to", to)
 	d.CreateConnection(from, to)
 }
 
@@ -67,66 +66,101 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	route := strings.Split(r.URL.Path, "/")[3]
 
 	err := r.ParseForm()
-	var respData string
+	if err != nil{
+		log.Println("could not parse form")
+	}
+
+	var msg string
 	for k, _ := range r.Form {
-		respData = k
+		msg = k
 	}
-	msg, err := simplejson.NewJson([]byte(respData))
-	if err != nil {
-		msg = nil
-	}
-	ResponseChan := make(chan *simplejson.Json)
+
+	ResponseChan := make(chan string)
 	blockRouteChan := d.blockMap[id].Routes[route]
 	blockRouteChan <- blocks.RouteResponse{
 		Msg:          msg,
 		ResponseChan: ResponseChan,
 	}
-	blockMsg := <-ResponseChan
-	out, err := blockMsg.MarshalJSON()
-	if err != nil {
-		log.Println(err.Error())
-	}
+	respMsg := <-ResponseChan
 
-	fmt.Fprintln(w, string(out))
+	fmt.Fprintln(w, respMsg)
 }
 
 func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "libraryBlob")
 }
 
-func (d *Daemon) createRoutes(b *blocks.Block){
-	for _, routeName := range b.Template.RouteNames {
-		log.Println("creating route /blocks/"+b.ID+"/"+routeName)
+func (d *Daemon) createRoutes(b *blocks.Block) {
+	for _, routeName := range blocks.Library[b.BlockType].RouteNames {
+		log.Println("creating route /blocks/" + b.ID + "/" + routeName)
 		http.HandleFunc("/blocks/"+b.ID+"/"+routeName, d.routeHandler)
 	}
 }
 
 func (d *Daemon) CreateConnection(from string, to string) {
-
 	ID := <-idChan
-	conn, _ := blocks.NewBlock("connection", ID)
+	d.CreateBlock("connection", ID)
 
-	// channel from the inbound block to the connection
-	fromBlock := d.blockMap[from]
-	inChan := make(chan *simplejson.Json)
-	fromBlock.OutChans[ID] = inChan
-	conn.InChan = inChan
+	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
+		Action:  blocks.CREATE_OUT_CHAN,
+		OutChan: d.blockMap[ID].InChan,
+		ID:      ID,
+	}
 
-	// channel from the connection to the outbound block
-	toBlock := d.blockMap[to]
-	inChan = toBlock.InChan
-	conn.OutChans[toBlock.ID] = inChan
-
-	d.createRoutes(conn)
-	d.blockMap[conn.ID] = conn
-	go blocks.Library["connection"].Routine(conn)
+	d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+		Action:  blocks.CREATE_OUT_CHAN,
+		OutChan: d.blockMap[to].InChan,
+		ID:      to,
+	}
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {
+	// TODO: Clean this up.
+	//
+	// In order to avoid data races the blocks held in daemon's blockMap
+	// are not the same blocks held in each block routine. When CreateBlock
+	// is called, we actually create two blocks: one to store in daemon's
+	// blockMap and one to send to the block routine.
+	//
+	// The block stored in daemon's blockmap doesn't make use of OutChans as
+	// a block's OutChans can be dynamically modified when connections are
+	// added or deleted. All of the other fields, such as ID, name, and all
+	// the channels that go into the block (inChan, Routes) are the SAME
+	// in both the daemon blockMap block and the blockroutine block.
+	//
+	// Becauase of this very minor difference it would be a huge semantic help
+	// if the type going to the blockroutines was actually different than the
+	// type being kept in daemon's blockmap.
+	//
+	// Modifications to blocks in daemon's blockMap will obviously not
+	// proliferate to blockroutines and all changes (such as adding outchans)
+	// can only be done through messages. A future daemon block type might
+	// want to restrict how daemon blocks can be used, such as creating
+	// getters and no setters. Or perhaps a setter automatically takes care
+	// of sending a message to the blockroutine to emulate the manipulation
+	// of a single variable.
+
+	// create the block that will be stored in blockMap
 	b, _ := blocks.NewBlock(name, ID)
 	d.createRoutes(b)
 	d.blockMap[b.ID] = b
-	go blocks.Library[name].Routine(b)
+
+	// create the block that will be sent to the blockroutine and copy all
+	// chan references from the previously created block
+	c, _ := blocks.NewBlock(name, ID)
+	for k, v := range b.Routes {
+		c.Routes[k] = v
+	}
+
+	c.InChan = b.InChan
+	c.AddChan = b.AddChan
+
+	//create outchans for use only by blockroutine block.
+	c.OutChans = make(map[string]chan *simplejson.Json)
+
+	go blocks.Library[name].Routine(c)
+
+	log.Println("started block \"" + ID + "\" of type " + name)
 }
 
 func (d *Daemon) Run(port string) {
@@ -148,8 +182,8 @@ func (d *Daemon) Run(port string) {
 	http.HandleFunc("/library", d.libraryHandler)
 
 	// start the http server
-	log.Println("starting stream tools on port",  port)
-	err := http.ListenAndServe(":"+ port, nil)
+	log.Println("starting stream tools on port", port)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

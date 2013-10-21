@@ -1,8 +1,13 @@
 package blocks
 
 import (
+	"errors"
 	"github.com/bitly/go-simplejson"
-    "errors"
+)
+
+const (
+	CREATE_OUT_CHAN = iota
+	DELETE_OUT_CHAN = iota
 )
 
 // Block is the basic interface for processing units in streamtools
@@ -14,38 +19,45 @@ type BlockTemplate struct {
 }
 
 type Block struct {
-	Template *BlockTemplate
-	ID       string
-	InChan   chan *simplejson.Json
-	OutChans map[string]chan *simplejson.Json
-	Routes   map[string]chan RouteResponse
+	BlockType string
+	ID        string
+	InChan    chan *simplejson.Json
+	OutChans  map[string]chan *simplejson.Json
+	Routes    map[string]chan RouteResponse
+	AddChan   chan *OutChanMsg
+}
+
+type OutChanMsg struct {
+	Action  int
+	OutChan chan *simplejson.Json
+	ID      string
 }
 
 type BlockRoutine func(*Block)
 
 // RouteResponse is passed into a block to query via established handlers
 type RouteResponse struct {
-	Msg          *simplejson.Json
-	ResponseChan chan *simplejson.Json
+	Msg          string
+	ResponseChan chan string
 }
 
 func NewBlock(name string, ID string) (*Block, error) {
 	routes := make(map[string]chan RouteResponse)
 
-    if _, ok := Library[name]; !ok {
-        return nil, errors.New("cannot find " + name + " in the Library") 
-    }
+	if _, ok := Library[name]; !ok {
+		return nil, errors.New("cannot find " + name + " in the Library")
+	}
 
 	for _, name := range Library[name].RouteNames {
 		routes[name] = make(chan RouteResponse)
 	}
 
 	b := &Block{
-		Template: Library[name],
-		ID:       ID,
-		InChan:   make(chan *simplejson.Json),
-		OutChans: make(map[string]chan *simplejson.Json),
-		Routes:   routes,
+		BlockType: name,
+		ID:        ID,
+		InChan:    make(chan *simplejson.Json),
+		Routes:    routes,
+		AddChan:   make(chan *OutChanMsg),
 	}
 
 	return b, nil

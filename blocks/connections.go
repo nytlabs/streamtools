@@ -5,14 +5,18 @@ import (
 )
 
 func Connection(b *Block) {
-	lastSeen, _ := simplejson.NewJson([]byte("{}"))
+	var last *simplejson.Json
+
 	for {
 		select {
 		case msg := <-b.InChan:
-			lastSeen = msg
+			last = msg
 			broadcast(b.OutChans, msg)
 		case query := <-b.Routes["last_seen"]:
-			query.ResponseChan <- lastSeen
+			r, _ := last.MarshalJSON()
+			query.ResponseChan <- string(r)
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		}
 	}
 }
