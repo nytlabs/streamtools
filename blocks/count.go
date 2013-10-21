@@ -15,8 +15,8 @@ func Count(b *Block) {
 		Count int
 	}
 
-	rule := &countRule {}
-	data := &countData{Count :0,}
+	rule := &countRule{}
+	data := &countData{Count: 0}
 
 	// block until we recieve a rule
 	unmarshal(<-b.Routes["set_rule"], &rule)

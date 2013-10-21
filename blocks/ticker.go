@@ -7,14 +7,14 @@ import (
 
 func Ticker(b *Block) {
 
-	type tickerRule struct{
-		Period	int
+	type tickerRule struct {
+		Period int
 	}
 
 	rule := &tickerRule{
 		Period: 1,
 	}
-	
+
 	ticker := time.NewTicker(time.Duration(rule.Period) * time.Second)
 
 	for {
