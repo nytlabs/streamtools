@@ -91,7 +91,7 @@ func Bunch(b *Block) {
 				if err != nil {
 					log.Fatal(err.Error())
 				}
-				outMsg.Set("bundle", bunches[id])
+				outMsg.Set("bunch", bunches[id])
 				broadcast(b.OutChans, outMsg)
 				delete(bunches, id)
 			}

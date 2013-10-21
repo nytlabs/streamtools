@@ -34,7 +34,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "random",
-			RouteNames: []string{},
+			RouteNames: []string{"set_rule"},
 			Routine:    Random,
 		},
 		&BlockTemplate{
@@ -51,6 +51,11 @@ func BuildLibrary() {
 			BlockType:  "sync",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Sync,
+		},
+		&BlockTemplate{
+			BlockType:  "post",
+			RouteNames: []string{"set_rule"},
+			Routine:    Post,
 		},
 	}
 
