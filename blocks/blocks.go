@@ -28,9 +28,12 @@ type Block struct {
 }
 
 type OutChanMsg struct {
-	Action  int
+	// type of action to perform
+	Action int
+	// new channel to introduce to a block's outChan array
 	OutChan chan *simplejson.Json
-	ID      string
+	// ID of the connection block
+	ID string
 }
 
 type BlockRoutine func(*Block)

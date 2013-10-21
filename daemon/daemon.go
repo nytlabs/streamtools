@@ -66,7 +66,7 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	route := strings.Split(r.URL.Path, "/")[3]
 
 	err := r.ParseForm()
-	if err != nil{
+	if err != nil {
 		log.Println("could not parse form")
 	}
 
@@ -112,6 +112,7 @@ func (d *Daemon) CreateConnection(from string, to string) {
 		OutChan: d.blockMap[to].InChan,
 		ID:      to,
 	}
+	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[to].ID)
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {

@@ -51,6 +51,8 @@ func Random(b *Block) {
 			msg.Set("e", rand.Float32()*8888)
 
 			broadcast(b.OutChans, msg)
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		}
 	}
 
