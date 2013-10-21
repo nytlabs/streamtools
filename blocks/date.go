@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
+	"log"
 	"time"
 )
 
@@ -16,6 +17,7 @@ func Date(b *Block) {
 
 	// block until we recieve a rule
 	unmarshal(<-b.Routes["set_rule"], &rule)
+	log.Println(rule)
 
 	timer := time.NewTimer(time.Duration(1) * time.Second)
 	outMsg := simplejson.New()
@@ -27,6 +29,8 @@ func Date(b *Block) {
 			outMsg.Set("date", t.Format(rule.FmtString))
 			broadcast(b.OutChans, outMsg)
 			timer.Reset(d)
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		}
 	}
 }
