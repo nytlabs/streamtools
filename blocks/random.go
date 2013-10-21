@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"github.com/bitly/go-simplejson"
+	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -14,17 +15,33 @@ var (
 )
 
 func Random(b *Block) {
-	msg, _ := simplejson.NewJson([]byte("{}"))
-	c := time.Tick(1 * time.Second)
+
+	type randomRule struct {
+		Period int
+	}
+
+	rule := &randomRule{
+		Period: 1,
+	}
+
+	msg := simplejson.New()
+	c := time.Tick(time.Duration(rule.Period) * time.Second)
 	r := rand.New(rand.NewSource(99))
 
 	for {
 		select {
+		case r := <-b.Routes["set_rule"]:
+			log.Println(r.Msg)
+			unmarshal(r, &rule)
+			log.Println("recieved new Period", rule.Period)
+			c = time.Tick(time.Duration(rule.Period) * time.Second)
 		case now := <-c:
 			a := int64(r.Float64() * 10000000000)
 			strTime := now.UnixNano() - a
 			msg.Set("t", int64(strTime/1000000))
 			msg.Set("a", 10)
+
+			msg.Set("random_int", rand.Intn(10)+1)
 
 			randints := make([]int, rand.Intn(10))
 			for i, _ := range randints {
@@ -55,5 +72,4 @@ func Random(b *Block) {
 			updateOutChans(msg, b)
 		}
 	}
-
 }

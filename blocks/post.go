@@ -30,17 +30,12 @@ func Post(b *Block) {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case msg := <-b.InChan:
-			body, err := simplejson.NewJson([]byte("{}"))
-			if err != nil {
-				log.Fatal(err.Error())
-			}
+			body := simplejson.New()
 			for _, keymap := range rule.Keymapping {
 				keys := strings.Split(keymap.MsgKey, ".")
-				value, err := msg.GetPath(keys...).String()
-				if err != nil {
-					log.Fatal(err.Error())
-				}
+				value := msg.GetPath(keys...).Interface()
 				body.Set(keymap.QueryKey, value)
+
 			}
 
 			// TODO maybe check the response ?
@@ -48,11 +43,10 @@ func Post(b *Block) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println(rule.Endpoint, body)
-			_, err = http.Post(rule.Endpoint, "application/json", bytes.NewReader(postBody))
-			if err != nil {
-				log.Fatal(err.Error())
-			}
+			log.Println(body)
+
+			// TODO the content-type here is heavily borked but we're using a hack
+			http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
 		}
 	}
 }

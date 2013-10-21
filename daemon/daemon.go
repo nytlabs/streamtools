@@ -74,7 +74,6 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	for k, _ := range r.Form {
 		msg = k
 	}
-
 	ResponseChan := make(chan string)
 	blockRouteChan := d.blockMap[id].Routes[route]
 	blockRouteChan <- blocks.RouteResponse{
