@@ -19,7 +19,7 @@ func BuildLibrary() {
 	templates := []*BlockTemplate{
 		&BlockTemplate{
 			BlockType:  "ticker",
-			RouteNames: []string{},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Ticker,
 		},
 		&BlockTemplate{
@@ -39,7 +39,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "count",
-			RouteNames: []string{"params", "count"},
+			RouteNames: []string{"set_rule", "count"},
 			Routine:    Count,
 		},
 	}

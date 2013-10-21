@@ -66,27 +66,24 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	route := strings.Split(r.URL.Path, "/")[3]
 
 	err := r.ParseForm()
-	var respData string
+	if err != nil{
+		log.Println("could not parse form")
+	}
+
+	var msg string
 	for k, _ := range r.Form {
-		respData = k
+		msg = k
 	}
-	msg, err := simplejson.NewJson([]byte(respData))
-	if err != nil {
-		msg = nil
-	}
-	ResponseChan := make(chan *simplejson.Json)
+
+	ResponseChan := make(chan string)
 	blockRouteChan := d.blockMap[id].Routes[route]
 	blockRouteChan <- blocks.RouteResponse{
 		Msg:          msg,
 		ResponseChan: ResponseChan,
 	}
-	blockMsg := <-ResponseChan
-	out, err := blockMsg.MarshalJSON()
-	if err != nil {
-		log.Println(err.Error())
-	}
+	respMsg := <-ResponseChan
 
-	fmt.Fprintln(w, string(out))
+	fmt.Fprintln(w, respMsg)
 }
 
 func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {

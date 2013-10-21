@@ -37,8 +37,8 @@ type BlockRoutine func(*Block)
 
 // RouteResponse is passed into a block to query via established handlers
 type RouteResponse struct {
-	Msg          *simplejson.Json
-	ResponseChan chan *simplejson.Json
+	Msg          string
+	ResponseChan chan string
 }
 
 func NewBlock(name string, ID string) (*Block, error) {
