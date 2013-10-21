@@ -42,6 +42,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "count"},
 			Routine:    Count,
 		},
+		&BlockTemplate{
+			BlockType: "mask",
+			RouteNames: []string{"set_rule","get_rule"},
+			Routine: Mask,
+		},
 	}
 
 	for _, t := range templates {
