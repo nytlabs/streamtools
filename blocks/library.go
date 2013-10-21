@@ -43,9 +43,14 @@ func BuildLibrary() {
 			Routine:    Count,
 		},
 		&BlockTemplate{
-			BlockType:  "bunch",
-			RouteNames: []string{"set_rule"},
-			Routine:    Bunch,
+			BlockType:  "mask",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Mask,
+		},
+		&BlockTemplate{
+			BlockType:  "sync",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Sync,
 		},
 	}
 
