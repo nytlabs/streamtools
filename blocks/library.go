@@ -52,6 +52,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule"},
 			Routine:    Post,
 		},
+		&BlockTemplate{
+			BlockType:  "date",
+			RouteNames: []string{"set_rule"},
+			Routine:    Date,
+		},
 	}
 
 	for _, t := range templates {
