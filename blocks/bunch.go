@@ -19,9 +19,9 @@ func Bunch(b *Block) {
 
 	unmarshal(<-b.Routes["set_rule"], &rule)
 	branchString := rule.Branch
-	log.Println("grouping by", branchString)
+	//log.Println("grouping by", branchString)
 	afterSeconds := rule.EmitAfter
-	log.Println("emitting after", afterSeconds, "seconds")
+	//log.Println("emitting after", afterSeconds, "seconds")
 
 	after := time.Duration(afterSeconds) * time.Second
 	branch := strings.Split(branchString, ".")
@@ -33,6 +33,8 @@ func Bunch(b *Block) {
 
 	for {
 		select {
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		case msg := <-b.InChan:
 			id, err := msg.GetPath(branch...).String()
 			if err != nil {
@@ -89,7 +91,6 @@ func Bunch(b *Block) {
 				if err != nil {
 					log.Fatal(err.Error())
 				}
-				log.Println("emitting bunch with id:", id)
 				outMsg.Set("bundle", bunches[id])
 				broadcast(b.OutChans, outMsg)
 				delete(bunches, id)
