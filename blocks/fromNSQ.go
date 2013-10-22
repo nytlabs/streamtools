@@ -48,6 +48,8 @@ func FromNSQ(b *Block) {
 		select {
 		case <-reader.ExitChan:
 			break
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		}
 	}
 }
