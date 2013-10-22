@@ -67,6 +67,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule"},
 			Routine:    PollS3,
 		},
+		&BlockTemplate{
+			BlockType:  "tofile",
+			RouteNames: []string{"set_rule"},
+			Routine:    ToFile,
+		},
 	}
 
 	for _, t := range templates {
