@@ -7,6 +7,12 @@ import (
 	"log"
 	"net/http"
 	"strings"
+    "io"
+    "io/ioutil"
+)
+
+const(
+	READ_MAX = 1024768
 )
 
 var (
@@ -32,49 +38,89 @@ func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
 func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println("could not parse form on /create")
+		ApiResponse(w, 500, "BAD_REQUEST")
+		return
 	}
-	if blockType, ok := r.Form["blockType"]; ok {
 
-		var id string
-		if blockId, ok := r.Form["id"]; ok {
-			id = blockId[0]
-		} else {
-			id = <-idChan
-		}
-		d.CreateBlock(blockType[0], id)
+	var id string
+	var blockType string 
+	fType, typeExists := r.Form["blockType"]
+	fID, idExists := r.Form["id"]
 
+	if typeExists == false {
+		ApiResponse(w, 500, "MISSING_BLOCKTYPE")
+		return
 	} else {
-		log.Println("no blocktype specified")
+		blockType = fType[0]
 	}
+
+	if idExists == false {
+		id = <-idChan
+	} else {
+		_, notUnique := d.blockMap[fID[0]]
+		if notUnique == true {
+			ApiResponse(w, 500, "BLOCK_ID_ALREADY_EXISTS")
+			return
+		} else {
+			id = fID[0]
+		}
+	}
+
+	d.CreateBlock(blockType, id)
+
+	ApiResponse(w, 200, "BLOCK_CREATED")
 }
 
 // The connectHandler connects together two blocks
 func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Println("could not parse form on /connect")
+		ApiResponse(w, 500, "BAD_REQUEST")
+		return
 	}
+
 	from := r.Form["from"][0]
 	to := r.Form["to"][0]
+
+	if len(from) == 0 {
+		ApiResponse(w, 500, "MISSING_FROM_BLOCK_ID")
+		return
+	}
+
+	if len(to) == 0 {
+		ApiResponse(w, 500, "MISSING_TO_BLOCK_ID")
+		return
+	}
+
+	_, exists := d.blockMap[from]
+	if exists == false {
+		ApiResponse(w, 500, "FROM_BLOCK_NOT_FOUND")
+		return
+	}
+
+	_, exists = d.blockMap[to] 
+	if exists == false {
+		ApiResponse(w, 500, "TO_BLOCK_NOT_FOUND")
+		return
+	}
+
 	d.CreateConnection(from, to)
+
+	ApiResponse(w, 200, "CONNECTION_CREATED")
 }
 
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
 func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	id := strings.Split(r.URL.Path, "/")[2]
 	route := strings.Split(r.URL.Path, "/")[3]
+	msg, err := ioutil.ReadAll(io.LimitReader(r.Body, READ_MAX))
 
-	err := r.ParseForm()
-	if err != nil {
-		log.Println("could not parse form")
+	if err != nil{
+		ApiResponse(w, 500, "BAD_REQUEST")
+		return
 	}
 
-	var msg string
-	for k, _ := range r.Form {
-		msg = k
-	}
-	ResponseChan := make(chan string)
+	ResponseChan := make(chan []byte)
 	blockRouteChan := d.blockMap[id].Routes[route]
 	blockRouteChan <- blocks.RouteResponse{
 		Msg:          msg,
@@ -82,7 +128,7 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	respMsg := <-ResponseChan
 
-	fmt.Fprintln(w, respMsg)
+	DataResponse(w, respMsg)
 }
 
 func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {

@@ -14,7 +14,7 @@ func Connection(b *Block) {
 			broadcast(b.OutChans, msg)
 		case query := <-b.Routes["last_seen"]:
 			r, _ := last.MarshalJSON()
-			query.ResponseChan <- string(r)
+			query.ResponseChan <- r
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}
