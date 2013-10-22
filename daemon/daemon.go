@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
+	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
-    "io"
-    "io/ioutil"
 )
 
-const(
+const (
 	READ_MAX = 1024768
 )
 
@@ -43,7 +43,7 @@ func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var id string
-	var blockType string 
+	var blockType string
 	fType, typeExists := r.Form["blockType"]
 	fID, idExists := r.Form["id"]
 
@@ -98,7 +98,7 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, exists = d.blockMap[to] 
+	_, exists = d.blockMap[to]
 	if exists == false {
 		ApiResponse(w, 500, "TO_BLOCK_NOT_FOUND")
 		return
@@ -115,7 +115,7 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	route := strings.Split(r.URL.Path, "/")[3]
 	msg, err := ioutil.ReadAll(io.LimitReader(r.Body, READ_MAX))
 
-	if err != nil{
+	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
 		return
 	}
