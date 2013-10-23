@@ -77,6 +77,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule"},
 			Routine:    ToFile,
 		},
+		&BlockTemplate{
+			BlockType:  "filter",
+			RouteNames: []string{"set_rule"},
+			Routine:    Filter,
+		},
 	}
 
 	for _, t := range templates {
