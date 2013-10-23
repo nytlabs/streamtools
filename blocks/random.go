@@ -41,7 +41,7 @@ func Random(b *Block) {
 			msg.Set("t", int64(strTime/1000000))
 			msg.Set("a", 10)
 
-			msg.Set("random_int", rand.Intn(10)+1)
+			msg.Set("random_int", rand.Intn(2)+1)
 
 			randints := make([]int, rand.Intn(10))
 			for i, _ := range randints {
