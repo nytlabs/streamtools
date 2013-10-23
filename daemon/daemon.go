@@ -54,6 +54,12 @@ func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 		blockType = fType[0]
 	}
 
+	_, inLibrary := blocks.Library[blockType]
+	if inLibrary == false {
+		ApiResponse(w, 500, "INVALID_BLOCKTYPE")
+		return
+	}
+
 	if idExists == false {
 		id = <-idChan
 	} else {
