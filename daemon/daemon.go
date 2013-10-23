@@ -85,6 +85,18 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, hasFrom := r.Form["from"]
+	if hasFrom == false {
+		ApiResponse(w, 500, "MISSING_FROM_BLOCK_ID")
+		return
+	}
+
+	_, hasTo := r.Form["to"]
+	if hasTo == false {
+		ApiResponse(w, 500, "MISSING_TO_BLOCK_ID")
+		return
+	}
+
 	from := r.Form["from"][0]
 	to := r.Form["to"][0]
 
