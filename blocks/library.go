@@ -62,6 +62,16 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule"},
 			Routine:    Date,
 		},
+		&BlockTemplate{
+			BlockType:  "fromNSQ",
+			RouteNames: []string{"set_rule"},
+			Routine:    FromNSQ,
+		},
+		&BlockTemplate{
+			BlockType:  "pollS3",
+			RouteNames: []string{"set_rule"},
+			Routine:    PollS3,
+		},
 	}
 
 	for _, t := range templates {

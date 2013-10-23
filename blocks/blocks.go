@@ -40,8 +40,8 @@ type BlockRoutine func(*Block)
 
 // RouteResponse is passed into a block to query via established handlers
 type RouteResponse struct {
-	Msg          string
-	ResponseChan chan string
+	Msg          []byte
+	ResponseChan chan []byte
 }
 
 func NewBlock(name string, ID string) (*Block, error) {

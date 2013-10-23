@@ -20,12 +20,12 @@ func updateOutChans(msg *OutChanMsg, b *Block) {
 }
 
 func unmarshal(r RouteResponse, rule interface{}) {
-	json.Unmarshal([]byte(r.Msg), &rule)
+	json.Unmarshal(r.Msg, &rule)
 	m, err := json.Marshal(rule)
 	if err != nil {
 		log.Println("could not unmarshal rule")
 	}
-	r.ResponseChan <- string(m)
+	r.ResponseChan <- m
 }
 
 func marshal(r RouteResponse, rule interface{}) {
@@ -33,5 +33,5 @@ func marshal(r RouteResponse, rule interface{}) {
 	if err != nil {
 		log.Println("could not marshal rule")
 	}
-	r.ResponseChan <- string(m)
+	r.ResponseChan <- m
 }
