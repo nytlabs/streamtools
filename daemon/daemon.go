@@ -54,6 +54,12 @@ func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 		blockType = fType[0]
 	}
 
+	_, inLibrary := blocks.Library[blockType]
+	if inLibrary == false {
+		ApiResponse(w, 500, "INVALID_BLOCKTYPE")
+		return
+	}
+
 	if idExists == false {
 		id = <-idChan
 	} else {
@@ -76,6 +82,18 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
+		return
+	}
+
+	_, hasFrom := r.Form["from"]
+	if hasFrom == false {
+		ApiResponse(w, 500, "MISSING_FROM_BLOCK_ID")
+		return
+	}
+
+	_, hasTo := r.Form["to"]
+	if hasTo == false {
+		ApiResponse(w, 500, "MISSING_TO_BLOCK_ID")
 		return
 	}
 
