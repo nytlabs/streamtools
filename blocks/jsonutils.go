@@ -1,13 +1,9 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
 	"log"
+	"strings"
 )
-
-func getPath(msg *simplejson.Json, path string) interface{} {
-	return msg.Get(path).Interface()
-}
 
 // getKeyValues returns values for all paths, including arrays
 // {"foo":"bar"} returns [bar] for string "foo"
@@ -19,17 +15,17 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	var rest string
 
 	keyIdx := strings.Index(p, ".")
-	
+
 	if keyIdx != -1 {
 		key = p[:keyIdx]
-		rest = p[keyIdx + 1:]
+		rest = p[keyIdx+1:]
 	}
 
 	switch d := d.(type) {
 	case map[string]interface{}:
 		if len(rest) > 0 {
 			x := getKeyValues(d[key], rest)
-			for _, z := range x{
+			for _, z := range x {
 				values = append(values, z)
 			}
 		} else {
@@ -67,6 +63,44 @@ func equals(value interface{}, comparator interface{}) bool {
 		return value == comparator
 	default:
 		log.Println("cannot perform an equals operation on this type")
+		return false
+	}
+}
+
+func greaterthan(value interface{}, comparator interface{}) bool {
+	switch value := value.(type) {
+	case int:
+		return value > int(comparator.(float64))
+	case float64:
+		return value > comparator.(float64)
+	default:
+		log.Println("cannot perform a greaterthan operation on this type")
+		return false
+	}
+}
+
+func lessthan(value interface{}, comparator interface{}) bool {
+	switch value := value.(type) {
+	case int:
+		return value < int(comparator.(float64))
+	case float64:
+		return value < comparator.(float64)
+	default:
+		log.Println("cannot perform a lessthan operation on this type")
+		return false
+	}
+}
+
+func subsetof(value interface{}, comparator interface{}) bool {
+	log.Println("HELLO")
+	switch value := value.(type) {
+	case string:
+		log.Println("VALUE", value)
+		log.Println("COMPARATOR", comparator.(string))
+		return strings.Contains(value, comparator.(string))
+	default:
+		log.Println(value)
+		log.Println("cannot perform a subsetof operation on this type")
 		return false
 	}
 }
