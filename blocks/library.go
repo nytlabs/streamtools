@@ -79,7 +79,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "filter",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Filter,
 		},
 	}

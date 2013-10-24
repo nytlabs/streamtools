@@ -14,13 +14,10 @@ func Filter(b *Block) {
 
 	operators = make(map[string]opFunc)
 
-	operators["="] = equals
-	/*
-		operators[">"] = greaterthan
-		operators["<"] = lessthan
-		operators["∈"] = elementof
-		operators["⊂"] = subsetof
-	*/
+	operators["eq"] = equals
+	operators["gt"] = greaterthan
+	operators["lt"] = lessthan
+	operators["subset"] = subsetof
 
 	rule := &filterRule{}
 	unmarshal(<-b.Routes["set_rule"], &rule)
@@ -28,10 +25,17 @@ func Filter(b *Block) {
 	for {
 		select {
 		case msg := <-b.InChan:
-			value := getPath(msg, rule.Path)
-			if operators[rule.Operator](value, rule.Comparator) {
-				broadcast(b.OutChans, msg)
+			values := getKeyValues(msg, rule.Path)
+			for _, value := range values {
+				if operators[rule.Operator](value, rule.Comparator) {
+					broadcast(b.OutChans, msg)
+					break
+				}
 			}
+		case msg := <- b.Routes["set_rule"]:
+			unmarshal(msg, &rule)
+		case msg := <- b.Routes["get_rule"]:
+			marshal(msg, rule)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}
