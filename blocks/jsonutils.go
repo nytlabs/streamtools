@@ -4,22 +4,24 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"github.com/bitly/go-simplejson"
 )
 
 // getKeyValues returns values for all paths, including arrays
 // {"foo":"bar"} returns [bar] for string "foo"
 // {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo.[]"
 // {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo.[].type"
+// this function is obscene :(
 func getKeyValues(d interface{}, p string) []interface{} {
 	var values []interface{}
 	var key string
 	var rest string
 
 	keyIdx := strings.Index(p, ".")
-
+	
 	if keyIdx != -1 {
 		key = p[:keyIdx]
-		rest = p[keyIdx+1:]
+		rest = p[keyIdx + 1:]
 	} else {
 		key = p
 	}
@@ -29,23 +31,93 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	var id int64
 	id = -1
 	if bStart == 0 && bEnd != 1 {
-		id, _ = strconv.ParseInt(key[bStart+1:bEnd], 10, 64)
+		id, _ = strconv.ParseInt(key[bStart + 1:bEnd], 10, 64) 
 	}
 
 	switch d := d.(type) {
 	case map[string]interface{}:
 		if len(rest) > 0 {
 			x := getKeyValues(d[key], rest)
-			for _, z := range x {
+			for _, z := range x{
 				values = append(values, z)
 			}
 		} else {
-			values = append(values, d[p])
+			_, ok := (d[p]).([]interface{})
+			if ok == false {
+				values = append(values, d[p])
+			}
+		}
+	case []int:
+		var ids []int64
+		if id != -1 {
+			if len(d) == 0 || int(id) >= len(d) || id < 0 {
+				break
+			}
+			ids = append(ids, int64(id))
+		} else {
+			for i := range d {
+				ids = append(ids, int64(i))
+			}
 		}
 
+		for _, id := range ids {
+			values = append(values, d[id])
+		}
+	case []string:
+		var ids []int64
+		if id != -1 {
+			if len(d) == 0 || int(id) >= len(d) || id < 0 {
+				break
+			}
+
+			ids = append(ids, int64(id))
+		} else {
+			for i := range d {
+				ids = append(ids, int64(i))
+			}
+		}
+
+		for _, id := range ids {
+			values = append(values, d[id])
+		}
+	case []bool:
+		var ids []int64
+		if id != -1 {
+			if len(d) == 0 || int(id) >= len(d) || id < 0 {
+				break
+			}
+			ids = append(ids, int64(id))
+		} else {
+			for i := range d {
+				ids = append(ids, int64(i))
+			}
+		}
+
+		for _, id := range ids {
+			values = append(values, d[id])
+		}
+	case []float64:
+		var ids []int64
+		if id != -1 {
+			if len(d) == 0 || int(id) >= len(d) || id < 0 {
+				break
+			}
+			ids = append(ids, int64(id))
+		} else {
+			for i := range d {
+				ids = append(ids, int64(i))
+			}
+		}
+
+		for _, id := range ids {
+			values = append(values, d[id])
+		}
 	case []interface{}:
 		var ids []int64
 		if id != -1 {
+			if len(d) == 0 || int(id) >= len(d) || id < 0 {
+				break
+			}
 			ids = append(ids, int64(id))
 		} else {
 			for i := range d {
@@ -63,6 +135,12 @@ func getKeyValues(d interface{}, p string) []interface{} {
 				values = append(values, d[id])
 			}
 		}
+	case *simplejson.Json:
+		x := getKeyValues(d.Interface(), p)
+		for _, z := range x {
+			values = append(values, z)
+		}
+
 	default:
 	}
 
@@ -109,15 +187,9 @@ func lessthan(value interface{}, comparator interface{}) bool {
 }
 
 func subsetof(value interface{}, comparator interface{}) bool {
-	log.Println("HELLO")
 	switch value := value.(type) {
 	case string:
-		log.Println("VALUE", value)
-		log.Println("COMPARATOR", comparator.(string))
 		return strings.Contains(value, comparator.(string))
-	default:
-		log.Println(value)
-		log.Println("cannot perform a subsetof operation on this type")
-		return false
 	}
+	return false
 }
