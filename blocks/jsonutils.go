@@ -10,9 +10,9 @@ import (
 
 // getKeyValues returns values for all paths, including arrays
 // {"foo":"bar"} returns [bar] for string "foo"
-// {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo.[]"
-// {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo.[].type"
-// {"foo":["bar","baz"]} returns [bar] for string "foo.[0]"
+// {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo[]"
+// {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo[].type"
+// {"foo":["bar","baz"]} returns [bar] for string "foo[0]"
 
 // this function is obscene :(
 func getKeyValues(d interface{}, p string) []interface{} {
@@ -21,12 +21,18 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	var rest string
 
 	keyIdx := strings.Index(p, ".")
-	
+	brkIdx := strings.Index(p, "[")
+
 	if keyIdx != -1 {
 		key = p[:keyIdx]
 		rest = p[keyIdx + 1:]
 	} else {
 		key = p
+	}
+
+	if brkIdx != -1 && brkIdx != 0 {
+		key = p[:brkIdx]
+		rest = p[brkIdx:]
 	}
 
 	bStart := strings.Index(key, "[")
@@ -168,6 +174,9 @@ func equals(value interface{}, comparator interface{}) bool {
 	case bool:
 		return value == comparator
 	default:
+		if value == nil && comparator == nil {
+			return true
+		}
 		log.Println("cannot perform an equals operation on this type")
 		return false
 	}
