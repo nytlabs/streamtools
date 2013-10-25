@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"github.com/bitly/go-simplejson"
+	"encoding/json"
 )
 
 // getKeyValues returns values for all paths, including arrays
@@ -149,9 +150,17 @@ func getKeyValues(d interface{}, p string) []interface{} {
 
 func equals(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case int:
-		c := comparator.(float64)
-		return value == int(c)
+	case json.Number:
+		// not sure about comparing floats
+		v, err := value.Float64()
+		if err != nil{
+			return false
+		}
+		c, ok := comparator.(float64)
+		if ok == false {
+			return false
+		}
+		return v == c
 	case string:
 		return value == comparator
 	case bool:
@@ -164,10 +173,17 @@ func equals(value interface{}, comparator interface{}) bool {
 
 func greaterthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case int:
-		return value > int(comparator.(float64))
-	case float64:
-		return value > comparator.(float64)
+	case json.Number:
+		// not sure about comparing floats
+		v, err := value.Float64()
+		if err != nil{
+			return false
+		}
+		c, ok := comparator.(float64)
+		if ok == false {
+			return false
+		}
+		return v > c
 	default:
 		log.Println("cannot perform a greaterthan operation on this type")
 		return false
@@ -176,10 +192,17 @@ func greaterthan(value interface{}, comparator interface{}) bool {
 
 func lessthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case int:
-		return value < int(comparator.(float64))
-	case float64:
-		return value < comparator.(float64)
+	case json.Number:
+		// not sure about comparing floats
+		v, err := value.Float64()
+		if err != nil{
+			return false
+		}
+		c, ok := comparator.(float64)
+		if ok == false {
+			return false
+		}
+		return v < c
 	default:
 		log.Println("cannot perform a lessthan operation on this type")
 		return false

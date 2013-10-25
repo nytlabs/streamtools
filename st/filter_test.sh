@@ -1,3 +1,12 @@
+clear
+echo "tests filter block"
+echo "all results in log"
+echo "messages with status \"SHOULD PASS\" should be followed by a message."
+echo "messages with status \"SHOULD FAIL\" should not followed by a message."
+echo ""
+echo ""
+echo ""
+
 curl "localhost:7070/create?blockType=postto"
 curl "localhost:7070/create?blockType=filter"
 curl "localhost:7070/create?blockType=tolog"
@@ -24,6 +33,13 @@ curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
 curl "localhost:7070/blocks/1/in" --data '{"test":5}'
 curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
 curl "localhost:7070/blocks/1/in" --data '{"test":10}'
+
+
+curl "localhost:7070/blocks/2/set_rule" --data '{"Path":"test","Comparator":5,"Operator":"gt"}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":10}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":5}'
 
 curl "localhost:7070/blocks/2/set_rule" --data '{"Path":"test","Comparator":true,"Operator":"eq"}'
 curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
@@ -107,3 +123,32 @@ curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
 curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":"yellow"}]}'
 curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
 curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":"nope"}]}'
+
+read
+echo ""
+echo ""
+echo "TEST 6: mixed"
+echo ""
+echo ""
+curl "localhost:7070/blocks/2/set_rule" --data '{"Path":"test.[].sub.[]","Comparator":"ok","Operator":"eq"}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":["ok","yes","no"]}]}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":["no","yes","no"]}]}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":null}]}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"completely_wrong":null}'
+
+curl "localhost:7070/blocks/2/set_rule" --data '{"Path":"test.[].sub.[]","Comparator":"bees","Operator":"subset"}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":["bees are cool","yes","no"]}]}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":["no","yes","no"]}]}'
+
+curl "localhost:7070/blocks/2/set_rule" --data '{"Path":"test.[].sub.[].url","Comparator":"fakeurl","Operator":"subset"}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":[{"url":"www.fakeurl.fake/~fake"},{"bad":null}]}]}'
+curl "localhost:7070/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:7070/blocks/1/in" --data '{"test":[{"sub":[null,5,"no"]}]}'
+
