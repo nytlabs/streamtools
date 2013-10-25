@@ -12,6 +12,8 @@ import (
 // {"foo":"bar"} returns [bar] for string "foo"
 // {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo.[]"
 // {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo.[].type"
+// {"foo":["bar","baz"]} returns [bar] for string "foo.[0]"
+
 // this function is obscene :(
 func getKeyValues(d interface{}, p string) []interface{} {
 	var values []interface{}
