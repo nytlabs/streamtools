@@ -82,6 +82,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Filter,
 		},
+		&BlockTemplate{
+			BlockType:  "postto",
+			RouteNames: []string{"in"},
+			Routine:    PostTo,
+		},
 	}
 
 	for _, t := range templates {
