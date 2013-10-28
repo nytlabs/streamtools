@@ -33,6 +33,10 @@ func Ticker(b *Block) {
 
 		case r := <-b.Routes["get_rule"]:
 			marshal(r, rule)
+
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

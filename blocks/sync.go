@@ -32,6 +32,9 @@ func Sync(b *Block) {
 			marshal(m, rule)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		case <-emitTick.C:
 		case msg := <-b.InChan:
 			// we should do something about the special case of "path" in the future

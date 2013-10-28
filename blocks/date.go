@@ -31,6 +31,9 @@ func Date(b *Block) {
 			timer.Reset(d)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

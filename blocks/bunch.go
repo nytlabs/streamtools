@@ -35,6 +35,9 @@ func Bunch(b *Block) {
 		select {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		case msg := <-b.InChan:
 			id, err := msg.GetPath(branch...).String()
 			if err != nil {

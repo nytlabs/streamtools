@@ -82,6 +82,9 @@ func PollS3(b *Block) {
 		case r := <-b.Routes["set_rule"]:
 			unmarshal(r, &rule)
 			log.Println("got updated prefix:", rule.Prefix)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		}

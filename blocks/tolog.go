@@ -15,6 +15,9 @@ func ToLog(b *Block) {
 			log.Println(string(msgStr))
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

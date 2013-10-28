@@ -37,6 +37,9 @@ func Count(b *Block) {
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			unmarshal(ruleUpdate, &rule)
 			window = time.Duration(rule.Window) * time.Second
+		case <-b.QuitChan:
+			quit(b)
+			return
 		case <-b.InChan:
 			queueMessage := &PQMessage{
 				val: &emptyByte,

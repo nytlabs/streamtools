@@ -17,6 +17,10 @@ func Connection(b *Block) {
 			query.ResponseChan <- r
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
+
 }

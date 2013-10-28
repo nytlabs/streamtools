@@ -5,16 +5,34 @@ import (
 	"log"
 )
 
-func maskJSON(mask map[string]interface{}, input map[string]interface{}) *simplejson.Json {
+func maskJSON(maskMap map[string]interface{}, input *simplejson.Json) *simplejson.Json {
 	t, _ := simplejson.NewJson([]byte(`{}`))
 
-	for k, _ := range mask {
-		switch input[k].(type) {
-		case map[string]interface{}:
-			t.Set(k, maskJSON(mask[k].(map[string]interface{}), input[k].(map[string]interface{})))
+	if len(maskMap) == 0 {
+		return input
+	}
+
+	inputMap, err := input.Map()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	for k, _ := range maskMap {
+		val, _ := inputMap[k]
+		switch val.(type) {
+		case *simplejson.Json:
+			valJ := val.(*simplejson.Json)
+			_, err := valJ.Map()
+			if err != nil {
+				log.Println("could not convert ", inputMap[k])
+				t.Set(k, inputMap[k])
+			} else {
+				t.Set(k, maskJSON(maskMap[k].(map[string]interface{}), valJ))
+			}
 		default:
-			t.Set(k, input[k])
+			t.Set(k, val)
 		}
+
 	}
 
 	return t
@@ -46,13 +64,16 @@ func Mask(b *Block) {
 		case r := <-b.Routes["get_rule"]:
 			marshal(r, rule)
 		case msg := <-b.InChan:
-			m, err := msg.Map()
+			/*m, err := msg.Map()
 			if err != nil {
 				log.Println(err.Error())
-			}
-			broadcast(b.OutChans, maskJSON(rule.Mask.(map[string]interface{}), m))
+			}*/
+			broadcast(b.OutChans, maskJSON(rule.Mask.(map[string]interface{}), msg))
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

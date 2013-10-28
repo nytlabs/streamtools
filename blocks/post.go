@@ -29,6 +29,9 @@ func Post(b *Block) {
 		select {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		case msg := <-b.InChan:
 			body := simplejson.New()
 			for _, keymap := range rule.Keymapping {

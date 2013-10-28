@@ -35,6 +35,9 @@ func ToFile(b *Block) {
 			w.Flush()
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }
