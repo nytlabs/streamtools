@@ -1,0 +1,1 @@
+curl "localhost:7070/connect?from=$1&to=$2"
