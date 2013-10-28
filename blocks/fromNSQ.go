@@ -50,6 +50,9 @@ func FromNSQ(b *Block) {
 			break
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

@@ -70,6 +70,9 @@ func Random(b *Block) {
 			broadcast(b.OutChans, msg)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

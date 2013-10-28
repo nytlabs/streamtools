@@ -17,6 +17,9 @@ func PostTo(b *Block) {
 				msg.ResponseChan <- []byte(string(`{"Post":"OK"}`))
 				broadcast(b.OutChans, outMsgJson)
 			}
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 	}
 }

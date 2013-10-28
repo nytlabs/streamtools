@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
+	"github.com/ant0ine/go-urlrouter"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
+	//"strings"
+	"errors"
 )
 
 const (
@@ -26,7 +28,7 @@ type Daemon struct {
 }
 
 // The rootHandler returns information about the whole system
-func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
+func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range d.blockMap {
@@ -35,7 +37,7 @@ func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // The createHandler creates new blocks
-func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
+func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
 	err := r.ParseForm()
 	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
@@ -77,8 +79,109 @@ func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request) {
 	ApiResponse(w, 200, "BLOCK_CREATED")
 }
 
+func (d *Daemon) deleteHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+	err := r.ParseForm()
+	if err != nil {
+		ApiResponse(w, 500, "BAD_REQUEST")
+		return
+	}
+
+	_, hasID := r.Form["id"]
+	if hasID == false {
+		ApiResponse(w, 500, "MISSING_BLOCK_ID")
+		return
+	}
+
+	id := r.Form["id"][0]
+
+	err = d.DeleteBlock(id)
+
+	if err != nil {
+		ApiResponse(w, 500, err.Error())
+		return
+	}
+
+	ApiResponse(w, 200, "BLOCK_DELETED")
+}
+
+func (d *Daemon) DeleteBlock(id string) error {
+	block, ok := d.blockMap[id]
+	if ok == false {
+		return errors.New("BLOCK_NOT_FOUND")
+	}
+
+	/*for k, _ := range block.InBlocks {
+		_, ok := d.blockMap[k]
+		if ok == false {
+			continue
+		}
+
+		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.DELETE_OUT_CHAN,
+			ID:      block.ID,
+		}
+	}*/
+	/*if block.BlockType == "connection" {
+		for k, _ := range block.InBlocks{ 
+			d.blockMap[k].AddChan <- &blocks.OutChanMsg{
+				Action:  blocks.DELETE_OUT_CHAN,
+				ID:      block.ID,
+			}
+			log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")
+		}
+
+		for k, _ := range block.OutBlocks{
+			log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")			
+		}
+
+
+		block.QuitChan <- true
+		delete(d.blockMap, id)
+
+	} else {
+		for k, _ := range block.InBlocks {
+			d.DeleteBlock(k)
+		}
+
+		for k, _ := range block.OutBlocks {
+			d.DeleteBlock(k)
+		}
+
+		block.QuitChan <- true
+		delete(d.blockMap, id)	
+	}*/
+	for k, _ := range block.InBlocks { 
+		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.DELETE_OUT_CHAN,
+			ID:      block.ID,
+		}
+
+		log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")
+
+		delete( d.blockMap[k].OutBlocks, block.ID)
+
+		if d.blockMap[k].BlockType == "connection"{
+			d.DeleteBlock(k)
+		}
+	}
+
+	for k, _ := range block.OutBlocks {
+		delete( d.blockMap[k].InBlocks, block.ID)
+		if d.blockMap[k].BlockType == "connection"{
+			d.DeleteBlock(k)
+		}
+	}
+
+	block.QuitChan <- true
+	delete(d.blockMap, id)	
+
+	return nil
+}
+
 // The connectHandler connects together two blocks
-func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
+func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+	var id string
+
 	err := r.ParseForm()
 	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
@@ -95,6 +198,19 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 	if hasTo == false {
 		ApiResponse(w, 500, "MISSING_TO_BLOCK_ID")
 		return
+	}
+
+	fID, hasID := r.Form["id"]
+	if hasID == false {
+		id = <-idChan
+	} else {
+		_, ok := d.blockMap[fID[0]]
+		if ok == false {
+			id = fID[0]
+		} else {
+			ApiResponse(w, 500, "BLOCK_ID_ALREADY_EXISTS")
+			return
+		}
 	}
 
 	from := r.Form["from"][0]
@@ -122,15 +238,40 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.CreateConnection(from, to)
+	d.CreateConnection(from, to, id)
 
 	ApiResponse(w, 200, "CONNECTION_CREATED")
 }
 
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
-func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
-	id := strings.Split(r.URL.Path, "/")[2]
-	route := strings.Split(r.URL.Path, "/")[3]
+func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+	//id := strings.Split(r.URL.Path, "/")[2]
+	//route := strings.Split(r.URL.Path, "/")[3]
+
+	id, ok := m["id"]
+	if ok == false {
+		ApiResponse(w, 500, "MISSING_BLOCK_ID")
+		return
+	}
+
+	route, ok := m["route"]
+	if ok == false {
+		ApiResponse(w, 500, "MISSING_ROUTE")
+		return
+	}
+
+	_, ok = d.blockMap[id]
+	if ok == false {
+		ApiResponse(w, 500, "BLOCK_ID_NOT_FOUND")
+		return
+	}
+
+	_, ok = d.blockMap[id].Routes[route] 
+	if ok == false {
+		ApiResponse(w, 500, "ROUTE_NOT_FOUND")
+		return
+	}
+
 	msg, err := ioutil.ReadAll(io.LimitReader(r.Body, READ_MAX))
 
 	if err != nil {
@@ -149,19 +290,11 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request) {
 	DataResponse(w, respMsg)
 }
 
-func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
+func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
 	fmt.Fprint(w, "libraryBlob")
 }
 
-func (d *Daemon) createRoutes(b *blocks.Block) {
-	for _, routeName := range blocks.Library[b.BlockType].RouteNames {
-		log.Println("creating route /blocks/" + b.ID + "/" + routeName)
-		http.HandleFunc("/blocks/"+b.ID+"/"+routeName, d.routeHandler)
-	}
-}
-
-func (d *Daemon) CreateConnection(from string, to string) {
-	ID := <-idChan
+func (d *Daemon) CreateConnection(from string, to string, ID string) {
 	d.CreateBlock("connection", ID)
 
 	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
@@ -175,6 +308,13 @@ func (d *Daemon) CreateConnection(from string, to string) {
 		OutChan: d.blockMap[to].InChan,
 		ID:      to,
 	}
+
+	// add the from block to the list of inblocks for connection.
+	d.blockMap[from].OutBlocks[ID] = true
+	d.blockMap[ID].InBlocks[from] = true
+	d.blockMap[ID].OutBlocks[to] = true
+	d.blockMap[to].InBlocks[ID] = true
+
 	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[to].ID)
 }
 
@@ -206,8 +346,10 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 
 	// create the block that will be stored in blockMap
 	b, _ := blocks.NewBlock(name, ID)
-	d.createRoutes(b)
+	//d.createRoutes(b)
 	d.blockMap[b.ID] = b
+	d.blockMap[b.ID].InBlocks = make(map[string]bool)
+	d.blockMap[b.ID].OutBlocks = make(map[string]bool)
 
 	// create the block that will be sent to the blockroutine and copy all
 	// chan references from the previously created block
@@ -218,6 +360,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 
 	c.InChan = b.InChan
 	c.AddChan = b.AddChan
+	c.QuitChan = b.QuitChan
 
 	//create outchans for use only by blockroutine block.
 	c.OutChans = make(map[string]chan *simplejson.Json)
@@ -240,10 +383,38 @@ func (d *Daemon) Run(port string) {
 	d.blockMap = make(map[string]*blocks.Block)
 
 	// instantiate the base handlers
-	http.HandleFunc("/", d.rootHandler)
-	http.HandleFunc("/create", d.createHandler)
-	http.HandleFunc("/connect", d.connectHandler)
-	http.HandleFunc("/library", d.libraryHandler)
+	router := urlrouter.Router{
+        Routes: []urlrouter.Route{
+            urlrouter.Route{
+                PathExp: "/",
+                Dest:    d.rootHandler,
+            },
+            urlrouter.Route{
+                PathExp: "/create",
+                Dest:    d.createHandler,
+            },
+            urlrouter.Route{
+                PathExp: "/delete",
+                Dest:    d.deleteHandler,
+            },
+            urlrouter.Route{
+                PathExp: "/connect",
+                Dest:    d.connectHandler,
+            },
+            urlrouter.Route{
+                PathExp: "/blocks/:id/:route",
+                Dest:    d.routeHandler,
+            },
+        },
+    }
+
+    router.Start()
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        route, params := router.FindRouteFromURL(r.URL)
+        handler := route.Dest.(func(http.ResponseWriter, *http.Request, map[string]string))
+        handler(w, r, params)
+    })
 
 	// start the http server
 	log.Println("starting stream tools on port", port)

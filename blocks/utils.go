@@ -16,6 +16,8 @@ func updateOutChans(msg *OutChanMsg, b *Block) {
 	switch msg.Action {
 	case CREATE_OUT_CHAN:
 		b.OutChans[msg.ID] = msg.OutChan
+	case DELETE_OUT_CHAN:
+		delete(b.OutChans, msg.ID)
 	}
 }
 
@@ -38,4 +40,12 @@ func marshal(r RouteResponse, rule interface{}) {
 		log.Println("could not marshal rule")
 	}
 	r.ResponseChan <- m
+}
+
+func quit(b *Block){
+	close (b.InChan)
+	for _, v := range b.Routes {
+		close(v)
+	}
+	log.Println("quitting \"" + b.ID + "\" of type " + b.BlockType)
 }

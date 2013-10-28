@@ -25,6 +25,9 @@ type Block struct {
 	OutChans  map[string]chan *simplejson.Json
 	Routes    map[string]chan RouteResponse
 	AddChan   chan *OutChanMsg
+	InBlocks  map[string] bool // bool is dumb. 
+	OutBlocks map[string] bool // bool is dumb.
+	QuitChan  chan bool
 }
 
 type OutChanMsg struct {
@@ -61,6 +64,7 @@ func NewBlock(name string, ID string) (*Block, error) {
 		InChan:    make(chan *simplejson.Json),
 		Routes:    routes,
 		AddChan:   make(chan *OutChanMsg),
+		QuitChan:  make(chan bool),
 	}
 
 	return b, nil
