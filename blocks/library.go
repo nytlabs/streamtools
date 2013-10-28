@@ -87,6 +87,11 @@ func BuildLibrary() {
 			RouteNames: []string{"in"},
 			Routine:    PostTo,
 		},
+		&BlockTemplate{
+			BlockType:  "timeseries",
+			RouteNames: []string{"set_rule", "timeseries"},
+			Routine:    Timeseries,
+		},
 	}
 
 	for _, t := range templates {

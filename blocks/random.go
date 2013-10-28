@@ -49,6 +49,9 @@ func Random(b *Block) {
 			}
 			msg.Set("random_integers", randints)
 
+			random_float :=r.Float64()
+			msg.Set("random_float", random_float)
+
 			idx0 := rand.Intn(len(options))
 			idx1 := rand.Intn(len(options))
 			msg.Set("option", options[idx0])
