@@ -32,9 +32,9 @@ func Filter(b *Block) {
 					break
 				}
 			}
-		case msg := <- b.Routes["set_rule"]:
+		case msg := <-b.Routes["set_rule"]:
 			unmarshal(msg, &rule)
-		case msg := <- b.Routes["get_rule"]:
+		case msg := <-b.Routes["get_rule"]:
 			marshal(msg, rule)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

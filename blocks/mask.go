@@ -6,36 +6,36 @@ import (
 )
 
 func maskJSON(maskMap map[string]interface{}, input *simplejson.Json) *simplejson.Json {
-        t, _ := simplejson.NewJson([]byte(`{}`))
+	t, _ := simplejson.NewJson([]byte(`{}`))
 
-        if len(maskMap) == 0 {
-                return input
-        }
+	if len(maskMap) == 0 {
+		return input
+	}
 
-        inputMap, err := input.Map()
-        if err != nil {
-        	log.Fatal(err.Error())
-        }
+	inputMap, err := input.Map()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-        for k, _ := range maskMap {
-        	val, _ := inputMap[k]
-        	switch val.(type){
-        	case *simplejson.Json:
-	        	valJ := val.(*simplejson.Json)
-	        	_, err := valJ.Map()
-	        	if err != nil {
-	        		log.Println("could not convert ", inputMap[k] )
-	        		t.Set(k, inputMap[k])
-	        	} else {
-	        		t.Set(k, maskJSON(maskMap[k].(map[string]interface{}), valJ ))
-	        	}
-	        default:
-	        	t.Set(k, val)
-	        }
+	for k, _ := range maskMap {
+		val, _ := inputMap[k]
+		switch val.(type) {
+		case *simplejson.Json:
+			valJ := val.(*simplejson.Json)
+			_, err := valJ.Map()
+			if err != nil {
+				log.Println("could not convert ", inputMap[k])
+				t.Set(k, inputMap[k])
+			} else {
+				t.Set(k, maskJSON(maskMap[k].(map[string]interface{}), valJ))
+			}
+		default:
+			t.Set(k, val)
+		}
 
-        }
+	}
 
-        return t
+	return t
 }
 
 // Mask modifies a JSON stream with an additive key filter. Mask uses the JSON

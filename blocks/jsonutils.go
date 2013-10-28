@@ -1,11 +1,11 @@
 package blocks
 
 import (
+	"encoding/json"
+	"github.com/bitly/go-simplejson"
 	"log"
 	"strconv"
 	"strings"
-	"github.com/bitly/go-simplejson"
-	"encoding/json"
 )
 
 // getKeyValues returns values for all paths, including arrays
@@ -25,7 +25,7 @@ func getKeyValues(d interface{}, p string) []interface{} {
 
 	if keyIdx != -1 {
 		key = p[:keyIdx]
-		rest = p[keyIdx + 1:]
+		rest = p[keyIdx+1:]
 	} else {
 		key = p
 	}
@@ -40,14 +40,14 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	var id int64
 	id = -1
 	if bStart == 0 && bEnd != 1 {
-		id, _ = strconv.ParseInt(key[bStart + 1:bEnd], 10, 64) 
+		id, _ = strconv.ParseInt(key[bStart+1:bEnd], 10, 64)
 	}
 
 	switch d := d.(type) {
 	case map[string]interface{}:
 		if len(rest) > 0 {
 			x := getKeyValues(d[key], rest)
-			for _, z := range x{
+			for _, z := range x {
 				values = append(values, z)
 			}
 		} else {
@@ -161,7 +161,7 @@ func equals(value interface{}, comparator interface{}) bool {
 	case json.Number:
 		// not sure about comparing floats
 		v, err := value.Float64()
-		if err != nil{
+		if err != nil {
 			return false
 		}
 		c, ok := comparator.(float64)
@@ -187,7 +187,7 @@ func greaterthan(value interface{}, comparator interface{}) bool {
 	case json.Number:
 		// not sure about comparing floats
 		v, err := value.Float64()
-		if err != nil{
+		if err != nil {
 			return false
 		}
 		c, ok := comparator.(float64)
@@ -206,7 +206,7 @@ func lessthan(value interface{}, comparator interface{}) bool {
 	case json.Number:
 		// not sure about comparing floats
 		v, err := value.Float64()
-		if err != nil{
+		if err != nil {
 			return false
 		}
 		c, ok := comparator.(float64)

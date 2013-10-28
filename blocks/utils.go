@@ -42,8 +42,8 @@ func marshal(r RouteResponse, rule interface{}) {
 	r.ResponseChan <- m
 }
 
-func quit(b *Block){
-	close (b.InChan)
+func quit(b *Block) {
+	close(b.InChan)
 	for _, v := range b.Routes {
 		close(v)
 	}

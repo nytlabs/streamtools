@@ -2,9 +2,9 @@ package daemon
 
 import (
 	"fmt"
+	"github.com/ant0ine/go-urlrouter"
 	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
-	"github.com/ant0ine/go-urlrouter"
 	"io"
 	"io/ioutil"
 	"log"
@@ -110,30 +110,30 @@ func (d *Daemon) DeleteBlock(id string) error {
 		return errors.New("BLOCK_NOT_FOUND")
 	}
 
-	for k, _ := range block.InBlocks { 
+	for k, _ := range block.InBlocks {
 		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
-			Action:  blocks.DELETE_OUT_CHAN,
-			ID:      block.ID,
+			Action: blocks.DELETE_OUT_CHAN,
+			ID:     block.ID,
 		}
 
 		log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")
 
-		delete( d.blockMap[k].OutBlocks, block.ID)
+		delete(d.blockMap[k].OutBlocks, block.ID)
 
-		if d.blockMap[k].BlockType == "connection"{
+		if d.blockMap[k].BlockType == "connection" {
 			d.DeleteBlock(k)
 		}
 	}
 
 	for k, _ := range block.OutBlocks {
-		delete( d.blockMap[k].InBlocks, block.ID)
-		if d.blockMap[k].BlockType == "connection"{
+		delete(d.blockMap[k].InBlocks, block.ID)
+		if d.blockMap[k].BlockType == "connection" {
 			d.DeleteBlock(k)
 		}
 	}
 
 	block.QuitChan <- true
-	delete(d.blockMap, id)	
+	delete(d.blockMap, id)
 
 	return nil
 }
@@ -226,7 +226,7 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request, m map[stri
 		return
 	}
 
-	_, ok = d.blockMap[id].Routes[route] 
+	_, ok = d.blockMap[id].Routes[route]
 	if ok == false {
 		ApiResponse(w, 500, "ROUTE_NOT_FOUND")
 		return
@@ -344,37 +344,37 @@ func (d *Daemon) Run(port string) {
 
 	// instantiate the base handlers
 	router := urlrouter.Router{
-        Routes: []urlrouter.Route{
-            urlrouter.Route{
-                PathExp: "/",
-                Dest:    d.rootHandler,
-            },
-            urlrouter.Route{
-                PathExp: "/create",
-                Dest:    d.createHandler,
-            },
-            urlrouter.Route{
-                PathExp: "/delete",
-                Dest:    d.deleteHandler,
-            },
-            urlrouter.Route{
-                PathExp: "/connect",
-                Dest:    d.connectHandler,
-            },
-            urlrouter.Route{
-                PathExp: "/blocks/:id/:route",
-                Dest:    d.routeHandler,
-            },
-        },
-    }
+		Routes: []urlrouter.Route{
+			urlrouter.Route{
+				PathExp: "/",
+				Dest:    d.rootHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/create",
+				Dest:    d.createHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/delete",
+				Dest:    d.deleteHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/connect",
+				Dest:    d.connectHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/blocks/:id/:route",
+				Dest:    d.routeHandler,
+			},
+		},
+	}
 
-    router.Start()
+	router.Start()
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        route, params := router.FindRouteFromURL(r.URL)
-        handler := route.Dest.(func(http.ResponseWriter, *http.Request, map[string]string))
-        handler(w, r, params)
-    })
+		route, params := router.FindRouteFromURL(r.URL)
+		handler := route.Dest.(func(http.ResponseWriter, *http.Request, map[string]string))
+		handler(w, r, params)
+	})
 
 	// start the http server
 	log.Println("starting stream tools on port", port)

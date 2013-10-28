@@ -25,8 +25,8 @@ type Block struct {
 	OutChans  map[string]chan *simplejson.Json
 	Routes    map[string]chan RouteResponse
 	AddChan   chan *OutChanMsg
-	InBlocks  map[string] bool // bool is dumb. 
-	OutBlocks map[string] bool // bool is dumb.
+	InBlocks  map[string]bool // bool is dumb.
+	OutBlocks map[string]bool // bool is dumb.
 	QuitChan  chan bool
 }
 
