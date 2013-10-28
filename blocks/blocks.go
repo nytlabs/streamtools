@@ -2,13 +2,16 @@ package blocks
 
 import (
 	"errors"
-	"github.com/bitly/go-simplejson"
 )
 
 const (
 	CREATE_OUT_CHAN = iota
 	DELETE_OUT_CHAN = iota
 )
+
+type BlockMessage struct {
+	data interface{}
+}
 
 // Block is the basic interface for processing units in streamtools
 type BlockTemplate struct {
@@ -21,8 +24,8 @@ type BlockTemplate struct {
 type Block struct {
 	BlockType string
 	ID        string
-	InChan    chan *simplejson.Json
-	OutChans  map[string]chan *simplejson.Json
+	InChan    chan *BlockMessage
+	OutChans  map[string]chan *BlockMessage
 	Routes    map[string]chan RouteResponse
 	AddChan   chan *OutChanMsg
 	InBlocks  map[string]bool // bool is dumb.
@@ -34,7 +37,7 @@ type OutChanMsg struct {
 	// type of action to perform
 	Action int
 	// new channel to introduce to a block's outChan array
-	OutChan chan *simplejson.Json
+	OutChan chan *BlockMessage
 	// ID of the connection block
 	ID string
 }
@@ -61,7 +64,7 @@ func NewBlock(name string, ID string) (*Block, error) {
 	b := &Block{
 		BlockType: name,
 		ID:        ID,
-		InChan:    make(chan *simplejson.Json),
+		InChan:    make(chan *BlockMessage),
 		Routes:    routes,
 		AddChan:   make(chan *OutChanMsg),
 		QuitChan:  make(chan bool),
