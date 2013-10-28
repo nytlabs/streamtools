@@ -110,46 +110,6 @@ func (d *Daemon) DeleteBlock(id string) error {
 		return errors.New("BLOCK_NOT_FOUND")
 	}
 
-	/*for k, _ := range block.InBlocks {
-		_, ok := d.blockMap[k]
-		if ok == false {
-			continue
-		}
-
-		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
-			Action:  blocks.DELETE_OUT_CHAN,
-			ID:      block.ID,
-		}
-	}*/
-	/*if block.BlockType == "connection" {
-		for k, _ := range block.InBlocks{ 
-			d.blockMap[k].AddChan <- &blocks.OutChanMsg{
-				Action:  blocks.DELETE_OUT_CHAN,
-				ID:      block.ID,
-			}
-			log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")
-		}
-
-		for k, _ := range block.OutBlocks{
-			log.Println("disconnecting \"" + block.ID + "\" from \"" + k + "\"")			
-		}
-
-
-		block.QuitChan <- true
-		delete(d.blockMap, id)
-
-	} else {
-		for k, _ := range block.InBlocks {
-			d.DeleteBlock(k)
-		}
-
-		for k, _ := range block.OutBlocks {
-			d.DeleteBlock(k)
-		}
-
-		block.QuitChan <- true
-		delete(d.blockMap, id)	
-	}*/
 	for k, _ := range block.InBlocks { 
 		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
 			Action:  blocks.DELETE_OUT_CHAN,
