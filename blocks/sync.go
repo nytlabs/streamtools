@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"container/heap"
+	"log"
 	"strings"
 	"time"
 )
@@ -40,11 +41,21 @@ func Sync(b *Block) {
 			// we should do something about the special case of "path" in the future
 			// so that we only split it once, not for every message.
 			keys := strings.Split(rule.Path, ".")
-			msgTime := msg.GetPath(keys...).Interface().(int64)
+			msgTimeJson := msg.GetPath(keys...)
+			if msgTimeJson == nil {
+				log.Fatal("cannot extract from JSON:", keys)
+			}
+			msgTime, err := msgTimeJson.Int()
+			if err != nil {
+				log.Println(msgTimeJson)
+				log.Fatal(err.Error())
+			}
 
 			// assuming the value is in MS
 			// TODO: make this more explicit and/or flexible
+			log.Println(msgTime)
 			ms := time.Unix(0, int64(time.Duration(msgTime)*time.Millisecond))
+			log.Println(ms)
 
 			queueMessage := &PQMessage{
 				data: *msg,
