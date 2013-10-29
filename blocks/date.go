@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
 	"log"
 	"time"
 )
@@ -20,13 +19,13 @@ func Date(b *Block) {
 	log.Println(rule)
 
 	timer := time.NewTimer(time.Duration(1) * time.Second)
-	outMsg := simplejson.New()
+	outMsg := make(map[string]interface{})
 	d := time.Duration(rule.Period) * time.Second
 
 	for {
 		select {
 		case t := <-timer.C:
-			outMsg.Set("date", t.Format(rule.FmtString))
+			Set(outMsg, "date", t.Format(rule.FmtString))
 			broadcast(b.OutChans, outMsg)
 			timer.Reset(d)
 		case msg := <-b.AddChan:
