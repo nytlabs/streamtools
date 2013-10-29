@@ -3,7 +3,7 @@ package blocks
 import (
 	"bufio"
 	"compress/gzip"
-	"github.com/bitly/go-simplejson"
+	"encoding/json"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
@@ -70,10 +70,8 @@ func PollS3(b *Block) {
 						scanner = bufio.NewScanner(br)
 					}
 					for scanner.Scan() {
-						out, err := simplejson.NewJson(scanner.Bytes())
-						if err != nil {
-							log.Fatal(err.Error())
-						}
+						var out BMsg
+						json.Unmarshal(scanner.Bytes(), &out)
 						broadcast(b.OutChans, out)
 					}
 				}
