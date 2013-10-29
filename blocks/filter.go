@@ -10,6 +10,7 @@ func Filter(b *Block) {
 		Operator   string
 		Path       string
 		Comparator interface{}
+		Invert     bool
 	}
 
 	operators = make(map[string]opFunc)
@@ -27,7 +28,7 @@ func Filter(b *Block) {
 		case msg := <-b.InChan:
 			values := getKeyValues(msg, rule.Path)
 			for _, value := range values {
-				if operators[rule.Operator](value, rule.Comparator) {
+				if operators[rule.Operator](value, rule.Comparator) == !rule.Invert {
 					broadcast(b.OutChans, msg)
 					break
 				}

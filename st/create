@@ -1,0 +1,1 @@
+curl localhost:7070/create?blockType=$1

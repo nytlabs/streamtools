@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"container/heap"
-	"github.com/bitly/go-simplejson"
 	"log"
 	"strings"
 	"time"
@@ -26,7 +25,7 @@ func Bunch(b *Block) {
 	after := time.Duration(afterSeconds) * time.Second
 	branch := strings.Split(branchString, ".")
 
-	bunches := make(map[string][]*simplejson.Json)
+	bunches := make(map[string][]BMsg)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
 	pq := &PriorityQueue{}
 	heap.Init(pq)
@@ -39,30 +38,33 @@ func Bunch(b *Block) {
 			quit(b)
 			return
 		case msg := <-b.InChan:
-			id, err := msg.GetPath(branch...).String()
+			id, err := Get(msg, branch...)
+			idStr, ok := id.(string)
+			if !ok {
+				log.Fatal("type assertion failed")
+			}
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			if len(bunches[id]) > 0 {
-				bunches[id] = append(bunches[id], msg)
+			if len(bunches[idStr]) > 0 {
+				bunches[idStr] = append(bunches[idStr], msg)
 			} else {
-				bunches[id] = []*simplejson.Json{msg}
+				bunches[idStr] = []BMsg{msg}
 			}
 
-			val, err := simplejson.NewJson([]byte("{}"))
+			val := make(map[string]interface{})
+			err = Set(val, "id", idStr)
 			if err != nil {
+				log.Println("1")
 				log.Fatal(err.Error())
 			}
-			val.Set("id", id)
-			val.Set("length", len(bunches[id]))
-
-			blob, err := val.Encode()
+			err = Set(val, "length", len(bunches[idStr]))
 			if err != nil {
+				log.Println("2")
 				log.Fatal(err.Error())
 			}
-
 			queueMessage := &PQMessage{
-				val: &blob,
+				val: val,
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
@@ -76,27 +78,30 @@ func Bunch(b *Block) {
 				break
 			}
 			v := pqMsg.(*PQMessage).val
-			queueMessage, err := simplejson.NewJson(*v)
+
+			l, err := Get(v, "length")
 			if err != nil {
+				log.Println(v)
+				log.Println("4")
 				log.Fatal(err.Error())
 			}
-			l, err := queueMessage.Get("length").Int()
+			lInt := l.(int)
+			id, err := Get(v, "id")
 			if err != nil {
+				log.Println("5")
 				log.Fatal(err.Error())
 			}
-			id, err := queueMessage.Get("id").String()
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-			if l == len(bunches[id]) {
+			idStr := id.(string)
+			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
-				outMsg, err := simplejson.NewJson([]byte("{}"))
+				outMsg := make(map[string]interface{})
+				err = Set(outMsg, "bunch", bunches[idStr])
 				if err != nil {
+					log.Println("3")
 					log.Fatal(err.Error())
 				}
-				outMsg.Set("bunch", bunches[id])
 				broadcast(b.OutChans, outMsg)
-				delete(bunches, id)
+				delete(bunches, idStr)
 			}
 		}
 	}

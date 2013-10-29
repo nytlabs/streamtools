@@ -1,11 +1,12 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
+	"encoding/json"
+	"log"
 )
 
 func Connection(b *Block) {
-	var last *simplejson.Json
+	var last BMsg
 
 	for {
 		select {
@@ -13,8 +14,11 @@ func Connection(b *Block) {
 			last = msg
 			broadcast(b.OutChans, msg)
 		case query := <-b.Routes["last_seen"]:
-			r, _ := last.MarshalJSON()
-			query.ResponseChan <- r
+			mj, err := json.Marshal(last)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			query.ResponseChan <- mj
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

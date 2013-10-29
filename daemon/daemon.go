@@ -3,7 +3,6 @@ package daemon
 import (
 	"fmt"
 	"github.com/ant0ine/go-urlrouter"
-	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
 	"io"
 	"io/ioutil"
@@ -323,7 +322,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	c.QuitChan = b.QuitChan
 
 	//create outchans for use only by blockroutine block.
-	c.OutChans = make(map[string]chan *simplejson.Json)
+	c.OutChans = make(map[string]chan blocks.BMsg)
 
 	go blocks.Library[name].Routine(c)
 

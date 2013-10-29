@@ -2,13 +2,33 @@ package blocks
 
 import (
 	"errors"
-	"github.com/bitly/go-simplejson"
 )
 
 const (
 	CREATE_OUT_CHAN = iota
 	DELETE_OUT_CHAN = iota
 )
+
+type BMsg interface {}
+
+func Set(m interface{}, key string, val interface{}) error{
+    min, ok := m.(map[string]interface{})
+    if !ok { return errors.New("type assertion failed") }
+    min[key] = val
+    return nil
+}
+
+func Get(msg interface{}, branch ...string) (interface{}, error){
+        min := msg
+        for i := range branch {
+                m, ok := min.(map[string]interface{})
+                if !ok { return nil, errors.New("type assertion failed") }
+                if val, ok := m[branch[i]]; ok { min = val } else { 
+                    return nil, errors.New("cannot find branch") 
+                }
+        }
+        return min, nil
+}
 
 // Block is the basic interface for processing units in streamtools
 type BlockTemplate struct {
@@ -21,8 +41,8 @@ type BlockTemplate struct {
 type Block struct {
 	BlockType string
 	ID        string
-	InChan    chan *simplejson.Json
-	OutChans  map[string]chan *simplejson.Json
+	InChan    chan BMsg
+	OutChans  map[string]chan BMsg
 	Routes    map[string]chan RouteResponse
 	AddChan   chan *OutChanMsg
 	InBlocks  map[string]bool // bool is dumb.
@@ -34,7 +54,7 @@ type OutChanMsg struct {
 	// type of action to perform
 	Action int
 	// new channel to introduce to a block's outChan array
-	OutChan chan *simplejson.Json
+	OutChan chan BMsg
 	// ID of the connection block
 	ID string
 }
@@ -61,7 +81,7 @@ func NewBlock(name string, ID string) (*Block, error) {
 	b := &Block{
 		BlockType: name,
 		ID:        ID,
-		InChan:    make(chan *simplejson.Json),
+		InChan:    make(chan BMsg),
 		Routes:    routes,
 		AddChan:   make(chan *OutChanMsg),
 		QuitChan:  make(chan bool),

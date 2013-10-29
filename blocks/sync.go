@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"container/heap"
+	"log"
 	"strings"
 	"time"
 )
@@ -37,17 +38,22 @@ func Sync(b *Block) {
 			return
 		case <-emitTick.C:
 		case msg := <-b.InChan:
-			// we should do something about the special case of "path" in the future
-			// so that we only split it once, not for every message.
 			keys := strings.Split(rule.Path, ".")
-			msgTime := msg.GetPath(keys...).Interface().(int64)
+			msgTime, err := Get(msg, keys...)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			msgTimeI, ok := msgTime.(int64)
+			if !ok {
+				log.Println("could not cast time key to int")
+			}
 
 			// assuming the value is in MS
 			// TODO: make this more explicit and/or flexible
-			ms := time.Unix(0, int64(time.Duration(msgTime)*time.Millisecond))
+			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
 
 			queueMessage := &PQMessage{
-				data: *msg,
+				val:  msg,
 				t:    ms,
 			}
 
@@ -63,7 +69,7 @@ func Sync(b *Block) {
 				emitTick.Reset(diff)
 				break
 			}
-			broadcast(b.OutChans, &item.(*PQMessage).data)
+			broadcast(b.OutChans, &item.(*PQMessage).val)
 		}
 	}
 
