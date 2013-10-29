@@ -1,38 +1,27 @@
 package blocks
 
-import (
-	"github.com/bitly/go-simplejson"
-	"log"
-)
-
-func maskJSON(maskMap map[string]interface{}, input *simplejson.Json) *simplejson.Json {
-	t, _ := simplejson.NewJson([]byte(`{}`))
+func maskJSON(maskMap map[string]interface{}, input map[string]interface{}) interface{} {
+	t := make(map[string]interface{})	
 
 	if len(maskMap) == 0 {
 		return input
 	}
 
-	inputMap, err := input.Map()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
 	for k, _ := range maskMap {
-		val, _ := inputMap[k]
-		switch val.(type) {
-		case *simplejson.Json:
-			valJ := val.(*simplejson.Json)
-			_, err := valJ.Map()
-			if err != nil {
-				log.Println("could not convert ", inputMap[k])
-				t.Set(k, inputMap[k])
-			} else {
-				t.Set(k, maskJSON(maskMap[k].(map[string]interface{}), valJ))
+		val, ok := input[k]; 
+		if ok {
+			switch v := val.(type) {
+			case map[string]interface{}:
+				maskNext, ok := maskMap[k].(map[string]interface{})
+				if ok {
+					Set(t, k, maskJSON(maskNext, v))
+				} else {
+					Set(t, k, v)
+				}
+			default:
+				Set(t, k, val)
 			}
-		default:
-			t.Set(k, val)
 		}
-
 	}
 
 	return t
@@ -64,11 +53,11 @@ func Mask(b *Block) {
 		case r := <-b.Routes["get_rule"]:
 			marshal(r, rule)
 		case msg := <-b.InChan:
-			/*m, err := msg.Map()
-			if err != nil {
-				log.Println(err.Error())
-			}*/
-			broadcast(b.OutChans, maskJSON(rule.Mask.(map[string]interface{}), msg))
+			msgMap, msgOk := msg.(map[string]interface{})
+			maskMap, maskOk := rule.Mask.(map[string]interface{})
+			if msgOk && maskOk {
+				broadcast(b.OutChans, maskJSON(maskMap, msgMap))
+			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
