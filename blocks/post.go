@@ -49,7 +49,6 @@ func Post(b *Block) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println(body)
 
 			// TODO the content-type here is heavily borked but we're using a hack
 			http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
