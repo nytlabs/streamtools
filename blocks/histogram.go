@@ -51,7 +51,7 @@ func Histogram(b *Block) {
 			unmarshal(ruleUpdate, &rule)
 			window = time.Duration(rule.Window) * time.Second
 		case msg := <-b.InChan:
-			value := getKeyValues(msg.Interface(), rule.Key)[0]
+			value := getKeyValues(msg, rule.Key)[0]
 			valueString := value.(string)
 
 			if pq, ok := histogram[valueString]; ok {
