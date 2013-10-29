@@ -4,15 +4,13 @@ package blocks
 
 import (
 	"container/heap"
-	"github.com/bitly/go-simplejson"
 	"time"
 )
 
 type PQMessage struct {
-	val   *[]byte
+	val   interface{}
 	t     time.Time
 	index int
-	data  simplejson.Json
 }
 
 // A PriorityQueue implements heap.Interface and holds Items.
