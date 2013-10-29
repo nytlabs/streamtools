@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"container/heap"
-	"encoding/json"
 	"log"
 	"strings"
 	"time"
@@ -54,25 +53,18 @@ func Bunch(b *Block) {
 			}
 
 			val := make(map[string]interface{})
-			if err != nil {
-				log.Fatal(err.Error())
-			}
 			err = Set(val, "id", idStr)
 			if err != nil {
+				log.Println("1")
 				log.Fatal(err.Error())
 			}
 			err = Set(val, "length", len(bunches[idStr]))
 			if err != nil {
+				log.Println("2")
 				log.Fatal(err.Error())
 			}
-
-			blob, err := json.Marshal(val)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-
 			queueMessage := &PQMessage{
-				val: &blob,
+				val: val,
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
@@ -89,18 +81,25 @@ func Bunch(b *Block) {
 
 			l, err := Get(v, "length")
 			if err != nil {
+				log.Println(v)
+				log.Println("4")
 				log.Fatal(err.Error())
 			}
 			lInt := l.(int)
 			id, err := Get(v, "id")
 			if err != nil {
+				log.Println("5")
 				log.Fatal(err.Error())
 			}
 			idStr := id.(string)
 			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
 				outMsg := make(map[string]interface{})
-				Set(outMsg, "bunch", bunches[idStr])
+				err = Set(outMsg, "bunch", bunches[idStr])
+				if err != nil {
+					log.Println("3")
+					log.Fatal(err.Error())
+				}
 				broadcast(b.OutChans, outMsg)
 				delete(bunches, idStr)
 			}

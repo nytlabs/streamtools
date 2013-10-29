@@ -97,6 +97,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "histogram"},
 			Routine:    Histogram,
 		},
+		&BlockTemplate{
+			BlockType:  "bunch",
+			RouteNames: []string{"set_rule"},
+			Routine:    Bunch,
+		},
 	}
 
 	for _, t := range templates {
