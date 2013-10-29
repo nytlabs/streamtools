@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"container/heap"
-	"github.com/bitly/go-simplejson"
 	"log"
 	"strings"
 	"time"
@@ -26,7 +25,7 @@ func Bunch(b *Block) {
 	after := time.Duration(afterSeconds) * time.Second
 	branch := strings.Split(branchString, ".")
 
-	bunches := make(map[string][]*simplejson.Json)
+	bunches := make(map[string][]*BMsg)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
 	pq := &PriorityQueue{}
 	heap.Init(pq)
@@ -39,14 +38,18 @@ func Bunch(b *Block) {
 			quit(b)
 			return
 		case msg := <-b.InChan:
-			id, err := msg.GetPath(branch...).String()
+            id, err := Get(msg, branch...)
+            idStr, ok := id.(string)
+            if !ok {
+               log.Fatal("type assertion failed") 
+            }
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			if len(bunches[id]) > 0 {
-				bunches[id] = append(bunches[id], msg)
+			if len(bunches[idStr]) > 0 {
+				bunches[idStr] = append(bunches[idStr], msg)
 			} else {
-				bunches[id] = []*simplejson.Json{msg}
+				bunches[idStr] = []*simplejson.Json{msg}
 			}
 
 			val, err := simplejson.NewJson([]byte("{}"))
