@@ -1,11 +1,10 @@
 package blocks
 
-
 func Timeseries(b *Block) {
 
 	type tsRule struct {
-		NumSamples int 
-		Key    string
+		NumSamples int
+		Key        string
 	}
 
 	type tsData struct {
@@ -27,7 +26,7 @@ func Timeseries(b *Block) {
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			unmarshal(ruleUpdate, &rule)
 		case msg := <-b.InChan:
-            val := getKeyValues(msg.Interface(), rule.Key)[0].(float64)
+			val := getKeyValues(msg, rule.Key)[0].(float64)
 			data.Values = append(data.Values[1:], val)
 		}
 	}
