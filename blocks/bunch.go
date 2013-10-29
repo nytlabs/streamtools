@@ -53,12 +53,18 @@ func Bunch(b *Block) {
 				bunches[idStr] = []BMsg{msg}
 			}
 
-			var val interface{}
+			val := make(map[string]interface{})
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			Set(val, "id", idStr)
-			Set(val, "length", len(bunches[idStr]))
+			err = Set(val, "id", idStr)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			err = Set(val, "length", len(bunches[idStr]))
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 
 			blob, err := json.Marshal(val)
 			if err != nil {
@@ -93,7 +99,7 @@ func Bunch(b *Block) {
 			idStr := id.(string)
 			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
-				var outMsg interface{}
+				outMsg := make(map[string]interface{})
 				Set(outMsg, "bunch", bunches[idStr])
 				broadcast(b.OutChans, outMsg)
 				delete(bunches, idStr)
