@@ -2,10 +2,10 @@ package blocks
 
 import (
 	"bytes"
-	"github.com/bitly/go-simplejson"
 	"log"
 	"net/http"
 	"strings"
+	"encoding/json"
 )
 
 func Post(b *Block) {
@@ -33,16 +33,19 @@ func Post(b *Block) {
 			quit(b)
 			return
 		case msg := <-b.InChan:
-			body := simplejson.New()
+			var body BMsg
 			for _, keymap := range rule.Keymapping {
 				keys := strings.Split(keymap.MsgKey, ".")
-				value := msg.GetPath(keys...).Interface()
-				body.Set(keymap.QueryKey, value)
-
+				value, err := Get(msg, keys...)
+				if err != nil{
+					log.Println(err.Error())
+				} else {
+					Set(body, keymap.QueryKey, value)
+				}
 			}
 
 			// TODO maybe check the response ?
-			postBody, err := body.Encode()
+			postBody, err := json.Marshal(body)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
