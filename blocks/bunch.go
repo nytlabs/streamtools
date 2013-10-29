@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"container/heap"
+	"encoding/json"
 	"log"
 	"strings"
 	"time"
@@ -38,28 +39,28 @@ func Bunch(b *Block) {
 			quit(b)
 			return
 		case msg := <-b.InChan:
-            id, err := Get(msg, branch...)
-            idStr, ok := id.(string)
-            if !ok {
-               log.Fatal("type assertion failed") 
-            }
+			id, err := Get(msg, branch...)
+			idStr, ok := id.(string)
+			if !ok {
+				log.Fatal("type assertion failed")
+			}
 			if err != nil {
 				log.Fatal(err.Error())
 			}
 			if len(bunches[idStr]) > 0 {
 				bunches[idStr] = append(bunches[idStr], msg)
 			} else {
-				bunches[idStr] = []*simplejson.Json{msg}
+				bunches[idStr] = []*BMsg{msg}
 			}
 
-			val, err := simplejson.NewJson([]byte("{}"))
+			var val interface{}
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			val.Set("id", id)
-			val.Set("length", len(bunches[id]))
+			Set(val, "id", idStr)
+			Set(val, "length", len(bunches[idStr]))
 
-			blob, err := val.Encode()
+			blob, err := json.Marshal(val)
 			if err != nil {
 				log.Fatal(err.Error())
 			}

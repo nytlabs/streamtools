@@ -3,7 +3,6 @@ package daemon
 import (
 	"fmt"
 	"github.com/ant0ine/go-urlrouter"
-	"github.com/bitly/go-simplejson"
 	"github.com/nytlabs/streamtools/blocks"
 	"io"
 	"io/ioutil"
