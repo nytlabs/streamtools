@@ -50,9 +50,7 @@ func Sync(b *Block) {
 
 			// assuming the value is in MS
 			// TODO: make this more explicit and/or flexible
-			log.Println(msgTimeI)
 			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
-			log.Println(ms)
 
 			queueMessage := &PQMessage{
 				val:  msg,
