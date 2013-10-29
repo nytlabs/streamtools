@@ -51,7 +51,11 @@ func Post(b *Block) {
 			}
 
 			// TODO the content-type here is heavily borked but we're using a hack
-			http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
+			resp, err := http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
+			if err != nil {
+				log.Println(err.Error())
+			}
+			defer resp.Body.Close()
 		}
 	}
 }
