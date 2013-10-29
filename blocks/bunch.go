@@ -82,9 +82,15 @@ func Bunch(b *Block) {
 			v := pqMsg.(*PQMessage).val
 
 			l, err := Get(v, "length")
+			if err != nil {
+				log.Fatal(err.Error())
+			}
 			lInt := l.(int)
 			id, err := Get(v, "id")
-			idStr := v.(string)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			idStr := id.(string)
 			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
 				var outMsg interface{}

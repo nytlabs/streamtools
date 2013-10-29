@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -27,7 +28,7 @@ func ToFile(b *Block) {
 	for {
 		select {
 		case msg := <-b.InChan:
-			msgStr, err := msg.MarshalJSON()
+			msgStr, err := json.Marshal(msg)
 			if err != nil {
 				log.Println("wow bad json")
 			}
