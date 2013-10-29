@@ -41,8 +41,8 @@ type BlockTemplate struct {
 type Block struct {
 	BlockType string
 	ID        string
-	InChan    chan *BMsg
-	OutChans  map[string]chan *BMsg
+	InChan    chan BMsg
+	OutChans  map[string]chan BMsg
 	Routes    map[string]chan RouteResponse
 	AddChan   chan *OutChanMsg
 	InBlocks  map[string]bool // bool is dumb.
@@ -54,7 +54,7 @@ type OutChanMsg struct {
 	// type of action to perform
 	Action int
 	// new channel to introduce to a block's outChan array
-	OutChan chan *BMsg
+	OutChan chan BMsg
 	// ID of the connection block
 	ID string
 }
@@ -81,7 +81,7 @@ func NewBlock(name string, ID string) (*Block, error) {
 	b := &Block{
 		BlockType: name,
 		ID:        ID,
-		InChan:    make(chan *BMsg),
+		InChan:    make(chan BMsg),
 		Routes:    routes,
 		AddChan:   make(chan *OutChanMsg),
 		QuitChan:  make(chan bool),

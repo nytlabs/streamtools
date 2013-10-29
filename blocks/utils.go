@@ -2,11 +2,10 @@ package blocks
 
 import (
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"log"
 )
 
-func broadcast(channels map[string]chan *simplejson.Json, msg *simplejson.Json) {
+func broadcast(channels map[string]chan BMsg, msg BMsg) {
 	for _, c := range channels {
 		c <- msg
 	}
