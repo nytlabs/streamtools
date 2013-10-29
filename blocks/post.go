@@ -2,10 +2,10 @@ package blocks
 
 import (
 	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
-	"encoding/json"
 )
 
 func Post(b *Block) {
@@ -33,11 +33,11 @@ func Post(b *Block) {
 			quit(b)
 			return
 		case msg := <-b.InChan:
-			var body BMsg
+			body := make(map[string]interface{})
 			for _, keymap := range rule.Keymapping {
 				keys := strings.Split(keymap.MsgKey, ".")
 				value, err := Get(msg, keys...)
-				if err != nil{
+				if err != nil {
 					log.Println(err.Error())
 				} else {
 					Set(body, keymap.QueryKey, value)
@@ -49,7 +49,6 @@ func Post(b *Block) {
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			log.Println(body)
 
 			// TODO the content-type here is heavily borked but we're using a hack
 			http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
