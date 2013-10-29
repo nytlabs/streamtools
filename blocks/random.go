@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
 	"log"
 	"math/rand"
 	"strings"
@@ -49,7 +48,7 @@ func Random(b *Block) {
 			}
 			msg.Set("random_integers", randints)
 
-			random_float :=r.Float64()
+			random_float := r.Float64()
 			msg.Set("random_float", random_float)
 
 			idx0 := rand.Intn(len(options))
