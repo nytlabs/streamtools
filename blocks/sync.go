@@ -38,27 +38,24 @@ func Sync(b *Block) {
 			return
 		case <-emitTick.C:
 		case msg := <-b.InChan:
-			// we should do something about the special case of "path" in the future
-			// so that we only split it once, not for every message.
 			keys := strings.Split(rule.Path, ".")
-			msgTimeJson := msg.GetPath(keys...)
-			if msgTimeJson == nil {
-				log.Fatal("cannot extract from JSON:", keys)
-			}
-			msgTime, err := msgTimeJson.Int()
+			msgTime, err := Get(msg, keys...)
 			if err != nil {
-				log.Println(msgTimeJson)
-				log.Fatal(err.Error())
+				log.Println(err.Error())
+			}
+			msgTimeI, ok := msgTime.(int64)
+			if !ok {
+				log.Println("could not cast time key to int")
 			}
 
 			// assuming the value is in MS
 			// TODO: make this more explicit and/or flexible
-			log.Println(msgTime)
-			ms := time.Unix(0, int64(time.Duration(msgTime)*time.Millisecond))
+			log.Println(msgTimeI)
+			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
 			log.Println(ms)
 
 			queueMessage := &PQMessage{
-				data: *msg,
+				val:  msg,
 				t:    ms,
 			}
 
@@ -74,7 +71,7 @@ func Sync(b *Block) {
 				emitTick.Reset(diff)
 				break
 			}
-			broadcast(b.OutChans, &item.(*PQMessage).data)
+			broadcast(b.OutChans, &item.(*PQMessage).val)
 		}
 	}
 
