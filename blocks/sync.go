@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"encoding/json"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -47,7 +48,8 @@ func Sync(b *Block) {
 			msgTimeI, ok := msgTime.(int64)
 			if !ok {
 				v, _ := json.Marshal(msg)
-				log.Println(v)
+				log.Println(string(v))
+				log.Println(reflect.TypeOf(msgTime))
 				log.Println(msgTime)
 				log.Println(msgTimeI)
 				log.Println("could not cast time key to int")
