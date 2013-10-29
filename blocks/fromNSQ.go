@@ -2,20 +2,22 @@ package blocks
 
 import (
 	"github.com/bitly/go-nsq"
-	"github.com/bitly/go-simplejson"
+	"encoding/json"
 	"log"
 )
 
 type readWriteHandler struct {
-	OutChans map[string]chan *simplejson.Json
+	OutChans map[string]chan BMsg
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
-	out, err := simplejson.NewJson(message.Body)
+	var msg BMsg 
+	err := json.Unmarshal(message.Body, &msg)
 	if err != nil {
-		log.Fatal(err.Error())
-	}
-	broadcast(self.OutChans, out)
+		log.Println(err.Error())
+	}	
+
+	broadcast(self.OutChans, msg)
 	return nil
 }
 
@@ -51,6 +53,7 @@ func FromNSQ(b *Block) {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
+			reader.ExitChan <- 1
 			quit(b)
 			return
 		}
