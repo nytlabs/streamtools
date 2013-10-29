@@ -28,6 +28,7 @@ func Random(b *Block) {
 	for {
 		select {
 		case r := <-b.Routes["set_rule"]:
+			log.Println("hello", string(r.Msg))
 			unmarshal(r, &rule)
 			log.Println("recieved new Period", rule.Period)
 			c = time.Tick(time.Duration(rule.Period) * time.Second)
