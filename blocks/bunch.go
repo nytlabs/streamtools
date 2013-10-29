@@ -26,7 +26,7 @@ func Bunch(b *Block) {
 	after := time.Duration(afterSeconds) * time.Second
 	branch := strings.Split(branchString, ".")
 
-	bunches := make(map[string][]*BMsg)
+	bunches := make(map[string][]BMsg)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
 	pq := &PriorityQueue{}
 	heap.Init(pq)
@@ -50,7 +50,7 @@ func Bunch(b *Block) {
 			if len(bunches[idStr]) > 0 {
 				bunches[idStr] = append(bunches[idStr], msg)
 			} else {
-				bunches[idStr] = []*BMsg{msg}
+				bunches[idStr] = []BMsg{msg}
 			}
 
 			var val interface{}
@@ -80,27 +80,17 @@ func Bunch(b *Block) {
 				break
 			}
 			v := pqMsg.(*PQMessage).val
-			queueMessage, err := simplejson.NewJson(*v)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-			l, err := queueMessage.Get("length").Int()
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-			id, err := queueMessage.Get("id").String()
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-			if l == len(bunches[id]) {
+
+			l, err := Get(v, "length")
+			lInt := l.(int)
+			id, err := Get(v, "id")
+			idStr := v.(string)
+			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
-				outMsg, err := simplejson.NewJson([]byte("{}"))
-				if err != nil {
-					log.Fatal(err.Error())
-				}
-				outMsg.Set("bunch", bunches[id])
+				var outMsg interface{}
+				Set(outMsg, "bunch", bunches[idStr])
 				broadcast(b.OutChans, outMsg)
-				delete(bunches, id)
+				delete(bunches, idStr)
 			}
 		}
 	}
