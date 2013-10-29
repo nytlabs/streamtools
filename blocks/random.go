@@ -38,7 +38,6 @@ func Random(b *Block) {
 			a := int64(r.Float64() * 10000000000)
 			strTime := now.UnixNano() - a
 			Set(msg, "t", int64(strTime/1000000))
-			log.Println("1", msg)
 			Set(msg, "a", 10)
 
 			Set(msg, "random_int", rand.Intn(10)+1)
@@ -57,6 +56,7 @@ func Random(b *Block) {
 			Set(msg, "option", options[idx0])
 
 			var nestJson interface{}
+			nestJson = make(map[string]interface{})
 			l := rand.Intn(20) + 10
 			d := make([]string, l)
 			string_bank := strings.Fields(raw_string)
@@ -69,8 +69,6 @@ func Random(b *Block) {
 			Set(nestJson, "nestedOption", options[idx1])
 			Set(msg, "c", nestJson)
 			Set(msg, "e", rand.Float32()*8888)
-
-			log.Println(msg)
 
 			broadcast(b.OutChans, msg)
 		case msg := <-b.AddChan:
