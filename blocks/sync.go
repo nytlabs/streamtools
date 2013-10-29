@@ -45,7 +45,8 @@ func Sync(b *Block) {
 			if err != nil {
 				log.Println(err.Error())
 			}
-			msgTimeI, ok := msgTime.(int64)
+			msgTimeF, ok := msgTime.(float64)
+			msgTimeI := int64(msgTimeF)
 			if !ok {
 				v, _ := json.Marshal(msg)
 				log.Println(string(v))
