@@ -32,8 +32,7 @@ func Random(b *Block) {
 			log.Println("recieved new Period", rule.Period)
 			c = time.Tick(time.Duration(rule.Period) * time.Second)
 		case now := <-c:
-			var msg BMsg
-			msg = make(map[string]interface{})
+			msg := make(map[string]interface{})
 			a := int64(r.Float64() * 10000000000)
 			strTime := now.UnixNano() - a
 			Set(msg, "t", int64(strTime/1000000))
