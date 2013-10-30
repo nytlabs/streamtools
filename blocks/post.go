@@ -36,8 +36,9 @@ func Post(b *Block) {
 			resp, err := http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
 			if err != nil {
 				log.Println(err.Error())
+			} else {
+				defer resp.Body.Close()
 			}
-			defer resp.Body.Close()
 		}
 	}
 }

@@ -88,6 +88,11 @@ func BuildLibrary() {
 			Routine:    Filter,
 		},
 		&BlockTemplate{
+			BlockType:  "toNSQ",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToNSQ,
+		},
+		&BlockTemplate{
 			BlockType:  "postto",
 			RouteNames: []string{"in"},
 			Routine:    PostTo,
