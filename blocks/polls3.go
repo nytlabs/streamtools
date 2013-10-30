@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-var (
-	scanner *bufio.Scanner
-)
-
 func PollS3(b *Block) {
 
 	type pollS3Rule struct {
@@ -74,16 +70,24 @@ func PollS3(b *Block) {
 					log.Println("[POLLS3] emitting", v.Key)
 					br, _ := bucket.GetReader(v.Key)
 					defer br.Close()
+
+					var reader *bufio.Reader
+
 					if rule.GzipFlag {
 						gr, _ := gzip.NewReader(br)
 						defer gr.Close()
-						scanner = bufio.NewScanner(gr)
+						reader = bufio.NewReader(gr)
 					} else {
-						scanner = bufio.NewScanner(br)
+						reader = bufio.NewReader(br)
 					}
-					for scanner.Scan() {
+					for {
+						line, err := reader.ReadBytes(10)
+						if err != nil {
+							log.Println(err.Error())
+							break
+						}
 						var out BMsg
-						json.Unmarshal(scanner.Bytes(), &out)
+						json.Unmarshal(line, &out)
 						broadcast(b.OutChans, out)
 					}
 				}
