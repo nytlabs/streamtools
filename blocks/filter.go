@@ -20,12 +20,15 @@ func Filter(b *Block) {
 	operators["lt"] = lessthan
 	operators["subset"] = subsetof
 
-	rule := &filterRule{}
-	unmarshal(<-b.Routes["set_rule"], &rule)
+	var rule *filterRule
 
 	for {
 		select {
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			values := getKeyValues(msg, rule.Path)
 			for _, value := range values {
 				if operators[rule.Operator](value, rule.Comparator) == !rule.Invert {
@@ -34,9 +37,17 @@ func Filter(b *Block) {
 				}
 			}
 		case msg := <-b.Routes["set_rule"]:
-			unmarshal(msg, &rule)
+			if rule == nil {
+				rule = &filterRule{}
+			}
+
+			unmarshal(msg, rule)
 		case msg := <-b.Routes["get_rule"]:
-			marshal(msg, rule)
+			if rule == nil {
+				marshal(msg, &filterRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
