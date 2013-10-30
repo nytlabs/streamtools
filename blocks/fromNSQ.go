@@ -7,7 +7,7 @@ import (
 )
 
 type readWriteHandler struct {
-	OutChans map[string]chan BMsg
+	toOut chan BMsg
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
@@ -16,8 +16,7 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 	if err != nil {
 		log.Println(err.Error())
 	}	
-
-	broadcast(self.OutChans, msg)
+	self.toOut <- msg
 	return nil
 }
 
@@ -30,30 +29,48 @@ func FromNSQ(b *Block) {
 		ReadChannel string
 	}
 
-	rule := &fromNSQRule{}
+	var rule *fromNSQRule
+	var reader *nsq.Reader
+	toOut := make(chan BMsg)
 
-	unmarshal(<-b.Routes["set_rule"], &rule)
-
-	reader, err := nsq.NewReader(rule.ReadTopic, rule.ReadChannel)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	reader.SetMaxInFlight(rule.MaxInFlight)
-
-	h := readWriteHandler{b.OutChans}
-	reader.AddHandler(h)
-	err = reader.ConnectToLookupd(rule.LookupdAddr)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
 	for {
 		select {
-		case <-reader.ExitChan:
-			break
+		case msg := <- toOut:
+			broadcast(b.OutChans, msg)
+		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &fromNSQRule{}
+			}
+			if reader != nil {
+				reader.Stop()
+			}
+
+			unmarshal(msg, rule)
+
+			reader, err := nsq.NewReader(rule.ReadTopic, rule.ReadChannel)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			reader.SetMaxInFlight(rule.MaxInFlight)
+
+			h := readWriteHandler{toOut}
+			reader.AddHandler(h)
+			err = reader.ConnectToLookupd(rule.LookupdAddr)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		case msg := <-b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &fromNSQRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
-			reader.ExitChan <- 1
+			if reader != nil {
+				reader.Stop()
+			}
 			quit(b)
 			return
 		}

@@ -2,7 +2,9 @@ package blocks
 
 import (
 	"container/heap"
+	"encoding/json"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -16,21 +18,24 @@ func Sync(b *Block) {
 		Lag  int
 	}
 
-	rule := &syncRule{}
-
-	unmarshal(<-b.Routes["set_rule"], &rule)
-
-	lagTime := time.Duration(time.Duration(rule.Lag) * time.Second)
-
+	var rule *syncRule
+	lagTime := time.Duration(0)
 	emitTick := time.NewTimer(500 * time.Millisecond)
 
 	for {
 		select {
 		case m := <-b.Routes["set_rule"]:
-			unmarshal(m, &rule)
+			if rule  == nil {
+				rule = &syncRule{}
+			}
+			unmarshal(m, rule)
 			lagTime = time.Duration(time.Duration(rule.Lag) * time.Second)
 		case m := <-b.Routes["get_rule"]:
-			marshal(m, rule)
+			if rule == nil {
+				marshal(m, &syncRule{})
+			} else {
+				marshal(m, rule)
+			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
@@ -38,13 +43,23 @@ func Sync(b *Block) {
 			return
 		case <-emitTick.C:
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			keys := strings.Split(rule.Path, ".")
 			msgTime, err := Get(msg, keys...)
 			if err != nil {
 				log.Println(err.Error())
 			}
-			msgTimeI, ok := msgTime.(int64)
+			msgTimeF, ok := msgTime.(float64)
+			msgTimeI := int64(msgTimeF)
 			if !ok {
+				v, _ := json.Marshal(msg)
+				log.Println(string(v))
+				log.Println(reflect.TypeOf(msgTime))
+				log.Println(msgTime)
+				log.Println(msgTimeI)
 				log.Println("could not cast time key to int")
 			}
 
@@ -53,8 +68,8 @@ func Sync(b *Block) {
 			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
 
 			queueMessage := &PQMessage{
-				val:  msg,
-				t:    ms,
+				val: msg,
+				t:   ms,
 			}
 
 			heap.Push(pq, queueMessage)

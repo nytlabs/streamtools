@@ -42,17 +42,26 @@ func Mask(b *Block) {
 	type maskRule struct {
 		Mask interface{}
 	}
-	rule := &maskRule{}
-
-	unmarshal(<-b.Routes["set_rule"], &rule)
+	var rule *maskRule
 
 	for {
 		select {
 		case m := <-b.Routes["set_rule"]:
-			unmarshal(m, &rule)
+			if rule == nil {
+				rule = &maskRule{}
+			}
+			unmarshal(m, rule)
 		case r := <-b.Routes["get_rule"]:
-			marshal(r, rule)
+			if rule == nil {
+				marshal(r, &maskRule{})
+			} else {
+				marshal(r, rule)
+			}
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			msgMap, msgOk := msg.(map[string]interface{})
 			maskMap, maskOk := rule.Mask.(map[string]interface{})
 			if msgOk && maskOk {

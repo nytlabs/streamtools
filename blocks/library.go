@@ -34,12 +34,12 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "random",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "ger_rule"},
 			Routine:    Random,
 		},
 		&BlockTemplate{
 			BlockType:  "count",
-			RouteNames: []string{"set_rule", "count"},
+			RouteNames: []string{"set_rule", "get_rule", "count"},
 			Routine:    Count,
 		},
 		&BlockTemplate{
@@ -53,18 +53,23 @@ func BuildLibrary() {
 			Routine:    Sync,
 		},
 		&BlockTemplate{
+			BlockType:  "postValue",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    PostValue,
+		},
+		&BlockTemplate{
 			BlockType:  "post",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Post,
 		},
 		&BlockTemplate{
 			BlockType:  "date",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Date,
 		},
 		&BlockTemplate{
 			BlockType:  "fromNSQ",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    FromNSQ,
 		},
 		&BlockTemplate{
@@ -74,7 +79,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "tofile",
-			RouteNames: []string{"set_rule","get_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
 		},
 		&BlockTemplate{
@@ -89,17 +94,17 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "timeseries",
-			RouteNames: []string{"set_rule", "timeseries"},
+			RouteNames: []string{"set_rule", "timeseries", "get_rule"},
 			Routine:    Timeseries,
 		},
 		&BlockTemplate{
 			BlockType:  "histogram",
-			RouteNames: []string{"set_rule", "histogram"},
+			RouteNames: []string{"set_rule", "histogram", "get_rule"},
 			Routine:    Histogram,
 		},
 		&BlockTemplate{
 			BlockType:  "bunch",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
 		},
 	}

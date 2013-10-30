@@ -14,19 +14,13 @@ func Bunch(b *Block) {
 		EmitAfter int
 	}
 
-	rule := &bunchRule{}
+	var rule *bunchRule
+	var branch []string
 
-	unmarshal(<-b.Routes["set_rule"], &rule)
-	branchString := rule.Branch
-	//log.Println("grouping by", branchString)
-	afterSeconds := rule.EmitAfter
-	//log.Println("emitting after", afterSeconds, "seconds")
-
-	after := time.Duration(afterSeconds) * time.Second
-	branch := strings.Split(branchString, ".")
-
-	bunches := make(map[string][]BMsg)
+	after := time.Duration(0)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
+	bunches := make(map[string][]BMsg)
+
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
@@ -37,7 +31,24 @@ func Bunch(b *Block) {
 		case <-b.QuitChan:
 			quit(b)
 			return
+		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &bunchRule{}
+			}
+			unmarshal(msg, rule)
+			after = time.Duration(rule.EmitAfter) * time.Second
+			branch = strings.Split(rule.Branch, ".")
+		case msg := <-b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &bunchRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			id, err := Get(msg, branch...)
 			idStr, ok := id.(string)
 			if !ok {
@@ -55,12 +66,10 @@ func Bunch(b *Block) {
 			val := make(map[string]interface{})
 			err = Set(val, "id", idStr)
 			if err != nil {
-				log.Println("1")
 				log.Fatal(err.Error())
 			}
 			err = Set(val, "length", len(bunches[idStr]))
 			if err != nil {
-				log.Println("2")
 				log.Fatal(err.Error())
 			}
 			queueMessage := &PQMessage{
@@ -81,14 +90,11 @@ func Bunch(b *Block) {
 
 			l, err := Get(v, "length")
 			if err != nil {
-				log.Println(v)
-				log.Println("4")
 				log.Fatal(err.Error())
 			}
 			lInt := l.(int)
 			id, err := Get(v, "id")
 			if err != nil {
-				log.Println("5")
 				log.Fatal(err.Error())
 			}
 			idStr := id.(string)
@@ -97,7 +103,6 @@ func Bunch(b *Block) {
 				outMsg := make(map[string]interface{})
 				err = Set(outMsg, "bunch", bunches[idStr])
 				if err != nil {
-					log.Println("3")
 					log.Fatal(err.Error())
 				}
 				broadcast(b.OutChans, outMsg)
