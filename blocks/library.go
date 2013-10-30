@@ -69,7 +69,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "fromNSQ",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    FromNSQ,
 		},
 		&BlockTemplate{
