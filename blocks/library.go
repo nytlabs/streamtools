@@ -74,7 +74,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "pollS3",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "poll_now"},
 			Routine:    PollS3,
 		},
 		&BlockTemplate{
@@ -86,6 +86,11 @@ func BuildLibrary() {
 			BlockType:  "filter",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Filter,
+		},
+		&BlockTemplate{
+			BlockType:  "toNSQ",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToNSQ,
 		},
 		&BlockTemplate{
 			BlockType:  "postto",

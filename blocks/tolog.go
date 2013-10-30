@@ -1,8 +1,8 @@
 package blocks
 
 import (
-	"log"
 	"encoding/json"
+	"log"
 )
 
 func ToLog(b *Block) {
