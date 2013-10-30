@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	//"strings"
+	"encoding/json"
 	"errors"
 )
 
@@ -250,7 +250,31 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request, m map[stri
 }
 
 func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
-	fmt.Fprint(w, "libraryBlob")
+	fmt.Fprint(w, blocks.LibraryBlob)
+}
+
+func (d *Daemon) listHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+	blockList := []map[string]interface{}{}
+	for _, v := range d.blockMap {
+		blockItem := make(map[string]interface{})
+		blockItem["BlockType"] = v.BlockType
+		blockItem["ID"] = v.ID
+		blockItem["InBlocks"] = []string{}
+		blockItem["OutBlocks"] = []string{}
+		blockItem["Routes"] = []string{}
+		for k, _ := range v.InBlocks {
+			blockItem["InBlocks"] = append(blockItem["InBlocks"].([]string), k)
+		}
+		for k, _ := range v.OutBlocks {
+			blockItem["OutBlocks"] = append(blockItem["OutBlocks"].([]string), k)
+		}
+		for k, _ := range v.Routes {
+			blockItem["Routes"] = append(blockItem["Routes"].([]string), k)
+		}
+		blockList = append(blockList, blockItem)
+	}
+	blob, _ := json.Marshal(blockList)
+	fmt.Fprint(w, string(blob) )
 }
 
 func (d *Daemon) CreateConnection(from string, to string, ID string) {
@@ -347,6 +371,14 @@ func (d *Daemon) Run(port string) {
 			urlrouter.Route{
 				PathExp: "/",
 				Dest:    d.rootHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/library",
+				Dest:    d.libraryHandler,
+			},
+			urlrouter.Route{
+				PathExp: "/list",
+				Dest:    d.listHandler,
 			},
 			urlrouter.Route{
 				PathExp: "/create",
