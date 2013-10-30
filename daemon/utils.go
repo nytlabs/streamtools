@@ -20,7 +20,7 @@ func ApiResponse(w http.ResponseWriter, statusCode int, statusTxt string) {
 	response, err := json.Marshal(struct {
 		StatusTxt string `json:"daemon"`
 	}{
-		statusTxt,
+		statusTxt + "\n",
 	})
 	if err != nil {
 		response = []byte(fmt.Sprintf(`{"daemon":"%s"}`, err.Error()))
@@ -36,5 +36,6 @@ func DataResponse(w http.ResponseWriter, response []byte) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(200)
+	response = append(response, 10)
 	w.Write(response)
 }
