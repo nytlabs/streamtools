@@ -29,12 +29,12 @@ func ApiResponse(w http.ResponseWriter, statusCode int, statusTxt string) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(statusCode)
-	w.Write(append(response, 10))
+	w.Write(response)
 }
 
 func DataResponse(w http.ResponseWriter, response []byte) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(200)
-	w.Write(append(response, 10))
+	w.Write(response)
 }
