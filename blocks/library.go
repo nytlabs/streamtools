@@ -74,7 +74,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "tofile",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule","get_rule"},
 			Routine:    ToFile,
 		},
 		&BlockTemplate{
