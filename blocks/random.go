@@ -31,6 +31,8 @@ func Random(b *Block) {
 			unmarshal(r, &rule)
 			log.Println("recieved new Period", rule.Period)
 			c = time.Tick(time.Duration(rule.Period) * time.Second)
+		case msg := <-b.Routes["get_rule"]:
+			marshal(msg, rule)
 		case now := <-c:
 			msg := make(map[string]interface{})
 			a := int64(r.Float64() * 10000000000)
