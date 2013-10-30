@@ -2,7 +2,9 @@ package blocks
 
 import (
 	"container/heap"
+	"encoding/json"
 	"log"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -50,8 +52,14 @@ func Sync(b *Block) {
 			if err != nil {
 				log.Println(err.Error())
 			}
-			msgTimeI, ok := msgTime.(int64)
+			msgTimeF, ok := msgTime.(float64)
+			msgTimeI := int64(msgTimeF)
 			if !ok {
+				v, _ := json.Marshal(msg)
+				log.Println(string(v))
+				log.Println(reflect.TypeOf(msgTime))
+				log.Println(msgTime)
+				log.Println(msgTimeI)
 				log.Println("could not cast time key to int")
 			}
 
@@ -60,8 +68,8 @@ func Sync(b *Block) {
 			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
 
 			queueMessage := &PQMessage{
-				val:  msg,
-				t:    ms,
+				val: msg,
+				t:   ms,
 			}
 
 			heap.Push(pq, queueMessage)
