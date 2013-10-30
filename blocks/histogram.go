@@ -21,14 +21,12 @@ func Histogram(b *Block) {
 		Histogram []histogramBucket
 	}
 
-	rule := &histogramRule{}
 	data := &histogramData{}
 
-	// block until we recieve a rule
-	unmarshal(<-b.Routes["set_rule"], &rule)
+	var rule *histogramRule
 
-	window := time.Duration(rule.Window) * time.Second
 	waitTimer := time.NewTimer(100 * time.Millisecond)
+	window := time.Duration(0)
 
 	histogram := map[string]*PriorityQueue{}
 	emptyByte := make([]byte, 0)
@@ -47,10 +45,24 @@ func Histogram(b *Block) {
 				i++
 			}
 			marshal(query, data)
+		case msg := <- b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &histogramRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case ruleUpdate := <-b.Routes["set_rule"]:
-			unmarshal(ruleUpdate, &rule)
+			if rule == nil {
+				rule = &histogramRule{}
+			}
+
+			unmarshal(ruleUpdate, rule)
 			window = time.Duration(rule.Window) * time.Second
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			value := getKeyValues(msg, rule.Key)[0]
 			valueString := value.(string)
 

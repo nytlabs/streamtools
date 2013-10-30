@@ -99,7 +99,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "histogram",
-			RouteNames: []string{"set_rule", "histogram"},
+			RouteNames: []string{"set_rule", "histogram", "get_rule"},
 			Routine:    Histogram,
 		},
 		&BlockTemplate{
