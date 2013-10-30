@@ -38,17 +38,29 @@ func PollS3(b *Block) {
 		panic(err.Error())
 	}
 
+	// triggerChan gets either the initial time or the ticker time, which is rule.Period
+	// seconds after Now()
+	triggerChan := make(chan time.Time, 1)
+
 	samplePeriod := time.Duration(rule.Period) * time.Second
 	ticker := time.NewTicker(samplePeriod)
 
 	for {
 		select {
 		case t := <-ticker.C:
+			// TODO this pattern introduces a bit of a delay. Is there a better way?
+			triggerChan <- t
+		case r := <-b.Routes["poll_now"]:
+			triggerChan <- time.Now()
+			log.Println("manual poll triggered")
+			r.ResponseChan <- []byte(string(`{"PollS3 says":"Thanks Dude"}`))
+		case t := <-triggerChan:
 			log.Println("checking", rule.BucketName, ":", rule.Prefix)
 			// Open Bucket
 			s := s3.New(auth, aws.USEast)
 			bucket := s.Bucket(rule.BucketName)
-			list, err := bucket.List(rule.Prefix, "/", "", 1000)
+			// get the list
+			list, err := bucket.List(rule.Prefix, "/", "", 2000)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
