@@ -16,21 +16,24 @@ func Sync(b *Block) {
 		Lag  int
 	}
 
-	rule := &syncRule{}
-
-	unmarshal(<-b.Routes["set_rule"], &rule)
-
-	lagTime := time.Duration(time.Duration(rule.Lag) * time.Second)
-
+	var rule *syncRule
+	lagTime := time.Duration(0)
 	emitTick := time.NewTimer(500 * time.Millisecond)
 
 	for {
 		select {
 		case m := <-b.Routes["set_rule"]:
-			unmarshal(m, &rule)
+			if rule  == nil {
+				rule = &syncRule{}
+			}
+			unmarshal(m, rule)
 			lagTime = time.Duration(time.Duration(rule.Lag) * time.Second)
 		case m := <-b.Routes["get_rule"]:
-			marshal(m, rule)
+			if rule == nil {
+				marshal(m, &syncRule{})
+			} else {
+				marshal(m, rule)
+			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
@@ -38,6 +41,10 @@ func Sync(b *Block) {
 			return
 		case <-emitTick.C:
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			keys := strings.Split(rule.Path, ".")
 			msgTime, err := Get(msg, keys...)
 			if err != nil {
