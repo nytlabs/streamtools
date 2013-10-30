@@ -94,7 +94,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "timeseries",
-			RouteNames: []string{"set_rule", "timeseries"},
+			RouteNames: []string{"set_rule", "timeseries", "get_rule"},
 			Routine:    Timeseries,
 		},
 		&BlockTemplate{

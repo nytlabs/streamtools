@@ -11,22 +11,48 @@ func Timeseries(b *Block) {
 		Values []float64
 	}
 
-	rule := &tsRule{}
-	data := &tsData{}
-
-	// block until we recieve a rule
-	unmarshal(<-b.Routes["set_rule"], &rule)
-
-	data.Values = make([]float64, rule.NumSamples)
+	var rule *tsRule
+	var data *tsData
 
 	for {
 		select {
 		case query := <-b.Routes["timeseries"]:
-			marshal(query, data)
+			if data != nil {
+				marshal(query, data)
+			} else {
+				marshal(query, &tsData{})
+			}
+
 		case ruleUpdate := <-b.Routes["set_rule"]:
-			unmarshal(ruleUpdate, &rule)
+			if rule == nil {
+				rule = &tsRule{}
+				data = &tsData{}
+			}
+
+			unmarshal(ruleUpdate, rule)
+			data.Values = make([]float64, rule.NumSamples)
+
+		case msg := <-b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &tsRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case msg := <-b.InChan:
-			val := getKeyValues(msg, rule.Key)[0].(float64)
+			if rule == nil {
+				break
+			}
+
+			var val float64
+			switch v := getKeyValues(msg, rule.Key)[0].(type) {
+			case float32:
+				val = float64(v)
+			case int: 
+				val = float64(v)
+			case float64:
+				val = v
+			}
+
 			data.Values = append(data.Values[1:], val)
 		}
 	}
