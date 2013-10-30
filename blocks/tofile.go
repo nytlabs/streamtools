@@ -23,7 +23,7 @@ func ToFile(b *Block) {
 			if rule == nil {
 				break
 			}
-			
+
 			msgStr, err := json.Marshal(msg)
 			if err != nil {
 				log.Println("wow bad json")
@@ -36,7 +36,7 @@ func ToFile(b *Block) {
 			if rule == nil{
 				rule = &toFileRule{}
 			}
-			
+
 			unmarshal(msg, rule)
 
 			fo, err := os.Create(rule.Filename)
@@ -47,12 +47,11 @@ func ToFile(b *Block) {
 			w = bufio.NewWriter(fo)
 
 		case msg := <-b.Routes["get_rule"]:
-			r := rule
-			if r == nil {
-				r = &toFileRule{}
+			if rule == nil {
+				marshal(msg, &toFileRule{})
+			} else {
+				marshal(msg, rule)
 			}
-			marshal(msg, r)
-
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 
