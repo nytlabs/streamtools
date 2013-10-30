@@ -1,38 +1,52 @@
 package blocks
 
 import (
-	"log"
-	"time"
+    "time"
 )
 
 func Date(b *Block) {
 
-	type dateRule struct {
-		FmtString string
-		Period    int
-	}
+    type dateRule struct {
+        FmtString string
+        Period    int
+    }
 
-	rule := &dateRule{}
+    var rule *dateRule
+    var d time.Duration
 
-	// block until we recieve a rule
-	unmarshal(<-b.Routes["set_rule"], &rule)
-	log.Println(rule)
+    timer := time.NewTimer(time.Duration(1) * time.Second)
 
-	timer := time.NewTimer(time.Duration(1) * time.Second)
-	outMsg := make(map[string]interface{})
-	d := time.Duration(rule.Period) * time.Second
+    for {
+        select {
+        case t := <-timer.C:
+            if rule == nil {
+                break
+            }
 
-	for {
-		select {
-		case t := <-timer.C:
-			Set(outMsg, "date", t.Format(rule.FmtString))
-			broadcast(b.OutChans, outMsg)
-			timer.Reset(d)
-		case msg := <-b.AddChan:
-			updateOutChans(msg, b)
-		case <-b.QuitChan:
-			quit(b)
-			return
-		}
-	}
+            outMsg := make(map[string]interface{})
+            Set(outMsg, "date", t.Format(rule.FmtString))
+            broadcast(b.OutChans, outMsg)
+            timer.Reset(d)
+        case msg := <- b.Routes["get_rule"]:
+            if rule == nil {
+                marshal(msg, &dateRule{})
+            } else {
+                marshal(msg, rule)
+            }
+        case msg := <- b.Routes["set_rule"]:
+            if rule == nil {
+                rule = &dateRule{}
+            }
+            unmarshal(msg, rule)
+
+            d = time.Duration(rule.Period) * time.Second
+            timer.Reset(d)
+
+        case msg := <-b.AddChan:
+            updateOutChans(msg, b)
+        case <-b.QuitChan:
+            quit(b)
+            return
+        }
+    }
 }
