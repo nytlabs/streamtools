@@ -13,19 +13,32 @@ func Post(b *Block) {
 		Endpoint string
 	}
 
-	rule := &postRule{}
-
-	unmarshal(<-b.Routes["set_rule"], &rule)
+	var rule *postRule
 
 	// TODO check the endpoint for happiness
 	for {
 		select {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
+		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &postRule{}
+			}
+			unmarshal(msg, rule)
+
+		case msg := <-b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &postRule{})
+			} else {
+				marshal(msg, rule)
+			}
 		case <-b.QuitChan:
 			quit(b)
 			return
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
 			// TODO maybe check the response ?
 			postBody, err := json.Marshal(msg)
 			if err != nil {
