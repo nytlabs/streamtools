@@ -20,9 +20,7 @@ func PostValue(b *Block) {
 		Endpoint   string
 	}
 
-	rule := &postRule{}
-
-	unmarshal(<-b.Routes["set_rule"], &rule)
+	var rule *postRule
 
 	// TODO check the endpoint for happiness
 	for {
@@ -32,7 +30,23 @@ func PostValue(b *Block) {
 		case <-b.QuitChan:
 			quit(b)
 			return
+		case msg := <-b.Routes["get_rule"]:
+			if rule == nil {
+				marshal(msg, &postRule{Keymapping:[]KeyMapping{KeyMapping{}}})
+			} else {
+				marshal(msg, rule)
+			}
+		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &postRule{}
+			}
+			unmarshal(msg, rule)
+
 		case msg := <-b.InChan:
+			if rule == nil {
+				break
+			}
+
 			body := make(map[string]interface{})
 			for _, keymap := range rule.Keymapping {
 				keys := strings.Split(keymap.MsgKey, ".")

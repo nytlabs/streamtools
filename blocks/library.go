@@ -54,7 +54,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "postValue",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    PostValue,
 		},
 		&BlockTemplate{
@@ -64,7 +64,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "date",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Date,
 		},
 		&BlockTemplate{
