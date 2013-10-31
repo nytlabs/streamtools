@@ -2,11 +2,12 @@ package blocks
 
 import (
 	"log"
+	"encoding/json"
 )
 
 var (
 	Library     BlockLibrary
-	libraryBlob string
+	LibraryBlob string
 )
 
 // A block library is a collection of possible block templates
@@ -34,7 +35,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "random",
-			RouteNames: []string{"set_rule", "ger_rule"},
+			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Random,
 		},
 		&BlockTemplate{
@@ -109,7 +110,17 @@ func BuildLibrary() {
 		},
 	}
 
+
+	libraryList := []map[string]interface{}{}
 	for _, t := range templates {
+		blockItem := make(map[string]interface{})
+		blockItem["BlockType"] = t.BlockType
+		blockItem["RouteNames"] = t.RouteNames
+		libraryList = append(libraryList, blockItem)
+
 		Library[t.BlockType] = t
 	}
+
+	blob, _ := json.Marshal(libraryList)
+	LibraryBlob = string(blob)
 }
