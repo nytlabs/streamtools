@@ -26,6 +26,7 @@ func ApiResponse(w *rest.ResponseWriter, statusCode int, statusTxt string) {
 		response = []byte(fmt.Sprintf(`{"daemon":"%s"}`, err.Error()))
 	}
 
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(statusCode)
@@ -33,6 +34,7 @@ func ApiResponse(w *rest.ResponseWriter, statusCode int, statusTxt string) {
 }
 
 func DataResponse(w *rest.ResponseWriter, response []byte) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(200)

@@ -2,7 +2,7 @@ package daemon
 
 import (
 	"fmt"
-	//"github.com/ant0ine/go-urlrouter"
+	"strconv"
 	"github.com/ant0ine/go-json-rest"
 	"github.com/nytlabs/streamtools/blocks"
 	"io"
@@ -29,6 +29,8 @@ type Daemon struct {
 
 // The rootHandler returns information about the whole system
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range d.blockMap {
@@ -251,6 +253,9 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 }
 
 func (d *Daemon) libraryHandler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(blocks.LibraryBlob)))
 	fmt.Fprint(w, blocks.LibraryBlob)
 }
 
@@ -275,6 +280,10 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 		blockList = append(blockList, blockItem)
 	}
 	blob, _ := json.Marshal(blockList)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
 	fmt.Fprint(w, string(blob) )
 }
 
