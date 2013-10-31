@@ -3,8 +3,8 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"strconv"
+	"github.com/ant0ine/go-json-rest"
 )
 
 func IDService(idChan chan string) {
@@ -16,7 +16,7 @@ func IDService(idChan chan string) {
 	}
 }
 
-func ApiResponse(w http.ResponseWriter, statusCode int, statusTxt string) {
+func ApiResponse(w *rest.ResponseWriter, statusCode int, statusTxt string) {
 	response, err := json.Marshal(struct {
 		StatusTxt string `json:"daemon"`
 	}{
@@ -32,7 +32,7 @@ func ApiResponse(w http.ResponseWriter, statusCode int, statusTxt string) {
 	w.Write(response)
 }
 
-func DataResponse(w http.ResponseWriter, response []byte) {
+func DataResponse(w *rest.ResponseWriter, response []byte) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(response)))
 	w.WriteHeader(200)

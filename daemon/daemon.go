@@ -2,7 +2,8 @@ package daemon
 
 import (
 	"fmt"
-	"github.com/ant0ine/go-urlrouter"
+	//"github.com/ant0ine/go-urlrouter"
+	"github.com/ant0ine/go-json-rest"
 	"github.com/nytlabs/streamtools/blocks"
 	"io"
 	"io/ioutil"
@@ -27,7 +28,7 @@ type Daemon struct {
 }
 
 // The rootHandler returns information about the whole system
-func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType")
 	for id, block := range d.blockMap {
@@ -36,7 +37,7 @@ func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request, m map[strin
 }
 
 // The createHandler creates new blocks
-func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) createHandler(w *rest.ResponseWriter, r *rest.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
@@ -78,7 +79,7 @@ func (d *Daemon) createHandler(w http.ResponseWriter, r *http.Request, m map[str
 	ApiResponse(w, 200, "BLOCK_CREATED")
 }
 
-func (d *Daemon) deleteHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) deleteHandler(w *rest.ResponseWriter, r *rest.Request) {
 	err := r.ParseForm()
 	if err != nil {
 		ApiResponse(w, 500, "BAD_REQUEST")
@@ -138,7 +139,7 @@ func (d *Daemon) DeleteBlock(id string) error {
 }
 
 // The connectHandler connects together two blocks
-func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 	var id string
 
 	err := r.ParseForm()
@@ -203,17 +204,17 @@ func (d *Daemon) connectHandler(w http.ResponseWriter, r *http.Request, m map[st
 }
 
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
-func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 	//id := strings.Split(r.URL.Path, "/")[2]
 	//route := strings.Split(r.URL.Path, "/")[3]
 
-	id, ok := m["id"]
+	id, ok := r.PathParams["id"]
 	if ok == false {
 		ApiResponse(w, 500, "MISSING_BLOCK_ID")
 		return
 	}
 
-	route, ok := m["route"]
+	route, ok := r.PathParams["route"]
 	if ok == false {
 		ApiResponse(w, 500, "MISSING_ROUTE")
 		return
@@ -249,11 +250,11 @@ func (d *Daemon) routeHandler(w http.ResponseWriter, r *http.Request, m map[stri
 	DataResponse(w, respMsg)
 }
 
-func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) libraryHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprint(w, blocks.LibraryBlob)
 }
 
-func (d *Daemon) listHandler(w http.ResponseWriter, r *http.Request, m map[string]string) {
+func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	blockList := []map[string]interface{}{}
 	for _, v := range d.blockMap {
 		blockItem := make(map[string]interface{})
@@ -365,51 +366,23 @@ func (d *Daemon) Run(port string) {
 	// initialise the block maps
 	d.blockMap = make(map[string]*blocks.Block)
 
-	// instantiate the base handlers
-	router := urlrouter.Router{
-		Routes: []urlrouter.Route{
-			urlrouter.Route{
-				PathExp: "/",
-				Dest:    d.rootHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/library",
-				Dest:    d.libraryHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/list",
-				Dest:    d.listHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/create",
-				Dest:    d.createHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/delete",
-				Dest:    d.deleteHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/connect",
-				Dest:    d.connectHandler,
-			},
-			urlrouter.Route{
-				PathExp: "/blocks/:id/:route",
-				Dest:    d.routeHandler,
-			},
-		},
+	handler := rest.ResourceHandler{
+		EnableRelaxedContentType: true,
 	}
 
-	router.Start()
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		route, params := router.FindRouteFromURL(r.URL)
-		handler := route.Dest.(func(http.ResponseWriter, *http.Request, map[string]string))
-		handler(w, r, params)
-	})
-
-	// start the http server
-	log.Println("starting stream tools on port", port)
-	err := http.ListenAndServe(":"+port, nil)
+	//TODO: make this a _real_ restful API
+	handler.SetRoutes(
+            rest.Route{"GET", "/", d.rootHandler},
+            rest.Route{"GET", "/library", d.libraryHandler},
+            rest.Route{"GET", "/list", d.listHandler},
+            rest.Route{"GET", "/create", d.createHandler},
+            rest.Route{"GET", "/delete", d.deleteHandler},
+            rest.Route{"GET", "/connect", d.connectHandler},
+            rest.Route{"GET", "/blocks/:id/:route", d.routeHandler},
+            rest.Route{"POST", "/blocks/:id/:route", d.routeHandler},
+    )
+    log.Println("starting stream tools on port", port)
+    err := http.ListenAndServe(":" + port, &handler)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
