@@ -1,39 +1,41 @@
 package blocks
 
-// rule - input
-// data - output
+import (
+    "encoding/json"
+    "log"
+)
 
 func Avg(b *Block) {
 
     type avgRule struct {
         Key string
-        X float64
     }
 
-    type avgData {
+    type avgData struct {
         Avg float64
-        N float64
     }
 
     rule := &avgRule{}
-    data := &avgData{}
+    data := &avgData{Avg: 0}
 
     // block until a rule is set
     unmarshal(<-b.Routes["set_rule"], &rule)
 
     data.Avg = 0.0
-    data.N = 0.0
+    N := 0.0
 
     for {
         select {
         case query := <-b.Routes["avg"]:
             marshal(query, data)
         case msg := <-b.InChan:
-            val := getKeyValues(msg, rule.Key)[0].(float64)
-            data.N = data.N + 1.0
-            data.Avg = ((n - 1.0) / n)*data.Avg + (1/n)*val
+            val := getKeyValues(msg, rule.Key)[0].(json.Number)
+            val_f, err := val.Float64()
+            if err != nil {
+                log.Fatal(err.Error())
+            }
+            N = N + 1.0
+            data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*val_f
         }
     }
-
-
 }
