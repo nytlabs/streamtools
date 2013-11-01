@@ -1,3 +1,7 @@
+// Online average
+// Update a sample average on a per point basis
+// mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
+
 package blocks
 
 import (
@@ -30,12 +34,12 @@ func Avg(b *Block) {
             marshal(query, data)
         case msg := <-b.InChan:
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
-            val_f, err := val.Float64()
+            x, err := val.Float64()
             if err != nil {
                 log.Fatal(err.Error())
             }
             N = N + 1.0
-            data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*val_f
+            data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*x
         }
     }
 }
