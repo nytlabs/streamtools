@@ -1,9 +1,11 @@
 // Streaming Standard Deviation
 // Welford's Algorithm
+// http://amstat.tandfonline.com/doi/abs/10.1080/00401706.1962.10490022?journalCode=utch20#preview
 
 package blocks
 
 import (
+    "encoding/json"
     "log"
 )
 
@@ -25,12 +27,15 @@ func Sd(b *Block) {
 
     data.Sd = 0.0
     N := 0.0
+    M_curr := 0.0
+    M_new := 0.0
+    S := 0.0
 
     for {
         select {
         case query := <-b.Routes["avg"]:
             marshal(query, data)
-        case msg := <-b.Inchan:
+        case msg := <-b.InChan:
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
             x, err := val.Float64()
             if err != nil {
@@ -38,12 +43,14 @@ func Sd(b *Block) {
             }
             N = N + 1.0
             if N == 1.0 {
-                M := x
-                S := 0
+                M_curr = x
+                S = 0
             } else {
-                M_new = M + (x - M) / N
-                S = S + (x - M)*(x - M_new)
-                M = M_new
+                M_new = M_curr + (x - M_curr) / N
+                S = S + (x - M_curr)*(x - M_new)
+                M_curr = M_new
             }
             data.Sd = S / (N - 1)
+        }
+    }
 }

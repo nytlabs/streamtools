@@ -113,6 +113,11 @@ func BuildLibrary() {
             RouteNames: []string{"set_rule", "avg"},
             Routine:    Avg,
         },
+        &BlockTemplate{
+            BlockType:  "sd",
+            RouteNames: []string{"set_rule", "sd"},
+            Routine:    Sd,
+        },
 	}
 
 
