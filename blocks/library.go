@@ -1,8 +1,8 @@
 package blocks
 
 import (
-	"log"
 	"encoding/json"
+	"log"
 )
 
 var (
@@ -75,13 +75,18 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "pollS3",
-			RouteNames: []string{"set_rule"},
+			RouteNames: []string{"set_rule", "poll_now"},
 			Routine:    PollS3,
 		},
 		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
+		},
+		&BlockTemplate{
+			BlockType:  "toNSQ",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToNSQ,
 		},
 		&BlockTemplate{
 			BlockType:  "filter",
@@ -109,7 +114,6 @@ func BuildLibrary() {
 			Routine:    Bunch,
 		},
 	}
-
 
 	libraryList := []map[string]interface{}{}
 	for _, t := range templates {
