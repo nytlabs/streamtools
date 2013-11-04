@@ -1,6 +1,6 @@
 // Streaming Standard Deviation
 // Welford's Algorithm
-// http://amstat.tandfonline.com/doi/abs/10.1080/00401706.1962.10490022?journalCode=utch20#preview
+// http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.7503&rep=rep1&type=pdf
 
 package blocks
 
@@ -20,11 +20,8 @@ func Sd(b *Block) {
         Sd float64
     }
 
-    rule := &sdRule{}
     data := &sdData{Sd: 0}
-
-    // block until a rule is set
-    unmarshal(<-b.Routes["set_rule"], &rule)
+    var rule *sdRule
 
     data.Sd = 0.0
     N := 0.0
@@ -36,6 +33,20 @@ func Sd(b *Block) {
         select {
         case query := <-b.Routes["sd"]:
             marshal(query, data)
+        case ruleUpdate := <-b.Routes["set_rule"]:
+            if rule == nil {
+                rule = &sdRule{}
+            }
+            unmarshal(ruleUpdate, rule)
+        case msg := <-b.Routes["get_rule"]:
+            if rule == nil {
+                marshal(msg, &sdRule{})
+            } else {
+                marshal(msg, rule)
+            }
+        case <-b.QuitChan:
+            quit(b)
+            return
         case msg := <-b.InChan:
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
             x, err := val.Float64()

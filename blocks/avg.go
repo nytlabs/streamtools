@@ -19,11 +19,8 @@ func Avg(b *Block) {
         Avg float64
     }
 
-    rule := &avgRule{}
     data := &avgData{Avg: 0}
-
-    // block until a rule is set
-    unmarshal(<-b.Routes["set_rule"], &rule)
+    var rule *avgRule
 
     data.Avg = 0.0
     N := 0.0
@@ -32,6 +29,20 @@ func Avg(b *Block) {
         select {
         case query := <-b.Routes["avg"]:
             marshal(query, data)
+        case ruleUpdate := <-b.Routes["set_rule"]:
+            if rule == nil {
+                rule = &avgRule{}
+            }
+            unmarshal(ruleUpdate, rule)
+        case msg := <-b.Routes["get_rule"]:
+            if rule == nil {
+                marshal(msg, &avgRule{})
+            } else {
+                marshal(msg, rule)
+            }
+        case <-b.QuitChan:
+            quit(b)
+            return
         case msg := <-b.InChan:
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
             x, err := val.Float64()
