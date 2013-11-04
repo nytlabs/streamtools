@@ -7,6 +7,7 @@ package blocks
 import (
     "encoding/json"
     "log"
+    "math"
 )
 
 func Sd(b *Block) {
@@ -22,7 +23,7 @@ func Sd(b *Block) {
     rule := &sdRule{}
     data := &sdData{Sd: 0}
 
-    // block unitl a rule is set
+    // block until a rule is set
     unmarshal(<-b.Routes["set_rule"], &rule)
 
     data.Sd = 0.0
@@ -33,7 +34,7 @@ func Sd(b *Block) {
 
     for {
         select {
-        case query := <-b.Routes["avg"]:
+        case query := <-b.Routes["sd"]:
             marshal(query, data)
         case msg := <-b.InChan:
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
@@ -44,13 +45,12 @@ func Sd(b *Block) {
             N = N + 1.0
             if N == 1.0 {
                 M_curr = x
-                S = 0
             } else {
                 M_new = M_curr + (x - M_curr) / N
                 S = S + (x - M_curr)*(x - M_new)
                 M_curr = M_new
             }
-            data.Sd = S / (N - 1)
+            data.Sd = math.Sqrt(S / (N - 1.0))
         }
     }
 }
