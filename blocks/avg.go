@@ -19,10 +19,9 @@ func Avg(b *Block) {
         Avg float64
     }
 
-    data := &avgData{Avg: 0}
+    data := &avgData{Avg: 0.0}
     var rule *avgRule
 
-    data.Avg = 0.0
     N := 0.0
 
     for {
@@ -49,7 +48,7 @@ func Avg(b *Block) {
             if err != nil {
                 log.Fatal(err.Error())
             }
-            N = N + 1.0
+            N++
             data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*x
         }
     }

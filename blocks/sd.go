@@ -17,13 +17,12 @@ func Sd(b *Block) {
     }
 
     type sdData struct {
-        Sd float64
+        StDev float64
     }
 
-    data := &sdData{Sd: 0}
+    data := &sdData{StDev: 0.0}
     var rule *sdRule
 
-    data.Sd = 0.0
     N := 0.0
     M_curr := 0.0
     M_new := 0.0
@@ -53,7 +52,7 @@ func Sd(b *Block) {
             if err != nil {
                 log.Fatal(err.Error())
             }
-            N = N + 1.0
+            N++
             if N == 1.0 {
                 M_curr = x
             } else {
@@ -61,7 +60,7 @@ func Sd(b *Block) {
                 S = S + (x - M_curr)*(x - M_new)
                 M_curr = M_new
             }
-            data.Sd = math.Sqrt(S / (N - 1.0))
+            data.StDev = math.Sqrt(S / (N - 1.0))
         }
     }
 }
