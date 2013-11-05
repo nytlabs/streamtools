@@ -1,7 +1,3 @@
-// Online average
-// Update a sample average on a per point basis
-// mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
-
 package blocks
 
 import (
@@ -9,6 +5,9 @@ import (
     "log"
 )
 
+// Avg() is an online average
+// The average for a stream of data is updated 1 data point at a time.
+// Formula: mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
 func Avg(b *Block) {
 
     type avgRule struct {
