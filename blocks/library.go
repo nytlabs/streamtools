@@ -118,6 +118,12 @@ func BuildLibrary() {
             RouteNames: []string{"set_rule", "sd"},
             Routine:    Sd,
         },
+        &BlockTemplate{
+            BlockType:  "var",
+            RouteNames: []string{"set_rule", "var"},
+            Routine:    Var,
+        },
+
 	}
 
 
