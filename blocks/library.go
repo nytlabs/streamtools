@@ -19,14 +19,14 @@ func BuildLibrary() {
 
 	templates := []*BlockTemplate{
 		&BlockTemplate{
+			BlockType:  "connection",
+			RouteNames: []string{"last_message", "rate"},
+			Routine:    Connection,
+		},
+		&BlockTemplate{
 			BlockType:  "ticker",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Ticker,
-		},
-		&BlockTemplate{
-			BlockType:  "connection",
-			RouteNames: []string{"last_seen"},
-			Routine:    Connection,
 		},
 		&BlockTemplate{
 			BlockType:  "tolog",
@@ -113,16 +113,21 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
 		},
-        &BlockTemplate{
-            BlockType:  "avg",
-            RouteNames: []string{"set_rule", "avg"},
-            Routine:    Avg,
-        },
-        &BlockTemplate{
-            BlockType:  "sd",
-            RouteNames: []string{"set_rule", "sd"},
-            Routine:    Sd,
-        },
+		&BlockTemplate{
+			BlockType:  "avg",
+			RouteNames: []string{"set_rule", "avg"},
+			Routine:    Avg,
+		},
+		&BlockTemplate{
+			BlockType:  "sd",
+			RouteNames: []string{"set_rule", "sd"},
+			Routine:    Sd,
+		},
+		&BlockTemplate{
+			BlockType:  "longHTTP",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    LongHTTP,
+		},
 	}
 
 	libraryList := []map[string]interface{}{}

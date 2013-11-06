@@ -1,16 +1,17 @@
 package daemon
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
-	"strconv"
 	"github.com/ant0ine/go-json-rest"
 	"github.com/nytlabs/streamtools/blocks"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"encoding/json"
-	"errors"
+	"strconv"
+	"time"
 )
 
 const (
@@ -27,14 +28,40 @@ type Daemon struct {
 	blockMap map[string]*blocks.Block
 }
 
+// A WatchDogTimer is created for each block
+func (d *Daemon) WatchDogTimer(b *blocks.Block) {
+	timeoutChan := make(chan bool)
+	ticker := time.NewTicker(time.Duration(5) * time.Second)
+	blocked := true
+	for {
+		select {
+		case <-ticker.C:
+			d.blockMap[b.ID].IsBlocked = blocked
+			go TestBlock(b, timeoutChan)
+			blocked = true
+		case <-timeoutChan:
+			blocked = false
+		}
+	}
+}
+
+func TestBlock(b *blocks.Block, timeoutChan chan bool) {
+	r := blocks.RouteResponse{
+		ResponseChan: make(chan []byte),
+	}
+	b.Routes["get_rule"] <- r
+	<-r.ResponseChan
+	timeoutChan <- true
+}
+
 // The rootHandler returns information about the whole system
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	fmt.Fprintln(w, "hello! this is streamtools")
-	fmt.Fprintln(w, "ID: BlockType")
+	fmt.Fprintln(w, "ID: BlockType, IsBlocked")
 	for id, block := range d.blockMap {
-		fmt.Fprintln(w, id+":", block.BlockType)
+		fmt.Fprintln(w, id+":", block.BlockType, block.IsBlocked)
 	}
 }
 
@@ -284,7 +311,7 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
-	fmt.Fprint(w, string(blob) )
+	fmt.Fprint(w, string(blob))
 }
 
 func (d *Daemon) CreateConnection(from string, to string, ID string) {
@@ -360,6 +387,9 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 
 	go blocks.Library[name].Routine(c)
 
+	// create the block's watchdog
+	go d.WatchDogTimer(c)
+
 	log.Println("started block \"" + ID + "\" of type " + name)
 }
 
@@ -381,17 +411,17 @@ func (d *Daemon) Run(port string) {
 
 	//TODO: make this a _real_ restful API
 	handler.SetRoutes(
-            rest.Route{"GET", "/", d.rootHandler},
-            rest.Route{"GET", "/library", d.libraryHandler},
-            rest.Route{"GET", "/list", d.listHandler},
-            rest.Route{"GET", "/create", d.createHandler},
-            rest.Route{"GET", "/delete", d.deleteHandler},
-            rest.Route{"GET", "/connect", d.connectHandler},
-            rest.Route{"GET", "/blocks/:id/:route", d.routeHandler},
-            rest.Route{"POST", "/blocks/:id/:route", d.routeHandler},
-    )
-    log.Println("starting stream tools on port", port)
-    err := http.ListenAndServe(":" + port, &handler)
+		rest.Route{"GET", "/", d.rootHandler},
+		rest.Route{"GET", "/library", d.libraryHandler},
+		rest.Route{"GET", "/list", d.listHandler},
+		rest.Route{"GET", "/create", d.createHandler},
+		rest.Route{"GET", "/delete", d.deleteHandler},
+		rest.Route{"GET", "/connect", d.connectHandler},
+		rest.Route{"GET", "/blocks/:id/:route", d.routeHandler},
+		rest.Route{"POST", "/blocks/:id/:route", d.routeHandler},
+	)
+	log.Println("starting stream tools on port", port)
+	err := http.ListenAndServe(":"+port, &handler)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

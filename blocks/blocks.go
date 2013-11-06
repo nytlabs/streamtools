@@ -9,25 +9,31 @@ const (
 	DELETE_OUT_CHAN = iota
 )
 
-type BMsg interface {}
+type BMsg interface{}
 
-func Set(m interface{}, key string, val interface{}) error{
-    min, ok := m.(map[string]interface{})
-    if !ok { return errors.New("type assertion failed") }
-    min[key] = val
-    return nil
+func Set(m interface{}, key string, val interface{}) error {
+	min, ok := m.(map[string]interface{})
+	if !ok {
+		return errors.New("type assertion failed")
+	}
+	min[key] = val
+	return nil
 }
 
-func Get(msg interface{}, branch ...string) (interface{}, error){
-        min := msg
-        for i := range branch {
-                m, ok := min.(map[string]interface{})
-                if !ok { return nil, errors.New("type assertion failed") }
-                if val, ok := m[branch[i]]; ok { min = val } else { 
-                    return nil, errors.New("cannot find branch") 
-                }
-        }
-        return min, nil
+func Get(msg interface{}, branch ...string) (interface{}, error) {
+	min := msg
+	for i := range branch {
+		m, ok := min.(map[string]interface{})
+		if !ok {
+			return nil, errors.New("type assertion failed")
+		}
+		if val, ok := m[branch[i]]; ok {
+			min = val
+		} else {
+			return nil, errors.New("cannot find branch")
+		}
+	}
+	return min, nil
 }
 
 // Block is the basic interface for processing units in streamtools
@@ -48,6 +54,7 @@ type Block struct {
 	InBlocks  map[string]bool // bool is dumb.
 	OutBlocks map[string]bool // bool is dumb.
 	QuitChan  chan bool
+	IsBlocked bool
 }
 
 type OutChanMsg struct {
