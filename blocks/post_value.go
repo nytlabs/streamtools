@@ -66,16 +66,9 @@ func PostValue(b *Block) {
 			}
 
 			// TODO the content-type here is heavily borked but we're using a hack
-			/*resp, err := http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
-			if err != nil {
-				log.Println(err.Error())
-				break
-			}
-			defer resp.Body.Close()*/
-
 			req, err := http.NewRequest("POST", rule.Endpoint, bytes.NewReader(postBody))
-			
-			req.Close()
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Close = true
 
 			if err != nil {
 			    log.Println(err)
