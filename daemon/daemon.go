@@ -45,6 +45,7 @@ func (d *Daemon) WatchDogTimer(b *blocks.Block) {
 	}
 }
 
+// TestBlock uses the get_rule channel for each block to decide if the block is blocked.
 func TestBlock(b *blocks.Block, timeoutChan chan bool) {
 	r := blocks.RouteResponse{
 		ResponseChan: make(chan []byte),
