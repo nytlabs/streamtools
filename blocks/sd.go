@@ -1,7 +1,3 @@
-// Streaming Standard Deviation
-// Welford's Algorithm
-// http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.7503&rep=rep1&type=pdf
-
 package blocks
 
 import (
@@ -10,6 +6,9 @@ import (
     "math"
 )
 
+
+// Sd calculates standard deviation in an online fashion using Welford's Algorithm.
+// Ref: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.7503&rep=rep1&type=pdf
 func Sd(b *Block) {
 
     type sdRule struct {
@@ -47,10 +46,13 @@ func Sd(b *Block) {
             quit(b)
             return
         case msg := <-b.InChan:
+            if rule == nil {
+                break
+            }
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
             x, err := val.Float64()
             if err != nil {
-                log.Fatal(err.Error())
+                log.Println(err.Error())
             }
             N++
             if N == 1.0 {

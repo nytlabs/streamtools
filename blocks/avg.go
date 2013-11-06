@@ -42,10 +42,13 @@ func Avg(b *Block) {
             quit(b)
             return
         case msg := <-b.InChan:
+            if rule == nil {
+                break
+            }
             val := getKeyValues(msg, rule.Key)[0].(json.Number)
             x, err := val.Float64()
             if err != nil {
-                log.Fatal(err.Error())
+                log.Println(err.Error())
             }
             N++
             data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*x
