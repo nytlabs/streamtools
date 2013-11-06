@@ -21,6 +21,7 @@ func PostValue(b *Block) {
 	}
 
 	var rule *postRule
+	client := &http.Client{}
 
 	// TODO check the endpoint for happiness
 	for {
@@ -65,11 +66,25 @@ func PostValue(b *Block) {
 			}
 
 			// TODO the content-type here is heavily borked but we're using a hack
-			resp, err := http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
+			req, err := http.NewRequest("POST", rule.Endpoint, bytes.NewReader(postBody))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Close = true
+
 			if err != nil {
-				log.Println(err.Error())
+			    log.Println(err)
+			    break
 			}
+			
+			resp, err := client.Do(req)
 			defer resp.Body.Close()
+
+			if err != nil {
+			    log.Println(err)
+			    break
+			}
+
+			bodyBuf := &bytes.Buffer{}
+			_, err = bodyBuf.ReadFrom(resp.Body)
 		}
 	}
 }
