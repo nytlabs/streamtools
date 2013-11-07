@@ -23,6 +23,13 @@ func BuildLibrary() {
 			RouteNames: []string{"last_message", "rate"},
 			Routine:    Connection,
 		},
+		////////// TESTING BLOCKS
+		&BlockTemplate{
+			BlockType:  "blocked",
+			RouteNames: []string{"get_rule"},
+			Routine:    Blocked,
+		},
+		////////////////////
 		&BlockTemplate{
 			BlockType:  "ticker",
 			RouteNames: []string{"set_rule", "get_rule"},

@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 const (
@@ -26,33 +25,6 @@ var (
 // Daemon keeps track of all the blocks and connections
 type Daemon struct {
 	blockMap map[string]*blocks.Block
-}
-
-// A WatchDogTimer is created for each block
-func (d *Daemon) WatchDogTimer(b *blocks.Block) {
-	timeoutChan := make(chan bool)
-	ticker := time.NewTicker(time.Duration(5) * time.Second)
-	blocked := true
-	for {
-		select {
-		case <-ticker.C:
-			d.blockMap[b.ID].IsBlocked = blocked
-			go TestBlock(b, timeoutChan)
-			blocked = true
-		case <-timeoutChan:
-			blocked = false
-		}
-	}
-}
-
-// TestBlock uses the get_rule channel for each block to decide if the block is blocked.
-func TestBlock(b *blocks.Block, timeoutChan chan bool) {
-	r := blocks.RouteResponse{
-		ResponseChan: make(chan []byte),
-	}
-	b.Routes["get_rule"] <- r
-	<-r.ResponseChan
-	timeoutChan <- true
 }
 
 // The rootHandler returns information about the whole system
@@ -140,6 +112,7 @@ func (d *Daemon) DeleteBlock(id string) error {
 		return errors.New("BLOCK_NOT_FOUND")
 	}
 
+	// delete inbound channels
 	for k, _ := range block.InBlocks {
 		d.blockMap[k].AddChan <- &blocks.OutChanMsg{
 			Action: blocks.DELETE_OUT_CHAN,
@@ -155,6 +128,7 @@ func (d *Daemon) DeleteBlock(id string) error {
 		}
 	}
 
+	// delete outbound channels
 	for k, _ := range block.OutBlocks {
 		delete(d.blockMap[k].InBlocks, block.ID)
 		if d.blockMap[k].BlockType == "connection" {
@@ -162,6 +136,7 @@ func (d *Daemon) DeleteBlock(id string) error {
 		}
 	}
 
+	// delete the block itself
 	block.QuitChan <- true
 	delete(d.blockMap, id)
 
@@ -387,9 +362,6 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	c.OutChans = make(map[string]chan blocks.BMsg)
 
 	go blocks.Library[name].Routine(c)
-
-	// create the block's watchdog
-	go d.WatchDogTimer(c)
 
 	log.Println("started block \"" + ID + "\" of type " + name)
 }

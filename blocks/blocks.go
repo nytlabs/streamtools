@@ -54,7 +54,6 @@ type Block struct {
 	InBlocks  map[string]bool // bool is dumb.
 	OutBlocks map[string]bool // bool is dumb.
 	QuitChan  chan bool
-	IsBlocked bool
 }
 
 type OutChanMsg struct {
