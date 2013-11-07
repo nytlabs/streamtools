@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"container/heap"
+	"log"
 	"time"
 )
 
@@ -45,7 +46,7 @@ func Histogram(b *Block) {
 				i++
 			}
 			marshal(query, data)
-		case msg := <- b.Routes["get_rule"]:
+		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &histogramRule{})
 			} else {
@@ -64,7 +65,11 @@ func Histogram(b *Block) {
 			}
 
 			value := getKeyValues(msg, rule.Key)[0]
-			valueString := value.(string)
+			valueString, ok := value.(string)
+			if !ok {
+				log.Println("nil value against", rule.Key, " - ignoring")
+				break
+			}
 
 			if pq, ok := histogram[valueString]; ok {
 				queueMessage := &PQMessage{
