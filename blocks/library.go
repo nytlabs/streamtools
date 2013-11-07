@@ -115,17 +115,17 @@ func BuildLibrary() {
 		},
         &BlockTemplate{
             BlockType:  "avg",
-            RouteNames: []string{"set_rule", "avg"},
+            RouteNames: []string{"set_rule", "get_rule", "avg"},
             Routine:    Avg,
         },
         &BlockTemplate{
             BlockType:  "sd",
-            RouteNames: []string{"set_rule", "sd"},
+            RouteNames: []string{"set_rule", "get_rule", "sd"},
             Routine:    Sd,
         },
         &BlockTemplate{
             BlockType:  "var",
-            RouteNames: []string{"set_rule", "var"},
+            RouteNames: []string{"set_rule", "get_ruel", "var"},
             Routine:    Var,
         },
 
