@@ -33,9 +33,11 @@ func ToNSQ(b *Block) {
 				log.Println("failed to marshal JSON")
 			}
 			frameType, data, err := w.Publish(rule.Topic, blob)
+
 			if err != nil {
-				log.Fatalf("frametype %d data %s error %s", frameType, string(data), err.Error())
+				log.Println("frametype %d data %s error %s", frameType, string(data), err.Error())
 			}
+
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &toNSQRule{}
