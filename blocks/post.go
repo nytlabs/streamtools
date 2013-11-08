@@ -14,6 +14,7 @@ func Post(b *Block) {
 	}
 
 	var rule *postRule
+	client := &http.Client{}
 
 	// TODO check the endpoint for happiness
 	for {
@@ -39,19 +40,21 @@ func Post(b *Block) {
 			if rule == nil {
 				break
 			}
-			// TODO maybe check the response ?
+
 			postBody, err := json.Marshal(msg)
 			if err != nil {
 				log.Fatal(err.Error())
+				break
 			}
 
-			// TODO the content-type here is heavily borked but we're using a hack
-			resp, err := http.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
+			resp, err := client.Post(rule.Endpoint, "application/x-www-form-urlencoded", bytes.NewReader(postBody))
+
 			if err != nil {
 				log.Println(err.Error())
-			} else {
-				defer resp.Body.Close()
+				break
 			}
+
+			resp.Body.Close()
 		}
 	}
 }
