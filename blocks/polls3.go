@@ -87,7 +87,11 @@ func PollS3(b *Block) {
 							break
 						}
 						var out BMsg
-						json.Unmarshal(line, &out)
+						err = json.Unmarshal(line, &out)
+						if err != nil {
+							log.Println(err)
+							break
+						}
 						broadcast(b.OutChans, out)
 					}
 				}
