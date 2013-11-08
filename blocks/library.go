@@ -120,17 +120,22 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
 		},
-		&BlockTemplate{
-			BlockType:  "avg",
-			RouteNames: []string{"set_rule", "avg"},
-			Routine:    Avg,
-		},
-		&BlockTemplate{
-			BlockType:  "sd",
-			RouteNames: []string{"set_rule", "sd"},
-			Routine:    Sd,
-		},
-		&BlockTemplate{
+        &BlockTemplate{
+            BlockType:  "avg",
+            RouteNames: []string{"set_rule", "get_rule", "avg"},
+            Routine:    Avg,
+        },
+        &BlockTemplate{
+            BlockType:  "sd",
+            RouteNames: []string{"set_rule", "get_rule", "sd"},
+            Routine:    Sd,
+        },
+        &BlockTemplate{
+            BlockType:  "var",
+            RouteNames: []string{"set_rule", "get_ruel", "var"},
+            Routine:    Var,
+        },
+        &BlockTemplate{
 			BlockType:  "longHTTP",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    LongHTTP,
