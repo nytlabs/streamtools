@@ -79,7 +79,9 @@ func Sync(b *Block) {
 			item, diff := pq.PeekAndShift(now, lagTime)
 			if item == nil {
 				// then the queue is empty. Pause for 5 seconds before checking again
-				diff = time.Duration(500) * time.Millisecond
+				if diff == 0 {
+					diff = time.Duration(500) * time.Millisecond
+				}
 
 				emitTick.Reset(diff)
 				break
