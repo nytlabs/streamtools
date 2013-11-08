@@ -34,7 +34,7 @@ func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprintln(w, "hello! this is streamtools")
 	fmt.Fprintln(w, "ID: BlockType, IsBlocked")
 	for id, block := range d.blockMap {
-		fmt.Fprintln(w, id+":", block.BlockType, block.IsBlocked)
+		fmt.Fprintln(w, id+":", block.BlockType)
 	}
 }
 

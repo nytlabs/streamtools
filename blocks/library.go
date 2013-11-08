@@ -116,6 +116,11 @@ func BuildLibrary() {
 			Routine:    Histogram,
 		},
 		&BlockTemplate{
+			BlockType:  "groupHistogram",
+			RouteNames: []string{"set_rule", "histogram", "get_rule", "list"},
+			Routine:    GroupHistogram,
+		},
+		&BlockTemplate{
 			BlockType:  "bunch",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
