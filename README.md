@@ -11,11 +11,11 @@ the form of JSON objects, flow through connections and are operated on by
 blocks. 
 
 Blocks fall roughly into one of four categories:
-* *source* blocks : these collect data from the world.
-* *sink* blocks : these send data back out to the world.
-* *transfer* blocks : these recieve messages, operate on them, and
+* *source* blocks : collect data from the world.
+* *sink* blocks : send data back out to the world.
+* *transfer* blocks : recieve messages, operate on them, and
   broadcast the result. 
-* *state* blocks : these recieve incoming messages and learn from them,
+* *state* blocks : recieve incoming messages and learn from them,
   maintaining a state.
 
 usage
