@@ -6,6 +6,20 @@ used for dealing with streams of data. Streamtools provides both a set of
 useful stream processing patterns and the mechanism by which the patterns are 
 combined together to create fully fledged systems. 
 
+Patterns are implemented as *blocks* which can be connected together. Data, in
+the form of JSON objects, flow through connections and are operated on by
+blocks. 
+
+Blocks fall roughly into one of four categories:
+* *source blocks* : these collect data from the world, e.g. by polling APIs, 
+  recieving sensor data, or reading a file.
+* *sink blocks* : these send data back out to the world, e.g. by
+  querying an API, writing to a databse, or broadcasting on a websocket.
+* *transfer blocks* : these recieve messages, operate on them, and
+  broadcast the result to any connected blocks. 
+* *state blocks* : these recieve incoming messages and learn from them,
+  maintaining a state.
+
 usage
 =====
 
