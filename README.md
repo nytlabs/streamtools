@@ -12,11 +12,10 @@ blocks.
 
 Blocks fall roughly into one of four categories:
 * *source* blocks : these collect data from the world.
-* *sink blocks* : these send data back out to the world, e.g. by
-  querying an API, writing to a databse, or broadcasting on a websocket.
-* *transfer blocks* : these recieve messages, operate on them, and
+* *sink* blocks : these send data back out to the world.
+* *transfer* blocks : these recieve messages, operate on them, and
   broadcast the result. 
-* *state blocks* : these recieve incoming messages and learn from them,
+* *state* blocks : these recieve incoming messages and learn from them,
   maintaining a state.
 
 usage
