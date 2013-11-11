@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"errors"
+	"strings"
 )
 
 const (
@@ -67,6 +68,12 @@ func (d *Daemon) createHandler(w *rest.ResponseWriter, r *rest.Request) {
 	if idExists == false {
 		id = <-idChan
 	} else {
+
+		if len(strings.TrimSpace(fID[0])) == 0 {
+			ApiResponse(w, 500, "BAD_BLOCK_ID")
+			return
+		}
+
 		_, notUnique := d.blockMap[fID[0]]
 		if notUnique == true {
 			ApiResponse(w, 500, "BLOCK_ID_ALREADY_EXISTS")
@@ -166,6 +173,12 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 	if hasID == false {
 		id = <-idChan
 	} else {
+
+		if len(strings.TrimSpace(fID[0])) == 0 {
+			ApiResponse(w, 500, "BAD_CONNECTION_ID")
+			return
+		}
+
 		_, ok := d.blockMap[fID[0]]
 		if ok == false {
 			id = fID[0]
