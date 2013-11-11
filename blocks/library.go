@@ -19,14 +19,21 @@ func BuildLibrary() {
 
 	templates := []*BlockTemplate{
 		&BlockTemplate{
+			BlockType:  "connection",
+			RouteNames: []string{"last_message", "rate"},
+			Routine:    Connection,
+		},
+		////////// TESTING BLOCKS
+		&BlockTemplate{
+			BlockType:  "blocked",
+			RouteNames: []string{"get_rule"},
+			Routine:    Blocked,
+		},
+		////////////////////
+		&BlockTemplate{
 			BlockType:  "ticker",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Ticker,
-		},
-		&BlockTemplate{
-			BlockType:  "connection",
-			RouteNames: []string{"last_seen"},
-			Routine:    Connection,
 		},
 		&BlockTemplate{
 			BlockType:  "tolog",
@@ -109,9 +116,34 @@ func BuildLibrary() {
 			Routine:    Histogram,
 		},
 		&BlockTemplate{
+			BlockType:  "groupHistogram",
+			RouteNames: []string{"set_rule", "histogram", "get_rule", "list"},
+			Routine:    GroupHistogram,
+		},
+		&BlockTemplate{
 			BlockType:  "bunch",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
+		},
+        &BlockTemplate{
+            BlockType:  "avg",
+            RouteNames: []string{"set_rule", "get_rule", "avg"},
+            Routine:    Avg,
+        },
+        &BlockTemplate{
+            BlockType:  "sd",
+            RouteNames: []string{"set_rule", "get_rule", "sd"},
+            Routine:    Sd,
+        },
+        &BlockTemplate{
+            BlockType:  "var",
+            RouteNames: []string{"set_rule", "get_ruel", "var"},
+            Routine:    Var,
+        },
+        &BlockTemplate{
+			BlockType:  "longHTTP",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    LongHTTP,
 		},
 	}
 
