@@ -3,7 +3,6 @@ package blocks
 import (
 	"encoding/json"
 	"github.com/bitly/go-simplejson"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -177,7 +176,6 @@ func equals(value interface{}, comparator interface{}) bool {
 		if value == nil && comparator == nil {
 			return true
 		}
-		log.Println("cannot perform an equals operation on this type")
 		return false
 	}
 }
@@ -196,7 +194,6 @@ func greaterthan(value interface{}, comparator interface{}) bool {
 		}
 		return v > c
 	default:
-		log.Println("cannot perform a greaterthan operation on this type")
 		return false
 	}
 }
@@ -215,7 +212,6 @@ func lessthan(value interface{}, comparator interface{}) bool {
 		}
 		return v < c
 	default:
-		log.Println("cannot perform a lessthan operation on this type")
 		return false
 	}
 }
