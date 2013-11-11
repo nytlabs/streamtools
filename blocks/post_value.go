@@ -33,7 +33,7 @@ func PostValue(b *Block) {
 			return
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
-				marshal(msg, &postRule{Keymapping:[]KeyMapping{KeyMapping{}}})
+				marshal(msg, &postRule{Keymapping: []KeyMapping{KeyMapping{}}})
 			} else {
 				marshal(msg, rule)
 			}
@@ -62,7 +62,8 @@ func PostValue(b *Block) {
 			// TODO maybe check the response ?
 			postBody, err := json.Marshal(body)
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Println(err.Error())
+				break
 			}
 
 			// TODO the content-type here is heavily borked but we're using a hack
@@ -71,20 +72,18 @@ func PostValue(b *Block) {
 			req.Close = true
 
 			if err != nil {
-			    log.Println(err)
-			    break
+				log.Println(err)
+				break
 			}
-			
+
 			resp, err := client.Do(req)
-			defer resp.Body.Close()
 
 			if err != nil {
-			    log.Println(err)
-			    break
+				log.Println(err)
+				break
 			}
 
-			bodyBuf := &bytes.Buffer{}
-			_, err = bodyBuf.ReadFrom(resp.Body)
+			resp.Body.Close()
 		}
 	}
 }

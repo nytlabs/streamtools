@@ -58,17 +58,21 @@ func PollS3(b *Block) {
 			// get the list
 			list, err := bucket.List(rule.Prefix, "/", "", 2000)
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Println(err.Error())
 			}
 			log.Println("found", len(list.Contents), "files")
 			for _, v := range list.Contents {
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
-					log.Fatal(err.Error())
+					log.Println(err.Error())
 				}
 				if lm.After(t.Add(-samplePeriod)) {
 					log.Println("[POLLS3] emitting", v.Key)
-					br, _ := bucket.GetReader(v.Key)
+					br, err := bucket.GetReader(v.Key)
+					if err != nil {
+						log.Println(err)
+						break
+					}
 					defer br.Close()
 
 					var reader *bufio.Reader
@@ -87,7 +91,11 @@ func PollS3(b *Block) {
 							break
 						}
 						var out BMsg
-						json.Unmarshal(line, &out)
+						err = json.Unmarshal(line, &out)
+						if err != nil {
+							log.Println(err)
+							break
+						}
 						broadcast(b.OutChans, out)
 					}
 				}
