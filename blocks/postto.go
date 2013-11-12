@@ -1,21 +1,23 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
+	"encoding/json"
 )
 
+// PostTo accepts JSON through POSTs to the /in endpoint and broadcasts to other blocks. 
 func PostTo(b *Block) {
 	for {
 		select {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case msg := <-b.Routes["in"]:
-			outMsgJson, err := simplejson.NewJson(msg.Msg)
+			var out BMsg
+			err := json.Unmarshal(msg.Msg, &out)
 			if err != nil {
 				msg.ResponseChan <- []byte(string(`{"Post":"Error"}`))
 			} else {
 				msg.ResponseChan <- []byte(string(`{"Post":"OK"}`))
-				broadcast(b.OutChans, outMsgJson)
+				broadcast(b.OutChans, out)
 			}
 		case <-b.QuitChan:
 			quit(b)
