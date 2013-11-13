@@ -2,20 +2,21 @@ streamtools
 ===========
 
 Streamtools is a [pattern language](http://en.wikipedia.org/wiki/Pattern_language) 
-used for dealing with streams of data. Streamtools provides both a set of
+for working with streams of data. Streamtools provides both a set of
 useful stream processing patterns and the mechanism by which the patterns are 
 combined together to create fully fledged systems. 
 
 Patterns are implemented as *blocks* which can be connected together. Data, in
-the form of JSON objects, flow through connections and are operated on by
-blocks. 
+the form of a stream of discrete JSON objects, flow through connections and are operated on by
+blocks. Streamtools is designed to work on streams of data that operate up to
+~3K messages per second.
 
 Blocks fall roughly into one of four categories:
 * *source* blocks : collect data from the world.
 * *sink* blocks : send data back out to the world.
-* *transfer* blocks : recieve messages, operate on them, and
+* *transfer* blocks : receive messages, operate on them, and
   broadcast the result. 
-* *state* blocks : recieve incoming messages and learn from them,
+* *state* blocks : receive incoming messages and learn from them,
   maintaining a state.
 
 usage
