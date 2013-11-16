@@ -8,8 +8,7 @@ combined together to create fully fledged systems.
 
 Patterns are implemented as *blocks* which can be connected together. Data, in
 the form of a stream of discrete JSON objects, flow through connections and are operated on by
-blocks. Streamtools is designed to work on streams of data that operate up to
-~3K messages per second.
+blocks. Depending on your resources, streamtools is capable of dealing with streams of data that operate up to thousands of JSON objects per second.
 
 Blocks fall roughly into one of four categories:
 * *source* blocks : collect data from the world.
