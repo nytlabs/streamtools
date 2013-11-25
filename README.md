@@ -29,7 +29,6 @@ NYT R&D lab for a while now. These are:
   underlying system is constantly changing. We call this assumption the
   '[stationarity](http://en.wikipedia.org/wiki/Stationary_process)' assumption, and it's a pretty common one. However, as far as assumptions go, it's not a particularly needed one, and can lead to some poor
   modelling. 
-  blind to 
 * *All data starts off life as a stream.* Every sensor collects data
   sequentially, be it a microarray, a thermometer, or a grad student with a
   clip-board. We take these streams of data and 'tabulate' them, to make them
@@ -41,7 +40,7 @@ NYT R&D lab for a while now. These are:
 * *Creative abduction.* A distinguishing concept of data science is that it
   allows, and promotes, a playful approach to data analysis and modelling. Known
   as [abduction](http://en.wikipedia.org/wiki/Abductive_reasoning), this form of
-  reasoning allows the scientist to reason from data to hypothesis, rather than
+  reasoning allows the scientist to reason their way from data to hypothesis, rather than
   the more traditional hypothesis testing framework. However, tools for
   performing this sort of reasoning are almost non-existent, which seems like a
   shame!
@@ -49,6 +48,13 @@ NYT R&D lab for a while now. These are:
 Streamtools, therefore, aims to provide a set of tools that are inherently
 non-stationary, that deal natively with streams of data, and that allow playful
 interactions with the data. 
+
+who is streamtools for?
+=======================
+
+We are building streamtools to be usable by anyone that would like to explore
+streams of data. At a basic level, streamtools exposes a basic, easy-to-use HTTP API, 
+
 
 usage
 =====
