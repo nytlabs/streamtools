@@ -55,6 +55,26 @@ who is streamtools for?
 We are building streamtools to be usable by anyone that would like to explore
 streams of data. At a basic level, streamtools exposes a basic, easy-to-use HTTP API, 
 
+what streamtools isn't
+======================
+
+Streamtools is definitely NOT a production quality queueing system. For these,
+see:
+* [NSQ](http://bitly.github.io/nsq/)
+* [RabbitMQ](http://www.rabbitmq.com/)
+* [ZeroMQ](http://zeromq.org/)
+* [AmazonSQS](http://aws.amazon.com/sqs/)
+
+Streamtools also isn't a production quality event processing framework. Streamtools provides a set
+of patterns for performing analysis on streams of data - the user should not
+expect to write any code at all. If you're looking for an event processing
+framework for building production systems, check out the following:
+* [Storm](http://storm-project.net/)
+* [Spark](http://spark.incubator.apache.org/)
+* [Amazon Kinesis](http://aws.amazon.com/kinesis/)
+
+We expect streamtools to be very useful for prototyping systems that
+subsequently rely on these technologies!
 
 usage
 =====
