@@ -49,12 +49,6 @@ Streamtools, therefore, aims to provide a set of tools that are inherently
 non-stationary, that deal natively with streams of data, and that allow playful
 interactions with the data. 
 
-who is streamtools for?
-=======================
-
-We are building streamtools to be usable by anyone that would like to explore
-streams of data. At a basic level, streamtools exposes a basic, easy-to-use HTTP API, 
-
 what streamtools isn't
 ======================
 
