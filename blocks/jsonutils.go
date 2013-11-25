@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"strconv"
 	"strings"
 )
@@ -142,11 +141,6 @@ func getKeyValues(d interface{}, p string) []interface{} {
 			} else {
 				values = append(values, d[id])
 			}
-		}
-	case *simplejson.Json:
-		x := getKeyValues(d.Interface(), p)
-		for _, z := range x {
-			values = append(values, z)
 		}
 
 	default:
