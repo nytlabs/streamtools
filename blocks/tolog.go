@@ -5,6 +5,7 @@ import (
 	"log"
 )
 
+// ToLog prints recieved messages to the stream tools logger. 
 func ToLog(b *Block) {
 	for {
 		select {

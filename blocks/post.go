@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// Post POSTs an input message to an HTTP endpoint. 
 func Post(b *Block) {
 
 	type postRule struct {
