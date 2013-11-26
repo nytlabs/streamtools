@@ -1,8 +1,6 @@
 package blocks
 
 import (
-    "encoding/json"
-    "log"
     "math"
 )
 
