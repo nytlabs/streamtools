@@ -1,44 +1,46 @@
+default=7070
+PORT=${1:-$default}
 clear
 echo "Test of the standard deviation block"
 echo ""
 echo ""
 echo "Make a post block"
-curl "localhost:7070/create?blockType=postto"
+curl "localhost:${PORT}/create?blockType=postto"
 echo ""
 echo ""
 echo "Make an st dev block"
-curl "localhost:7070/create?blockType=sd"
+curl "localhost:${PORT}/create?blockType=sd"
 echo ""
 echo ""
 echo "Set a rule for the sd block"
-curl "localhost:7070/blocks/2/set_rule" --data '{"Key":"test"}'
+curl "localhost:${PORT}/blocks/2/set_rule" --data '{"Key":"test"}'
 echo ""
 echo ""
 echo "Connect the postto and sd blocks"
-curl "localhost:7070/connect?from=1&to=2"
+curl "localhost:${PORT}/connect?from=1&to=2"
 echo ""
 echo ""
 echo "Send data to the sd block"
-curl "localhost:7070/blocks/1/in" --data '{"test":1.0}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":1.0}'
 echo ""
 echo ""
 echo "Get the state of the sd block"
-curl "localhost:7070/blocks/2/sd"
+curl "localhost:${PORT}/blocks/2/sd"
 echo ""
 echo ""
 echo "Send data to the sd block"
-curl "localhost:7070/blocks/1/in" --data '{"test":2.0}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":2.0}'
 echo ""
 echo ""
 echo "Get of the state of the sd block again"
-curl "localhost:7070/blocks/2/sd"
+curl "localhost:${PORT}/blocks/2/sd"
 echo ""
 echo ""
 echo "Send data to the sd block"
-curl "localhost:7070/blocks/1/in" --data '{"test":3.0}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":3.0}'
 echo ""
 echo ""
 echo "Get of the state of the sd block again"
-curl "localhost:7070/blocks/2/sd"
+curl "localhost:${PORT}/blocks/2/sd"
 echo ""
 echo ""

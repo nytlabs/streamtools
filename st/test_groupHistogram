@@ -1,8 +1,0 @@
-./create random r | jq .
-./create groupHistogram g | jq .
-./connect r g | jq .
-curl -s localhost:7070/blocks/g/set_rule -d '{"Window":10, "GroupKey":"option",
-"Key":"c.nestedOption"}' | jq .
-sleep 4
-curl -s localhost:7070/blocks/g/list | jq .
-curl -s localhost:7070/blocks/g/histogram -d '{"GroupKey":"a"}' | jq .
