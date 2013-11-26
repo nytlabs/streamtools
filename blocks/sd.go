@@ -1,8 +1,6 @@
 package blocks
 
 import (
-    "encoding/json"
-    "log"
     "math"
 )
 
@@ -49,10 +47,10 @@ func Sd(b *Block) {
             if rule == nil {
                 break
             }
-            val := getKeyValues(msg, rule.Key)[0].(json.Number)
-            x, err := val.Float64()
-            if err != nil {
-                log.Println(err.Error())
+            val := getKeyValues(msg, rule.Key)[0]
+            x, ok := val.(float64)
+            if !ok {
+                break
             }
             N++
             if N == 1.0 {
