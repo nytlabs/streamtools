@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	"encoding/json"
 	"strconv"
 	"strings"
 )
@@ -151,17 +150,13 @@ func getKeyValues(d interface{}, p string) []interface{} {
 
 func equals(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
+		// comparing floats.....?
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v == c
+		return value == c
 	case string:
 		return value == comparator
 	case bool:
@@ -176,17 +171,12 @@ func equals(value interface{}, comparator interface{}) bool {
 
 func greaterthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v > c
+		return value > c
 	default:
 		return false
 	}
@@ -194,17 +184,12 @@ func greaterthan(value interface{}, comparator interface{}) bool {
 
 func lessthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v < c
+		return value < c
 	default:
 		return false
 	}
