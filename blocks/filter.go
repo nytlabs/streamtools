@@ -39,7 +39,8 @@ func Filter(b *Block) {
 	operators["gt"] = greaterthan
 	operators["lt"] = lessthan
 	operators["subset"] = subsetof
-
+	operators["keyin"] = keyin
+	
 	var rule *filterRule
 
 	for {
