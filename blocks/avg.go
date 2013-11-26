@@ -1,10 +1,5 @@
 package blocks
 
-import (
-    "encoding/json"
-    "log"
-)
-
 // Avg() is an online average
 // The average for a stream of data is updated 1 data point at a time.
 // Formula: mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
@@ -45,10 +40,10 @@ func Avg(b *Block) {
             if rule == nil {
                 break
             }
-            val := getKeyValues(msg, rule.Key)[0].(json.Number)
-            x, err := val.Float64()
-            if err != nil {
-                log.Println(err.Error())
+            val := getKeyValues(msg, rule.Key)[0]
+            x, ok := val.(float64)
+            if !ok {
+                break
             }
             N++
             data.Avg = ((N - 1.0) / N)*data.Avg + (1.0/N)*x

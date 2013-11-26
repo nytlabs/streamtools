@@ -2,9 +2,7 @@ package blocks
 
 import (
 	"container/heap"
-	"encoding/json"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -52,15 +50,12 @@ func Sync(b *Block) {
 			if err != nil {
 				log.Println(err.Error())
 			}
-			msgTimeF, ok := msgTime.(float64)
-			msgTimeI := int64(msgTimeF)
+
+			msgTimeI, ok := msgTime.(int64)
 			if !ok {
-				v, _ := json.Marshal(msg)
-				log.Println(string(v))
-				log.Println(reflect.TypeOf(msgTime))
-				log.Println(msgTime)
 				log.Println(msgTimeI)
-				log.Println("could not cast time key to int")
+				log.Println("error could not get key")
+				break
 			}
 
 			// assuming the value is in MS

@@ -1,1 +1,0 @@
-curl -d '$2' localhost:7070/blocks/$1/set_rule

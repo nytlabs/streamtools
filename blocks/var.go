@@ -1,11 +1,5 @@
 package blocks
 
-import (
-    "encoding/json"
-    "log"
-)
-
-
 // Var calculates variance in an online fashion using Welford's Algorithm.
 // The Var() block is the Sd() block with the squared correction.
 // Ref: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.302.7503&rep=rep1&type=pdf
@@ -49,10 +43,10 @@ func Var(b *Block) {
             if rule == nil {
                 break
             }
-            val := getKeyValues(msg, rule.Key)[0].(json.Number)
-            x, err := val.Float64()
-            if err != nil {
-                log.Println(err.Error())
+            val := getKeyValues(msg, rule.Key)[0]
+            x, ok := val.(float64)
+            if !ok {
+                break
             }
             N++
             if N == 1.0 {

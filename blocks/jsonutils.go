@@ -1,8 +1,6 @@
 package blocks
 
 import (
-	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"strconv"
 	"strings"
 )
@@ -12,34 +10,62 @@ import (
 // {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo[]"
 // {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo[].type"
 // {"foo":["bar","baz"]} returns [bar] for string "foo[0]"
+// 
+// getKeyValues also supports bracket access in case your keys include periods.
+// {"key.includes.periods":1} returns [1] for string "['key.includes.periods']"
+// {"foo":{"bar.bar":{"baz":1}} returns [1] for string 'foo["bar.bar"].baz'
+// {"foo.bar"{"baz":{"bing.bong":{"boo":1}}}} returns [1] for string '["foo.bar"].baz["bing.bong"]["boo"]'
 
 // this function is obscene :(
 func getKeyValues(d interface{}, p string) []interface{} {
 	var values []interface{}
 	var key string
 	var rest string
+	var id int64
+	id = -1
 
 	keyIdx := strings.Index(p, ".")
 	brkIdx := strings.Index(p, "[")
+	escIdx := strings.Index(p, "[\"")
+	
+	if escIdx == -1 {
+		escIdx = strings.Index(p, "['")
+	}
 
-	if keyIdx != -1 {
-		key = p[:keyIdx]
-		rest = p[keyIdx+1:]
+	if escIdx == 0 {
+		endescIdx := strings.Index(p, "\"]")
+		if endescIdx == -1 {
+			endescIdx = strings.Index(p, "']")
+		}
+
+		key = p[escIdx + 2:endescIdx]
+		rest = p[endescIdx + 2:]
+
+		if len(rest) > 0 && rest[0] == '.'{
+			rest = rest[1:]
+		}
 	} else {
-		key = p
-	}
 
-	if brkIdx != -1 && brkIdx != 0 {
-		key = p[:brkIdx]
-		rest = p[brkIdx:]
-	}
+		if keyIdx != -1 {
+			key = p[:keyIdx]
+			rest = p[keyIdx+1:]
+		} else {
+			key = p
+		}
 
-	bStart := strings.Index(key, "[")
-	bEnd := strings.Index(key, "]")
-	var id int64
-	id = -1
-	if bStart == 0 && bEnd != 1 {
-		id, _ = strconv.ParseInt(key[bStart+1:bEnd], 10, 64)
+		if brkIdx != -1 && brkIdx != 0 {
+			key = p[:brkIdx]
+			rest = p[brkIdx:]
+		}
+
+
+		bStart := strings.Index(key, "[")
+		bEnd := strings.Index(key, "]")
+
+		if bStart == 0 && bEnd != 1 {
+			id, _ = strconv.ParseInt(key[bStart+1:bEnd], 10, 64)
+		}
+
 	}
 
 	switch d := d.(type) {
@@ -50,9 +76,9 @@ func getKeyValues(d interface{}, p string) []interface{} {
 				values = append(values, z)
 			}
 		} else {
-			_, ok := (d[p]).([]interface{})
+			_, ok := (d[key]).([]interface{})
 			if ok == false {
-				values = append(values, d[p])
+				values = append(values, d[key])
 			}
 		}
 	case []int:
@@ -143,11 +169,6 @@ func getKeyValues(d interface{}, p string) []interface{} {
 				values = append(values, d[id])
 			}
 		}
-	case *simplejson.Json:
-		x := getKeyValues(d.Interface(), p)
-		for _, z := range x {
-			values = append(values, z)
-		}
 
 	default:
 	}
@@ -157,17 +178,13 @@ func getKeyValues(d interface{}, p string) []interface{} {
 
 func equals(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
+		// comparing floats.....?
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v == c
+		return value == c
 	case string:
 		return value == comparator
 	case bool:
@@ -182,17 +199,12 @@ func equals(value interface{}, comparator interface{}) bool {
 
 func greaterthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v > c
+		return value > c
 	default:
 		return false
 	}
@@ -200,17 +212,12 @@ func greaterthan(value interface{}, comparator interface{}) bool {
 
 func lessthan(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
-	case json.Number:
-		// not sure about comparing floats
-		v, err := value.Float64()
-		if err != nil {
-			return false
-		}
+	case float64:
 		c, ok := comparator.(float64)
 		if ok == false {
 			return false
 		}
-		return v < c
+		return value < c
 	default:
 		return false
 	}

@@ -1,3 +1,0 @@
-curl -s "localhost:7070/create?blockType=$1&id=$2"
-#echo ''
-#echo "curl localhost:7070/create?blockType=$1&id=$2"

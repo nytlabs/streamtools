@@ -1,1 +1,0 @@
-curl localhost:7070/delete?id=$1
