@@ -51,11 +51,14 @@ func Sync(b *Block) {
 				log.Println(err.Error())
 			}
 
-			msgTimeI, ok := msgTime.(int64)
-			if !ok {
-				log.Println(msgTimeI)
-				log.Println("error could not get key")
-				break
+			var msgTimeI int64
+			switch msgTime := msgTime.(type){
+			case int64:
+				msgTimeI = msgTime
+			case float64:
+				msgTimeI = int64(msgTime)
+			default:
+				log.Println("count not cast time key to int")
 			}
 
 			// assuming the value is in MS
