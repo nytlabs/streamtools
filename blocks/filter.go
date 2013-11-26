@@ -40,7 +40,7 @@ func Filter(b *Block) {
 	operators["lt"] = lessthan
 	operators["subset"] = subsetof
 	operators["keyin"] = keyin
-	
+
 	var rule *filterRule
 
 	for {
@@ -57,6 +57,11 @@ func Filter(b *Block) {
 					break
 				}
 			}
+
+			if len(values) == 0 && rule.Invert {
+				broadcast(b.OutChans, msg)
+			}
+
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &filterRule{}

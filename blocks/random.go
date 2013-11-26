@@ -55,6 +55,10 @@ func Random(b *Block) {
 			idx1 := rand.Intn(len(options))
 			Set(msg, "option", options[idx0])
 
+			if rand.Intn(10) > 5 {
+				Set(msg, "sometimes.dot.option", options[rand.Intn(5)])
+			}
+
 			var nestJson interface{}
 			nestJson = make(map[string]interface{})
 			l := rand.Intn(20) + 10

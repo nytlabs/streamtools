@@ -76,9 +76,12 @@ func getKeyValues(d interface{}, p string) []interface{} {
 				values = append(values, z)
 			}
 		} else {
-			_, ok := (d[key]).([]interface{})
-			if ok == false {
-				values = append(values, d[key])
+			_, ok := d[key]
+			if ok {
+				_, ok := (d[key]).([]interface{})
+				if ok == false {
+					values = append(values, d[key])
+				}
 			}
 		}
 	case []int:
