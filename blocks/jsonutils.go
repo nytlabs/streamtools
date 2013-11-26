@@ -230,3 +230,7 @@ func subsetof(value interface{}, comparator interface{}) bool {
 	}
 	return false
 }
+
+func keyin(value interface{}, comparator interface{}) bool {
+	return true
+}
