@@ -2,9 +2,7 @@ package blocks
 
 import (
 	"container/heap"
-	//"encoding/json"
 	"log"
-	//"reflect"
 	"strings"
 	"time"
 )
