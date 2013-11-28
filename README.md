@@ -28,7 +28,7 @@ NYT R&D lab for a while now. These are:
   available data, and we would forget, for a moment, that the
   underlying system is constantly changing. We call this assumption the
   '[stationarity](http://en.wikipedia.org/wiki/Stationary_process)' assumption, 
-  and it's a pretty common one. However, when studying systems whose properties change of time can lead to some poor
+  and it's a pretty common one. However, when studying systems whose properties change over time can lead to some poor
   modelling. For example, when studying a system as complex as an audience, it is critical
   to realise that the audience's properties are changing on many different time
   frames. 
