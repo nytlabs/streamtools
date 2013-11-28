@@ -47,7 +47,7 @@ func Timeseries(b *Block) {
 			switch v := getKeyValues(msg, rule.Key)[0].(type) {
 			case float32:
 				val = float64(v)
-			case int: 
+			case int:
 				val = float64(v)
 			case float64:
 				val = v

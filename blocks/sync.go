@@ -23,7 +23,7 @@ func Sync(b *Block) {
 	for {
 		select {
 		case m := <-b.Routes["set_rule"]:
-			if rule  == nil {
+			if rule == nil {
 				rule = &syncRule{}
 			}
 			unmarshal(m, rule)
@@ -52,7 +52,7 @@ func Sync(b *Block) {
 			}
 
 			var msgTimeI int64
-			switch msgTime := msgTime.(type){
+			switch msgTime := msgTime.(type) {
 			case int64:
 				msgTimeI = msgTime
 			case float64:

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-// PostTo accepts JSON through POSTs to the /in endpoint and broadcasts to other blocks. 
+// PostTo accepts JSON through POSTs to the /in endpoint and broadcasts to other blocks.
 func PostTo(b *Block) {
 	for {
 		select {

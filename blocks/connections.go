@@ -8,7 +8,7 @@ import (
 
 // Connection accepts the input from a block and outputs it to another block.
 // This block is a special case in that it requires an input and an output block
-// to be created. 
+// to be created.
 func Connection(b *Block) {
 	var last BMsg
 	var rate float64 // rate in messages per second of this block

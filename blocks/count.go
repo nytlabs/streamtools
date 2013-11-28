@@ -6,7 +6,7 @@ import (
 )
 
 // Count uses a priority queue to count the number of messages that have been sent
-// to the count block over a duration of time in seconds. 
+// to the count block over a duration of time in seconds.
 func Count(b *Block) {
 
 	type countRule struct {
