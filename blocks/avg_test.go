@@ -8,9 +8,11 @@ import (
 
 func TestCreate(t *testing.T) {
 	BuildLibrary()
-	if _, err := NewBlock("avg", "testBlock"); err != nil {
+	b, err := NewBlock("avg", "testBlock")
+	if err != nil {
 		t.Error("failed to create avg block", err.Error())
 	}
+	go Library["avg"].Routine(b)
 }
 
 func TestSend(t *testing.T) {
@@ -19,6 +21,7 @@ func TestSend(t *testing.T) {
 	if err != nil {
 		t.Error("failed to create avg block", err.Error())
 	}
+	go Library["avg"].Routine(b)
 	msg := make(map[string]interface{})
 	msg["value"] = 2
 	m, err := json.Marshal(msg)
@@ -26,4 +29,5 @@ func TestSend(t *testing.T) {
 		log.Fatal(err.Error())
 	}
 	b.InChan <- m
+
 }
