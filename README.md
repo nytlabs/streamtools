@@ -27,8 +27,11 @@ NYT R&D lab for a while now. These are:
 * *The world is nonstationary.* In the past our analysis was typically based on a snapshot of
   available data, and we would forget, for a moment, that the
   underlying system is constantly changing. We call this assumption the
-  '[stationarity](http://en.wikipedia.org/wiki/Stationary_process)' assumption, and it's a pretty common one. However, as far as assumptions go, it's not a particularly needed one, and can lead to some poor
-  modelling. 
+  '[stationarity](http://en.wikipedia.org/wiki/Stationary_process)' assumption, 
+  and it's a pretty common one. However, when studying systems whose properties change of time can lead to some poor
+  modelling. For example, when studying a system as complex as an audience, it is critical
+  to realise that the audience's properties are changing on many different time
+  frames. 
 * *All data starts off life as a stream.* Every sensor collects data
   sequentially, be it a microarray, a thermometer, or a grad student with a
   clip-board. We take these streams of data and 'tabulate' them, to make them
