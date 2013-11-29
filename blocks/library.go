@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"encoding/json"
-	"log"
 )
 
 var (
@@ -14,7 +13,6 @@ var (
 type BlockLibrary map[string]*BlockTemplate
 
 func BuildLibrary() {
-	log.Println("building block library")
 	Library = make(map[string]*BlockTemplate)
 
 	templates := []*BlockTemplate{
