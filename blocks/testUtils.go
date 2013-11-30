@@ -1,7 +1,10 @@
 package blocks
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"log"
 	"time"
 )
 
@@ -28,7 +31,7 @@ func TestRoute(blockType string, m []byte, route string) error {
 	// send the test response
 	go func() {
 		block.Routes[route] <- rr
-		//log.Println(string(<-rr.ResponseChan))
+		<-rr.ResponseChan
 		successChan <- true
 	}()
 	select {
@@ -39,100 +42,50 @@ func TestRoute(blockType string, m []byte, route string) error {
 	return nil
 }
 
-/*
-func TestBlocks(t *testing.T) {
+// make sure block has the expected state after a given time.
+// send messages in on the inChan, and after the duration the state will be
+// compared to the expected byte sequence.
+// blockType : the kind of block to test
+// inChan : send data through this channel to affect the state
+// t : wait this many seconds before checking the state
+// expected : compare the state to this expected byte array
+// rule : set the block with this rule
+// route : test the state using this route
+func TestState(blockType string, inChan chan BMsg, t int, expected []byte, rule []byte, route string, successChan chan bool) {
+	// build the library
 	BuildLibrary()
-	for _, b := range Library {
-		log.Println("testing", b.BlockType)
-		test_create(b.BlockType, t)
-		test_send(b.BlockType, t)
-		for _, r := range b.RouteNames {
-			test_route(b.BlockType, r, t)
+	// create the block
+	block, _ := NewBlock(blockType, "testBlock")
+	// set the block running
+	go Library[blockType].Routine(block)
+	// set the rule
+	rr := RouteResponse{
+		Msg:          rule,
+		ResponseChan: make(chan []byte),
+	}
+	block.Routes["set_rule"] <- rr
+	<-rr.ResponseChan
+	// set the timer running
+	timer := time.NewTimer(time.Duration(t) * time.Second)
+	for {
+		select {
+		case m := <-inChan:
+			block.InChan <- m
+		case <-timer.C:
+			m, _ := json.Marshal("{}")
+			rr := RouteResponse{
+				Msg:          m,
+				ResponseChan: make(chan []byte),
+			}
+			block.Routes[route] <- rr
+			state := <-rr.ResponseChan
+			if bytes.Equal(state, expected) {
+				successChan <- true
+			} else {
+				log.Println("got", string(state), "expected", string(expected))
+				successChan <- false
+			}
+			break
 		}
 	}
 }
-
-func create(b string) (*Block, error) {
-	block, err := NewBlock(b, "testBlock")
-	return block, err
-}
-
-func test_create(b string, t *testing.T) {
-	block, err := create(b)
-	if err != nil {
-		t.Error("failed to create", b)
-	}
-	go Library[b].Routine(block)
-}
-
-func send(c chan BMsg, m BMsg, o chan bool) {
-	c <- m
-	o <- true
-}
-
-func timedSend(m BMsg, c chan BMsg) error {
-	timer := time.NewTimer(time.Duration(5) * time.Second)
-	responseChan := make(chan bool)
-	go send(c, m, responseChan)
-	select {
-	case <-responseChan:
-	case <-timer.C:
-		return errors.New("send failed")
-	}
-	return nil
-
-}
-
-func timedSendRoute(m BMsg, c chan RouteResponse) error {
-	timer := time.NewTimer(time.Duration(5) * time.Second)
-	responseChan := make(chan bool)
-	o, err := json.Marshal(m)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	rr := RouteResponse{
-		Msg:          o,
-		ResponseChan: make(chan []byte),
-	}
-	go func() {
-		c <- rr
-		responseChan <- true
-	}()
-	select {
-	case <-responseChan:
-	case <-timer.C:
-		return errors.New("send failed")
-	}
-	return nil
-}
-
-func test_send(b string, t *testing.T) {
-	block, err := create(b)
-	if err != nil {
-		t.Error("failed to create", b)
-	}
-	go Library[b].Routine(block)
-	msg := make(map[string]interface{})
-	msg["value"] = 2
-	m, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	timedSend(m, block.InChan)
-}
-
-func test_route(b string, r string, t *testing.T) {
-	block, err := create(b)
-	if err != nil {
-		t.Error("failed to create", b)
-	}
-	go Library[b].Routine(block)
-	msg := make(map[string]interface{})
-	m, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	timedSendRoute(m, block.Routes[r])
-	return err
-}
-*/

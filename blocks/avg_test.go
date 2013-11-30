@@ -2,20 +2,10 @@ package blocks
 
 import (
 	"encoding/json"
-	"log"
 	"testing"
 )
 
-func TestCreate(t *testing.T) {
-	BuildLibrary()
-	b, err := NewBlock("avg", "testBlock")
-	if err != nil {
-		t.Error("failed to create avg block", err.Error())
-	}
-	go Library["avg"].Routine(b)
-}
-
-func TestRoutes(t *testing.T) {
+func TestSetRule(t *testing.T) {
 	msg := map[string]interface{}{
 		"Key": "TestKey",
 	}
@@ -24,26 +14,30 @@ func TestRoutes(t *testing.T) {
 	if err != nil {
 		t.Error(err.Error())
 	}
-	msg = map[string]interface{}{}
-	m, _ = json.Marshal(msg)
-	err = TestRoute("avg", m, "get_rule")
+}
+
+func TestGetRule(t *testing.T) {
+	msg := map[string]interface{}{}
+	m, _ := json.Marshal(msg)
+	err := TestRoute("avg", m, "get_rule")
 	if err != nil {
 		t.Error(err.Error())
 	}
 }
 
-func TestSend(t *testing.T) {
-	BuildLibrary()
-	b, err := NewBlock("avg", "testBlock")
-	if err != nil {
-		t.Error("failed to create avg block", err.Error())
+func TestAvg(t *testing.T) {
+	inChan := make(chan BMsg)
+	successChan := make(chan bool)
+	e, _ := json.Marshal(map[string]interface{}{"Avg": 100})
+	r, _ := json.Marshal(map[string]interface{}{"Key": "value"})
+	go TestState("avg", inChan, 5, e, r, "avg", successChan)
+	inChan <- map[string]interface{}{
+		"value": 150,
 	}
-	go Library["avg"].Routine(b)
-	msg := make(map[string]interface{})
-	msg["value"] = 2
-	m, err := json.Marshal(msg)
-	if err != nil {
-		log.Fatal(err.Error())
+	inChan <- map[string]interface{}{
+		"value": 50,
 	}
-	b.InChan <- m
+	if !<-successChan {
+		t.Error("state did not match")
+	}
 }

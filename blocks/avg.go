@@ -1,5 +1,7 @@
 package blocks
 
+import "log"
+
 // Avg() is an online average
 // The average for a stream of data is updated 1 data point at a time.
 // Formula: mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
@@ -41,8 +43,14 @@ func Avg(b *Block) {
 				break
 			}
 			val := getKeyValues(msg, rule.Key)[0]
-			x, ok := val.(float64)
-			if !ok {
+			var x float64
+			switch val := val.(type) {
+			case float64:
+				x = val
+			case int:
+				x = float64(val)
+			default:
+				log.Println("unable to take average of value specified by", rule.Key)
 				break
 			}
 			N++
