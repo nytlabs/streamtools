@@ -24,11 +24,13 @@ philosophy
 
 Streamtools is the result of three sets of observations we've been making in the
 NYT R&D lab for a while now. These are:
-* *The world is nonstationary.* In the past our analysis was typically based on a snapshot of
-  available data, and we would forget, for a moment, that the
-  underlying system is constantly changing. We call this assumption the
+* *The world is nonstationary.* It's not uncommong for our analysis to be based on a snapshot of
+  available data, arrange in a table. We forget, for a moment, that the
+  underlying system is constantly changing and assume, instead, that the system's properties are static 
+  during the period the data was collected. We call this assumption the
   '[stationarity](http://en.wikipedia.org/wiki/Stationary_process)' assumption, 
-  and it's a pretty common one. However, when studying systems whose properties change over time can lead to some poor
+  and it's a pretty common one. However, when studying systems whose properties change over time, 
+  this assumption can lead to some poor
   modelling. For example, when studying a system as complex as an audience, it is critical
   to realise that the audience's properties are changing on many different time
   frames. 
