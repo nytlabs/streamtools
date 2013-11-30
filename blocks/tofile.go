@@ -33,7 +33,7 @@ func ToFile(b *Block) {
 			w.Flush()
 
 		case msg := <-b.Routes["set_rule"]:
-			if rule == nil{
+			if rule == nil {
 				rule = &toFileRule{}
 			}
 

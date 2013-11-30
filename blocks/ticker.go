@@ -20,7 +20,7 @@ func Ticker(b *Block) {
 		select {
 		case tick := <-ticker.C:
 			var msg BMsg
-			Set(msg,"t", tick)
+			Set(msg, "t", tick)
 			broadcast(b.OutChans, msg)
 
 		case msg := <-b.AddChan:

@@ -10,7 +10,7 @@ import (
 // {"foo":["bar","bar","bar"]} returns [bar, bar, bar] for string "foo[]"
 // {"foo":[{"type":"bar"},{"type":"baz"}]} returns [bar, baz] for string "foo[].type"
 // {"foo":["bar","baz"]} returns [bar] for string "foo[0]"
-// 
+//
 // getKeyValues also supports bracket access in case your keys include periods.
 // {"key.includes.periods":1} returns [1] for string "['key.includes.periods']"
 // {"foo":{"bar.bar":{"baz":1}} returns [1] for string 'foo["bar.bar"].baz'
@@ -27,7 +27,7 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	keyIdx := strings.Index(p, ".")
 	brkIdx := strings.Index(p, "[")
 	escIdx := strings.Index(p, "[\"")
-	
+
 	if escIdx == -1 {
 		escIdx = strings.Index(p, "['")
 	}
@@ -38,10 +38,10 @@ func getKeyValues(d interface{}, p string) []interface{} {
 			endescIdx = strings.Index(p, "']")
 		}
 
-		key = p[escIdx + 2:endescIdx]
-		rest = p[endescIdx + 2:]
+		key = p[escIdx+2 : endescIdx]
+		rest = p[endescIdx+2:]
 
-		if len(rest) > 0 && rest[0] == '.'{
+		if len(rest) > 0 && rest[0] == '.' {
 			rest = rest[1:]
 		}
 	} else {
@@ -57,7 +57,6 @@ func getKeyValues(d interface{}, p string) []interface{} {
 			key = p[:brkIdx]
 			rest = p[brkIdx:]
 		}
-
 
 		bStart := strings.Index(key, "[")
 		bEnd := strings.Index(key, "]")

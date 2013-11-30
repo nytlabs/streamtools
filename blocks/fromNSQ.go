@@ -1,8 +1,8 @@
 package blocks
 
 import (
-	"github.com/bitly/go-nsq"
 	"encoding/json"
+	"github.com/bitly/go-nsq"
 	"log"
 )
 
@@ -11,11 +11,11 @@ type readWriteHandler struct {
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
-	var msg BMsg 
+	var msg BMsg
 	err := json.Unmarshal(message.Body, &msg)
 	if err != nil {
 		log.Println(err.Error())
-	}	
+	}
 	self.toOut <- msg
 	return nil
 }
@@ -35,7 +35,7 @@ func FromNSQ(b *Block) {
 
 	for {
 		select {
-		case msg := <- toOut:
+		case msg := <-toOut:
 			broadcast(b.OutChans, msg)
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
