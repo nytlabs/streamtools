@@ -3,6 +3,8 @@ package blocks
 import (
 	"encoding/json"
 	"github.com/bitly/go-simplejson"
+	"log"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -19,10 +21,13 @@ func getKeyValues(d interface{}, p string) []interface{} {
 	var key string
 	var rest string
 
-	keyIdx := strings.Index(p, ".")
+	//keyIdx := strings.Index(p, ".")
+	re := regexp.MustCompile(`[^\\](\.)`)
+	matchIdx := re.FindIndex([]byte(p))
 	brkIdx := strings.Index(p, "[")
 
-	if keyIdx != -1 {
+	if matchIdx != nil {
+		keyIdx := matchIdx[0] + 1 // because regex
 		key = p[:keyIdx]
 		rest = p[keyIdx+1:]
 	} else {
@@ -220,6 +225,19 @@ func subsetof(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
 	case string:
 		return strings.Contains(value, comparator.(string))
+	}
+	return false
+}
+
+func regexmatch(value interface{}, comparator interface{}) bool {
+	r, ok := comparator.(*regexp.Regexp)
+	if !ok {
+		log.Println("non regex passed into regexmatch")
+		return false
+	}
+	switch value := value.(type) {
+	case string:
+		return r.Match([]byte(value))
 	}
 	return false
 }

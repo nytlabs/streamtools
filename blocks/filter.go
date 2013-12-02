@@ -1,5 +1,11 @@
 package blocks
 
+import (
+	"encoding/json"
+	"log"
+	"regexp"
+)
+
 type opFunc func(interface{}, interface{}) bool
 
 var operators map[string]opFunc
@@ -19,6 +25,7 @@ func Filter(b *Block) {
 	operators["gt"] = greaterthan
 	operators["lt"] = lessthan
 	operators["subset"] = subsetof
+	operators["regex"] = regexmatch
 
 	var rule *filterRule
 
@@ -40,8 +47,37 @@ func Filter(b *Block) {
 			if rule == nil {
 				rule = &filterRule{}
 			}
-
-			unmarshal(msg, rule)
+			// we can't use the standard unmarshal(msg, rule) as we need to make
+			// sure the regex compiles, if supplied.
+			newRule := &filterRule{}
+			err := json.Unmarshal(msg.Msg, &newRule)
+			if err != nil {
+				log.Println("found errors during unmarshalling")
+				log.Println(err.Error())
+			}
+			if newRule.Operator == "regex" {
+				// regex is a bit of a special case
+				c, ok := rule.Comparator.(string)
+				if !ok {
+					log.Println("regex must be a string, not setting rule")
+				}
+				r, err := regexp.Compile(c)
+				if err != nil {
+					log.Println("regex did not compile, not setting rule")
+					log.Println(err.Error())
+				}
+				rule = newRule
+				rule.Comparator = r
+			} else {
+				// the simpler rules don't need any futzing
+				rule = newRule
+			}
+			// send the rule back for the response
+			m, err := json.Marshal(rule)
+			if err != nil {
+				log.Println("could not marshal rule")
+			}
+			msg.ResponseChan <- m
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &filterRule{})
@@ -55,5 +91,4 @@ func Filter(b *Block) {
 			return
 		}
 	}
-
 }
