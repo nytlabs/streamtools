@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	"github.com/bitly/go-simplejson"
 	"time"
 )
 
@@ -20,9 +19,9 @@ func Ticker(b *Block) {
 	for {
 		select {
 		case tick := <-ticker.C:
-			outMsg, _ := simplejson.NewJson([]byte("{}"))
-			outMsg.Set("t", tick)
-			broadcast(b.OutChans, outMsg)
+			var msg BMsg
+			Set(msg, "t", tick)
+			broadcast(b.OutChans, msg)
 
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

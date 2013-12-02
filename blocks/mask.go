@@ -1,14 +1,14 @@
 package blocks
 
 func maskJSON(maskMap map[string]interface{}, input map[string]interface{}) interface{} {
-	t := make(map[string]interface{})	
+	t := make(map[string]interface{})
 
 	if len(maskMap) == 0 {
 		return input
 	}
 
 	for k, _ := range maskMap {
-		val, ok := input[k]; 
+		val, ok := input[k]
 		if ok {
 			switch v := val.(type) {
 			case map[string]interface{}:

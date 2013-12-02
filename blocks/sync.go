@@ -2,9 +2,7 @@ package blocks
 
 import (
 	"container/heap"
-	"encoding/json"
 	"log"
-	"reflect"
 	"strings"
 	"time"
 )
@@ -25,7 +23,7 @@ func Sync(b *Block) {
 	for {
 		select {
 		case m := <-b.Routes["set_rule"]:
-			if rule  == nil {
+			if rule == nil {
 				rule = &syncRule{}
 			}
 			unmarshal(m, rule)
@@ -52,15 +50,15 @@ func Sync(b *Block) {
 			if err != nil {
 				log.Println(err.Error())
 			}
-			msgTimeF, ok := msgTime.(float64)
-			msgTimeI := int64(msgTimeF)
-			if !ok {
-				v, _ := json.Marshal(msg)
-				log.Println(string(v))
-				log.Println(reflect.TypeOf(msgTime))
-				log.Println(msgTime)
-				log.Println(msgTimeI)
-				log.Println("could not cast time key to int")
+
+			var msgTimeI int64
+			switch msgTime := msgTime.(type) {
+			case int64:
+				msgTimeI = msgTime
+			case float64:
+				msgTimeI = int64(msgTime)
+			default:
+				log.Println("count not cast time key to int")
 			}
 
 			// assuming the value is in MS
