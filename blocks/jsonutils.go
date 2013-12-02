@@ -1,6 +1,8 @@
 package blocks
 
 import (
+	"log"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -229,6 +231,19 @@ func subsetof(value interface{}, comparator interface{}) bool {
 	switch value := value.(type) {
 	case string:
 		return strings.Contains(value, comparator.(string))
+	}
+	return false
+}
+
+func regexmatch(value interface{}, comparator interface{}) bool {
+	r, ok := comparator.(*regexp.Regexp)
+	if !ok {
+		log.Println("non regex passed into regexmatch")
+		return false
+	}
+	switch value := value.(type) {
+	case string:
+		return r.Match([]byte(value))
 	}
 	return false
 }
