@@ -241,3 +241,22 @@ curl "localhost:${PORT}/blocks/2/set_rule" --data '{"Path":"[\"test.long.key\"][
 curl "localhost:${PORT}/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
 curl "localhost:${PORT}/blocks/1/in" --data '{"test.long.key":{"foo":{"bar":{"mixed":"test"}}}}'
 
+echo ""
+echo ""
+echo "TEST 10: regex"
+echo ""
+echo ""
+read
+
+curl "localhost:${PORT}/blocks/2/set_rule" --data '{"Path":"test","Comparator":"bob","Operator":"regex"}'
+curl "localhost:${PORT}/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":"bob"}'
+curl "localhost:${PORT}/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":"bo"}'
+
+
+curl "localhost:${PORT}/blocks/2/set_rule" --data '{"Path":"test","Comparator":"http://www.nytimes.com/$","Operator":"regex"}'
+curl "localhost:${PORT}/blocks/4/in" --data '{"STATUS":"SHOULD PASS"}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":"http://www.nytimes.com/"}'
+curl "localhost:${PORT}/blocks/4/in" --data '{"STATUS":"SHOULD FAIL"}'
+curl "localhost:${PORT}/blocks/1/in" --data '{"test":"http://www.nytimes.com/bob"}'

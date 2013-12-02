@@ -1,8 +1,6 @@
 package blocks
 
 import (
-	"encoding/json"
-	"github.com/bitly/go-simplejson"
 	"log"
 	"regexp"
 	"strconv"

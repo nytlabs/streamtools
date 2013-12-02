@@ -83,7 +83,7 @@ func Filter(b *Block) {
 			}
 			if newRule.Operator == "regex" {
 				// regex is a bit of a special case
-				c, ok := rule.Comparator.(string)
+				c, ok := newRule.Comparator.(string)
 				if !ok {
 					log.Println("regex must be a string, not setting rule")
 				}
