@@ -80,17 +80,20 @@ func Filter(b *Block) {
 			if err != nil {
 				log.Println("found errors during unmarshalling")
 				log.Println(err.Error())
+				break
 			}
 			if newRule.Operator == "regex" {
 				// regex is a bit of a special case
 				c, ok := newRule.Comparator.(string)
 				if !ok {
 					log.Println("regex must be a string, not setting rule")
+					break
 				}
 				r, err := regexp.Compile(c)
 				if err != nil {
 					log.Println("regex did not compile, not setting rule")
 					log.Println(err.Error())
+					break
 				}
 				rule = newRule
 				rule.Comparator = r
@@ -101,7 +104,8 @@ func Filter(b *Block) {
 			// send the rule back for the response
 			m, err := json.Marshal(rule)
 			if err != nil {
-				log.Println("could not marshal rule")
+				log.Println("could not marshal new rule")
+				break
 			}
 			msg.ResponseChan <- m
 		case msg := <-b.Routes["get_rule"]:
