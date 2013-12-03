@@ -6,12 +6,29 @@
     margin: 0px;
     padding: 0px;
 }
+
+#term {
+    position: absolute;
+    width: 100%;
+    height: 20px;
+    font-family: courier, monospace;
+    bottom: 0px;
+    left: 0px;
+}
+
+.inverted {
+    background: black;
+    color: white;
+}
+
 </style>
 </head>
 <body>
-
+<div id="term">
+    <span id="prompt">streamtools&gt;</span>
+    <span id="command"><span id="start"></span><span id="cursor">&nbsp;</span><span id="end"></span></span>
+</div>
 <canvas id="springydemo" width="1280" height="720" />
-
 <script>
 /*
  * jQuery JavaScript Library v1.3.2
@@ -1014,12 +1031,13 @@ jQuery.fn.springy = function(params) {
             ctx.clearRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
 
             // fill background
-            if (selected !== null && nearest.node !== null && selected.node.id === node.id) {
+            // selected -> selected.node
+            if (selected.node !== null && nearest.node !== null && selected.node.id === node.id) {
                 ctx.fillStyle = "#FFFFE0";
             } else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
                 ctx.fillStyle = "#EEEEEE";
             } else {
-                ctx.fillStyle = "#FFFFFF";
+                ctx.fillStyle = node.data.background !== undefined ? node.data.background : "#FFFFFF";
             }
             ctx.fillRect(s.x - boxWidth/2, s.y - 10, boxWidth, 20);
 
@@ -1082,6 +1100,198 @@ jQuery(function(){
     var blocks = {};
     var graph = new Springy.Graph();
 
+
+    var cursor = document.getElementById('cursor');
+    var start = document.getElementById('start');
+    var end = document.getElementById('end');
+
+    var cursorInverted = true;
+    var cmd = "";
+    var cursorIndex = 0;
+
+    var _to_ascii = {
+        '188': '44',
+        '109': '45',
+        '190': '46',
+        '191': '47',
+        '192': '96',
+        '220': '92',
+        '222': '39',
+        '221': '93',
+        '219': '91',
+        '173': '45',
+        '187': '61', //IE Key codes
+        '186': '59', //IE Key codes
+        '189': '45'  //IE Key codes
+    }
+
+    var shiftUps = {
+        "96": "~",
+        "49": "!",
+        "50": "@",
+        "51": "#",
+        "52": "$",
+        "53": "%",
+        "54": "^",
+        "55": "&",
+        "56": "*",
+        "57": "(",
+        "48": ")",
+        "45": "_",
+        "61": "+",
+        "91": "{",
+        "93": "}",
+        "92": "|",
+        "59": ":",
+        "39": "\"",
+        "44": "<",
+        "46": ">",
+        "47": "?"
+    };
+
+    function getHSL(str){
+        var strLen = str.length
+        var d = Math.floor(strLen / 3)
+        var strmax = d * 3;
+        var hsl = []
+
+        for(var i = 0; i < strmax; i+=d){
+            var c = 0
+            for(var j = i; j < i + d; j++){
+                c += str.charCodeAt(j) - 64
+            }
+            hsl.push(  Math.floor(c /= d) )
+        }
+        return 'hsl(' + (10 * hsl[0]) + ',' + 100 + '%,' + 50 + '%)'
+    }
+
+    window.setInterval(function(){
+        cursorInverted = !cursorInverted;
+        if(cursorInverted){
+            cursor.classList.add('inverted');
+        } else {
+            cursor.classList.remove('inverted');
+        }
+    },500);
+
+    function safe(str) {
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/ /g, '&nbsp;');
+    }
+
+    var rootCommands = {
+        create: function(tokens){
+            if(tokens.length > 3){
+                console.log("incorrect number of arguments")
+                return false; 
+            }
+            var query = "create?blockType=" + tokens[1];
+            if(tokens.length == 3) {
+                query += '&id=' + tokens[2];
+            }
+            get(query);
+            return true;
+        },
+        delete: function(tokens){
+            if(tokens.length > 2){
+                console.log("incorrect number of arguments")
+                return false; 
+            }
+            var query = "delete?id=" + tokens[1];
+            get(query);
+            return true;
+        },
+        connect: function(tokens){
+            if(tokens.length !== 3){
+                console.log("incorrect number of arguments")
+                return false; 
+            }
+            var query = "connect?from=" + tokens[1] + "&to=" + tokens[2];
+            get(query);
+            return true;
+        },
+    }
+
+    function routeCommand(tokens){
+        console.log("route command")
+        var routeTokens = tokens[0].split('/');
+        if(!blocks.hasOwnProperty(routeTokens[0])){
+            return false;
+        }
+        var query = 'blocks/' + routeTokens[0] + '/' + routeTokens[1];
+        console.log( get(query) );
+        return true;
+    }
+
+    function execute(cmd){
+        var tokens = cmd.match(/\w+/g) 
+        
+        if(tokens === null){
+            return;
+        }
+
+        console.log(tokens[0]);
+
+        if(rootCommands.hasOwnProperty(tokens[0]) && rootCommands[tokens[0]](tokens) || 
+           tokens[0].indexOf('/') !== -1 && routeCommand(tokens) ){
+            update();
+            return;
+        }
+
+    }
+
+    document.onkeydown = function(e){
+        //console.log(e)
+        if(e.which == 8 || e.which == 46){
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        if(e.which == 37){
+            if(cursorIndex > 0){
+                cursorIndex--;
+            }
+        }  else if (e.which == 39){
+            if(cursorIndex < cmd.length){
+                cursorIndex++;
+            }
+        } else if (e.which == 8 || e.which == 46) {
+            cmd = cmd.substring(0,cursorIndex - 1) + cmd.substring(cursorIndex);
+            if (cursorIndex > 0){
+                cursorIndex--;
+            }
+        } else if (e.which == 13){
+            execute(cmd);
+            cmd = ''
+            cursorIndex = 0;
+        } else {
+            var c = e.which;
+            if (_to_ascii.hasOwnProperty(c)) {
+                c = _to_ascii[c];
+            }
+            
+            if (!e.shiftKey && (c >= 65 && c <= 90)) {
+                c = String.fromCharCode(c + 32);
+            } else if (e.shiftKey && shiftUps.hasOwnProperty(c)) {
+                c = shiftUps[c];
+            } else {
+                c = String.fromCharCode(c);
+            }
+
+            cursorIndex++; 
+            cmd = cmd.substring(0, cursorIndex - 1) + c + cmd.substring(cursorIndex - 1)
+        }
+
+        start.innerHTML = safe(cmd.substring(0, cursorIndex));
+
+        if (cursorIndex === cmd.length){
+            cursor.innerHTML = '&nbsp;';
+        } else {
+            cursor.innerHTML = safe(cmd.substring(cursorIndex, cursorIndex + 1));
+        }
+
+        end.innerHTML = safe(cmd.substring(cursorIndex + 1, cmd.length));
+    }
+
     function get(url){
         var request = new XMLHttpRequest();
         request.open('GET', url, false);
@@ -1092,7 +1302,7 @@ jQuery(function(){
     }
 
     function deleteBlock(id){
-        if(blocks[id].BlockType === "connection"){
+        if(blocks[id].data.block.BlockType === "connection"){
             graph.removeEdge(blocks[id]);
         } else {
             graph.removeNode(blocks[id]);
@@ -1112,7 +1322,7 @@ jQuery(function(){
 
     function addToGraph(newBlock){
         var exists = blocks.hasOwnProperty(newBlock.ID);
-        if( exists === true && !sameBlock(blocks[newBlock.ID].block, newBlock)){
+        if( exists === true && !sameBlock(blocks[newBlock.ID].data.block, newBlock)){
             console.log("block " + newBlock.ID + " has changed. updating...")
             deleteBlock(newBlock.ID)
             return true;
@@ -1132,7 +1342,7 @@ jQuery(function(){
             newIDs.push(b.ID);
             if(b.BlockType !== "connection") {
                 if ( addToGraph(b) ) {
-                    blocks[b.ID] = graph.newNode({label: b.ID, block: b});
+                    blocks[b.ID] = graph.newNode({label: b.ID, block: b, background: getHSL(b.BlockType) });
                 }
             }
         })
@@ -1149,6 +1359,7 @@ jQuery(function(){
         // remove blocks that are in the interface but no longer in ST
         for(var key in blocks){
             if(newIDs.indexOf(key) === -1){
+                console.log("block: " + key + " no longer exists")
                 deleteBlock(key)
             }
         }
