@@ -105,11 +105,13 @@ func Filter(b *Block) {
 				rule = newRule
 			}
 			// send the rule back for the response
-			out_rule := rule
+			out_rule := *rule
 			if rule.Operator == "regex" {
+				// we replace the regex in the outgoing rule with its string
+				// representation so we can marshal it correctly.
 				out_rule.Comparator = ruleRegexString
 			}
-			m, err := json.Marshal(rule)
+			m, err := json.Marshal(out_rule)
 			if err != nil {
 				log.Println("could not marshal new rule")
 				break
