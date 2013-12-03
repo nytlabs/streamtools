@@ -515,26 +515,43 @@ jQuery(function(){
         },
     }
 
-    function routeCommand(tokens){
+    function routeCommand(tokens, obj){
         console.log("route command")
         var routeTokens = tokens[0].split('/');
         if(!blocks.hasOwnProperty(routeTokens[0])){
             return false;
         }
         var query = 'blocks/' + routeTokens[0] + '/' + routeTokens[1];
-        console.log( get(query) );
+
+        if (obj == null){
+            console.log( get(query) );
+        } else {
+            console.log( post(query, JSON.stringify(JSON.parse(obj))))
+        }
+
         return true;
     }
 
     function execute(cmd){
+        var obj = null; 
+        
+        if( cmd.indexOf('{') !== -1){
+            obj = cmd.substring(cmd.indexOf('{') );
+            cmd = cmd.substring(0, cmd.indexOf('{') );
+        }
+
         var tokens = cmd.replace(/\s+/g,' ').trim().split(' ');
 
         if(tokens === null || tokens.length === 0){
             return;
         }
 
-        if(rootCommands.hasOwnProperty(tokens[0]) && rootCommands[tokens[0]](tokens) || 
-           tokens[0].indexOf('/') !== -1 && routeCommand(tokens) ){
+        if(rootCommands.hasOwnProperty(tokens[0]) && rootCommands[tokens[0]](tokens)){
+            update();
+            return;
+        }
+
+        if(tokens[0].indexOf('/') !== -1 && routeCommand(tokens, obj)){
             update();
             return;
         }
@@ -542,7 +559,6 @@ jQuery(function(){
     }
 
     document.onkeydown = function(e){
-        console.log(e)
         if(e.which == 8 || e.which == 46){
             e.preventDefault();
             e.stopPropagation();
@@ -598,6 +614,15 @@ jQuery(function(){
         var request = new XMLHttpRequest();
         request.open('GET', url, false);
         request.send(null);
+        if (request.status === 200) {
+          return request.responseText;
+        }
+    }
+
+    function post(url, str){
+        var request = new XMLHttpRequest();
+        request.open('POST', url, false);
+        request.send(str);
         if (request.status === 200) {
           return request.responseText;
         }
