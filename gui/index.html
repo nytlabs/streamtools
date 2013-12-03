@@ -1032,7 +1032,7 @@ jQuery.fn.springy = function(params) {
 
             // fill background
             // selected -> selected.node
-            if (selected.node !== null && nearest.node !== null && selected.node.id === node.id) {
+            if (selected !== null && selected.node !== null && nearest.node !== null && selected.node.id === node.id) {
                 ctx.fillStyle = "#FFFFE0";
             } else if (nearest !== null && nearest.node !== null && nearest.node.id === node.id) {
                 ctx.fillStyle = "#EEEEEE";
@@ -1223,13 +1223,11 @@ jQuery(function(){
     }
 
     function execute(cmd){
-        var tokens = cmd.match(/\w+/g) 
-        
-        if(tokens === null){
+        var tokens = cmd.replace(/\s+/g,' ').trim().split(' ');
+
+        if(tokens === null || tokens.length === 0){
             return;
         }
-
-        console.log(tokens[0]);
 
         if(rootCommands.hasOwnProperty(tokens[0]) && rootCommands[tokens[0]](tokens) || 
            tokens[0].indexOf('/') !== -1 && routeCommand(tokens) ){
@@ -1240,7 +1238,7 @@ jQuery(function(){
     }
 
     document.onkeydown = function(e){
-        //console.log(e)
+        console.log(e)
         if(e.which == 8 || e.which == 46){
             e.preventDefault();
             e.stopPropagation();
@@ -1263,7 +1261,7 @@ jQuery(function(){
             execute(cmd);
             cmd = ''
             cursorIndex = 0;
-        } else {
+        } else if (e.which !== 16){
             var c = e.which;
             if (_to_ascii.hasOwnProperty(c)) {
                 c = _to_ascii[c];
@@ -1310,14 +1308,13 @@ jQuery(function(){
         delete blocks[id];
     }
 
-    function sameBlock(oldBlock, newBlock){
-        newBlock.InBlocks.sort();
-        newBlock.OutBlocks.sort();
-        newBlock.Routes.sort();
+    /*function sameBlock(oldBlock, newBlock){
+        // really dumb equality.
         if(JSON.stringify(oldBlock) === JSON.stringify(newBlock)) {
-            return false;
+            return true;
         }
-        return true;
+
+        return false;
     }
 
     function addToGraph(newBlock){
@@ -1325,6 +1322,15 @@ jQuery(function(){
         if( exists === true && !sameBlock(blocks[newBlock.ID].data.block, newBlock)){
             console.log("block " + newBlock.ID + " has changed. updating...")
             deleteBlock(newBlock.ID)
+            return true;
+        }
+        return !exists;
+    }*/
+
+    function addToGraph(newBlock){
+        var exists = blocks.hasOwnProperty(newBlock.ID);
+        if(exists !== -1 && JSON.stringify(blocks[newBlock.ID]) === JSON.stringify(newBlock)){
+            deleteBlock(newBlock.ID);
             return true;
         }
         return !exists;
