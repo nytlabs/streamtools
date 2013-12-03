@@ -52,9 +52,6 @@ func ToFile(b *Block) {
 			} else {
 				marshal(msg, rule)
 			}
-		case msg := <-b.AddChan:
-			updateOutChans(msg, b)
-
 		case <-b.QuitChan:
 			quit(b)
 			return
