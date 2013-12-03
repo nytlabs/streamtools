@@ -30,13 +30,8 @@ type Daemon struct {
 
 // The rootHandler returns information about the whole system
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
-
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	fmt.Fprintln(w, "hello! this is streamtools")
-	fmt.Fprintln(w, "ID: BlockType, IsBlocked")
-	for id, block := range d.blockMap {
-		fmt.Fprintln(w, id+":", block.BlockType)
-	}
+	w.Write(index())
 }
 
 // The createHandler creates new blocks
