@@ -64,7 +64,15 @@ func Histogram(b *Block) {
 				break
 			}
 
-			value := getKeyValues(msg, rule.Key)[0]
+			valueSlice := getKeyValues(msg, rule.Key)
+			// we need to guard against the possibility that the key is not in
+			// the message
+			if len(valueSlice) == 0 {
+				log.Println("could not find", rule.Key, "in message")
+				break
+			}
+
+			value := valueSlice[0]
 			valueString, ok := value.(string)
 			if !ok {
 				log.Println("nil value against", rule.Key, " - ignoring")
