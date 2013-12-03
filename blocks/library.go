@@ -69,6 +69,11 @@ func BuildLibrary() {
 			Routine:    Post,
 		},
 		&BlockTemplate{
+			BlockType:  "get",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    HTTPGet,
+		},
+		&BlockTemplate{
 			BlockType:  "date",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Date,
