@@ -73,6 +73,8 @@ func Filter(b *Block) {
 			if rule == nil {
 				rule = &filterRule{}
 			}
+			// this is used to send back on the response chan
+			var ruleRegexString string
 			// we can't use the standard unmarshal(msg, rule) as we need to make
 			// sure the regex compiles, if supplied.
 			newRule := &filterRule{}
@@ -97,11 +99,16 @@ func Filter(b *Block) {
 				}
 				rule = newRule
 				rule.Comparator = r
+				ruleRegexString = r.String()
 			} else {
 				// the simpler rules don't need any futzing
 				rule = newRule
 			}
 			// send the rule back for the response
+			out_rule := rule
+			if rule.Operator == "regex" {
+				out_rule.Comparator = ruleRegexString
+			}
 			m, err := json.Marshal(rule)
 			if err != nil {
 				log.Println("could not marshal new rule")
