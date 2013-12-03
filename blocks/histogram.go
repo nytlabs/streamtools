@@ -88,6 +88,9 @@ func Histogram(b *Block) {
 				heap.Push(pq, queueMessage)
 			}
 		case <-waitTimer.C:
+		case <-b.QuitChan:
+			quit(b)
+			return
 		}
 		for _, pq := range histogram {
 			for {
