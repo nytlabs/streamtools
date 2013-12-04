@@ -1,5 +1,7 @@
 package blocks
 
+import "time"
+
 func Timeseries(b *Block) {
 
 	type tsRule struct {
@@ -7,8 +9,13 @@ func Timeseries(b *Block) {
 		Key        string
 	}
 
+	type tsDataPoint struct {
+		Timestamp float64
+		Value     float64
+	}
+
 	type tsData struct {
-		Values []float64
+		Values []tsDataPoint
 	}
 
 	var rule *tsRule
@@ -30,7 +37,7 @@ func Timeseries(b *Block) {
 			}
 
 			unmarshal(ruleUpdate, rule)
-			data.Values = make([]float64, rule.NumSamples)
+			data.Values = make([]tsDataPoint, rule.NumSamples)
 
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
@@ -53,7 +60,12 @@ func Timeseries(b *Block) {
 				val = v
 			}
 
-			data.Values = append(data.Values[1:], val)
+			t := float64(time.Now().Unix())
+			d := tsDataPoint{
+				Timestamp: t,
+				Value:     val,
+			}
+			data.Values = append(data.Values[1:], d)
 		}
 	}
 }
