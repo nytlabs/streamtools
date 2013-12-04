@@ -312,7 +312,7 @@ jQuery.fn.springy = function(params) {
 
             // label
             if (edge.data.label !== undefined) {
-                text = edge.data.rate;
+                text = '"' + edge.data.label + '" @ ' + edge.data.rate;
                 ctx.save();
                 ctx.textAlign = "center";
                 ctx.textBaseline = "top";
