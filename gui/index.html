@@ -312,7 +312,7 @@ jQuery.fn.springy = function(params) {
 
             // label
             if (edge.data.label !== undefined) {
-                text = edge.data.label
+                text = edge.data.rate;
                 ctx.save();
                 ctx.textAlign = "center";
                 ctx.textBaseline = "top";
@@ -669,7 +669,26 @@ jQuery(function(){
         blockUpdates.forEach(function(b){
             if(b.BlockType === "connection") {
                 if ( !blocks.hasOwnProperty(b.ID) ) {
-                    blocks[b.ID] = graph.newEdge(blocks[b.InBlocks[0]],blocks[b.OutBlocks[0]], {label: b.ID, block: b})         
+                    var edgeData = {
+                        label: b.ID, 
+                        block: b, 
+                        rate: 0.0,
+                    };
+
+                    function updateRate(){
+                        setTimeout(function(){
+                            //console.log("getting rate for " + b.ID)
+                            var rate = JSON.parse(get('blocks/' + b.ID + '/rate')).rate;
+                            edgeData.rate = rate === 0 ? 0 : Math.round( (1/rate) * 1000.0 )/1000.0;
+                            edgeData.weight = edgeData.rate === 0 ? 1 : edgeData.rate * 2; 
+                            //console.log("rate is " + edgeData.rate);
+                            updateRate();
+                        },1000);
+                    }
+
+                    updateRate(); 
+
+                    blocks[b.ID] = graph.newEdge(blocks[b.InBlocks[0]],blocks[b.OutBlocks[0]], edgeData)         
                 }
             }
         })
