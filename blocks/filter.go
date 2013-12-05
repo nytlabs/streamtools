@@ -59,7 +59,12 @@ func Filter(b *Block) {
 
 			values := getKeyValues(msg, rule.Path)
 			for _, value := range values {
-				if operators[rule.Operator](value, rule.Comparator) == !rule.Invert {
+				op, ok := operators[rule.Operator]
+				if !ok {
+					log.Println("specified operator does not exist")
+				}
+				break
+				if op(value, rule.Comparator) == !rule.Invert {
 					broadcast(b.OutChans, msg)
 					break
 				}
@@ -82,6 +87,14 @@ func Filter(b *Block) {
 			if err != nil {
 				log.Println("found errors during unmarshalling")
 				log.Println(err.Error())
+				m, _ := json.Marshal(rule)
+				msg.ResponseChan <- m
+				break
+			}
+			if _, ok := operators[newRule.Operator]; !ok {
+				log.Println("invalid operator")
+				m, _ := json.Marshal(rule)
+				msg.ResponseChan <- m
 				break
 			}
 			if newRule.Operator == "regex" {
@@ -89,12 +102,16 @@ func Filter(b *Block) {
 				c, ok := newRule.Comparator.(string)
 				if !ok {
 					log.Println("regex must be a string, not setting rule")
+					m, _ := json.Marshal(rule)
+					msg.ResponseChan <- m
 					break
 				}
 				r, err := regexp.Compile(c)
 				if err != nil {
 					log.Println("regex did not compile, not setting rule")
 					log.Println(err.Error())
+					m, _ := json.Marshal(rule)
+					msg.ResponseChan <- m
 					break
 				}
 				rule = newRule
@@ -114,6 +131,8 @@ func Filter(b *Block) {
 			m, err := json.Marshal(out_rule)
 			if err != nil {
 				log.Println("could not marshal new rule")
+				m, _ := json.Marshal(rule)
+				msg.ResponseChan <- m
 				break
 			}
 			msg.ResponseChan <- m
