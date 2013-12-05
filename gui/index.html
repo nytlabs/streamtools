@@ -7,13 +7,28 @@
     padding: 0px;
 }
 
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 #term {
     position: absolute;
     width: 100%;
-    height: 20px;
     font-family: courier, monospace;
-    bottom: 0px;
-    left: 0px;
+    bottom: 10px;
+    left: 10px;
+}
+
+#response {
+    margin-bottom: 5px;
 }
 
 .inverted {
@@ -21,14 +36,25 @@
     color: white;
 }
 
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: red; }
+
+
 </style>
 </head>
 <body>
 <div id="term">
+    <div id="response">
+        <pre id="respTxt">
+        </pre>
+    </div>
     <span id="prompt">streamtools&gt;</span>
     <span id="command"><span id="start"></span><span id="cursor">&nbsp;</span><span id="end"></span></span>
 </div>
-<canvas id="springydemo" width="1280" height="720" />
+<canvas id="springydemo"/>
 <script>
 /*
  * jQuery JavaScript Library v1.3.2
@@ -469,6 +495,14 @@ jQuery(function(){
         return 'hsl(' + (10 * hsl[0]) + ',' + 100 + '%,' + 50 + '%)'
     }
 
+    jQuery(window).resize(resizeCanvas); 
+
+    function resizeCanvas(){
+        var c = jQuery('#springydemo');
+        c.attr('width', window.innerWidth );
+        c.attr('height',window.innerHeight ); 
+    }
+
     window.setInterval(function(){
         cursorInverted = !cursorInverted;
         if(cursorInverted){
@@ -482,6 +516,33 @@ jQuery(function(){
         return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/ /g, '&nbsp;');
     }
 
+    //http://stackoverflow.com/questions/4810841/json-pretty-print-using-javascript
+    function syntaxHighlight(json) {
+        json = JSON.parse(json);
+        json = JSON.stringify(json, undefined, 4);
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+            var cls = 'number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'key';
+                } else {
+                    cls = 'string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'boolean';
+            } else if (/null/.test(match)) {
+                cls = 'null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
+    }
+
+    function response(str){
+        var r = document.getElementById('respTxt');
+        r.innerHTML = syntaxHighlight(str);
+    }
+
     var rootCommands = {
         create: function(tokens){
             if(tokens.length > 3){
@@ -492,7 +553,7 @@ jQuery(function(){
             if(tokens.length == 3) {
                 query += '&id=' + tokens[2];
             }
-            get(query);
+            response( get(query) );
             return true;
         },
         delete: function(tokens){
@@ -501,7 +562,7 @@ jQuery(function(){
                 return false; 
             }
             var query = "delete?id=" + tokens[1];
-            get(query);
+            response( get(query) );
             return true;
         },
         connect: function(tokens){
@@ -510,7 +571,7 @@ jQuery(function(){
                 return false; 
             }
             var query = "connect?from=" + tokens[1] + "&to=" + tokens[2];
-            get(query);
+            response( get(query) );
             return true;
         },
     }
@@ -524,9 +585,9 @@ jQuery(function(){
         var query = 'blocks/' + routeTokens[0] + '/' + routeTokens[1];
 
         if (obj == null){
-            console.log( get(query) );
+            response( get(query) );
         } else {
-            console.log( post(query, JSON.stringify(JSON.parse(obj))))
+            response( post(query, JSON.stringify(JSON.parse(obj))))
         }
 
         return true;
@@ -555,7 +616,6 @@ jQuery(function(){
             update();
             return;
         }
-
     }
 
     document.onkeydown = function(e){
@@ -694,6 +754,7 @@ jQuery(function(){
         })
     }
 
+    resizeCanvas();
     updateGraph();
 
     var springy = window.springy = jQuery('#springydemo').springy({
