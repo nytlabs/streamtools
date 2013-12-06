@@ -78,7 +78,11 @@ func PollS3(b *Block) {
 					var reader *bufio.Reader
 
 					if rule.GzipFlag {
-						gr, _ := gzip.NewReader(br)
+						gr, err := gzip.NewReader(br)
+						if err != nil {
+							log.Println("failed to open a gzip reader")
+							break
+						}
 						defer gr.Close()
 						reader = bufio.NewReader(gr)
 					} else {
