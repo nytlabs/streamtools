@@ -7,6 +7,7 @@ func Timeseries(b *Block) {
 	type tsRule struct {
 		NumSamples int
 		Key        string
+		Lag        int
 	}
 
 	type tsDataPoint struct {
@@ -60,7 +61,9 @@ func Timeseries(b *Block) {
 				val = v
 			}
 
-			t := float64(time.Now().Unix())
+      lag := -time.Duration(rule.Lag)*time.Second
+      t := float64(time.Now().Add(lag).Unix())
+
 			d := tsDataPoint{
 				Timestamp: t,
 				Value:     val,
