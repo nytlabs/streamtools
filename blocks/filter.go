@@ -62,8 +62,9 @@ func Filter(b *Block) {
 				op, ok := operators[rule.Operator]
 				if !ok {
 					log.Println("specified operator does not exist")
+					break
 				}
-				break
+				
 				if op(value, rule.Comparator) == !rule.Invert {
 					broadcast(b.OutChans, msg)
 					break
