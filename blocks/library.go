@@ -148,6 +148,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    LongHTTP,
 		},
+		&BlockTemplate{
+			BlockType:  "fromSQS",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    FromSQS,
+		},
 	}
 
 	libraryList := []map[string]interface{}{}
