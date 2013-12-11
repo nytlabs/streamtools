@@ -40,7 +40,6 @@ func GetS3(b *Block) {
 		// timer will have a waiting message until we hit EOF. Each time this
 		// case is called, one new message is emitted
 		case <-timer.C:
-			log.Println("timer")
 			// this check should only be needed at the initialisation of the
 			// block
 			if !dumping {
@@ -63,7 +62,6 @@ func GetS3(b *Block) {
 			// the inChan case is responsible for putting a job into the bufferred
 			// todo channel
 		case msg := <-b.InChan:
-			log.Println("inchan")
 			j := job{
 				bucket: getKeyValues(msg, "bucketName")[0].(string),
 				prefix: getKeyValues(msg, "prefix")[0].(string),
@@ -77,27 +75,22 @@ func GetS3(b *Block) {
 			}
 			todo <- j
 		case r := <-b.Routes["set_rule"]:
-			log.Println("setrule")
 			unmarshal(r, &rule)
 		case msg := <-b.Routes["get_rule"]:
-			log.Println("getrule")
 			if rule == nil {
 				marshal(msg, &getS3Rule{})
 			} else {
 				marshal(msg, rule)
 			}
 		case <-b.QuitChan:
-			log.Println("quit")
 			quit(b)
 			return
 		case msg := <-b.AddChan:
-			log.Println("addchan")
 			updateOutChans(msg, b)
 		}
 		// at this point either we've just emitted a message, finished a file,
 		// loaded up a job, added an outChan or updated a rule. So we need to
 		// check out what's going on.
-		log.Println("loop end")
 
 		// if we're dumping then keep dumping
 		if dumping {
