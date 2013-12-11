@@ -298,6 +298,42 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprint(w, string(blob))
 }
 
+func (d *Daemon) saveHandler(w *rest.ResponseWriter, r *rest.Request) {
+	blockList := []map[string]interface{}{}
+	for _, v := range d.blockMap {
+		blockItem := make(map[string]interface{})
+		blockItem["BlockType"] = v.BlockType
+		blockItem["ID"] = v.ID
+		blockItem["InBlocks"] = []string{}
+		blockItem["OutBlocks"] = []string{}
+		for k, _ := range v.InBlocks {
+			blockItem["InBlocks"] = append(blockItem["InBlocks"].([]string), k)
+		}
+		for k, _ := range v.OutBlocks {
+			blockItem["OutBlocks"] = append(blockItem["OutBlocks"].([]string), k)
+		}
+		for k, _ := range v.Routes {
+			blockItem["Routes"] = append(blockItem["Routes"].([]string), k)
+		}
+		responseChan := make(chan []byte)
+		getChan := d.blockMap[v.ID].Routes["get_rule"]
+		getChan <- blocks.RouteResponse{
+			Msg:          []byte{},
+			ResponseChan: responseChan,
+		}
+		rule := <-responseChan
+		log.Println(rule)
+		blockItem["Rule"] = rule
+		blockList = append(blockList, blockItem)
+	}
+	blob, _ := json.Marshal(blockList)
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
+	fmt.Fprint(w, string(blob))
+}
+
 func (d *Daemon) CreateConnection(from string, to string, ID string) {
 	d.CreateBlock("connection", ID)
 
@@ -395,6 +431,7 @@ func (d *Daemon) Run(port string) {
 		rest.Route{"GET", "/", d.rootHandler},
 		rest.Route{"GET", "/library", d.libraryHandler},
 		rest.Route{"GET", "/list", d.listHandler},
+		rest.Route{"GET", "/save", d.saveHandler},
 		rest.Route{"GET", "/create", d.createHandler},
 		rest.Route{"GET", "/delete", d.deleteHandler},
 		rest.Route{"GET", "/connect", d.connectHandler},
