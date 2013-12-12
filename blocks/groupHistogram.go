@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"container/heap"
-	"encoding/json"
 	"log"
 	"time"
 )
@@ -52,9 +51,14 @@ func GroupHistogram(b *Block) {
 
 	for {
 		select {
-		case query := <-b.Routes["histogram"]:
+		case msg := <-b.Routes["histogram"]:
+			query, ok := msg.(RouteResponse)
+			if !ok {
+				break
+			}
+
 			var q histogramQuery
-			json.Unmarshal(query.Msg, &q)
+			decode(query.Msg, &q)
 			h, ok := histograms[q.GroupKey]
 			if !ok {
 				log.Println("could not find requested histogram in group",

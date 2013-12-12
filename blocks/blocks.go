@@ -49,7 +49,7 @@ type Block struct {
 	ID        string
 	InChan    chan BMsg
 	OutChans  map[string]chan BMsg
-	Routes    map[string]chan RouteResponse
+	Routes    map[string]chan BMsg
 	AddChan   chan *OutChanMsg
 	InBlocks  map[string]bool // bool is dumb.
 	OutBlocks map[string]bool // bool is dumb.
@@ -69,19 +69,19 @@ type BlockRoutine func(*Block)
 
 // RouteResponse is passed into a block to query via established handlers
 type RouteResponse struct {
-	Msg          []byte
-	ResponseChan chan []byte
+	Msg          BMsg
+	ResponseChan chan BMsg 
 }
 
 func NewBlock(name string, ID string) (*Block, error) {
-	routes := make(map[string]chan RouteResponse)
+	routes := make(map[string]chan BMsg)
 
 	if _, ok := Library[name]; !ok {
 		return nil, errors.New("cannot find " + name + " in the Library")
 	}
 
 	for _, name := range Library[name].RouteNames {
-		routes[name] = make(chan RouteResponse)
+		routes[name] = make(chan BMsg)
 	}
 
 	b := &Block{

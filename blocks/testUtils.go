@@ -1,6 +1,6 @@
 package blocks
 
-import (
+/*import (
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -88,4 +88,4 @@ func TestState(blockType string, inChan chan BMsg, t int, expected []byte, rule 
 			break
 		}
 	}
-}
+}*/
