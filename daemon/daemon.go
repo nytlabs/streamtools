@@ -205,17 +205,17 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	_, exists = d.blockMap[strings.Split(to,"/")[0]]
+	_, exists = d.blockMap[strings.Split(to, "/")[0]]
 	if exists == false {
 		ApiResponse(w, 500, "TO_BLOCK_NOT_FOUND")
 		return
 	}
 
 	err = d.CreateConnection(from, to, id)
-    if err != nil {
-       ApiResponse(w, 500, "TO_ROUTE_NOT_FOUND")
-       return
-    }
+	if err != nil {
+		ApiResponse(w, 500, "TO_ROUTE_NOT_FOUND")
+		return
+	}
 
 	ApiResponse(w, 200, "CONNECTION_CREATED")
 }
@@ -319,43 +319,6 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprint(w, string(blob))
 }
 
-<<<<<<< HEAD
-func (d *Daemon) saveHandler(w *rest.ResponseWriter, r *rest.Request) {
-	blockList := []map[string]interface{}{}
-	for _, v := range d.blockMap {
-		blockItem := make(map[string]interface{})
-		blockItem["BlockType"] = v.BlockType
-		blockItem["ID"] = v.ID
-		blockItem["InBlocks"] = []string{}
-		blockItem["OutBlocks"] = []string{}
-		for k, _ := range v.InBlocks {
-			blockItem["InBlocks"] = append(blockItem["InBlocks"].([]string), k)
-		}
-		for k, _ := range v.OutBlocks {
-			blockItem["OutBlocks"] = append(blockItem["OutBlocks"].([]string), k)
-		}
-		for k, _ := range v.Routes {
-			blockItem["Routes"] = append(blockItem["Routes"].([]string), k)
-		}
-		responseChan := make(chan []byte)
-		getChan := d.blockMap[v.ID].Routes["get_rule"]
-		getChan <- blocks.RouteResponse{
-			Msg:          []byte{},
-			ResponseChan: responseChan,
-		}
-		rule := <-responseChan
-		log.Println(rule)
-		blockItem["Rule"] = rule
-		blockList = append(blockList, blockItem)
-	}
-	blob, _ := json.Marshal(blockList)
-
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
-	fmt.Fprint(w, string(blob))
-}
-
 func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	d.CreateBlock("connection", ID)
 
@@ -371,23 +334,23 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 		ID:      to,
 	}*/
 	toParts := strings.Split(to, "/")
-      switch len(toParts) {
-      case 1:
-          d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
-              Action:  blocks.CREATE_OUT_CHAN,
-              OutChan: d.blockMap[to].InChan,
-              ID:      to,
-          }
-      case 2:
-          d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
-              Action:  blocks.CREATE_OUT_CHAN,
-            OutChan: d.blockMap[toParts[0]].Routes[toParts[1]],
-              ID:      to,
-          }
-      default:
-          err := errors.New("malformed to route specification")
-          return err
-    }
+	switch len(toParts) {
+	case 1:
+		d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.CREATE_OUT_CHAN,
+			OutChan: d.blockMap[to].InChan,
+			ID:      to,
+		}
+	case 2:
+		d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.CREATE_OUT_CHAN,
+			OutChan: d.blockMap[toParts[0]].Routes[toParts[1]],
+			ID:      to,
+		}
+	default:
+		err := errors.New("malformed to route specification")
+		return err
+	}
 
 	// add the from block to the list of inblocks for connection.
 	d.blockMap[from].OutBlocks[ID] = true
