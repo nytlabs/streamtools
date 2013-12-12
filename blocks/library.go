@@ -89,9 +89,9 @@ func BuildLibrary() {
 			Routine:    FromNSQ,
 		},
 		&BlockTemplate{
-			BlockType:  "pollS3",
-			RouteNames: []string{"set_rule", "poll_now"},
-			Routine:    PollS3,
+			BlockType:  "getS3",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    GetS3,
 		},
 		&BlockTemplate{
 			BlockType:  "tofile",

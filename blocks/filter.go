@@ -1,9 +1,9 @@
 package blocks
 
 import (
-	"encoding/json"
 	"log"
 	"regexp"
+	"github.com/mitchellh/mapstructure"
 )
 
 type opFunc func(interface{}, interface{}) bool
@@ -83,19 +83,30 @@ func Filter(b *Block) {
 			var ruleRegexString string
 			// we can't use the standard unmarshal(msg, rule) as we need to make
 			// sure the regex compiles, if supplied.
+
+			var inMsg BMsg
+			rr, isRouteResponse := msg.(RouteResponse)
+			if isRouteResponse {
+				inMsg = rr.Msg
+			} else {
+				inMsg = msg
+			}
+
 			newRule := &filterRule{}
-			err := json.Unmarshal(msg.Msg, &newRule)
+			err := mapstructure.Decode(inMsg, &newRule)
 			if err != nil {
-				log.Println("found errors during unmarshalling")
+				log.Println("found errors during decoding")
 				log.Println(err.Error())
-				m, _ := json.Marshal(rule)
-				msg.ResponseChan <- m
+				if isRouteResponse {
+					rr.ResponseChan <- rule
+				}
 				break
 			}
 			if _, ok := operators[newRule.Operator]; !ok {
 				log.Println("invalid operator")
-				m, _ := json.Marshal(rule)
-				msg.ResponseChan <- m
+				if isRouteResponse {
+					rr.ResponseChan <- rule
+				}
 				break
 			}
 			if newRule.Operator == "regex" {
@@ -103,16 +114,18 @@ func Filter(b *Block) {
 				c, ok := newRule.Comparator.(string)
 				if !ok {
 					log.Println("regex must be a string, not setting rule")
-					m, _ := json.Marshal(rule)
-					msg.ResponseChan <- m
+					if isRouteResponse {
+						rr.ResponseChan <- rule
+					}
 					break
 				}
 				r, err := regexp.Compile(c)
 				if err != nil {
 					log.Println("regex did not compile, not setting rule")
 					log.Println(err.Error())
-					m, _ := json.Marshal(rule)
-					msg.ResponseChan <- m
+					if isRouteResponse {
+						rr.ResponseChan <- rule
+					}
 					break
 				}
 				rule = newRule
@@ -129,14 +142,11 @@ func Filter(b *Block) {
 				// representation so we can marshal it correctly.
 				out_rule.Comparator = ruleRegexString
 			}
-			m, err := json.Marshal(out_rule)
-			if err != nil {
-				log.Println("could not marshal new rule")
-				m, _ := json.Marshal(rule)
-				msg.ResponseChan <- m
-				break
+			
+			if isRouteResponse{
+				rr.ResponseChan <- out_rule
 			}
-			msg.ResponseChan <- m
+
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &filterRule{})

@@ -8,7 +8,7 @@ combined together to create fully fledged systems.
 
 Patterns are implemented as *blocks* which can be connected together. Data, in
 the form of a stream of discrete JSON objects, flow through connections and are operated on by
-blocks. Depending on your resources, streamtools is capable of dealing with streams of data that operate up to thousands of JSON objects per second.
+blocks. Depending on your resources, streamtools is capable of dealing with streams of data that operate at up to thousands of JSON objects per second.
 
 Blocks fall roughly into one of four categories:
 * *source* blocks : collect data from the world.
@@ -35,7 +35,7 @@ NYT R&D lab for a while now. These are:
   to realise that the audience's properties are changing on many different time
   frames. 
 * *All data starts off life as a stream.* Every sensor collects data
-  sequentially, be it a microarray, a thermometer, or a grad student with a
+  sequentially, be it a set of microarray, a thermometer, or a grad student with a
   clip-board. We take these streams of data and 'tabulate' them, to make them
   easier to store and work with in the future. However, as "big data" gives way
   to "data streams": endless amounts of data that arrive via the network, we are
