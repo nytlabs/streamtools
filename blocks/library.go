@@ -84,6 +84,11 @@ func BuildLibrary() {
 			Routine:    FromNSQ,
 		},
 		&BlockTemplate{
+			BlockType:  "getS3",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    GetS3,
+		},
+		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
