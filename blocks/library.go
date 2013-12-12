@@ -54,6 +54,11 @@ func BuildLibrary() {
 			Routine:    Mask,
 		},
 		&BlockTemplate{
+			BlockType:  "unpack",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Unpack,
+		},
+		&BlockTemplate{
 			BlockType:  "sync",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Sync,
