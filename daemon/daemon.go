@@ -436,7 +436,6 @@ func (d *Daemon) Run(port string) {
 		rest.Route{"GET", "/", d.rootHandler},
 		rest.Route{"GET", "/library", d.libraryHandler},
 		rest.Route{"GET", "/list", d.listHandler},
-		rest.Route{"GET", "/save", d.saveHandler},
 		rest.Route{"GET", "/create", d.createHandler},
 		rest.Route{"GET", "/delete", d.deleteHandler},
 		rest.Route{"GET", "/connect", d.connectHandler},
