@@ -205,13 +205,17 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	_, exists = d.blockMap[to]
+	_, exists = d.blockMap[strings.Split(to,"/")[0]]
 	if exists == false {
 		ApiResponse(w, 500, "TO_BLOCK_NOT_FOUND")
 		return
 	}
 
-	d.CreateConnection(from, to, id)
+	err = d.CreateConnection(from, to, id)
+    if err != nil {
+       ApiResponse(w, 500, "TO_ROUTE_NOT_FOUND")
+       return
+    }
 
 	ApiResponse(w, 200, "CONNECTION_CREATED")
 }
@@ -252,15 +256,32 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	ResponseChan := make(chan []byte)
+	var outMsg blocks.BMsg
+
+	if len(msg) > 0 {
+		err = json.Unmarshal(msg, &outMsg)
+		if err != nil {
+			log.Println(msg)
+			ApiResponse(w, 500, "BAD_JSON")
+			return
+		}
+	}
+
+	ResponseChan := make(chan blocks.BMsg)
 	blockRouteChan := d.blockMap[id].Routes[route]
 	blockRouteChan <- blocks.RouteResponse{
-		Msg:          msg,
+		Msg:          outMsg,
 		ResponseChan: ResponseChan,
 	}
 	respMsg := <-ResponseChan
 
-	DataResponse(w, respMsg)
+	respJson, err := json.Marshal(respMsg)
+	if err != nil {
+		ApiResponse(w, 500, "BAD_RESPONSE_FROM_BLOCK")
+		return
+	}
+
+	DataResponse(w, respJson)
 }
 
 func (d *Daemon) libraryHandler(w *rest.ResponseWriter, r *rest.Request) {
@@ -298,7 +319,7 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprint(w, string(blob))
 }
 
-func (d *Daemon) CreateConnection(from string, to string, ID string) {
+func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	d.CreateBlock("connection", ID)
 
 	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
@@ -307,19 +328,39 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) {
 		ID:      ID,
 	}
 
-	d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+	/*d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
 		Action:  blocks.CREATE_OUT_CHAN,
 		OutChan: d.blockMap[to].InChan,
 		ID:      to,
-	}
+	}*/
+	toParts := strings.Split(to, "/")
+      switch len(toParts) {
+      case 1:
+          d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+              Action:  blocks.CREATE_OUT_CHAN,
+              OutChan: d.blockMap[to].InChan,
+              ID:      to,
+          }
+      case 2:
+          d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
+              Action:  blocks.CREATE_OUT_CHAN,
+            OutChan: d.blockMap[toParts[0]].Routes[toParts[1]],
+              ID:      to,
+          }
+      default:
+          err := errors.New("malformed to route specification")
+          return err
+    }
 
 	// add the from block to the list of inblocks for connection.
 	d.blockMap[from].OutBlocks[ID] = true
 	d.blockMap[ID].InBlocks[from] = true
-	d.blockMap[ID].OutBlocks[to] = true
-	d.blockMap[to].InBlocks[ID] = true
+	d.blockMap[ID].OutBlocks[toParts[0]] = true
+	d.blockMap[toParts[0]].InBlocks[ID] = true
 
-	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[to].ID)
+	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[toParts[0]].ID)
+
+	return nil
 }
 
 func (d *Daemon) CreateBlock(name string, ID string) {
