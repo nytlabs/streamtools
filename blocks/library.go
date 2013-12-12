@@ -94,6 +94,11 @@ func BuildLibrary() {
 			Routine:    GetS3,
 		},
 		&BlockTemplate{
+			BlockType:  "listS3",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ListS3,
+		},
+		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
