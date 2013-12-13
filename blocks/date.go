@@ -23,8 +23,12 @@ func Date(b *Block) {
 				break
 			}
 
-			outMsg := make(map[string]interface{})
-			Set(outMsg, "date", t.Format(rule.FmtString))
+			msg := make(map[string]interface{})
+			Set(msg, "date", t.Format(rule.FmtString))
+			outMsg := BMsg{
+				Msg:          msg,
+				ResponseChan: nil,
+			}
 			broadcast(b.OutChans, outMsg)
 			timer.Reset(d)
 		case msg := <-b.Routes["get_rule"]:

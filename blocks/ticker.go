@@ -10,7 +10,7 @@ func Ticker(b *Block) {
 		Period int
 	}
 
-	rule := &tickerRule{
+	rule := tickerRule{
 		Period: 1,
 	}
 

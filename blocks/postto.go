@@ -7,10 +7,12 @@ func PostTo(b *Block) {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case msg := <-b.Routes["in"]:
-			if rr, ok := msg.(RouteResponse); ok{
-				marshal(msg, map[string]string{"POST":"OK",})
-				broadcast(b.OutChans, rr.Msg)
+			marshal(msg, map[string]string{"POST": "OK"})
+			out := BMsg{
+				Msg:          msg.Msg,
+				ResponseChan: nil,
 			}
+			broadcast(b.OutChans, out)
 		case <-b.QuitChan:
 			quit(b)
 			return

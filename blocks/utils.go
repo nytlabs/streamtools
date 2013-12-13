@@ -1,8 +1,8 @@
 package blocks
 
 import (
-	"log"
 	"github.com/mitchellh/mapstructure"
+	"log"
 )
 
 // broadcast emits a message to all output channels.
@@ -30,34 +30,26 @@ func updateOutChans(msg *OutChanMsg, b *Block) {
 // the daemon. It is typically used to change state within a block from an HTTP
 // handler.
 func unmarshal(r BMsg, rule interface{}) {
+	// let's call this setRuleAndRespond?
 	decode(r, rule)
 	marshal(r, rule)
 }
 
-func decode(r BMsg, rule interface{}){
-	var inRule BMsg
-	routeMsg, isRouteResponse := r.(RouteResponse)
-
-	if isRouteResponse {
-		// msg came from daemon
-		inRule = routeMsg.Msg
-		log.Println("unmarshall called on non-RouteResponse message")
-	} else {
-		// msg came from another block
-		inRule = r
-	}
-
-	err := mapstructure.Decode(inRule, rule)
+func decode(r BMsg, rule interface{}) {
+	// why don't we call this setRule?
+	err := mapstructure.Decode(r.Msg, rule)
 	if err != nil {
+		log.Println(r.Msg)
 		log.Println("could not decode msg into rule")
+		log.Println(err.Error())
 	}
 }
 
 func marshal(r BMsg, rule interface{}) {
-	routeMsg, isRouteResponse := r.(RouteResponse)
-
-	if isRouteResponse {
-		routeMsg.ResponseChan <- rule
+	// why don't we call this "respond"
+	log.Println(rule)
+	if r.ResponseChan != nil {
+		r.ResponseChan <- rule
 	}
 }
 

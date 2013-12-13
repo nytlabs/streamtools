@@ -10,7 +10,7 @@ func ToLog(b *Block) {
 	for {
 		select {
 		case msg := <-b.InChan:
-			out, err := json.Marshal(msg)
+			out, err := json.Marshal(msg.Msg)
 			if err != nil {
 				log.Println("could not marshal json")
 			}
