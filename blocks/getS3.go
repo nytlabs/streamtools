@@ -16,7 +16,6 @@ func GetS3(b *Block) {
 	}
 
 	type job struct {
-		prefix string
 		bucket string
 		key    string
 	}
@@ -64,7 +63,6 @@ func GetS3(b *Block) {
 		case msg := <-b.InChan:
 			j := job{
 				bucket: getKeyValues(msg, "bucketName")[0].(string),
-				prefix: getKeyValues(msg, "prefix")[0].(string),
 				key:    getKeyValues(msg, "key")[0].(string),
 			}
 			log.Println(j)
@@ -104,8 +102,8 @@ func GetS3(b *Block) {
 		j := <-todo
 		// Open Bucket
 		bucket := s.Bucket(j.bucket)
-		log.Println("[POLLS3] emitting", j.bucket, j.prefix, j.key)
-		br, err := bucket.GetReader(j.prefix + j.key)
+		log.Println("[POLLS3] emitting", j.bucket, j.key)
+		br, err := bucket.GetReader(j.key)
 		if err != nil {
 			log.Println(err)
 			break

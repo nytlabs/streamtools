@@ -87,7 +87,7 @@ func Filter(b *Block) {
 			inMsg := msg.Msg
 
 			newRule := &filterRule{}
-			err := mapstructure.Decode(inMsg, &newRule)
+			err := mapstructure.Decode(inMsg, newRule)
 			if err != nil {
 				log.Println("found errors during decoding")
 				log.Println(err.Error())
