@@ -69,12 +69,12 @@ func BuildLibrary() {
 			Routine:    PostValue,
 		},
 		&BlockTemplate{
-			BlockType:  "post",
+			BlockType:  "toPost",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Post,
 		},
 		&BlockTemplate{
-			BlockType:  "get",
+			BlockType:  "getHTTP",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    HTTPGet,
 		},
@@ -84,7 +84,7 @@ func BuildLibrary() {
 			Routine:    Date,
 		},
 		&BlockTemplate{
-			BlockType:  "fromNSQ",
+			BlockType:  "NSQStream",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    FromNSQ,
 		},
@@ -114,7 +114,7 @@ func BuildLibrary() {
 			Routine:    Filter,
 		},
 		&BlockTemplate{
-			BlockType:  "postto",
+			BlockType:  "postHTTP",
 			RouteNames: []string{"in"},
 			Routine:    PostTo,
 		},
@@ -134,12 +134,12 @@ func BuildLibrary() {
 			Routine:    GroupHistogram,
 		},
 		&BlockTemplate{
-			BlockType:  "bunch",
+			BlockType:  "pack",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Bunch,
 		},
 		&BlockTemplate{
-			BlockType:  "avg",
+			BlockType:  "mean",
 			RouteNames: []string{"set_rule", "get_rule", "avg"},
 			Routine:    Avg,
 		},
@@ -154,12 +154,12 @@ func BuildLibrary() {
 			Routine:    Var,
 		},
 		&BlockTemplate{
-			BlockType:  "longHTTP",
+			BlockType:  "HTTPStream",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    LongHTTP,
 		},
 		&BlockTemplate{
-			BlockType:  "fromSQS",
+			BlockType:  "SQSStream",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    FromSQS,
 		},
