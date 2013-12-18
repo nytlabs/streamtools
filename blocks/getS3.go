@@ -7,12 +7,14 @@ import (
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
+	"reflect"
 	"time"
 )
 
 func GetS3(b *Block) {
 
 	type getS3Rule struct {
+		BucketName string
 	}
 
 	type job struct {
@@ -22,7 +24,8 @@ func GetS3(b *Block) {
 
 	var reader *bufio.Reader
 	var dumping bool
-	var rule *getS3Rule
+
+	rule := &getS3Rule{}
 
 	// The AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are used.
 	auth, err := aws.EnvAuth()
@@ -50,20 +53,46 @@ func GetS3(b *Block) {
 				dumping = false
 				break
 			}
-			var out BMsg
+			var out interface{}
 			err = json.Unmarshal(line, &out)
 			if err != nil {
 				log.Println(err)
 				break
 			}
-			broadcast(b.OutChans, out)
+			outMsg := BMsg{
+				Msg:          out,
+				ResponseChan: nil,
+			}
+			broadcast(b.OutChans, outMsg)
 			timer.Reset(time.Duration(0))
 			// the inChan case is responsible for putting a job into the bufferred
 			// todo channel
 		case msg := <-b.InChan:
+			if rule == nil {
+				log.Println("no rule set")
+				break
+			}
+			/*
+				bucketName := getKeyValues(msg, "bucketName")
+				if len(bucketName) == 0 {
+					log.Println("No bucket name found in message")
+					break
+				}
+			*/
+			keyArray := getKeyValues(msg.Msg, "Key")
+			if len(keyArray) == 0 {
+				log.Println(reflect.TypeOf(msg.Msg))
+				log.Println(msg.Msg)
+				log.Println("No key found in message")
+				break
+			}
+			keyInterface := keyArray[0]
+			key := keyInterface.(string)
+			//bucket: bucketName[0].(string),
+			bucketName := rule.BucketName
 			j := job{
-				bucket: getKeyValues(msg, "bucketName")[0].(string),
-				key:    getKeyValues(msg, "key")[0].(string),
+				bucket: bucketName,
+				key:    key,
 			}
 			log.Println(j)
 			//TODO this should be a priority queue
@@ -73,12 +102,12 @@ func GetS3(b *Block) {
 			}
 			todo <- j
 		case r := <-b.Routes["set_rule"]:
-			unmarshal(r, &rule)
+			unmarshal(r, rule)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &getS3Rule{})
 			} else {
-				marshal(msg, rule)
+				marshal(msg, &rule)
 			}
 		case <-b.QuitChan:
 			quit(b)

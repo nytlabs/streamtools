@@ -47,7 +47,6 @@ func decode(r BMsg, rule interface{}) {
 
 func marshal(r BMsg, rule interface{}) {
 	// why don't we call this "respond"
-	log.Println(rule)
 	if r.ResponseChan != nil {
 		r.ResponseChan <- rule
 	}

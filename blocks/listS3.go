@@ -33,12 +33,13 @@ func ListS3(b *Block) {
 			// get the list
 			list, err := bucket.List(rule.Prefix, "/", "", 2000)
 			if err != nil {
+				log.Println(rule)
 				log.Println(err.Error())
+				break
 			}
 			log.Println("found", len(list.Contents), "files")
 			outArray := []interface{}{}
 			for _, v := range list.Contents {
-				log.Println(v.Key)
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
 					log.Println(err.Error())
@@ -50,7 +51,9 @@ func ListS3(b *Block) {
 					break
 				}
 				if lm.After(time.Now().Add(-since)) {
-					outArray = append(outArray, v)
+					listElement := make(map[string]interface{})
+					listElement["Key"] = v.Key
+					outArray = append(outArray, listElement)
 				}
 			}
 			out["List"] = outArray
@@ -61,7 +64,7 @@ func ListS3(b *Block) {
 			broadcast(b.OutChans, outMsg)
 			log.Println("done emitting")
 		case r := <-b.Routes["set_rule"]:
-			unmarshal(r, &rule)
+			unmarshal(r, rule)
 			log.Println("got updated prefix:", rule.Prefix)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
