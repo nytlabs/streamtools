@@ -2,10 +2,10 @@ package blocks
 
 import "log"
 
-// Avg() is an online average
-// The average for a stream of data is updated 1 data point at a time.
+// Mean() is an online mean
+// The mean for a stream of data is updated 1 data point at a time.
 // Formula: mu_i+1 = mu_i * (n - 1) /n + (1/n) * x_i
-func Avg(b *Block) {
+func Mean(b *Block) {
 
 	type avgRule struct {
 		Key string

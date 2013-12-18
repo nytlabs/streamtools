@@ -9,8 +9,9 @@ import (
 	"time"
 )
 
-// LongHTTP creates a long-poll HTTP connection
-func LongHTTP(b *Block) {
+// HTTPStream creates a persistent HTTP connection, emitting all messages from
+// the stream into streamtools
+func HTTPStream(b *Block) {
 
 	type longHTTPRule struct {
 		Endpoint string

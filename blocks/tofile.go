@@ -8,6 +8,7 @@ import (
 	"os"
 )
 
+// Writes messages to a specified file, one line per message
 func ToFile(b *Block) {
 
 	type toFileRule struct {

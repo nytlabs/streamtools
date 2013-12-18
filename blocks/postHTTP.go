@@ -1,7 +1,7 @@
 package blocks
 
 // PostTo accepts JSON through POSTs to the /in endpoint and broadcasts to other blocks.
-func PostTo(b *Block) {
+func PostHTTP(b *Block) {
 	for {
 		select {
 		case msg := <-b.AddChan:

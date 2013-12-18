@@ -4,6 +4,8 @@ import (
 	"time"
 )
 
+// emits the time. Specify the period - the time between emissions - in seconds
+// as a rule.
 func Ticker(b *Block) {
 
 	type tickerRule struct {
@@ -19,9 +21,13 @@ func Ticker(b *Block) {
 	for {
 		select {
 		case tick := <-ticker.C:
-			var msg BMsg
+			var msg interface{}
 			Set(msg, "t", tick)
-			broadcast(b.OutChans, msg)
+			out := BMsg{
+				Msg:          msg,
+				ResponseChan: nil,
+			}
+			broadcast(b.OutChans, out)
 
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

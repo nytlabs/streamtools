@@ -2,6 +2,7 @@ package blocks
 
 import "time"
 
+// stores a specified key from the last `NumSamples` messages
 func Timeseries(b *Block) {
 
 	type tsRule struct {
@@ -61,8 +62,8 @@ func Timeseries(b *Block) {
 				val = v
 			}
 
-      lag := -time.Duration(rule.Lag)*time.Second
-      t := float64(time.Now().Add(lag).Unix())
+			lag := -time.Duration(rule.Lag) * time.Second
+			t := float64(time.Now().Add(lag).Unix())
 
 			d := tsDataPoint{
 				Timestamp: t,

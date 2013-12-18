@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// The Sync block delays a message by a specified lag relative to a timestamp
+// internal to the message. Specify which key holds the timestamp, and how long
+// the lag should be, using a rule.
 func Sync(b *Block) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)

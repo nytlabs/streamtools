@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// Get GETs an external JSON and emits it
-func HTTPGet(b *Block) {
+// Get, on any inbound message, GETs an external JSON and emits it
+func GetHTTP(b *Block) {
 
 	type getRule struct {
 		Endpoint string

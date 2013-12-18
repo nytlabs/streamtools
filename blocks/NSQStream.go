@@ -20,7 +20,8 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 	return nil
 }
 
-func FromNSQ(b *Block) {
+// NSQStream connects to an NSQ topic and emits each message into streamtools.
+func NSQStream(b *Block) {
 
 	type fromNSQRule struct {
 		ReadTopic   string

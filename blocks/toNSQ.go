@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+// writes messages to an NSQ topic
 func ToNSQ(b *Block) {
 
 	type toNSQRule struct {

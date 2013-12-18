@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+// lists an S3 bucket, within a specified time inteval, starting with a
+// specified prefix.
 func ListS3(b *Block) {
 
 	type listS3Rule struct {

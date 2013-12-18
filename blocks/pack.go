@@ -7,7 +7,10 @@ import (
 	"time"
 )
 
-func Bunch(b *Block) {
+// Pack groups messages together by testing equality of keys, and emits the
+// group of messages after no new messages have been added to the group for a
+// specified amount of time.
+func Pack(b *Block) {
 
 	type bunchRule struct {
 		Branch    string

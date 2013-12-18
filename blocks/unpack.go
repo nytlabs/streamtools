@@ -1,5 +1,6 @@
 package blocks
 
+// unpack an array into seperate messages, and emit them in order
 func Unpack(b *Block) {
 
 	type unpackRule struct {
