@@ -7,7 +7,6 @@ import (
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
-	"reflect"
 	"time"
 )
 
@@ -81,8 +80,6 @@ func GetS3(b *Block) {
 			*/
 			keyArray := getKeyValues(msg.Msg, "Key")
 			if len(keyArray) == 0 {
-				log.Println(reflect.TypeOf(msg.Msg))
-				log.Println(msg.Msg)
 				log.Println("No key found in message")
 				break
 			}
