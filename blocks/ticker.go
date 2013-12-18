@@ -27,7 +27,7 @@ func Ticker(b *Block) {
 			updateOutChans(msg, b)
 
 		case r := <-b.Routes["set_rule"]:
-			unmarshal(r, &rule)
+			unmarshal(r, rule)
 			ticker = time.NewTicker(time.Duration(rule.Period) * time.Second)
 
 		case r := <-b.Routes["get_rule"]:

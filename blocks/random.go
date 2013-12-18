@@ -73,8 +73,12 @@ func Random(b *Block) {
 			Set(nestJson, "nestedOption", options[idx1])
 			Set(msg, "c", nestJson)
 			Set(msg, "e", rand.Float32()*8888)
+			out := BMsg{
+				Msg:          msg,
+				ResponseChan: nil,
+			}
 
-			broadcast(b.OutChans, msg)
+			broadcast(b.OutChans, out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

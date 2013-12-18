@@ -19,7 +19,7 @@ func Bunch(b *Block) {
 
 	after := time.Duration(0)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
-	bunches := make(map[string][]BMsg)
+	bunches := make(map[string][]interface{})
 
 	pq := &PriorityQueue{}
 	heap.Init(pq)
@@ -49,7 +49,7 @@ func Bunch(b *Block) {
 				break
 			}
 
-			id, err := Get(msg, branch...)
+			id, err := Get(msg.Msg, branch...)
 			idStr, ok := id.(string)
 			if !ok {
 				log.Fatal("type assertion failed")
@@ -58,9 +58,9 @@ func Bunch(b *Block) {
 				log.Fatal(err.Error())
 			}
 			if len(bunches[idStr]) > 0 {
-				bunches[idStr] = append(bunches[idStr], msg)
+				bunches[idStr] = append(bunches[idStr], msg.Msg)
 			} else {
-				bunches[idStr] = []BMsg{msg}
+				bunches[idStr] = []interface{}{msg.Msg}
 			}
 
 			val := make(map[string]interface{})
@@ -100,11 +100,16 @@ func Bunch(b *Block) {
 			idStr := id.(string)
 			if lInt == len(bunches[idStr]) {
 				// we've not seen anything since putting this message in the queue
-				outMsg := make(map[string]interface{})
-				err = Set(outMsg, "bunch", bunches[idStr])
+				msg := make(map[string]interface{})
+				err = Set(msg, "bunch", bunches[idStr])
 				if err != nil {
 					log.Fatal(err.Error())
 				}
+				outMsg := BMsg{
+					Msg:          msg,
+					ResponseChan: nil,
+				}
+
 				broadcast(b.OutChans, outMsg)
 				delete(bunches, idStr)
 			}

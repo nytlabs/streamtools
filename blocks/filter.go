@@ -1,9 +1,9 @@
 package blocks
 
 import (
+	"github.com/mitchellh/mapstructure"
 	"log"
 	"regexp"
-	"github.com/mitchellh/mapstructure"
 )
 
 type opFunc func(interface{}, interface{}) bool
@@ -64,7 +64,7 @@ func Filter(b *Block) {
 					log.Println("specified operator does not exist")
 					break
 				}
-				
+
 				if op(value, rule.Comparator) == !rule.Invert {
 					broadcast(b.OutChans, msg)
 					break
@@ -84,28 +84,22 @@ func Filter(b *Block) {
 			// we can't use the standard unmarshal(msg, rule) as we need to make
 			// sure the regex compiles, if supplied.
 
-			var inMsg BMsg
-			rr, isRouteResponse := msg.(RouteResponse)
-			if isRouteResponse {
-				inMsg = rr.Msg
-			} else {
-				inMsg = msg
-			}
+			inMsg := msg.Msg
 
 			newRule := &filterRule{}
 			err := mapstructure.Decode(inMsg, newRule)
 			if err != nil {
 				log.Println("found errors during decoding")
 				log.Println(err.Error())
-				if isRouteResponse {
-					rr.ResponseChan <- rule
+				if msg.ResponseChan != nil {
+					msg.ResponseChan <- rule
 				}
 				break
 			}
 			if _, ok := operators[newRule.Operator]; !ok {
 				log.Println("invalid operator")
-				if isRouteResponse {
-					rr.ResponseChan <- rule
+				if msg.ResponseChan != nil {
+					msg.ResponseChan <- rule
 				}
 				break
 			}
@@ -114,8 +108,8 @@ func Filter(b *Block) {
 				c, ok := newRule.Comparator.(string)
 				if !ok {
 					log.Println("regex must be a string, not setting rule")
-					if isRouteResponse {
-						rr.ResponseChan <- rule
+					if msg.ResponseChan != nil {
+						msg.ResponseChan <- rule
 					}
 					break
 				}
@@ -123,8 +117,8 @@ func Filter(b *Block) {
 				if err != nil {
 					log.Println("regex did not compile, not setting rule")
 					log.Println(err.Error())
-					if isRouteResponse {
-						rr.ResponseChan <- rule
+					if msg.ResponseChan != nil {
+						msg.ResponseChan <- rule
 					}
 					break
 				}
@@ -142,9 +136,9 @@ func Filter(b *Block) {
 				// representation so we can marshal it correctly.
 				out_rule.Comparator = ruleRegexString
 			}
-			
-			if isRouteResponse{
-				rr.ResponseChan <- out_rule
+
+			if msg.ResponseChan != nil {
+				msg.ResponseChan <- out_rule
 			}
 
 		case msg := <-b.Routes["get_rule"]:

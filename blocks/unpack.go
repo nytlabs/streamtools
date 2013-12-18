@@ -25,9 +25,13 @@ func Unpack(b *Block) {
 			if rule == nil {
 				break
 			}
-			array := getKeyValues(msg, rule.Path)
+			array := getKeyValues(msg.Msg, rule.Path)
 			for _, outMsg := range array {
-				broadcast(b.OutChans, outMsg)
+				out := BMsg{
+					Msg:          outMsg,
+					ResponseChan: nil,
+				}
+				broadcast(b.OutChans, out)
 			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

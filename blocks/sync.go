@@ -84,7 +84,11 @@ func Sync(b *Block) {
 				emitTick.Reset(diff)
 				break
 			}
-			broadcast(b.OutChans, &item.(*PQMessage).val)
+			out := BMsg{
+				Msg:          &item.(*PQMessage).val,
+				ResponseChan: nil,
+			}
+			broadcast(b.OutChans, out)
 		}
 	}
 

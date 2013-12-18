@@ -256,7 +256,7 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	var outMsg blocks.BMsg
+	var outMsg interface{}
 
 	if len(msg) > 0 {
 		err = json.Unmarshal(msg, &outMsg)
@@ -267,9 +267,9 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 		}
 	}
 
-	ResponseChan := make(chan blocks.BMsg)
+	ResponseChan := make(chan interface{})
 	blockRouteChan := d.blockMap[id].Routes[route]
-	blockRouteChan <- blocks.RouteResponse{
+	blockRouteChan <- blocks.BMsg{
 		Msg:          outMsg,
 		ResponseChan: ResponseChan,
 	}
