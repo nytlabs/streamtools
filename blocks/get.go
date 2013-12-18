@@ -50,13 +50,17 @@ func HTTPGet(b *Block) {
 			}
 
 			body, err := ioutil.ReadAll(resp.Body)
-			var msg BMsg
+			var msg interface{}
 			err = json.Unmarshal(body, &msg)
 			if err != nil {
 				log.Println(err)
 				break
 			}
-			broadcast(b.OutChans, msg)
+			out := BMsg{
+				Msg:          msg,
+				ResponseChan: nil,
+			}
+			broadcast(b.OutChans, out)
 		}
 	}
 }

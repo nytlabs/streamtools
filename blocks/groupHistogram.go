@@ -52,13 +52,8 @@ func GroupHistogram(b *Block) {
 	for {
 		select {
 		case msg := <-b.Routes["histogram"]:
-			query, ok := msg.(RouteResponse)
-			if !ok {
-				break
-			}
-
 			var q histogramQuery
-			decode(query.Msg, &q)
+			decode(msg, &q)
 			h, ok := histograms[q.GroupKey]
 			if !ok {
 				log.Println("could not find requested histogram in group",
@@ -76,7 +71,7 @@ func GroupHistogram(b *Block) {
 				i++
 			}
 			data.GroupKey = q.GroupKey
-			marshal(query, data)
+			marshal(msg, data)
 		case query := <-b.Routes["list"]:
 			var keys []string
 			for k := range histograms {

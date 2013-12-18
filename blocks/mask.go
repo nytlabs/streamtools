@@ -62,10 +62,14 @@ func Mask(b *Block) {
 				break
 			}
 
-			msgMap, msgOk := msg.(map[string]interface{})
+			msgMap, msgOk := msg.Msg.(map[string]interface{})
 			maskMap, maskOk := rule.Mask.(map[string]interface{})
 			if msgOk && maskOk {
-				broadcast(b.OutChans, maskJSON(maskMap, msgMap))
+				out := BMsg{
+					Msg:          maskJSON(maskMap, msgMap),
+					ResponseChan: nil,
+				}
+				broadcast(b.OutChans, out)
 			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

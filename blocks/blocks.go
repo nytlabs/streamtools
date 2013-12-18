@@ -9,7 +9,10 @@ const (
 	DELETE_OUT_CHAN = iota
 )
 
-type BMsg interface{}
+type BMsg struct {
+	Msg          interface{}
+	ResponseChan chan interface{}
+}
 
 func Set(m interface{}, key string, val interface{}) error {
 	min, ok := m.(map[string]interface{})
@@ -66,12 +69,6 @@ type OutChanMsg struct {
 }
 
 type BlockRoutine func(*Block)
-
-// RouteResponse is passed into a block to query via established handlers
-type RouteResponse struct {
-	Msg          BMsg
-	ResponseChan chan BMsg 
-}
 
 func NewBlock(name string, ID string) (*Block, error) {
 	routes := make(map[string]chan BMsg)
