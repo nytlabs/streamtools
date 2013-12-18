@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// creates a histogram of a specified key
 func Histogram(b *Block) {
 
 	type histogramRule struct {

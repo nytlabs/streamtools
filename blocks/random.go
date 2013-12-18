@@ -12,6 +12,7 @@ var (
 	options    = []string{"a", "b", "c", "d", "e", "f"}
 )
 
+// emits a JSON blob full of random stuff. Set the period using a rule.
 func Random(b *Block) {
 
 	type randomRule struct {

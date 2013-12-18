@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Gets the key specified in the inbound message. Specify the bucket using a
+// rule.
 func GetS3(b *Block) {
 
 	type getS3Rule struct {
