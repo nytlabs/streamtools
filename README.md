@@ -57,14 +57,14 @@ interactions with the data.
 what streamtools isn't
 ======================
 
-Streamtools is definitely NOT a production quality queueing system. For these,
+Streamtools is NOT a queueing system. For these,
 see:
 * [NSQ](http://bitly.github.io/nsq/)
 * [RabbitMQ](http://www.rabbitmq.com/)
 * [ZeroMQ](http://zeromq.org/)
 * [AmazonSQS](http://aws.amazon.com/sqs/)
 
-Streamtools also isn't a production quality event processing framework. Streamtools provides a set
+Streamtools also isn't an event processing framework. Streamtools provides a set
 of patterns for performing analysis on streams of data - the user should not
 expect to write any code at all. If you're looking for an event processing
 framework for building production systems, check out the following:
