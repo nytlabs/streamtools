@@ -74,15 +74,3 @@ framework for building production systems, check out the following:
 
 We expect streamtools to be very useful for prototyping systems that
 subsequently rely on these technologies!
-
-usage
-=====
-
-Run the service using `st`.
-
-* Create blocks using `/create`
-* Connect blocks using `/connect`
-* Delete blocks using `/delete`
-* Access blocks using `/blocks/`
-* See all active blocks using `/list`
-* See all available blocks using `/library`
