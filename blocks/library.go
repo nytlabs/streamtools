@@ -163,6 +163,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    SQSStream,
 		},
+                &BlockTemplate{
+                        BlockType:  "map",
+                        RouteNames: []string{"set_rule", "get_rule"},
+                        Routine:    Map,
+                },
 	}
 
 	libraryList := []map[string]interface{}{}
