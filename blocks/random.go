@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+	"encoding/json"
 )
 
 var (
@@ -74,8 +75,12 @@ func Random(b *Block) {
 			Set(nestJson, "nestedOption", options[idx1])
 			Set(msg, "c", nestJson)
 			Set(msg, "e", rand.Float32()*8888)
+
+			var outJson interface{}
+			msgM, _ := json.Marshal(msg)
+			json.Unmarshal(msgM, &outJson)
 			out := BMsg{
-				Msg:          msg,
+				Msg:          outJson,
 				ResponseChan: nil,
 			}
 
