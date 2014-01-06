@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	//"github.com/mitchellh/mapstructure"
 	"github.com/nytlabs/gojee"
 	"log"
 )
@@ -35,8 +34,8 @@ func Filter(b *Block) {
 
 			if eval == true {
 				out := BMsg{
-	                Msg: msg.Msg,
-	            }
+					Msg: msg.Msg,
+				}
 
 				broadcast(b.OutChans, out)
 			}
