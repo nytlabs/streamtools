@@ -49,7 +49,7 @@ func Sync(b *Block) {
 			}
 
 			keys := strings.Split(rule.Path, ".")
-			msgTime, err := Get(msg, keys...)
+			msgTime, err := Get(msg.Msg, keys...)
 			if err != nil {
 				log.Println(err.Error())
 			}
@@ -69,7 +69,7 @@ func Sync(b *Block) {
 			ms := time.Unix(0, int64(time.Duration(msgTimeI)*time.Millisecond))
 
 			queueMessage := &PQMessage{
-				val: msg,
+				val: msg.Msg,
 				t:   ms,
 			}
 
@@ -88,7 +88,7 @@ func Sync(b *Block) {
 				break
 			}
 			out := BMsg{
-				Msg:          &item.(*PQMessage).val,
+				Msg:          item.(*PQMessage).val,
 				ResponseChan: nil,
 			}
 			broadcast(b.OutChans, out)
