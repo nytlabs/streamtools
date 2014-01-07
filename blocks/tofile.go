@@ -25,7 +25,7 @@ func ToFile(b *Block) {
 				break
 			}
 
-			msgStr, err := json.Marshal(msg)
+			msgStr, err := json.Marshal(msg.Msg)
 			if err != nil {
 				log.Println("wow bad json")
 			}

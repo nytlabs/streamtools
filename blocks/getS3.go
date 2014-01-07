@@ -58,6 +58,7 @@ func GetS3(b *Block) {
 			err = json.Unmarshal(line, &out)
 			if err != nil {
 				log.Println(err)
+				timer.Reset(time.Duration(0))
 				break
 			}
 			outMsg := BMsg{
