@@ -9,18 +9,18 @@ import (
 func Ticker(b *Block) {
 
 	type tickerRule struct {
-		Period int
+		Interval string
 	}
 
 	rule := &tickerRule{
-		Period: 1,
+		Interval: "1s",
 	}
 
-	ticker := time.NewTicker(time.Duration(rule.Period) * time.Second)
+	tickC := time.Tick(time.Duration(1) * time.Second)
 
 	for {
 		select {
-		case tick := <-ticker.C:
+		case tick := <-tickC:
 			var msg interface{}
 			Set(msg, "t", tick)
 			out := BMsg{
@@ -28,13 +28,16 @@ func Ticker(b *Block) {
 				ResponseChan: nil,
 			}
 			broadcast(b.OutChans, out)
-
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 
 		case r := <-b.Routes["set_rule"]:
 			unmarshal(r, rule)
-			ticker = time.NewTicker(time.Duration(rule.Period) * time.Second)
+			newDur, err := time.ParseDuration(rule.Interval)
+			if err != nil {
+				break
+			}
+			tickC = time.Tick(newDur)
 
 		case r := <-b.Routes["get_rule"]:
 			marshal(r, rule)

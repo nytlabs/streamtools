@@ -10,26 +10,38 @@ import (
 func Connection(b *Block) {
 	var last interface{}
 	var rate float64 // rate in messages per second of this block
-	var N float64    // number of messages passed through this block
-	var t time.Time
+
+	times := make([]int64,100,100)
+	timesIdx := len(times)
+
 	for {
 		select {
 		case msg := <-b.InChan:
 			last = msg.Msg
 			broadcast(b.OutChans, msg)
-			// rate calc
-			if t.IsZero() {
-				// this is the connection's first message
-				t = time.Now()
-				break
+
+			//for i := 0; i < len(times) - 1; i++ {
+			//	times[i] = times[i+1]
+			//}
+
+			//times[len(times) - 1] = time.Now().UnixNano()
+
+			times = times[1:]
+			times = append(times, time.Now().UnixNano())
+
+			if timesIdx > 0 {
+				timesIdx--
 			}
-			N++
-			dt := time.Since(t).Seconds()
-			rate = ((N-1.0)/N)*rate + (1.0/N)*dt
-			t = time.Now()
+
 		case query := <-b.Routes["last_message"]:
 			query.ResponseChan <- last
 		case query := <-b.Routes["rate"]:
+			if timesIdx == len(times) {
+				rate = 0
+			} else {
+				rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
+			}
+
 			query.ResponseChan <- map[string]float64{"rate": rate}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

@@ -977,6 +977,15 @@ jQuery.fn.springy = function(params) {
             // Figure out how far off center the line should be drawn
             var offset = normal.multiply(-((total - 1) * spacing)/2.0 + (n * spacing));
 
+            edge.data.msgTime += .001 + Math.min(edge.data.rate, 100)/4000.0; 
+            edge.data.msgTime = edge.data.msgTime > 1.0 ? 0.0 : edge.data.msgTime;
+            var rx = x1 + ((x2 - x1) * (edge.data.msgTime));
+            var ry = y1 + ((y2 - y1) * (edge.data.msgTime));
+
+            ctx.beginPath();
+            ctx.arc(rx,ry,2,0,2*Math.PI);
+            ctx.fill();
+
             var s1 = toScreen(p1).add(offset);
             var s2 = toScreen(p2).add(offset);
 
@@ -1074,6 +1083,8 @@ jQuery.fn.springy = function(params) {
             ctx.font = "16px Verdana, sans-serif";
             var text = (node.data.label !== undefined) ? node.data.label : node.id;
             ctx.fillText(text, s.x - boxWidth/2 + 5, s.y - 8);
+            var blockType = node.data.block.BlockType
+            ctx.fillText(blockType, s.x - boxWidth/2 + 5, s.y + 5);
 
             ctx.restore();
         }
@@ -1256,7 +1267,10 @@ jQuery(function(){
             if(tokens.length == 3) {
                 query += '&id=' + tokens[2];
             }
-            response( get(query) );
+            $.get(query, function(data){
+              update();
+              response(data)
+            })
             return true;
         },
         delete: function(tokens){
@@ -1265,7 +1279,10 @@ jQuery(function(){
                 return false; 
             }
             var query = "delete?id=" + tokens[1];
-            response( get(query) );
+            $.get(query, function(data){
+              update();
+              response(data)
+            })
             return true;
         },
         connect: function(tokens){
@@ -1274,7 +1291,10 @@ jQuery(function(){
                 return false; 
             }
             var query = "connect?from=" + tokens[1] + "&to=" + tokens[2];
-            response( get(query) );
+            $.get(query, function(data){
+              update();
+              response(data)
+            })
             return true;
         },
     }
@@ -1288,7 +1308,9 @@ jQuery(function(){
         var query = 'blocks/' + routeTokens[0] + '/' + routeTokens[1];
 
         if (obj == null){
-            response( get(query) );
+            $.get(query, function(data){
+              response(data)
+            })
         } else {
             var sendObj;
             try {
@@ -1297,7 +1319,9 @@ jQuery(function(){
               response('{"error":"invalid json"}')
               return false;
             }
-            response( post(query, JSON.stringify(sendObj)))
+            $.post(query,  JSON.stringify(sendObj), function(data){
+              response(data)
+            })
         }
 
         return true;
@@ -1318,12 +1342,12 @@ jQuery(function(){
         }
 
         if(rootCommands.hasOwnProperty(tokens[0]) && rootCommands[tokens[0]](tokens)){
-            update();
+            //update();
             return;
         }
 
         if(tokens[0].indexOf('/') !== -1 && routeCommand(tokens, obj)){
-            update();
+            //update();
             return;
         }
 
@@ -1422,9 +1446,9 @@ jQuery(function(){
         end.innerHTML = safe(cmd.substring(cursorIndex + 1, cmd.length));
     }
 
-    function get(url){
+    /*function get(url){
         var request = new XMLHttpRequest();
-        request.open('GET', url, false);
+        request.open('GET', url, true);
         request.send(null);
         if (request.status === 200 || request.status === 500) {
           return request.responseText;
@@ -1434,13 +1458,13 @@ jQuery(function(){
 
     function post(url, str){
         var request = new XMLHttpRequest();
-        request.open('POST', url, false);
+        request.open('POST', url, true);
         request.send(str);
         if (request.status === 200 || request.status === 500) {
           return request.responseText;
         }
         return '{"error":0}';
-    }
+    }*/
 
     function deleteBlock(id){
         if(blocks[id].data.block.BlockType === "connection"){
@@ -1452,11 +1476,16 @@ jQuery(function(){
         delete blocks[id];
     }
 
-    window.update = updateGraph;
+    //window.update = updateGraph;
+    function update(){
+      $.get('list',function(data){
+        updateGraph(JSON.parse(data))
+      })
+    }
 
-    function updateGraph(){
+    function updateGraph(list){
         console.log("updating...")
-        var blockUpdates = JSON.parse(get('list'));
+        var blockUpdates = list;
         var newIDs = [];
 
         blockUpdates.forEach(function(b){
@@ -1488,14 +1517,16 @@ jQuery(function(){
                         label: b.ID, 
                         block: b, 
                         rate: 0.0,
+                        msgTime: 0.0,
                     };
 
                     function updateRate(block){
                         block.data.updater = setTimeout(function(){
-                            var rate = JSON.parse(get('blocks/' + b.ID + '/rate')).rate;
-                            edgeData.rate = rate === 0 ? 0 : Math.round( (1/rate) * 1000.0 )/1000.0;
-                            edgeData.weight = edgeData.rate === 0 ? 1 : Math.log(edgeData.rate);
-                            updateRate(block);
+                            $.get('blocks/' + b.ID + '/rate', function(data){
+                              var rate = JSON.parse(data).rate;
+                              edgeData.rate = Math.round( (rate) * 1000.0 )/1000.0;
+                              updateRate(block);
+                            })
                         },1000);
                     }
 
@@ -1508,7 +1539,7 @@ jQuery(function(){
     }
 
     resizeCanvas();
-    updateGraph();
+    update();
 
     var springy = window.springy = jQuery('#springydemo').springy({
         graph: graph,
