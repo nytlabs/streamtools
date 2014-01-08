@@ -20,12 +20,6 @@ func Connection(b *Block) {
 			last = msg.Msg
 			broadcast(b.OutChans, msg)
 
-			//for i := 0; i < len(times) - 1; i++ {
-			//	times[i] = times[i+1]
-			//}
-
-			//times[len(times) - 1] = time.Now().UnixNano()
-
 			times = times[1:]
 			times = append(times, time.Now().UnixNano())
 
