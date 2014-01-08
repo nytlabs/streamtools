@@ -21,6 +21,7 @@ func GetS3(b *Block) {
 	type job struct {
 		bucket string
 		key    string
+		retry  int
 	}
 
 	var reader *bufio.Reader
@@ -74,13 +75,7 @@ func GetS3(b *Block) {
 				log.Println("no rule set")
 				break
 			}
-			/*
-				bucketName := getKeyValues(msg, "bucketName")
-				if len(bucketName) == 0 {
-					log.Println("No bucket name found in message")
-					break
-				}
-			*/
+
 			keyArray := getKeyValues(msg.Msg, "Key")
 			if len(keyArray) == 0 {
 				log.Println("No key found in message")
@@ -88,11 +83,12 @@ func GetS3(b *Block) {
 			}
 			keyInterface := keyArray[0]
 			key := keyInterface.(string)
-			//bucket: bucketName[0].(string),
+
 			bucketName := rule.BucketName
 			j := job{
 				bucket: bucketName,
 				key:    key,
+				retry:  0,
 			}
 			log.Println(j)
 			//TODO this should be a priority queue
@@ -135,13 +131,21 @@ func GetS3(b *Block) {
 		br, err := bucket.GetReader(j.key)
 		if err != nil {
 			log.Println(err)
-			break
+			j.retry++
+			if j.retry < 3 {
+				todo <- j
+			}
+			continue // continue
 		}
 		defer br.Close()
 		gr, err := gzip.NewReader(br)
 		if err != nil {
 			log.Println("failed to open a gzip reader")
-			break
+			j.retry++
+			if j.retry < 3 {
+				todo <- j
+			}
+			continue // continue
 		}
 		defer gr.Close()
 		// set the reader

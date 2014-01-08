@@ -1,7 +1,6 @@
 package blocks
 
 import (
-	"log"
 	"math/rand"
 	"strings"
 	"time"
@@ -13,26 +12,29 @@ var (
 	options    = []string{"a", "b", "c", "d", "e", "f"}
 )
 
-// emits a JSON blob full of random stuff. Set the period using a rule.
+// emits a JSON blob full of random stuff. Set the Interval using a rule.
 func Random(b *Block) {
 
 	type randomRule struct {
-		Period int
+		Interval string
 	}
 
 	rule := &randomRule{
-		Period: 1,
+		Interval: "1s",
 	}
 
-	c := time.Tick(time.Duration(rule.Period) * time.Second)
+	c := time.Tick(time.Duration(1) * time.Second)
 	r := rand.New(rand.NewSource(99))
 
 	for {
 		select {
 		case r := <-b.Routes["set_rule"]:
 			unmarshal(r, rule)
-			log.Println("recieved new Period", rule.Period)
-			c = time.Tick(time.Duration(rule.Period) * time.Second)
+			newDur, err := time.ParseDuration(rule.Interval)
+			if err != nil {
+				break
+			}
+			c = time.Tick(newDur)
 		case msg := <-b.Routes["get_rule"]:
 			marshal(msg, rule)
 		case now := <-c:
