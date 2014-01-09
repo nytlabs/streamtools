@@ -50,6 +50,10 @@ func GetHTTP(b *Block) {
 			}
 
 			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Println(err)
+				break
+			}
 			var msg interface{}
 			err = json.Unmarshal(body, &msg)
 			if err != nil {
