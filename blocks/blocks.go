@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	CREATE_OUT_CHAN = iota
-	DELETE_OUT_CHAN = iota
+	CREATE_OUT_CHAN   = iota
+	CREATE_ROUTE_CHAN = iota
+	DELETE_OUT_CHAN   = iota
 )
 
 type BMsg struct {

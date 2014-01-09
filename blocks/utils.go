@@ -18,6 +18,8 @@ func broadcast(channels map[string]chan BMsg, msg BMsg) {
 // output channels.
 func updateOutChans(msg *OutChanMsg, b *Block) {
 	switch msg.Action {
+	case CREATE_ROUTE_CHAN:
+		b.Routes[msg.ID] = msg.OutChan
 	case CREATE_OUT_CHAN:
 		b.OutChans[msg.ID] = msg.OutChan
 	case DELETE_OUT_CHAN:
