@@ -199,7 +199,7 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 		return
 	}
 
-	_, exists := d.blockMap[from]
+	_, exists := d.blockMap[strings.Split(from, "/")[0]]
 	if exists == false {
 		ApiResponse(w, 500, "FROM_BLOCK_NOT_FOUND")
 		return
@@ -322,17 +322,25 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	d.CreateBlock("connection", ID)
 
-	d.blockMap[from].AddChan <- &blocks.OutChanMsg{
-		Action:  blocks.CREATE_OUT_CHAN,
-		OutChan: d.blockMap[ID].InChan,
-		ID:      ID,
-	}
+	fromParts := strings.Split(from, "/")
+	switch len(fromParts) {
+	case 1:
+		d.blockMap[from].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.CREATE_OUT_CHAN,
+			OutChan: d.blockMap[ID].InChan,
+			ID:      ID,
+		}
+	case 2:
+		d.blockMap[fromParts[0]].AddChan <- &blocks.OutChanMsg{
+			Action:  blocks.CREATE_ROUTE_CHAN,
+			OutChan: d.blockMap[ID].InChan,
+			ID:      fromParts[1],
+		}
+	default:
+		err := errors.New("malformed to route specification")
+		return err
 
-	/*d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
-		Action:  blocks.CREATE_OUT_CHAN,
-		OutChan: d.blockMap[to].InChan,
-		ID:      to,
-	}*/
+	}
 	toParts := strings.Split(to, "/")
 	switch len(toParts) {
 	case 1:
@@ -353,12 +361,12 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	}
 
 	// add the from block to the list of inblocks for connection.
-	d.blockMap[from].OutBlocks[ID] = true
-	d.blockMap[ID].InBlocks[from] = true
+	d.blockMap[fromParts[0]].OutBlocks[ID] = true
+	d.blockMap[ID].InBlocks[fromParts[0]] = true
 	d.blockMap[ID].OutBlocks[toParts[0]] = true
 	d.blockMap[toParts[0]].InBlocks[ID] = true
 
-	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[toParts[0]].ID)
+	log.Println("connected", d.blockMap[fromParts[0]].ID, "to", d.blockMap[toParts[0]].ID)
 
 	return nil
 }
