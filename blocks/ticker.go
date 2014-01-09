@@ -21,7 +21,7 @@ func Ticker(b *Block) {
 	for {
 		select {
 		case tick := <-tickC:
-			var msg interface{}
+			msg := make(map[string]interface{})
 			Set(msg, "t", tick)
 			out := BMsg{
 				Msg:          msg,
