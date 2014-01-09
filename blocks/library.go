@@ -45,7 +45,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "count",
-			RouteNames: []string{"set_rule", "get_rule", "count"},
+			RouteNames: []string{"set_rule", "get_rule", "count", "poll"},
 			Routine:    Count,
 		},
 		&BlockTemplate{

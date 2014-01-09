@@ -33,6 +33,14 @@ func Count(b *Block) {
 		case query := <-b.Routes["count"]:
 			data.Count = len(*pq)
 			marshal(query, data)
+		case <-b.Routes["poll"]:
+			outMsg := map[string]interface{}{
+				"Count": len(*pq),
+			}
+			out := BMsg{
+				Msg: outMsg,
+			}
+			broadcast(b.OutChans, out)
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &countRule{}
