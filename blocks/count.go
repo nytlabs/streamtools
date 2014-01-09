@@ -56,6 +56,8 @@ func Count(b *Block) {
 		case <-b.QuitChan:
 			quit(b)
 			return
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		case <-b.InChan:
 			if rule == nil {
 				break
