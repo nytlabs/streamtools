@@ -99,6 +99,11 @@ func BuildLibrary() {
 			Routine:    ListS3,
 		},
 		&BlockTemplate{
+			BlockType:  "toElasticsearch",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToElasticsearch,
+		},
+		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
