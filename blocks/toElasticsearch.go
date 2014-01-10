@@ -44,7 +44,7 @@ func ToElasticsearch(b *Block) {
 				break
 			}
 
-      response, err := core.Index(true, rule.Index, rule.Type, "", msg.Msg)
+      _, err := core.Index(true, rule.Index, rule.Type, "", msg.Msg)
 			if err != nil {
 				log.Println(err.Error())
 				break
