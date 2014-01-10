@@ -125,7 +125,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "histogram",
-			RouteNames: []string{"set_rule", "histogram", "get_rule"},
+			RouteNames: []string{"set_rule", "histogram", "get_rule", "poll"},
 			Routine:    Histogram,
 		},
 		&BlockTemplate{
