@@ -49,7 +49,6 @@ func ToElasticsearch(b *Block) {
 				log.Println(err.Error())
 				break
 			}
-      log.Printf("Index OK: %v", response.Ok)
   	}
 	}
 }
