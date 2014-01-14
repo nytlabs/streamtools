@@ -77,7 +77,11 @@ func HTTPStream(b *Block) {
 				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
 					if len(blob) > 0 {
 						var outMsg interface{}
-						json.Unmarshal(blob, &outMsg)
+						err := json.Unmarshal(blob, &outMsg)
+						if err != nil {
+							log.Println("cannot unmarshal json")
+							break
+						}
 						out := BMsg{
 							Msg: outMsg,
 						}
