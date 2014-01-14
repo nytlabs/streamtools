@@ -80,7 +80,7 @@ func HTTPStream(b *Block) {
 						err := json.Unmarshal(blob, &outMsg)
 						if err != nil {
 							log.Println("cannot unmarshal json")
-							break
+							continue
 						}
 						out := BMsg{
 							Msg: outMsg,
