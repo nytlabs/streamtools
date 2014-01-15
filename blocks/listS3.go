@@ -46,6 +46,7 @@ func ListS3(b *Block) {
 				listelement["key"] = v.Key
 				if rule.Since == "" {
 					outArray = append(outArray, listelement)
+					continue
 				}
 
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
