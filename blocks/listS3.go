@@ -42,6 +42,13 @@ func ListS3(b *Block) {
 			log.Println("found", len(list.Contents), "files")
 			outArray := []interface{}{}
 			for _, v := range list.Contents {
+				listelement := make(map[string]interface{})
+				listelement["key"] = v.Key
+				if rule.Since == "" {
+					outArray = append(outArray, listelement)
+					continue
+				}
+
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
 					log.Println(err.Error())
@@ -53,9 +60,9 @@ func ListS3(b *Block) {
 					break
 				}
 				if lm.After(time.Now().Add(-since)) {
-					listElement := make(map[string]interface{})
-					listElement["Key"] = v.Key
-					outArray = append(outArray, listElement)
+					listelement := make(map[string]interface{})
+					listelement["key"] = v.Key
+					outArray = append(outArray, listelement)
 				}
 			}
 			out["List"] = outArray
