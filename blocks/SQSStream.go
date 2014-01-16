@@ -75,6 +75,8 @@ func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
 func SQSStream(b *Block) {
 	var rule *fromSQSRule
 	var c aws4.Client
+	var SQSmsg map[string]interface{}
+	var msg map[string]interface{}
 	timer := time.NewTimer(1)
 	responseChan := make(chan Message)
 
@@ -86,6 +88,7 @@ func SQSStream(b *Block) {
 				break
 			}
 			go pollSQS(rule.SQSEndpoint, c, responseChan)
+			timer.Reset(time.Duration(1) * time.Millisecond)
 		case m := <-responseChan:
 			if len(m.Body) == 0 {
 				timer.Reset(time.Duration(10) * time.Second)
@@ -94,7 +97,6 @@ func SQSStream(b *Block) {
 			log.Println("body length", len(m.Body))
 
 			for i, body := range m.Body {
-				var SQSmsg map[string]interface{}
 				err := json.Unmarshal([]byte(body), &SQSmsg)
 				msgString, ok := SQSmsg["Message"].(string)
 				if !ok {
@@ -105,8 +107,7 @@ func SQSStream(b *Block) {
 					if len(m) == 0 {
 						continue
 					}
-					var msg map[string]interface{}
-					json.Unmarshal([]byte(m), &msg)
+					err = json.Unmarshal([]byte(m), &msg)
 					if err != nil {
 						log.Println(err.Error())
 						continue
@@ -117,12 +118,7 @@ func SQSStream(b *Block) {
 					broadcast(b.OutChans, out)
 				}
 				go deleteMessage(rule.SQSEndpoint, c, m.ReceiptHandle[i])
-				if err != nil {
-					log.Println(err.Error())
-				}
 			}
-
-			timer.Reset(time.Duration(1) * time.Millisecond)
 
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
