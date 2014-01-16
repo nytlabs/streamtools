@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -27,51 +28,43 @@ type Message struct {
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
 }
 
-func pollSQS(rule *fromSQSRule) Message {
+func pollSQS(endpoint string, c aws4.Client, rChan chan Message) {
+	var v Message
 	query := make(url.Values)
 	query.Add("Action", "ReceiveMessage")
 	query.Add("AttributeName", "All")
 	query.Add("Version", AWSSQSAPIVersion)
 	query.Add("SignatureVersion", AWSSignatureVersion)
 	query.Add("WaitTimeSeconds", "10")
+	query.Add("MaxNumberOfMessages", "10")
 
-	keys := &aws4.Keys{
-		AccessKey: rule.AccessKey,
-		SecretKey: rule.AccessSecret,
-	}
-
-	c := aws4.Client{Keys: keys}
-
-	resp, err := c.Get(rule.SQSEndpoint + query.Encode())
+	resp, err := c.Get(endpoint + query.Encode())
+	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err.Error())
+		return
 	}
-
-	var v Message
-
 	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
 	err = xml.Unmarshal(body, &v)
 	if err != nil {
 		log.Println(err.Error())
+		return
 	}
-	return v
+	rChan <- v
 }
 
-func deleteMessage(rule *fromSQSRule, ReceiptHandle string) {
+func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
 	query := make(url.Values)
 	query.Add("Action", "DeleteMessage")
 	query.Add("ReceiptHandle", ReceiptHandle)
 	query.Add("Version", AWSSQSAPIVersion)
 	query.Add("SignatureVersion", AWSSignatureVersion)
-
-	keys := &aws4.Keys{
-		AccessKey: rule.AccessKey,
-		SecretKey: rule.AccessSecret,
-	}
-
-	c := aws4.Client{Keys: keys}
-
-	_, err := c.Get(rule.SQSEndpoint + query.Encode())
+	resp, err := c.Get(endpoint + query.Encode())
+	resp.Body.Close()
 	if err != nil {
 		log.Println(err.Error())
 	}
@@ -81,7 +74,9 @@ func deleteMessage(rule *fromSQSRule, ReceiptHandle string) {
 // streamtools
 func SQSStream(b *Block) {
 	var rule *fromSQSRule
+	var c aws4.Client
 	timer := time.NewTimer(1)
+	responseChan := make(chan Message)
 
 	for {
 		select {
@@ -90,25 +85,55 @@ func SQSStream(b *Block) {
 				timer.Reset(time.Duration(10) * time.Second)
 				break
 			}
+			go pollSQS(rule.SQSEndpoint, c, responseChan)
+		case m := <-responseChan:
+			if len(m.Body) == 0 {
+				timer.Reset(time.Duration(10) * time.Second)
+				break
+			}
+			log.Println("body length", len(m.Body))
 
-			m := pollSQS(rule)
-			if len(m.Body) > 0 {
-				for i, body := range m.Body {
-					var msg BMsg
-					err := json.Unmarshal([]byte(body), &msg)
+			for i, body := range m.Body {
+				var SQSmsg map[string]interface{}
+				err := json.Unmarshal([]byte(body), &SQSmsg)
+				msgString, ok := SQSmsg["Message"].(string)
+				if !ok {
+					log.Println("couldn't convert SQS Message to string")
+					continue
+				}
+				for _, m := range strings.Split(msgString, "\n") {
+					if len(m) == 0 {
+						continue
+					}
+					var msg map[string]interface{}
+					json.Unmarshal([]byte(m), &msg)
 					if err != nil {
 						log.Println(err.Error())
+						continue
 					}
-					broadcast(b.OutChans, msg)
-					deleteMessage(rule, m.ReceiptHandle[i])
+					out := BMsg{
+						Msg: msg,
+					}
+					broadcast(b.OutChans, out)
 				}
-				timer.Reset(time.Duration(10) * time.Millisecond)
-			} else {
-				timer.Reset(time.Duration(10) * time.Second)
+				go deleteMessage(rule.SQSEndpoint, c, m.ReceiptHandle[i])
+				if err != nil {
+					log.Println(err.Error())
+				}
 			}
 
+			timer.Reset(time.Duration(1) * time.Millisecond)
+
 		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &fromSQSRule{}
+			}
 			unmarshal(msg, rule)
+			keys := &aws4.Keys{
+				AccessKey: rule.AccessKey,
+				SecretKey: rule.AccessSecret,
+			}
+			c = aws4.Client{Keys: keys}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &fromSQSRule{})
