@@ -35,15 +35,15 @@ func pollSQS(endpoint string, c aws4.Client, rChan chan Message) {
 	query.Add("AttributeName", "All")
 	query.Add("Version", AWSSQSAPIVersion)
 	query.Add("SignatureVersion", AWSSignatureVersion)
-	query.Add("WaitTimeSeconds", "10")
+	query.Add("WaitTimeSeconds", "0")
 	query.Add("MaxNumberOfMessages", "10")
 
 	resp, err := c.Get(endpoint + query.Encode())
-	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
+	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err.Error())
@@ -64,10 +64,41 @@ func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
 	query.Add("Version", AWSSQSAPIVersion)
 	query.Add("SignatureVersion", AWSSignatureVersion)
 	resp, err := c.Get(endpoint + query.Encode())
-	resp.Body.Close()
 	if err != nil {
 		log.Println(err.Error())
+		return
 	}
+	resp.Body.Close()
+}
+
+func unpackAndDelete(body string, reciept string, endpoint string, client aws4.Client, outChan chan BMsg) {
+	var SQSmsg map[string]interface{}
+	var msg map[string]interface{}
+	err := json.Unmarshal([]byte(body), &SQSmsg)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	msgString, ok := SQSmsg["Message"].(string)
+	if !ok {
+		log.Println("couldn't convert SQS Message to string")
+		return
+	}
+	for _, m := range strings.Split(msgString, "\n") {
+		if len(m) == 0 {
+			continue
+		}
+		err = json.Unmarshal([]byte(m), &msg)
+		if err != nil {
+			log.Println(err.Error())
+			continue
+		}
+		out := BMsg{
+			Msg: msg,
+		}
+		outChan <- out
+	}
+	go deleteMessage(endpoint, client, reciept)
 }
 
 // SQSStream hooks into an Amazon SQS, and emits every message it sees into
@@ -75,10 +106,9 @@ func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
 func SQSStream(b *Block) {
 	var rule *fromSQSRule
 	var c aws4.Client
-	var SQSmsg map[string]interface{}
-	var msg map[string]interface{}
 	timer := time.NewTimer(1)
 	responseChan := make(chan Message)
+	broadcastChan := make(chan BMsg)
 
 	for {
 		select {
@@ -88,7 +118,7 @@ func SQSStream(b *Block) {
 				break
 			}
 			go pollSQS(rule.SQSEndpoint, c, responseChan)
-			timer.Reset(time.Duration(1) * time.Millisecond)
+			timer.Reset(time.Duration(1000) * time.Microsecond)
 		case m := <-responseChan:
 			if len(m.Body) == 0 {
 				timer.Reset(time.Duration(10) * time.Second)
@@ -97,28 +127,11 @@ func SQSStream(b *Block) {
 			log.Println("body length", len(m.Body))
 
 			for i, body := range m.Body {
-				err := json.Unmarshal([]byte(body), &SQSmsg)
-				msgString, ok := SQSmsg["Message"].(string)
-				if !ok {
-					log.Println("couldn't convert SQS Message to string")
-					continue
-				}
-				for _, m := range strings.Split(msgString, "\n") {
-					if len(m) == 0 {
-						continue
-					}
-					err = json.Unmarshal([]byte(m), &msg)
-					if err != nil {
-						log.Println(err.Error())
-						continue
-					}
-					out := BMsg{
-						Msg: msg,
-					}
-					broadcast(b.OutChans, out)
-				}
-				go deleteMessage(rule.SQSEndpoint, c, m.ReceiptHandle[i])
+				reciept := m.ReceiptHandle[i]
+				go unpackAndDelete(body, reciept, rule.SQSEndpoint, c, broadcastChan)
 			}
+		case outMsg := <-broadcastChan:
+			broadcast(b.OutChans, outMsg)
 
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
