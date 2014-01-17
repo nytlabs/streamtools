@@ -104,11 +104,6 @@ func BuildLibrary() {
 			Routine:    ToElasticsearch,
 		},
 		&BlockTemplate{
-			BlockType:  "toRedis",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    ToRedis,
-		},
-		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
