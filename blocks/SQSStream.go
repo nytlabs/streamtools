@@ -29,6 +29,8 @@ type Message struct {
 }
 
 func pollSQS(endpoint string, c aws4.Client, rChan chan Message) {
+	log.Println("polling start")
+	t := time.Now()
 	var v Message
 	query := make(url.Values)
 	query.Add("Action", "ReceiveMessage")
@@ -38,23 +40,32 @@ func pollSQS(endpoint string, c aws4.Client, rChan chan Message) {
 	query.Add("WaitTimeSeconds", "0")
 	query.Add("MaxNumberOfMessages", "10")
 
+	t1 := time.Now()
 	resp, err := c.Get(endpoint + query.Encode())
+	log.Println("polling Get", time.Now().Sub(t1).String())
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
 	defer resp.Body.Close()
+	t1 = time.Now()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
+	log.Println("polling ReadAll", time.Now().Sub(t1).String())
+	t1 = time.Now()
 	err = xml.Unmarshal(body, &v)
 	if err != nil {
 		log.Println(err.Error())
 		return
 	}
+	log.Println("polling Unmarshal", time.Now().Sub(t1).String())
+	t1 = time.Now()
 	rChan <- v
+	log.Println("polling block", time.Now().Sub(t1).String())
+	log.Println("polling", time.Now().Sub(t).String())
 }
 
 func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
@@ -71,7 +82,33 @@ func deleteMessage(endpoint string, c aws4.Client, ReceiptHandle string) {
 	resp.Body.Close()
 }
 
-func unpackAndDelete(body string, reciept string, endpoint string, client aws4.Client, outChan chan BMsg) {
+func deleteBatch(endpoint string, c aws4.Client, receipts []string) {
+	log.Println("delete start")
+	t := time.Now()
+	query := make(url.Values)
+	query.Add("Action", "DeleteMessage")
+	query.Add("Version", AWSSQSAPIVersion)
+	query.Add("SignatureVersion", AWSSignatureVersion)
+
+	for i, r := range receipts {
+		query.Add("DeleteMessageBatchRequestEntry.n.Id", "msg"+string(i))
+		query.Add("DeleteMessageBatchRequestEntry.n.ReceiptHandle", r)
+	}
+
+	t1 := time.Now()
+	resp, err := c.Get(endpoint + query.Encode())
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	log.Println("delete call", time.Now().Sub(t1).String())
+	resp.Body.Close()
+	log.Println("deleting", time.Now().Sub(t).String())
+}
+
+func unpack(body string, reciept string, endpoint string, client aws4.Client, outChan chan BMsg) {
+	log.Println("unpack start")
+	t := time.Now()
 	var SQSmsg map[string]interface{}
 	var msg map[string]interface{}
 	err := json.Unmarshal([]byte(body), &SQSmsg)
@@ -84,6 +121,7 @@ func unpackAndDelete(body string, reciept string, endpoint string, client aws4.C
 		log.Println("couldn't convert SQS Message to string")
 		return
 	}
+	unpackingBlock := time.Duration(0)
 	for _, m := range strings.Split(msgString, "\n") {
 		if len(m) == 0 {
 			continue
@@ -96,9 +134,12 @@ func unpackAndDelete(body string, reciept string, endpoint string, client aws4.C
 		out := BMsg{
 			Msg: msg,
 		}
+		t1 := time.Now()
 		outChan <- out
+		unpackingBlock = unpackingBlock + time.Now().Sub(t1)
 	}
-	go deleteMessage(endpoint, client, reciept)
+	log.Println("unpacking block", unpackingBlock)
+	log.Println("unpacking", time.Now().Sub(t).String())
 }
 
 // SQSStream hooks into an Amazon SQS, and emits every message it sees into
@@ -114,22 +155,23 @@ func SQSStream(b *Block) {
 		select {
 		case <-timer.C:
 			if rule == nil {
-				timer.Reset(time.Duration(10) * time.Second)
+				timer.Reset(time.Duration(1) * time.Second)
 				break
 			}
 			go pollSQS(rule.SQSEndpoint, c, responseChan)
-			timer.Reset(time.Duration(1000) * time.Microsecond)
+			timer.Reset(time.Duration(100) * time.Millisecond)
 		case m := <-responseChan:
 			if len(m.Body) == 0 {
 				timer.Reset(time.Duration(10) * time.Second)
 				break
 			}
-			log.Println("body length", len(m.Body))
-
+			receipts := make([]string, len(m.Body))
 			for i, body := range m.Body {
 				reciept := m.ReceiptHandle[i]
-				go unpackAndDelete(body, reciept, rule.SQSEndpoint, c, broadcastChan)
+				go unpack(body, reciept, rule.SQSEndpoint, c, broadcastChan)
+				receipts[i] = reciept
 			}
+			go deleteBatch(rule.SQSEndpoint, c, receipts)
 		case outMsg := <-broadcastChan:
 			broadcast(b.OutChans, outMsg)
 
