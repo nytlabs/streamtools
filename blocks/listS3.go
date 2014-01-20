@@ -36,7 +36,7 @@ func ListS3(b *Block) {
 			outArray := []interface{}{}
 			for _, v := range listContents {
 				listelement := make(map[string]interface{})
-				listelement["key"] = v.Key
+				listelement["Key"] = v.Key
 				if rule.Since == "" {
 					outArray = append(outArray, listelement)
 					continue
@@ -54,7 +54,7 @@ func ListS3(b *Block) {
 				}
 				if lm.After(time.Now().Add(-since)) {
 					listelement := make(map[string]interface{})
-					listelement["key"] = v.Key
+					listelement["Key"] = v.Key
 					outArray = append(outArray, listelement)
 				}
 			}
