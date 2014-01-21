@@ -41,6 +41,7 @@ func pollSQS(endpoint string, c aws4.Client, rChan chan Message) {
 	query.Add("MaxNumberOfMessages", "10")
 
 	t1 := time.Now()
+	log.Println(endpoint + query.Encode())
 	resp, err := c.Get(endpoint + query.Encode())
 	log.Println("polling Get", time.Now().Sub(t1).String())
 	if err != nil {
