@@ -36,7 +36,7 @@ func GetS3(b *Block) {
 	}
 
 	timer := time.NewTimer(time.Duration(10) * time.Second)
-	todo := make(chan job, 100) // max number of jobs is 100
+	todo := make(chan job, 2000) // max number of jobs is 2000
 	s := s3.New(auth, aws.USEast)
 
 	for {

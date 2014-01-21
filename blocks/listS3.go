@@ -1,8 +1,8 @@
 package blocks
 
 import (
+	"github.com/jacqui/gorecurses3/s3walker"
 	"launchpad.net/goamz/aws"
-	"launchpad.net/goamz/s3"
 	"log"
 	"time"
 )
@@ -29,19 +29,19 @@ func ListS3(b *Block) {
 		select {
 		case <-b.InChan:
 			out := make(map[string]interface{})
-			// Open Bucket
-			s := s3.New(auth, aws.USEast)
-			bucket := s.Bucket(rule.BucketName)
 			// get the list
-			list, err := bucket.List(rule.Prefix, "/", "", 2000)
-			if err != nil {
-				log.Println(rule)
-				log.Println(err.Error())
-				break
-			}
-			log.Println("found", len(list.Contents), "files")
+			listContents := s3walker.ListFiles(auth, rule.BucketName, rule.Prefix, "")
+
+			log.Println("found", len(listContents), "files")
 			outArray := []interface{}{}
-			for _, v := range list.Contents {
+			for _, v := range listContents {
+				listelement := make(map[string]interface{})
+				listelement["Key"] = v.Key
+				if rule.Since == "" {
+					outArray = append(outArray, listelement)
+					continue
+				}
+
 				lm, err := time.Parse("2006-01-02T15:04:05.000Z", v.LastModified)
 				if err != nil {
 					log.Println(err.Error())
@@ -53,9 +53,9 @@ func ListS3(b *Block) {
 					break
 				}
 				if lm.After(time.Now().Add(-since)) {
-					listElement := make(map[string]interface{})
-					listElement["Key"] = v.Key
-					outArray = append(outArray, listElement)
+					listelement := make(map[string]interface{})
+					listelement["Key"] = v.Key
+					outArray = append(outArray, listelement)
 				}
 			}
 			out["List"] = outArray
