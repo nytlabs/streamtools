@@ -1,18 +1,7 @@
 package blocks
 
 import (
-	"encoding/json"
-	"encoding/xml"
-	"github.com/mikedewar/aws4"
-	"io/ioutil"
-	"log"
-	"net/url"
-	"time"
-)
-
-var (
-	AWSSQSAPIVersion    string = "2012-11-05"
-	AWSSignatureVersion string = "4"
+	"github.com/mikedewar/go-sqsReader" //sqsReader
 )
 
 type fromSQSRule struct {
@@ -27,88 +16,27 @@ type Message struct {
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
 }
 
-func pollSQS(rule *fromSQSRule) Message {
-	query := make(url.Values)
-	query.Add("Action", "ReceiveMessage")
-	query.Add("AttributeName", "All")
-	query.Add("Version", AWSSQSAPIVersion)
-	query.Add("SignatureVersion", AWSSignatureVersion)
-	query.Add("WaitTimeSeconds", "10")
-
-	keys := &aws4.Keys{
-		AccessKey: rule.AccessKey,
-		SecretKey: rule.AccessSecret,
-	}
-
-	c := aws4.Client{Keys: keys}
-
-	resp, err := c.Get(rule.SQSEndpoint + query.Encode())
-	if err != nil {
-		log.Println(err.Error())
-	}
-
-	var v Message
-
-	body, err := ioutil.ReadAll(resp.Body)
-	err = xml.Unmarshal(body, &v)
-	if err != nil {
-		log.Println(err.Error())
-	}
-	return v
-}
-
-func deleteMessage(rule *fromSQSRule, ReceiptHandle string) {
-	query := make(url.Values)
-	query.Add("Action", "DeleteMessage")
-	query.Add("ReceiptHandle", ReceiptHandle)
-	query.Add("Version", AWSSQSAPIVersion)
-	query.Add("SignatureVersion", AWSSignatureVersion)
-
-	keys := &aws4.Keys{
-		AccessKey: rule.AccessKey,
-		SecretKey: rule.AccessSecret,
-	}
-
-	c := aws4.Client{Keys: keys}
-
-	_, err := c.Get(rule.SQSEndpoint + query.Encode())
-	if err != nil {
-		log.Println(err.Error())
-	}
-}
-
 // SQSStream hooks into an Amazon SQS, and emits every message it sees into
 // streamtools
 func SQSStream(b *Block) {
 	var rule *fromSQSRule
-	timer := time.NewTimer(1)
+	var r *sqsReader.Reader
+	outChan := make(chan map[string]interface{})
 
 	for {
 		select {
-		case <-timer.C:
-			if rule == nil {
-				timer.Reset(time.Duration(10) * time.Second)
-				break
+		case m := <-outChan:
+			out := BMsg{
+				Msg: m,
 			}
-
-			m := pollSQS(rule)
-			if len(m.Body) > 0 {
-				for i, body := range m.Body {
-					var msg BMsg
-					err := json.Unmarshal([]byte(body), &msg)
-					if err != nil {
-						log.Println(err.Error())
-					}
-					broadcast(b.OutChans, msg)
-					deleteMessage(rule, m.ReceiptHandle[i])
-				}
-				timer.Reset(time.Duration(10) * time.Millisecond)
-			} else {
-				timer.Reset(time.Duration(10) * time.Second)
-			}
-
+			broadcast(b.OutChans, out)
 		case msg := <-b.Routes["set_rule"]:
+			if rule == nil {
+				rule = &fromSQSRule{}
+			}
 			unmarshal(msg, rule)
+			r = sqsReader.NewReader(rule.SQSEndpoint, rule.AccessKey, rule.AccessSecret, outChan)
+			go r.Start()
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &fromSQSRule{})
