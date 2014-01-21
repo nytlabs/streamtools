@@ -45,7 +45,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "count",
-			RouteNames: []string{"set_rule", "get_rule", "count"},
+			RouteNames: []string{"set_rule", "get_rule", "count", "poll"},
 			Routine:    Count,
 		},
 		&BlockTemplate{
@@ -99,6 +99,11 @@ func BuildLibrary() {
 			Routine:    ListS3,
 		},
 		&BlockTemplate{
+			BlockType:  "toElasticsearch",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToElasticsearch,
+		},
+		&BlockTemplate{
 			BlockType:  "tofile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
@@ -125,7 +130,7 @@ func BuildLibrary() {
 		},
 		&BlockTemplate{
 			BlockType:  "histogram",
-			RouteNames: []string{"set_rule", "histogram", "get_rule"},
+			RouteNames: []string{"set_rule", "histogram", "get_rule", "poll"},
 			Routine:    Histogram,
 		},
 		&BlockTemplate{

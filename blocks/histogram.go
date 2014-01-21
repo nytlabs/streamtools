@@ -2,30 +2,42 @@ package blocks
 
 import (
 	"container/heap"
+	"github.com/nytlabs/gojee" // jee
 	"log"
 	"time"
 )
+
+// build the histogram JSON for output
+func buildHistogram(histogram map[string]*PriorityQueue) map[string]interface{} {
+
+	buckets := make([]map[string]interface{}, len(histogram))
+
+	i := 0
+	for k, pq := range histogram {
+		bucket := map[string]interface{}{
+			"Count": len(*pq),
+			"Label": k,
+		}
+		buckets[i] = bucket
+		i++
+	}
+	data := map[string]interface{}{
+		"Histogram": buckets,
+	}
+	return data
+}
 
 // creates a histogram of a specified key
 func Histogram(b *Block) {
 
 	type histogramRule struct {
-		Window int
-		Key    string
+		Window string
+		Path   string
 	}
-
-	type histogramBucket struct {
-		Count int
-		Label string
-	}
-
-	type histogramData struct {
-		Histogram []histogramBucket
-	}
-
-	data := &histogramData{}
 
 	var rule *histogramRule
+	var tree *jee.TokenTree
+	var err error
 
 	waitTimer := time.NewTimer(100 * time.Millisecond)
 	window := time.Duration(0)
@@ -36,17 +48,14 @@ func Histogram(b *Block) {
 	for {
 		select {
 		case query := <-b.Routes["histogram"]:
-			data.Histogram = make([]histogramBucket, len(histogram))
-			i := 0
-			for k, pq := range histogram {
-				bucket := histogramBucket{
-					Count: len(*pq),
-					Label: k,
-				}
-				data.Histogram[i] = bucket
-				i++
-			}
+			data := buildHistogram(histogram)
 			marshal(query, data)
+		case <-b.Routes["poll"]:
+			data := buildHistogram(histogram)
+			out := BMsg{
+				Msg: data,
+			}
+			broadcast(b.OutChans, out)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &histogramRule{})
@@ -59,24 +68,35 @@ func Histogram(b *Block) {
 			}
 
 			unmarshal(ruleUpdate, rule)
-			window = time.Duration(rule.Window) * time.Second
+			window, err = time.ParseDuration(rule.Window)
+			if err != nil {
+				log.Println(err.Error())
+			}
+			token, err := jee.Lexer(rule.Path)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+		case msg := <-b.AddChan:
+			updateOutChans(msg, b)
 		case msg := <-b.InChan:
 			if rule == nil {
 				break
 			}
 
-			valueSlice := getKeyValues(msg, rule.Key)
-			// we need to guard against the possibility that the key is not in
-			// the message
-			if len(valueSlice) == 0 {
-				log.Println("could not find", rule.Key, "in message")
+			v, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
 				break
 			}
-
-			value := valueSlice[0]
-			valueString, ok := value.(string)
+			valueString, ok := v.(string)
 			if !ok {
-				log.Println("nil value against", rule.Key, " - ignoring")
+				log.Println("nil value against", rule.Path, " - ignoring")
 				break
 			}
 
