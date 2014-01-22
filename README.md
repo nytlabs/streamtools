@@ -10,7 +10,7 @@ Streamtools is built upon a few core principles:
 
 Streamtools is an open source project written in Go and is intended to be used with streams of JSON.
 
-Getting Started
+getting started
 ===============
 
 1. Find a computer to play with. It needs to be Linux or OSX. 
@@ -20,5 +20,16 @@ Getting Started
 5. Now launch streamtools by typing `./st-linux` if you're on linux or `./st-darwin` if you're on osx.
 6. To find the UI visit [http://localhost:7070](http://localhost:7070)
 7. Create our [Hello World](https://github.com/nytlabs/streamtools/wiki/Hello-world) pattern!
+
+health warning
+==============
+
+*Note that streamtools is very new!* This means we're developing it very rapidly, and some things aren't going to work. If you find a bug please do let us know! And, if you think of something you'd like to see, please do request it! Both of these things can be done on our [issues page](https://github.com/nytlabs/streamtools/issues?milestone=&page=1&state=open). 
+contributing
+============
+
+As always: pull requests are welcome! Our focus at the moment (Spring '14) is to get a fully functioning system together that we can demonstrate. Therefore new blocks are likely to be merged in with more energy than large re-writes of the back-end. Having said that, there is plenty that can and should be done behind the scenes, and we always have an eye to the next major re-factor. 
+
+If you'd like to make a new block the best place to start is to look at the skeleton blocks. We have a [skeleton state](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_state.go) block which demonstrates how to lay out a block that maintains a state. We also have a [skeleton transfer](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_transfer.go) block which demonstrates how to lay out a block that emits zero or one messages upon reciept of an inbound message.
 
 
