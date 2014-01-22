@@ -19,6 +19,6 @@ Getting Started
 4. Run `chmod +x st-linux` if you're on linux or `chmod +x st-darwin` on osx. 
 5. Now launch streamtools by typing `./st-linux` if you're on linux or `./st-darwin` if you're on osx.
 6. To find the UI visit [http://localhost:7070](http://localhost:7070)
-7. Create our [Hello World]() pattern!
+7. Create our [Hello World](https://github.com/nytlabs/streamtools/wiki/Hello-world) pattern!
 
 
