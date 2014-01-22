@@ -19,7 +19,10 @@ getting started
 4. Run `chmod +x st-linux` if you're on linux or `chmod +x st-darwin` on osx. This makes the file you downloaded executeable. 
 5. Now launch streamtools by typing `./st-linux` if you're on linux or `./st-darwin` if you're on osx. Your terminal should say `starting stream tools on port 7070`.
 6. To find the UI visit [http://localhost:7070](http://localhost:7070) in a browser. If you're not running streamtools locally you need some way of accessing port 7070 on your remote box.
-7. Create our [Hello World](https://github.com/nytlabs/streamtools/wiki/Hello-world) pattern!
+7. Go through our [Hello World](https://github.com/nytlabs/streamtools/wiki/Hello-world) pattern!
+8. Look through the rest of our [patterns](https://github.com/nytlabs/streamtools/wiki#patterns) for inspiration and guidance. 
+
+Good luck!
 
 health warning
 ==============
