@@ -2,15 +2,20 @@ package blocks
 
 import (
 	"container/heap"
+	"log"
 	"time"
 )
 
 // Count uses a priority queue to count the number of messages that have been sent
 // to the count block over a duration of time in seconds.
+//
+// Note that this is an exact count and therefore has O(N) memory requirements.
 func Count(b *Block) {
 
+	var err error
+
 	type countRule struct {
-		Window int
+		Window string
 	}
 
 	type countData struct {
@@ -46,7 +51,10 @@ func Count(b *Block) {
 				rule = &countRule{}
 			}
 			unmarshal(ruleUpdate, rule)
-			window = time.Duration(rule.Window) * time.Second
+			window, err = time.ParseDuration(rule.Window)
+			if err != nil {
+				log.Println(err.Error())
+			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &countRule{})
