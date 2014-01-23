@@ -42,7 +42,7 @@ func Post(b *Block) {
 				break
 			}
 
-			postBody, err := json.Marshal(msg)
+			postBody, err := json.Marshal(msg.Msg)
 			if err != nil {
 				log.Fatal(err.Error())
 				break
