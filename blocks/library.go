@@ -74,6 +74,11 @@ func BuildLibrary() {
 			Routine:    Post,
 		},
 		&BlockTemplate{
+			BlockType:  "toWebsocket",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToWebsocket,
+		},
+		&BlockTemplate{
 			BlockType:  "getHTTP",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    GetHTTP,
