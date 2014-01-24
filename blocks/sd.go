@@ -1,6 +1,8 @@
 package blocks
 
 import (
+	"github.com/nytlabs/gojee" // jee
+	"log"
 	"math"
 )
 
@@ -18,6 +20,7 @@ func Sd(b *Block) {
 
 	data := &sdData{StDev: 0.0}
 	var rule *sdRule
+	var tree *jee.TokenTree
 
 	N := 0.0
 	M_curr := 0.0
@@ -33,6 +36,17 @@ func Sd(b *Block) {
 				rule = &sdRule{}
 			}
 			unmarshal(ruleUpdate, rule)
+			token, err := jee.Lexer(rule.Key)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &sdRule{})
@@ -46,7 +60,15 @@ func Sd(b *Block) {
 			if rule == nil {
 				break
 			}
-			val := getKeyValues(msg, rule.Key)[0]
+			if tree == nil {
+				break
+			}
+			val, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+
 			x, ok := val.(float64)
 			if !ok {
 				break
