@@ -25,7 +25,10 @@ func SkeletonTransfer(b *Block) {
 				break
 			}
 			messageBody := msg.Msg
-			broadcast(b.OutChans, messageBody)
+			out := BMsg{
+				Msg:messageBody,
+			}
+			broadcast(b.OutChans, out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
