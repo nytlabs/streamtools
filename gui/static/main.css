@@ -7,13 +7,16 @@
 .node {
     cursor: pointer;
     stroke-width: 1px;
-    stroke: #EBDCC8;
+    stroke: rgba(80,80,80,1);
 }
 
-.nodetext{
+.nodetype, .nodeid{
     cursor: pointer;
-    font-family: Helvetica;
-    fill: #000;
+}
+
+.nodetype {
+    font-family: Monaco, courier;
+    font-variant: small-caps;
 }
 
 line.arrow {
@@ -35,8 +38,13 @@ body {
     width: 200px;
     position: absolute;
     background: #728896;
-    left: 0px;
-    top: 0px;
+    right: 0px;
+    top: 140px;
+}
+
+.idrect {
+    fill: rgba(220,220,220,1);
+    cursor: pointer;
 }
 
 .rule {
@@ -44,22 +52,6 @@ body {
     display: inline-block;
     font-variant: small-caps;
     padding: 4px;
-}
-
-.object {
-    background: rgba(200,50,50,1);
-}
-
-.string {
-    background: rgba(50,200,50,1);
-}
-
-.number {
-    background: rgba(50,50,200,1);
-}
-
-.boolean {
-    background: rgba(50,200,200,1);
 }
 
 #rule .name {

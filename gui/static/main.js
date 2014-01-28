@@ -31,7 +31,6 @@
 })(jQuery, 'smartresize');
 
 $(function() {
-    //var HOST = "http://localhost:7080/";
     var HOST = "";
     var width = $(window).width(),
         height = $(window).height();
@@ -46,7 +45,7 @@ $(function() {
         .nodes(nodes)
         .links(links)
         .charge(-1000)
-        .linkDistance(100)
+        .linkDistance(120)
         .linkStrength(0.5)
         .size([width, height])
         .on("tick", tick);
@@ -338,47 +337,56 @@ $(function() {
 
         });
 
-        nodes.on("mouseover", function(d) {
-            d3.select(this).attr('class', '');
-        });
 
         var rects = nodes.append("rect")
             .attr("class", "node")
-        //.attr("width", 50)
-        //.attr("height", 40)
-        .attr("fill", function(d) {
-            return getHSL(d.BlockType);
-        });
+            .attr("fill", function(d) {
+                return getHSL(d.BlockType);
+            });
+
+        var idRects = nodes.append("rect")
+            .attr('class', 'idrect')
 
         nodes.append("svg:text")
-            .attr("class", "nodetext")
-            .attr("dx", 0)
-            .attr("dy", 0)
+            .attr("class", "nodetype")
+            .attr("dx", 4)
             .text(function(d) {
                 return d.BlockType;
             }).each(function(d) {
                 var bbox = this.getBBox();
-                d.width = d.width > bbox.width ? d.width : bbox.width;
-                d.height = d.height > bbox.height ? d.height : bbox.height;
+                d.width = (d.width > bbox.width ? d.width : bbox.width) + 8;
+                d.height = (d.height > bbox.height ? d.height : bbox.height) + 4;
             }).attr("dy", function(d) {
-                return 1 * d.height;
+                return 2 * d.height - 4;
             })
 
         nodes.append("svg:text")
-            .attr("class", "nodetext")
-            .attr("dx", 0)
+            .attr("class", "nodeid")
+            .attr("dx", 4)
             .attr("dy", function(d) {
-                return 2 * d.height;
+                return 1 * d.height;
             })
             .text(function(d) {
                 return d.ID;
             }).each(function(d) {
                 var bbox = this.getBBox();
-                d.width = d.width > bbox.width ? d.width : bbox.width;
-                d.height = d.height > bbox.height ? d.height : bbox.height;
+                d.width = (d.width > bbox.width ? d.width : bbox.width) + 8;
+                d.height = (d.height > bbox.height ? d.height : bbox.height);
             });
 
+        idRects
+            .attr('x', 0)
+            .attr('y', 0)
+            .attr('width', function(d) {
+                return d.width;
+            })
+            .attr('height', function(d) {
+                return d.height * 1.2;
+            })
+
         rects
+            .attr('x', 0)
+            .attr('y', 0)
             .attr('width', function(d) {
                 return d.width;
             })
@@ -465,7 +473,7 @@ $(function() {
         svg.selectAll('.edgePing')
             .each(function(d) {
                 d.rateLoc += 0.001 + Math.min(d.rate, 100) / 4000.0;
-                if (d.rateLoc > .75) d.rateLoc = 0;
+                if (d.rateLoc > 1) d.rateLoc = 0;
             })
             .attr('cx', function(d) {
                 return d.source.x + (d.target.x - d.source.x) * d.rateLoc;
@@ -699,8 +707,8 @@ $(function() {
     var termOn = false;
     $('#term').hide();
     $('#hiddenTerm').focusout(function(e) {
-        termOn = false;
-        $('#term').hide();
+        //termOn = false;
+        //$('#term').hide();
     });
 
     document.onkeydown = function(e) {
@@ -870,4 +878,5 @@ $(function() {
             y: p1.y + ua * (p2.y - p1.y)
         };
     }
+    2
 });
