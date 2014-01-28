@@ -34,7 +34,8 @@ compiled_html: index.html.go
 
 clean: 
 	rm -rf $(BLDDIR)
-	rm $(DAEMONDIR)/_*.go
+	rm $(DAEMONDIR)/static_*.go
+
 
 .PHONY: all
 .PHONY: $(BINARIES)
