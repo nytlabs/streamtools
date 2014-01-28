@@ -31,6 +31,7 @@
 })(jQuery, 'smartresize');
 
 $(function() {
+    //var HOST = "http://localhost:7080/";
     var HOST = "";
     var width = $(window).width(),
         height = $(window).height();
@@ -167,7 +168,7 @@ $(function() {
 
         $('#create').on('click', function() {
             var id = window.prompt('create an id for this block', '');
-            $.get('http://localhost:7080/create?blockType=' + $('#library').val() + '&id=' + id, function(data) {
+            $.get(HOST + 'create?blockType=' + $('#library').val() + '&id=' + id, function(data) {
                 update();
             });
         });
@@ -235,7 +236,7 @@ $(function() {
                 }));
 
                 $("#delete").unbind().on('click', function() {
-                    $.get('http://localhost:7080/delete?id=' + d.id, function(data) {
+                    $.get(HOST + 'delete?id=' + d.id, function(data) {
                         update();
                     });
                 });
@@ -265,8 +266,8 @@ $(function() {
         nodes.on("mousedown", function(d) {
             if (connectState == 2) {
                 connectState = 0;
-                console.log('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id);
-                $.get('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id, function(data) {
+                console.log(HOST + 'connect?from=' + connectSource + '&to=' + d.id);
+                $.get(HOST + 'connect?from=' + connectSource + '&to=' + d.id, function(data) {
                     update();
                 });
             }
@@ -328,8 +329,8 @@ $(function() {
             }));
 
             $("#delete").unbind().on('click', function() {
-                //console.log('http://localhost:7080/delete?id=' + d.ID)
-                $.get('http://localhost:7080/delete?id=' + d.ID, function(data) {
+                //console.log(HOST + 'delete?id=' + d.ID)
+                $.get(HOST + 'delete?id=' + d.ID, function(data) {
                     update();
                     $('#block_bar').hide();
                 });
@@ -644,7 +645,7 @@ $(function() {
 
     function routeCommand(tokens, obj) {
         var routeTokens = tokens[0].split('/');
-        var query = 'http://localhost:7080/blocks/' + routeTokens[0] + '/' + routeTokens[1];
+        var query = HOST + 'blocks/' + routeTokens[0] + '/' + routeTokens[1];
 
         if (obj === null) {
             $.ajax({
