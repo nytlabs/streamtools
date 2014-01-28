@@ -116,6 +116,8 @@ $(function() {
             for (var i = 0; i < data.length; i++) {
                 if (data[i].BlockType != "connection" && !blocks.hasOwnProperty(data[i].ID)) {
                     data[i].id = data[i].ID;
+                    data[i].width = 0;
+                    data[i].height = 0;
                     data[i].hsl = getHSL(data[i].BlockType);
                     blocks[data[i].ID] = data[i];
                     nodes.push(blocks[data[i].ID]);
@@ -257,110 +259,132 @@ $(function() {
             return d.id;
         });
 
-        node.enter()
+        var nodes = node.enter()
             .append("g")
-            .call(force.drag)
-            .on("mousedown", function(d) {
-                if (connectState == 2) {
-                    connectState = 0;
-                    console.log('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id);
-                    $.get('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id, function(data) {
-                        update();
+            .call(force.drag);
+
+        nodes.on("mousedown", function(d) {
+            if (connectState == 2) {
+                connectState = 0;
+                console.log('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id);
+                $.get('http://localhost:7080/connect?from=' + connectSource + '&to=' + d.id, function(data) {
+                    update();
+                });
+            }
+
+            if (connectState == 1) {
+                connectSource = d.id;
+                connectState = 2;
+                $('#source').html('source: ' + d.id);
+                $('#target').html('select a target block');
+            }
+
+
+            $('#block_bar').show();
+
+            var infoTmp = $('#block_info').html();
+            var ruleTmp = $('#block_rule').html();
+
+            if (d.Routes.indexOf("get_rule") !== -1) {
+                $.get(HOST + "blocks/" + d.ID + "/get_rule", function(ruleData) {
+                    var tmpl = _.template(ruleTmp, {
+                        block: d,
+                        rule: ruleData,
+                        routes: d.Routes
                     });
-                }
+                    $("#rule").html(tmpl);
 
-                if (connectState == 1) {
-                    connectSource = d.id;
-                    connectState = 2;
-                    $('#source').html('source: ' + d.id);
-                    $('#target').html('select a target block');
-                }
+                    $("#update").on("click", function() {
+                        var rule = {};
+                        for (var key in ruleData) {
+                            var ruleInput = $('#' + d.ID + "_" + key);
+                            var val = ruleInput.val();
+                            var type = ruleInput.prop("tagName");
 
-
-                $('#block_bar').show();
-
-                var infoTmp = $('#block_info').html();
-                var ruleTmp = $('#block_rule').html();
-
-                if (d.Routes.indexOf("get_rule") !== -1) {
-                    $.get(HOST + "blocks/" + d.ID + "/get_rule", function(ruleData) {
-                        var tmpl = _.template(ruleTmp, {
-                            block: d,
-                            rule: ruleData,
-                            routes: d.Routes
-                        });
-                        $("#rule").html(tmpl);
-
-                        $("#update").on("click", function() {
-                            var rule = {};
-                            for (var key in ruleData) {
-                                var ruleInput = $('#' + d.ID + "_" + key);
-                                var val = ruleInput.val();
-                                var type = ruleInput.prop("tagName");
-
-                                switch (typeof(ruleData[key])) {
-                                    case 'boolean':
-                                        rule[key] = val === 'true' ? true : false;
-                                        break;
-                                    case 'string':
-                                        rule[key] = val;
-                                        break;
-                                    case 'object':
-                                        rule[key] = JSON.parse(val);
-                                        break;
-                                    case 'number':
-                                        rule[key] = parseFloat(val);
-                                        break;
-                                }
+                            switch (typeof(ruleData[key])) {
+                                case 'boolean':
+                                    rule[key] = val === 'true' ? true : false;
+                                    break;
+                                case 'string':
+                                    rule[key] = val;
+                                    break;
+                                case 'object':
+                                    rule[key] = JSON.parse(val);
+                                    break;
+                                case 'number':
+                                    rule[key] = parseFloat(val);
+                                    break;
                             }
-                            $.post(HOST + "blocks/" + d.ID + "/set_rule", JSON.stringify(rule), function(data) {
-                                //console.log(data)
-                            });
+                        }
+                        $.post(HOST + "blocks/" + d.ID + "/set_rule", JSON.stringify(rule), function(data) {
+                            //console.log(data)
                         });
-                    });
-                } else {
-                    $("#rule").empty();
-                }
-                $("#info").html(_.template(infoTmp, {
-                    block: d
-                }));
-
-                $("#delete").unbind().on('click', function() {
-                    //console.log('http://localhost:7080/delete?id=' + d.ID)
-                    $.get('http://localhost:7080/delete?id=' + d.ID, function(data) {
-                        update();
-                        $('#block_bar').hide();
                     });
                 });
+            } else {
+                $("#rule").empty();
+            }
+            $("#info").html(_.template(infoTmp, {
+                block: d
+            }));
 
-            })
-            .on("mouseover", function(d) {
-                d3.select(this).attr('class', '');
+            $("#delete").unbind().on('click', function() {
+                //console.log('http://localhost:7080/delete?id=' + d.ID)
+                $.get('http://localhost:7080/delete?id=' + d.ID, function(data) {
+                    update();
+                    $('#block_bar').hide();
+                });
             });
 
-        node.append("rect")
+        });
+
+        nodes.on("mouseover", function(d) {
+            d3.select(this).attr('class', '');
+        });
+
+        var rects = nodes.append("rect")
             .attr("class", "node")
-            .attr("width", 50)
-            .attr("height", 40)
-            .attr("fill", function(d) {
-                return getHSL(d.BlockType);
-            });
+        //.attr("width", 50)
+        //.attr("height", 40)
+        .attr("fill", function(d) {
+            return getHSL(d.BlockType);
+        });
 
-        node.append("svg:text")
+        nodes.append("svg:text")
             .attr("class", "nodetext")
-            .attr("dx", 12)
-            .attr("dy", 34)
+            .attr("dx", 0)
+            .attr("dy", 0)
             .text(function(d) {
                 return d.BlockType;
-            });
+            }).each(function(d) {
+                var bbox = this.getBBox();
+                d.width = d.width > bbox.width ? d.width : bbox.width;
+                d.height = d.height > bbox.height ? d.height : bbox.height;
+            }).attr("dy", function(d) {
+                return 1 * d.height;
+            })
 
-        node.append("svg:text")
+        nodes.append("svg:text")
             .attr("class", "nodetext")
-            .attr("dx", 12)
-            .attr("dy", 16)
+            .attr("dx", 0)
+            .attr("dy", function(d) {
+                return 2 * d.height;
+            })
             .text(function(d) {
                 return d.ID;
+            }).each(function(d) {
+                var bbox = this.getBBox();
+                d.width = d.width > bbox.width ? d.width : bbox.width;
+                d.height = d.height > bbox.height ? d.height : bbox.height;
             });
+
+        rects
+            .attr('width', function(d) {
+                return d.width;
+            })
+            .attr('height', function(d) {
+                return d.height * 2;
+            })
 
 
         node.exit().remove();
@@ -386,14 +410,14 @@ $(function() {
 
     function tick() {
         node.attr("transform", function(d) {
-            return "translate(" + (d.x - 25) + ", " + (d.y - 20) + ")";
-        })
+            return "translate(" + (d.x - (d.width * .5)) + ", " + (d.y - (d.height)) + ")";
+        });
 
         link.each(function(d) {
             var s1 = d.source;
             var s2 = d.target;
-            var width = 50;
-            var height = 40;
+            var width = d.target.width;
+            var height = d.target.height * 2;
             var x2 = s2.x;
             var y2 = s2.y;
             var intersection = intersect_line_box(s1, s2, {
@@ -441,7 +465,7 @@ $(function() {
         svg.selectAll('.edgePing')
             .each(function(d) {
                 d.rateLoc += 0.001 + Math.min(d.rate, 100) / 4000.0;
-                if (d.rateLoc > 1) d.rateLoc = 0;
+                if (d.rateLoc > .75) d.rateLoc = 0;
             })
             .attr('cx', function(d) {
                 return d.source.x + (d.target.x - d.source.x) * d.rateLoc;
