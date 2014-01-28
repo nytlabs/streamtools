@@ -34,6 +34,31 @@ func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Write(index())
 }
 
+func (d *Daemon) cssHandler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(css_main())
+}
+
+func (d *Daemon) d3Handler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(lib_d3())
+}
+
+func (d *Daemon) mainjsHandler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(js_main())
+}
+
+func (d *Daemon) jqueryHandler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(lib_jquery())
+}
+
+func (d *Daemon) underscoreHandler(w *rest.ResponseWriter, r *rest.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write(lib_underscore())
+}
+
 // The createHandler creates new blocks
 func (d *Daemon) createHandler(w *rest.ResponseWriter, r *rest.Request) {
 	err := r.ParseForm()
@@ -434,6 +459,11 @@ func (d *Daemon) Run(port string) {
 	//TODO: make this a _real_ restful API
 	handler.SetRoutes(
 		rest.Route{"GET", "/", d.rootHandler},
+		rest.Route{"GET", "/static/main.css", d.cssHandler },
+		rest.Route{"GET", "/static/d3.v3.min.js", d.d3Handler },
+		rest.Route{"GET", "/static/main.js", d.mainjsHandler },
+		rest.Route{"GET", "/static/jquery-2.1.0.min.js", d.jqueryHandler },
+		rest.Route{"GET", "/static/underscore-min.js", d.underscoreHandler },		
 		rest.Route{"GET", "/library", d.libraryHandler},
 		rest.Route{"GET", "/list", d.listHandler},
 		rest.Route{"GET", "/create", d.createHandler},

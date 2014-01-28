@@ -1,3 +1,35 @@
+// http://www.paulirish.com/2009/throttled-smartresize-jquery-event-handler/
+(function($, sr) {
+
+    // debouncing function from John Hann
+    // http://unscriptable.com/index.php/2009/03/20/debouncing-javascript-methods/
+    var debounce = function(func, threshold, execAsap) {
+        var timeout;
+
+        return function debounced() {
+            var obj = this,
+                args = arguments;
+
+            function delayed() {
+                if (!execAsap)
+                    func.apply(obj, args);
+                timeout = null;
+            }
+
+            if (timeout)
+                clearTimeout(timeout);
+            else if (execAsap)
+                func.apply(obj, args);
+
+            timeout = setTimeout(delayed, threshold || 100);
+        };
+    };
+    // smartresize 
+    jQuery.fn[sr] = function(fn) {
+        return fn ? this.bind('resize', debounce(fn)) : this.trigger(sr);
+    };
+})(jQuery, 'smartresize');
+
 $(function() {
     //var HOST = "http://localhost:7080/";
     var HOST = "";
@@ -112,7 +144,6 @@ $(function() {
             start();
         });
     }
-    window.update = update;
 
     update();
 
@@ -141,11 +172,14 @@ $(function() {
         });
     });
 
-    $(window).on("resize", function() {
+    $(window).smartresize(function(e) {
         svg.attr("width", $(window).width());
-        svg.attr("height", $(window).height());
+        svg.attr("height", window.innerHeight);
+        force.size([$(window).width(), window.innerHeight]);
+        start();
     });
 
+    $('#block_bar').hide();
 
     var CONNECT_ZERO_STATE = 0;
     var CONNECT_SOURCE_STATE = 1;
@@ -242,6 +276,9 @@ $(function() {
                     $('#target').html('select a target block');
                 }
 
+
+                $('#block_bar').show();
+
                 var infoTmp = $('#block_info').html();
                 var ruleTmp = $('#block_rule').html();
 
@@ -292,6 +329,7 @@ $(function() {
                     //console.log('http://localhost:7080/delete?id=' + d.ID)
                     $.get('http://localhost:7080/delete?id=' + d.ID, function(data) {
                         update();
+                        $('#block_bar').hide();
                     });
                 });
 
@@ -347,9 +385,6 @@ $(function() {
     }
 
     function tick() {
-        //node.attr("x", function(d) { return d.x - 25; })
-        //    .attr("y", function(d) { return d.y - 10; })
-
         node.attr("transform", function(d) {
             return "translate(" + (d.x - 25) + ", " + (d.y - 20) + ")";
         })
@@ -637,96 +672,6 @@ $(function() {
         return;
     }
 
-    /*document.onkeydown = function(e){
-    // capture backspace
-    if(e.which == 8 || e.which == 46){
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    if(e.which == 37){
-        // left
-        if(cursorIndex > 0){
-            cursorIndex--;
-        }
-    } else if (e.which == 39){
-        //right 
-        if(cursorIndex < cmd.length){
-            cursorIndex++;
-        }
-    } else if (e.which == 8 || e.which == 46) {
-        // backspace 
-        cmd = cmd.substring(0,cursorIndex - 1) + cmd.substring(cursorIndex);
-        if (cursorIndex > 0){
-            cursorIndex--;
-        }
-    } else if (e.which == 38){
-      // up
-      if(cmdHistoryIndex > 0){
-        cmdHistoryIndex--; 
-        cmd = cmdHistory[cmdHistoryIndex];
-        cursorIndex = cmd.length;
-      }
-    } else if (e.which == 40){
-      // down
-      if(cmdHistoryIndex < cmdHistory.length - 1){
-        cmdHistoryIndex++; 
-        cmd = cmdHistory[cmdHistoryIndex];
-        cursorIndex = cmd.length;
-      }
-    }else if (e.which == 13 && cmd.length === 0){
-      // enter w/o command
-        if (cmd.length === 0){
-          clearResponse();
-        }
-    } else if (e.which == 13 && cmd.length !== 0) {
-      // enter with command
-        console.log(cmdHistory.length - 1, cmd)
-        
-        if(cmdHistoryIndex != cmdHistory.length - 1){
-          cmdHistory[cmdHistory.length - 1] = cmd;
-        } 
-        
-        cmdHistory.push(cmd);
-
-        cmdHistoryIndex = cmdHistory.length - 1;
-        execute(cmd);
-        cmd = '';
-        cmdHistory[cmdHistory.length - 1] = '';
-        cursorIndex = 0;
-    } else if (e.which !== 16){
-        var c = e.which;
-        if (_to_ascii.hasOwnProperty(c)) {
-            c = _to_ascii[c];
-        }
-        
-        if (!e.shiftKey && (c >= 65 && c <= 90)) {
-            c = String.fromCharCode(c + 32);
-        } else if (e.shiftKey && shiftUps.hasOwnProperty(c)) {
-            c = shiftUps[c];
-        } else {
-            c = String.fromCharCode(c);
-        }
-
-        cursorIndex++; 
-        cmd = cmd.substring(0, cursorIndex - 1) + c + cmd.substring(cursorIndex - 1)
-
-        if(cmdHistoryIndex == cmdHistory.length - 1){
-          cmdHistory[cmdHistory.length - 1] = cmd;
-        }
-    }
-    console.log(cmdHistory, cmd);
-
-    termStart.innerHTML = safe(cmd.substring(0, cursorIndex));
-
-    if (cursorIndex === cmd.length){
-        cursor.innerHTML = '&nbsp;';
-    } else {
-        cursor.innerHTML = safe(cmd.substring(cursorIndex, cursorIndex + 1));
-    }
-
-    end.innerHTML = safe(cmd.substring(cursorIndex + 1, cmd.length));
-}*/
     var termOn = false;
     $('#term').hide();
     $('#hiddenTerm').focusout(function(e) {
@@ -822,8 +767,6 @@ $(function() {
 
         end.innerHTML = safe(cmd.substring(cursorIndex + 1, cmd.length));
     };
-
-
 
     //http://stackoverflow.com/questions/4810841/json-pretty-print-using-javascript
     function syntaxHighlight(json) {

@@ -32,6 +32,7 @@ body {
     overflow: hidden;
     background: #F3F8F3;
     font-family: helvetica;
+    margin: 0px;
 }
 
 #block_bar{
