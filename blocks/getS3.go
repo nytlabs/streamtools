@@ -3,6 +3,7 @@ package blocks
 import (
 	"bufio"
 	"compress/gzip"
+	"container/heap"
 	"encoding/json"
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
@@ -35,8 +36,12 @@ func GetS3(b *Block) {
 		panic(err.Error())
 	}
 
+	// we make a priority queue to store keys in, in case Jacqui sends us a
+	// billion keys to get all at once
+	pq := &PriorityQueue{}
+	heap.Init(pq)
+
 	timer := time.NewTimer(time.Duration(10) * time.Second)
-	todo := make(chan job, 2000) // max number of jobs is 2000
 	s := s3.New(auth, aws.USEast)
 
 	for {
@@ -85,18 +90,17 @@ func GetS3(b *Block) {
 			key := keyInterface.(string)
 
 			bucketName := rule.BucketName
-			j := job{
+			j := &job{
 				bucket: bucketName,
 				key:    key,
 				retry:  0,
 			}
-			log.Println(j)
-			//TODO this should be a priority queue
-			if len(todo) == 100 {
-				log.Println("Trying to queue up more than 100 keys!")
-				break
+			queueMessage := &PQMessage{
+				val: j,
+				t:   time.Now(),
 			}
-			todo <- j
+			log.Println(j)
+			heap.Push(pq, queueMessage)
 		case r := <-b.Routes["set_rule"]:
 			unmarshal(r, rule)
 		case msg := <-b.Routes["get_rule"]:
@@ -120,11 +124,21 @@ func GetS3(b *Block) {
 			continue
 		}
 		// if there's nothing todo, then go wait for something to do
-		if len(todo) == 0 {
+		if len(*pq) == 0 {
 			continue
 		}
 		// otherwise get on with the next key
-		j := <-todo
+		msgInterface := heap.Pop(pq)
+		msg, ok := msgInterface.(PQMessage)
+		if !ok {
+			log.Println("could not convert message to PQMessage")
+			break
+		}
+		j, ok := msg.val.(job)
+		if !ok {
+			log.Println("could not convert job interface to job object")
+			break
+		}
 		// Open Bucket
 		bucket := s.Bucket(j.bucket)
 		log.Println("[POLLS3] emitting", j.bucket, j.key)
@@ -133,7 +147,7 @@ func GetS3(b *Block) {
 			log.Println(err)
 			j.retry++
 			if j.retry < 3 {
-				todo <- j
+				heap.Push(pq, msg)
 			}
 			continue // continue
 		}
@@ -143,7 +157,7 @@ func GetS3(b *Block) {
 			log.Println("failed to open a gzip reader")
 			j.retry++
 			if j.retry < 3 {
-				todo <- j
+				heap.Push(pq, msg)
 			}
 			continue // continue
 		}
