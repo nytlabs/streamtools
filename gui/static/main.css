@@ -1,0 +1,163 @@
+
+.link {
+  stroke: #000;
+  stroke-width: 1.5px;
+}
+
+.node {
+    cursor: pointer;
+    stroke-width: 1px;
+    stroke: rgba(80,80,80,1);
+}
+
+.nodetype, .nodeid{
+    cursor: pointer;
+}
+
+.nodetype {
+    font-family: Monaco, courier;
+    font-variant: small-caps;
+}
+
+line.arrow {
+    stroke: #666;
+    stroke-width: 1px;
+}
+marker#arrow {
+    fill: #666;
+}
+
+body {
+    overflow: hidden;
+    background: #F3F8F3;
+    font-family: helvetica;
+    margin: 0px;
+}
+
+#block_bar{
+    width: 200px;
+    position: absolute;
+    background: #728896;
+    right: 0px;
+    top: 140px;
+}
+
+.idrect {
+    fill: rgba(220,220,220,1);
+    cursor: pointer;
+}
+
+.rule {
+    font-size: 14px;
+    display: inline-block;
+    font-variant: small-caps;
+    padding: 4px;
+}
+
+#rule .name {
+    font-weight: bold;
+    display: inline-block;
+}
+
+#block_bar #info div, #block_bar #update, #block_bar #delete, #create, #connect {
+    width: 184px;
+    padding: 8px;
+    font-size: 18px;
+}
+
+#connect{
+    background: rgba(110,130,250,1);
+}
+
+#connect:hover{
+    background: rgba(110,130,250,.5);
+    cursor: pointer;
+}
+
+#create {
+    background: rgba(50,250,30,1);
+}
+
+#create:hover{
+    background:  rgba(50,250,30,.5);
+    cursor: pointer;
+}
+
+#update {
+    background: rgba(255,255,255,.5);
+}
+
+#delete {
+    background: rgba(250,50,50,1.0);   
+}
+
+#delete:hover{
+    cursor: pointer;
+    background: rgba(250,50,50,.5);     
+}
+
+#update:hover{
+    cursor: pointer;
+    background: rgba(255,255,255,.25);
+}
+
+#rule_bar .in {
+    display: block;
+}
+
+textarea {
+    font-family: Monaco, Courier;
+}
+
+.edgeRate{
+    cursor: pointer;
+    font-family: helvetica, sans-serif;
+    fill: rgba(100, 217, 239, 1);
+    font-size: 12px;
+}
+
+.edgePing {
+    fill : #666;
+}
+
+#create {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+}
+
+#connect {
+    position: absolute;
+    top: 50px;
+    right: 0px;
+}
+
+#term {
+    position: absolute;
+    width: 100%;
+    font-family: courier, monospace;
+    bottom: 10px;
+    left: 10px;
+}
+
+#response {
+    margin-bottom: 5px;
+}
+
+.inverted {
+    background: black;
+    color: white;
+}
+
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: red; }
+
+#hiddenTerm {
+    position: absolute;
+    left:-1000px;
+    width: 12;
+    height: 12px;
+}
