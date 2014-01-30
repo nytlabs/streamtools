@@ -11,12 +11,15 @@ type readWriteHandler struct {
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
-	var msg BMsg
+	var msg interface{}
 	err := json.Unmarshal(message.Body, &msg)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	self.toOut <- msg
+	out := BMsg{
+		Msg: msg,
+	}
+	self.toOut <- out
 	return nil
 }
 
