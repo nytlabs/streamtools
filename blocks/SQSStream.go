@@ -46,6 +46,7 @@ func SQSStream(b *Block) {
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:
+			r.Stop()
 			quit(b)
 			return
 		}
