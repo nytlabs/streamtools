@@ -14,7 +14,7 @@ getting started
 ===============
 
 1. Find a computer to play with. It needs to be Linux or OSX. 
-2. Download the latest [release](https://github.com/nytlabs/streamtools/releases).
+2. Download the latest [release](https://github.com/nytlabs/streamtools/releases). You need `st-linux` if you're on linux or `st-darwin` if you're on osx.
 3. In a terminal, change directory to wherever you downloaded the file. 
 4. Run `chmod +x st-linux` if you're on linux or `chmod +x st-darwin` on osx. This makes the file you downloaded executeable. 
 5. Now launch streamtools by typing `./st-linux` if you're on linux or `./st-darwin` if you're on osx. Your terminal should say `starting stream tools on port 7070`.
