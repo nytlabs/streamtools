@@ -10,8 +10,8 @@ import (
 func ToNSQ(b *Block) {
 
 	type toNSQRule struct {
-		NsqdHTTPAddrs string
-		Topic         string
+		NsqdTCPAddrs string
+		Topic        string
 	}
 
 	var rule *toNSQRule
@@ -29,7 +29,7 @@ func ToNSQ(b *Block) {
 			if rule == nil {
 				break
 			}
-			blob, err := json.Marshal(msg)
+			blob, err := json.Marshal(msg.Msg)
 			if err != nil {
 				log.Println("failed to marshal JSON")
 			}
@@ -44,7 +44,7 @@ func ToNSQ(b *Block) {
 				rule = &toNSQRule{}
 			}
 			unmarshal(msg, rule)
-			w = nsq.NewWriter(rule.NsqdHTTPAddrs)
+			w = nsq.NewWriter(rule.NsqdTCPAddrs)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &toNSQRule{})
