@@ -294,7 +294,7 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 
 	ResponseChan := make(chan interface{})
 	blockRouteChan := d.blockMap[id].Routes[route]
-	blockRouteChan <- blocks.BMsg{
+	blockRouteChan <- &blocks.BMsg{
 		Msg:          outMsg,
 		ResponseChan: ResponseChan,
 	}
@@ -433,7 +433,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	c.QuitChan = b.QuitChan
 
 	//create outchans for use only by blockroutine block.
-	c.OutChans = make(map[string]chan blocks.BMsg)
+	c.OutChans = make(map[string]chan *blocks.BMsg)
 
 	go blocks.Library[name].Routine(c)
 

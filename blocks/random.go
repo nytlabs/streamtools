@@ -86,7 +86,7 @@ func Random(b *Block) {
 				ResponseChan: nil,
 			}
 
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

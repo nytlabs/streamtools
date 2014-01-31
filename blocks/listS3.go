@@ -63,7 +63,7 @@ func ListS3(b *Block) {
 				Msg:          out,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, outMsg)
+			broadcast(b.OutChans, &outMsg)
 			log.Println("done emitting")
 		case r := <-b.Routes["set_rule"]:
 			unmarshal(r, rule)

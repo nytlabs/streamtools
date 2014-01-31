@@ -113,7 +113,7 @@ func Pack(b *Block) {
 					ResponseChan: nil,
 				}
 
-				broadcast(b.OutChans, outMsg)
+				broadcast(b.OutChans, &outMsg)
 				delete(bunches, idStr)
 			}
 		}

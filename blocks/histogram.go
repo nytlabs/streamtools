@@ -55,7 +55,7 @@ func Histogram(b *Block) {
 			out := BMsg{
 				Msg: data,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &histogramRule{})

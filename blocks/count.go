@@ -45,7 +45,7 @@ func Count(b *Block) {
 			out := BMsg{
 				Msg: outMsg,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &countRule{}

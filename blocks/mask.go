@@ -69,7 +69,7 @@ func Mask(b *Block) {
 					Msg:          maskJSON(maskMap, msgMap),
 					ResponseChan: nil,
 				}
-				broadcast(b.OutChans, out)
+				broadcast(b.OutChans, &out)
 			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
