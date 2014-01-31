@@ -66,7 +66,7 @@ func GetS3(b *Block) {
 				Msg:          out,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, outMsg)
+			broadcast(b.OutChans, &outMsg)
 			timer.Reset(time.Duration(0))
 			// the inChan case is responsible for putting a job into the bufferred
 			// todo channel

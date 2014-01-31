@@ -12,7 +12,7 @@ func PostHTTP(b *Block) {
 				Msg:          msg.Msg,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case <-b.QuitChan:
 			quit(b)
 			return

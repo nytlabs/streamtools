@@ -64,7 +64,7 @@ func GetHTTP(b *Block) {
 				Msg:          msg,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		}
 	}
 }

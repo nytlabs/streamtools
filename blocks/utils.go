@@ -6,7 +6,7 @@ import (
 )
 
 // broadcast emits a message to all output channels.
-func broadcast(channels map[string]chan BMsg, msg BMsg) {
+func broadcast(channels map[string]chan *BMsg, msg *BMsg) {
 	for _, c := range channels {
 		c <- msg
 	}
@@ -29,13 +29,13 @@ func updateOutChans(msg *OutChanMsg, b *Block) {
 // it into JSON, and echoes the current value of the supplied struct back to
 // the daemon. It is typically used to change state within a block from an HTTP
 // handler.
-func unmarshal(r BMsg, rule interface{}) {
+func unmarshal(r *BMsg, rule interface{}) {
 	// let's call this setRuleAndRespond?
 	decode(r, rule)
 	marshal(r, rule)
 }
 
-func decode(r BMsg, rule interface{}) {
+func decode(r *BMsg, rule interface{}) {
 	// why don't we call this setRule?
 	err := mapstructure.Decode(r.Msg, rule)
 	if err != nil {
@@ -45,7 +45,7 @@ func decode(r BMsg, rule interface{}) {
 	}
 }
 
-func marshal(r BMsg, rule interface{}) {
+func marshal(r *BMsg, rule interface{}) {
 	// why don't we call this "respond"
 	if r.ResponseChan != nil {
 		r.ResponseChan <- rule

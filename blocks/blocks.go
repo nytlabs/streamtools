@@ -50,9 +50,9 @@ type BlockTemplate struct {
 type Block struct {
 	BlockType string
 	ID        string
-	InChan    chan BMsg
-	OutChans  map[string]chan BMsg
-	Routes    map[string]chan BMsg
+	InChan    chan *BMsg
+	OutChans  map[string]chan *BMsg
+	Routes    map[string]chan *BMsg
 	AddChan   chan *OutChanMsg
 	InBlocks  map[string]bool // bool is dumb.
 	OutBlocks map[string]bool // bool is dumb.
@@ -63,7 +63,7 @@ type OutChanMsg struct {
 	// type of action to perform
 	Action int
 	// new channel to introduce to a block's outChan array
-	OutChan chan BMsg
+	OutChan chan *BMsg
 	// ID of the connection block
 	ID string
 }
@@ -71,20 +71,20 @@ type OutChanMsg struct {
 type BlockRoutine func(*Block)
 
 func NewBlock(name string, ID string) (*Block, error) {
-	routes := make(map[string]chan BMsg)
+	routes := make(map[string]chan *BMsg)
 
 	if _, ok := Library[name]; !ok {
 		return nil, errors.New("cannot find " + name + " in the Library")
 	}
 
 	for _, name := range Library[name].RouteNames {
-		routes[name] = make(chan BMsg)
+		routes[name] = make(chan *BMsg)
 	}
 
 	b := &Block{
 		BlockType: name,
 		ID:        ID,
-		InChan:    make(chan BMsg),
+		InChan:    make(chan *BMsg),
 		Routes:    routes,
 		AddChan:   make(chan *OutChanMsg),
 		QuitChan:  make(chan bool),

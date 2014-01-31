@@ -27,7 +27,7 @@ func Ticker(b *Block) {
 				Msg:          msg,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 

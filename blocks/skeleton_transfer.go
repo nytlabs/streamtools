@@ -24,11 +24,7 @@ func SkeletonTransfer(b *Block) {
 			if rule == nil {
 				break
 			}
-			messageBody := msg.Msg
-			out := BMsg{
-				Msg:messageBody,
-			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, msg)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

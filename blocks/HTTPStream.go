@@ -85,7 +85,7 @@ func HTTPStream(b *Block) {
 						out := BMsg{
 							Msg: outMsg,
 						}
-						broadcast(b.OutChans, out)
+						broadcast(b.OutChans, &out)
 					}
 				}
 				body.Reset()

@@ -1,7 +1,8 @@
 package blocks
 
 import (
-	"github.com/mikedewar/go-sqsReader" //sqsReader
+	"github.com/nikhan/go-sqsReader" //sqsReader
+	"encoding/json"
 )
 
 type fromSQSRule struct {
@@ -21,15 +22,20 @@ type Message struct {
 func SQSStream(b *Block) {
 	var rule *fromSQSRule
 	var r *sqsReader.Reader
-	outChan := make(chan map[string]interface{})
+	outChan := make(chan []byte)
 
 	for {
 		select {
 		case m := <-outChan:
-			out := BMsg{
-				Msg: m,
+			var outMsg interface{}
+			err := json.Unmarshal(m, &outMsg)
+			if err != nil {
+				break
 			}
-			broadcast(b.OutChans, out)
+			out := BMsg{
+				Msg: outMsg,
+			}
+			broadcast(b.OutChans, &out)
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &fromSQSRule{}
