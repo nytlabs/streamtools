@@ -129,12 +129,12 @@ func GetS3(b *Block) {
 		}
 		// otherwise get on with the next key
 		msgInterface := heap.Pop(pq)
-		msg, ok := msgInterface.(PQMessage)
+		msg, ok := msgInterface.(*PQMessage)
 		if !ok {
 			log.Println("could not convert message to PQMessage")
 			break
 		}
-		j, ok := msg.val.(job)
+		j, ok := msg.val.(*job)
 		if !ok {
 			log.Println("could not convert job interface to job object")
 			break
