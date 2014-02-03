@@ -29,34 +29,41 @@ type Daemon struct {
 }
 
 // The rootHandler returns information about the whole system
+// TODO: create a generic static file handler
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(index())
+	data, _ := Asset("gui/index.html")
+	w.Write(data)
 }
 
 func (d *Daemon) cssHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(css_main())
+	data, _ := Asset("gui/static/main.css")
+	w.Write(data)
 }
 
 func (d *Daemon) d3Handler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(lib_d3())
+	data, _ := Asset("gui/static/d3.v3.min.js")
+	w.Write(data)
 }
 
 func (d *Daemon) mainjsHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(js_main())
+	data, _ := Asset("gui/static/main.js")
+	w.Write(data)
 }
 
 func (d *Daemon) jqueryHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(lib_jquery())
+	data, _ := Asset("gui/static/jquery-2.1.0.min.js")
+	w.Write(data)
 }
 
 func (d *Daemon) underscoreHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Write(lib_underscore())
+	data, _ := Asset("gui/static/underscore-min.js")
+	w.Write(data)
 }
 
 // The createHandler creates new blocks
