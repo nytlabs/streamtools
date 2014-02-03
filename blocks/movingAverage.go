@@ -7,13 +7,23 @@ import (
 	"time"
 )
 
-// Count uses a priority queue to count the number of messages that have been sent
-// to the count block over a duration of time in seconds.
-//
-// Note that this is an exact count and therefore has O(N) memory requirements.
-func MovingAverage(b *Block) {
+func pqAverage(pq *PriorityQueue) float64 {
+	var sum float64
+	sum = 0
+	for i, pqmsg := range *pq {
+		v := pqmsg.val
+		val, ok := v.(float64)
+		if !ok {
+			log.Println("non float stored in moving average")
+			continue
+		}
+		sum += val
+	}
+	N := float64(len(*pq))
+	return sum / N
+}
 
-	var err error
+func MovingAverage(b *Block) {
 
 	type movingAverageRule struct {
 		Window string
@@ -21,12 +31,10 @@ func MovingAverage(b *Block) {
 	}
 
 	type avgData struct {
-		Average int
-		Window  string
+		Average float64
 	}
 
-	data := &avgData{Count: 0}
-	var rule *countRule
+	var rule *movingAverageRule
 	var tree *jee.TokenTree
 
 	window := time.Duration(0)
@@ -35,16 +43,16 @@ func MovingAverage(b *Block) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
-	emptyByte := make([]byte, 0)
-
 	for {
 		select {
 		case query := <-b.Routes["moving_average"]:
-			data.Count = len(*pq)
+			data := avgData{
+				Average: pqAverage(pq),
+			}
 			marshal(query, data)
 		case <-b.Routes["poll"]:
 			outMsg := map[string]interface{}{
-				"Count": len(*pq),
+				"Averageg": pqAverage(pq),
 			}
 			out := BMsg{
 				Msg: outMsg,
@@ -52,10 +60,10 @@ func MovingAverage(b *Block) {
 			broadcast(b.OutChans, &out)
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			if rule == nil {
-				rule = &countRule{}
+				rule = &movingAverageRule{}
 			}
 			unmarshal(ruleUpdate, rule)
-			token, err := jee.Lexer(rule.Key)
+			token, err := jee.Lexer(rule.Path)
 			if err != nil {
 				log.Println(err.Error())
 				break
@@ -71,7 +79,7 @@ func MovingAverage(b *Block) {
 			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
-				marshal(msg, &countRule{})
+				marshal(msg, &movingAverageRule{})
 			} else {
 				marshal(msg, rule)
 			}
@@ -80,7 +88,7 @@ func MovingAverage(b *Block) {
 			return
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
-		case <-b.InChan:
+		case msg := <-b.InChan:
 			if rule == nil {
 				break
 			}
@@ -92,9 +100,15 @@ func MovingAverage(b *Block) {
 				log.Println(err.Error())
 				break
 			}
-
+			// TODO make this a type swtich and convert anything we can to a
+			// float
+			val, ok := val.(float64)
+			if !ok {
+				log.Println("trying to put a non-float into the moving average")
+				continue
+			}
 			queueMessage := &PQMessage{
-				val: &val,
+				val: val,
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
