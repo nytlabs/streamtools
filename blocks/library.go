@@ -164,6 +164,11 @@ func BuildLibrary() {
 			Routine:    Var,
 		},
 		&BlockTemplate{
+			BlockType:  "movingAverage",
+			RouteNames: []string{"set_rule", "get_rule", "moving_average", "poll"},
+			Routine:    MovingAverage,
+		},
+		&BlockTemplate{
 			BlockType:  "HTTPStream",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    HTTPStream,
