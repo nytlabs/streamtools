@@ -6,7 +6,7 @@ import (
 
 // emits the time. Specify the period - the time between emissions - in seconds
 // as a rule.
-func Ticker(b *Block) {
+func GenTicker(b *Block) {
 
 	type tickerRule struct {
 		Interval string

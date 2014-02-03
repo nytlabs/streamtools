@@ -1,8 +1,8 @@
 package blocks
 
 import (
-	"github.com/nikhan/go-sqsReader" //sqsReader
 	"encoding/json"
+	"github.com/nikhan/go-sqsReader" //sqsReader
 )
 
 type fromSQSRule struct {
@@ -17,9 +17,9 @@ type Message struct {
 	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
 }
 
-// SQSStream hooks into an Amazon SQS, and emits every message it sees into
+// hooks into an Amazon SQS, and emits every message it sees into
 // streamtools
-func SQSStream(b *Block) {
+func FromSQS(b *Block) {
 	var rule *fromSQSRule
 	var r *sqsReader.Reader
 	outChan := make(chan []byte)
