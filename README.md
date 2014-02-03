@@ -11,7 +11,7 @@ Streamtools is built upon a few core principles:
 Streamtools is an open source project written in Go and is intended to be used with streams of JSON.
 
 ![s3 polling
-example](https://raw.github.com/mikedewar/streamtools/movingaverage/examples/crazy_example.png)
+example](https://raw.github.com/mikedewar/streamtools/master/examples/crazy_example.png)
 
 getting started
 ===============
