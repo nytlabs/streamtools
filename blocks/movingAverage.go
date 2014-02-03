@@ -10,7 +10,7 @@ import (
 func pqAverage(pq *PriorityQueue) float64 {
 	var sum float64
 	sum = 0
-	for i, pqmsg := range *pq {
+	for _, pqmsg := range *pq {
 		v := pqmsg.val
 		val, ok := v.(float64)
 		if !ok {
