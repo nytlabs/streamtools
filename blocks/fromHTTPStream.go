@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-// HTTPStream creates a persistent HTTP connection, emitting all messages from
+// creates a persistent HTTP connection, emitting all messages from
 // the stream into streamtools
-func HTTPStream(b *Block) {
+func FromHTTPStream(b *Block) {
 
 	type longHTTPRule struct {
 		Endpoint string

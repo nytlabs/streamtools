@@ -1,10 +1,10 @@
 package blocks
 
 import (
+	"encoding/json"
 	"math/rand"
 	"strings"
 	"time"
-	"encoding/json"
 )
 
 var (
@@ -13,7 +13,7 @@ var (
 )
 
 // emits a JSON blob full of random stuff. Set the Interval using a rule.
-func Random(b *Block) {
+func GenRandom(b *Block) {
 
 	type randomRule struct {
 		Interval string
