@@ -8,20 +8,23 @@ import (
 )
 
 // build the histogram JSON for output
-func buildHistogram(histogram map[string]*PriorityQueue) map[string]interface{} {
-
-	buckets := make([]map[string]interface{}, len(histogram))
+func buildHistogram(histogram map[string]*PriorityQueue) interface{} {
+	var data interface{}
+	var buckets []interface{}
+	buckets = make([]interface{}, len(histogram))
 
 	i := 0
 	for k, pq := range histogram {
-		bucket := map[string]interface{}{
+		var bucket interface{}
+		bucket = map[string]interface{}{
 			"Count": len(*pq),
 			"Label": k,
 		}
 		buckets[i] = bucket
 		i++
 	}
-	data := map[string]interface{}{
+
+	data = map[string]interface{}{
 		"Histogram": buckets,
 	}
 	return data
