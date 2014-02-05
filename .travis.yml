@@ -7,14 +7,9 @@ go:
   - tip
   
 before_install:
-  - go get github.com/jteeuwen/go-bindata/...
-  - cd /home/travis/gopath/bin 
-  - ls
-  - cd/home/travis/.gvm/pkgsets/go1.2/global/bin
-  - ls
-  #- export PATH=$GOPATH/bin:$PATH
-  #- mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cd $GOPATH/src/github.com/nytlabs/streamtools
+  - export PATH=/home/travis/gopath/bin:$PATH
+  - mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
+  - cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
+  - cd $GOPATH/src/github.com/nytlabs/streamtools
 
 install: make
