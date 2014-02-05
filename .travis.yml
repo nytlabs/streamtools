@@ -7,6 +7,9 @@ go:
   - tip
   
 before_install:
+  - go get github.com/jteeuwen/go-bindata/...
+  - ls
+  - pwd
   - export PATH=$GOPATH/bin:$PATH
   - mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
   - cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
