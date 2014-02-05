@@ -82,6 +82,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToNSQ,
 		},
+		&BlockTemplate{
+			BlockType:  "toBeanstalkd",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToBeanstalkd,
+		},
 
 		/// state blocks
 		&BlockTemplate{
@@ -109,12 +114,13 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Pack,
 		},
+        /*
 		&BlockTemplate{
 			BlockType:  "learn",
 			RouteNames: []string{"set_rule", "get_rule", "state", "poll"},
 			Routine:    Learn,
 		},
-
+        */
 		/// transfer blocks
 		&BlockTemplate{
 			BlockType:  "mask",
