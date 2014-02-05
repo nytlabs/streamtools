@@ -13,7 +13,8 @@ func ToBeanstalkd(b *Block) {
         Tube string
         TTR int
     }
-    var conn lentil.Beanstalkd
+    var conn *lentil.Beanstalkd
+    var e error
     var tube = "default"
     var ttr = 0
     var rule *toBeanstalkdRule
@@ -25,9 +26,10 @@ func ToBeanstalkd(b *Block) {
                 rule = &toBeanstalkdRule{}
             }
             unmarshal(m, rule)
-            conn, err := lentil.Dial(rule.Host)
-            if err != nil {
-                log.Panic(err.Error())
+
+            conn, e = lentil.Dial(rule.Host)
+            if e != nil {
+                log.Panic(e.Error())
             } else {
                 if len(rule.Tube) > 0 {
                     tube = rule.Tube
@@ -36,6 +38,7 @@ func ToBeanstalkd(b *Block) {
                     ttr = rule.TTR
                 }
                 conn.Use(tube)
+                log.Println("initialized connection using tube:", tube)
             }
 
         case r := <-b.Routes["get_rule"]:
@@ -54,11 +57,12 @@ func ToBeanstalkd(b *Block) {
                 log.Println("wow bad json")
             }
             /* your code goes here */
-            jobId, err := conn.Put(0, 0, ttr, []byte(msgStr))
+ 
+            jobId, err := conn.Put(0, 0, ttr, msgStr)
             if err != nil {
                 log.Panic(err.Error())
             } else{
-                log.Println("put jobId %d on queue", jobId)
+                log.Println("put job on queue: Job Id:", jobId)
             }
             //broadcast(b.OutChans, msg)
         case msg := <-b.AddChan:
