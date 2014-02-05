@@ -29,7 +29,7 @@ func ToBeanstalkd(b *Block) {
 
             conn, e = lentil.Dial(rule.Host)
             if e != nil {
-                log.Panic(e.Error())
+                log.Println(e.Error())
             } else {
                 if len(rule.Tube) > 0 {
                     tube = rule.Tube
@@ -64,7 +64,7 @@ func ToBeanstalkd(b *Block) {
  			}
             jobId, err := conn.Put(0, 0, ttr, msgStr)
             if err != nil {
-                log.Panic(err.Error())
+                log.Println(err.Error())
             } else{
                 log.Println("put job on queue: Job Id:", jobId)
             }
