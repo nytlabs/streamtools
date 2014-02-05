@@ -3,3 +3,9 @@ go:
   - 1.2
   - release
   - tip
+  
+before_install:
+  - go get github.com/nytlabs/streamtools/blocks
+  - go get github.com/nytlabs/streamtools/daemon
+
+install: make
