@@ -32,36 +32,42 @@ type Daemon struct {
 // TODO: create a generic static file handler
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data, _ := Asset("gui/index.html")
 	w.Write(data)
 }
 
 func (d *Daemon) cssHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	data, _ := Asset("gui/static/main.css")
 	w.Write(data)
 }
 
 func (d *Daemon) d3Handler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/d3.v3.min.js")
 	w.Write(data)
 }
 
 func (d *Daemon) mainjsHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/main.js")
 	w.Write(data)
 }
 
 func (d *Daemon) jqueryHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/jquery-2.1.0.min.js")
 	w.Write(data)
 }
 
 func (d *Daemon) underscoreHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/underscore-min.js")
 	w.Write(data)
 }
@@ -252,6 +258,18 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 	ApiResponse(w, 200, "CONNECTION_CREATED")
 }
 
+// this should probably be async someday
+func (d *Daemon) routeMsg(id string, route string, outMsg interface{}) interface{} {
+	ResponseChan := make(chan interface{})
+	blockRouteChan := d.blockMap[id].Routes[route]
+	blockRouteChan <- &blocks.BMsg{
+		Msg:          outMsg,
+		ResponseChan: ResponseChan,
+	}
+	respMsg := <-ResponseChan
+	return respMsg
+}
+
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
 func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 	//id := strings.Split(r.URL.Path, "/")[2]
@@ -299,15 +317,7 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 		}
 	}
 
-	ResponseChan := make(chan interface{})
-	blockRouteChan := d.blockMap[id].Routes[route]
-	blockRouteChan <- &blocks.BMsg{
-		Msg:          outMsg,
-		ResponseChan: ResponseChan,
-	}
-	respMsg := <-ResponseChan
-
-	respJson, err := json.Marshal(respMsg)
+	respJson, err := json.Marshal(d.routeMsg(id, route, outMsg))
 	if err != nil {
 		ApiResponse(w, 500, "BAD_RESPONSE_FROM_BLOCK")
 		return
@@ -323,7 +333,7 @@ func (d *Daemon) libraryHandler(w *rest.ResponseWriter, r *rest.Request) {
 	fmt.Fprint(w, blocks.LibraryBlob)
 }
 
-func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
+func (d *Daemon) listBlocks() []map[string]interface{} {
 	blockList := []map[string]interface{}{}
 	for _, v := range d.blockMap {
 		blockItem := make(map[string]interface{})
@@ -343,7 +353,40 @@ func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 		}
 		blockList = append(blockList, blockItem)
 	}
-	blob, _ := json.Marshal(blockList)
+	return blockList
+}
+
+func (d *Daemon) makeExport() []map[string]interface{} {
+	blockList := d.listBlocks()
+	for _, b := range blockList {
+		_, ok := d.blockMap[b["ID"].(string)]
+		if !ok {
+			continue
+		}
+		_, ok = d.blockMap[b["ID"].(string)].Routes["get_rule"]
+		if !ok {
+			continue
+		}
+		var outMsg interface{}
+		b["rule"] = d.routeMsg(b["ID"].(string), "get_rule", outMsg)
+		delete(b, "InBlocks")
+		delete(b, "OutBlocks")
+		delete(b, "Routes")
+	}
+	return blockList
+}
+
+func (d *Daemon) exportHandler(w *rest.ResponseWriter, r *rest.Request) {
+	blob, _ := json.Marshal(d.makeExport())
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
+	fmt.Fprint(w, string(blob))
+}
+
+func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
+	blob, _ := json.Marshal(d.listBlocks())
 
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -478,6 +521,7 @@ func (d *Daemon) Run(port string) {
 		rest.Route{"GET", "/connect", d.connectHandler},
 		rest.Route{"GET", "/blocks/:id/:route", d.routeHandler},
 		rest.Route{"POST", "/blocks/:id/:route", d.routeHandler},
+		rest.Route{"GET", "/export", d.exportHandler},
 	)
 	log.Println("starting stream tools on port", port)
 	err := http.ListenAndServe(":"+port, &handler)
