@@ -58,7 +58,10 @@ func ToBeanstalkd(b *Block) {
                 break
             }
             /* your code goes here */
- 
+ 			if conn == nil {
+ 				log.Panic("Connection to beanstalkd was dropped. Something is not right.")
+ 				break
+ 			}
             jobId, err := conn.Put(0, 0, ttr, msgStr)
             if err != nil {
                 log.Panic(err.Error())
