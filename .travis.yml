@@ -1,4 +1,5 @@
 go:
   - 1.1
+  - 1.2
+  - release
   - tip
-install: make
