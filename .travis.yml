@@ -5,9 +5,9 @@ go:
   - tip
   
 before_install:
-  - go get github.com/jteeuwen/go-bindata/...
-  - go-bindata -pkg=daemon -o $GOPATH/src/github.com/nytlabs/streamtools/daemon/static_bindata.go gui/...
-  - go get github.com/nytlabs/streamtools/blocks
-  - go get github.com/nytlabs/streamtools/daemon
+  - export GOPATH=/tmp/gopath
+  - mkdir -p $(GOPATH)/src/github.com/nytlabs/streamtools 
+  - cp -r ./streamtools/* $(GOPATH)/github.com/nytlabs/streamtools 
+  - cd $(GOPATH)/github.com/nytlabs/streamtools
 
 install: make
