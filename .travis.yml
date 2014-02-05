@@ -7,6 +7,8 @@ go:
   - tip
   
 before_install:
+  - go get -d github.com/nytlabs/streamtools/blocks
+  - go get -d github.com/nytlabs/streamtools/daemon
   - export PATH=/home/travis/gopath/bin:$PATH
   - mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
   - cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
