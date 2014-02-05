@@ -5,9 +5,8 @@ go:
   - tip
   
 before_install:
-  - export GOPATH=/tmp/gopath
-  - mkdir -p $(GOPATH)/src/github.com/nytlabs/streamtools 
-  - cp -r ./streamtools/* $(GOPATH)/github.com/nytlabs/streamtools 
-  - cd $(GOPATH)/github.com/nytlabs/streamtools
+  - mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
+  - cp -r ./streamtools/* $GOPATH/github.com/nytlabs/streamtools 
+  - cd $GOPATH/github.com/nytlabs/streamtools
 
 install: make
