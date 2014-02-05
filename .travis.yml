@@ -6,7 +6,8 @@ go:
   
 before_install:
   - go get github.com/jteeuwen/go-bindata/...
-  - go-bindata -pkg=daemon -o daemon/static_bindata.go gui/...
+  - go-bindata -pkg=daemon -o $GOPATH/src/github.com/nytlabs/streamtools/daemon/static_bindata.go gui/...
   - go get github.com/nytlabs/streamtools/blocks
   - go get github.com/nytlabs/streamtools/daemon
+
 install: make
