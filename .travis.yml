@@ -7,6 +7,7 @@ go:
   - tip
   
 before_install:
+  - export PATH=$GOPATH/bin:$PATH
   - mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
   - cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
   - cd $GOPATH/src/github.com/nytlabs/streamtools
