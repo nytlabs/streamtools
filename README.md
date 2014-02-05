@@ -1,8 +1,7 @@
 streamtools
 ===========
 
-[![Build Status](https://drone.io/github.com/nytlabs/streamtools/status.png)](https://drone.io/github.com/nytlabs/streamtools/latest)
-
+[![Build Status](https://travis-ci.org/nytlabs/streamtools.png?branch=master)](https://travis-ci.org/nytlabs/streamtools)
 Streamtools is a creative tool for working with streams of data. It provides a vocabulary of data processing operations, called blocks, that can be connected to create online data processing systems without the need for programming or complicated infrastructure. 
 
 Streamtools is built upon a few core principles: 
