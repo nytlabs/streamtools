@@ -55,6 +55,7 @@ func ToBeanstalkd(b *Block) {
             msgStr, err := json.Marshal(msg.Msg)
             if err != nil {
                 log.Println("wow bad json")
+                break
             }
             /* your code goes here */
  
