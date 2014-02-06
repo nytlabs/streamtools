@@ -57,7 +57,6 @@ func ToBeanstalkd(b *Block) {
                 log.Println("wow bad json")
                 break
             }
-            /* your code goes here */
  			if conn == nil {
  				log.Panic("Connection to beanstalkd was dropped. Something is not right.")
  				break
@@ -68,7 +67,6 @@ func ToBeanstalkd(b *Block) {
             } else{
                 log.Println("put job on queue: Job Id:", jobId)
             }
-            //broadcast(b.OutChans, msg)
         case msg := <-b.AddChan:
             updateOutChans(msg, b)
         case <-b.QuitChan:
