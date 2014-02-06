@@ -102,7 +102,7 @@ func (d *Daemon) createHandler(w *rest.ResponseWriter, r *rest.Request) {
 	}
 
 	if idExists == false {
-		id = <-idChan
+		id = d.getID()
 	} else {
 
 		if len(strings.TrimSpace(fID[0])) == 0 {
@@ -210,7 +210,7 @@ func (d *Daemon) connectHandler(w *rest.ResponseWriter, r *rest.Request) {
 
 	fID, hasID := r.Form["id"]
 	if hasID == false {
-		id = <-idChan
+		id = d.getID()
 	} else {
 
 		if len(strings.TrimSpace(fID[0])) == 0 {
@@ -271,6 +271,16 @@ func (d *Daemon) routeMsg(id string, route string, outMsg interface{}) interface
 	}
 	respMsg := <-ResponseChan
 	return respMsg
+}
+
+func (d *Daemon) getID() string {
+	id := <-idChan 
+	_, ok := d.blockMap[id]
+	for ok {
+		id = <-idChan
+		_, ok = d.blockMap[id]
+	}
+	return id
 }
 
 // The routeHandler deals with any incoming message sent to an arbitrary block endpoint
@@ -382,7 +392,8 @@ func (d *Daemon) makeExport() map[string]interface{} {
 
 				route := d.blockMap[ b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]] 
 				if len(route) > 0 {
-					b["to"] = b["OutBlocks"].([]string)[0] + "/" + route
+					b["to"] = b["OutBlocks"].([]string)[0] 
+					b["route"] = route
 				} else {
 					b["to"] = b["OutBlocks"].([]string)[0]
 				}
@@ -507,7 +518,7 @@ func (d *Daemon) importConfig(config interface{}) error {
     	d.CreateBlock(b["type"].(string),collisionMap[b["id"].(string)])
     	_, ok = b["rule"];
     	if ok {
-	    	d.routeMsg(b["id"].(string), "set_rule" , b["rule"])
+	    	d.routeMsg(collisionMap[b["id"].(string)], "set_rule" , b["rule"])
 	    }
     }
 
@@ -531,12 +542,15 @@ func (d *Daemon) importConfig(config interface{}) error {
     		collisionMap[c["id"].(string)] = c["id"].(string)
     	}
 
+    	toBlock := collisionMap[c["to"].(string)]
+    	_, ok = c["route"]
+    	if ok {
+    		toBlock = toBlock + "/" + c["route"].(string)
+    	}
+    	fromBlock := collisionMap[c["from"].(string)]
+    	blockID := collisionMap[c["id"].(string)]
 
-    	d.CreateConnection(collisionMap[c["from"].(string)],collisionMap[c["to"].(string)],collisionMap[c["id"].(string)])
-    }
-
-    for i := 0; i < len(connections) + len(blocks); i++ {
-    	_ = <- idChan
+    	d.CreateConnection(fromBlock,toBlock,blockID)
     }
 
     return nil
@@ -561,6 +575,7 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	}
 
 	toParts := strings.Split(to, "/")
+	log.Println(to, toParts)
 	var route string
 	if len(toParts) == 2 {
 		route = toParts[1]
