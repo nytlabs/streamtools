@@ -16,6 +16,7 @@ import (
 
 const (
 	READ_MAX = 1024768
+	FILE_FORMAT = "0.1.0"
 )
 
 var (
@@ -26,6 +27,8 @@ var (
 // Daemon keeps track of all the blocks and connections
 type Daemon struct {
 	blockMap map[string]*blocks.Block
+	Port string
+	Config string
 }
 
 // The rootHandler returns information about the whole system
@@ -356,24 +359,57 @@ func (d *Daemon) listBlocks() []map[string]interface{} {
 	return blockList
 }
 
-func (d *Daemon) makeExport() []map[string]interface{} {
+func (d *Daemon) makeExport() map[string]interface{} {
 	blockList := d.listBlocks()
+	blocks := []map[string]interface{}{}
+	conns := []map[string]interface{}{}
+
 	for _, b := range blockList {
 		_, ok := d.blockMap[b["ID"].(string)]
 		if !ok {
 			continue
 		}
+
+		delete(b, "Routes")
+
 		_, ok = d.blockMap[b["ID"].(string)].Routes["get_rule"]
-		if !ok {
-			continue
+		if ok {
+			var outMsg interface{}
+			b["rule"] = d.routeMsg(b["ID"].(string), "get_rule", outMsg)
+		} else {
+			if len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
+				b["from"] = b["InBlocks"].([]string)[0]
+
+				route := d.blockMap[ b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]] 
+				if len(route) > 0 {
+					b["to"] = b["OutBlocks"].([]string)[0] + "/" + route
+				} else {
+					b["to"] = b["OutBlocks"].([]string)[0]
+				}
+			}
 		}
-		var outMsg interface{}
-		b["rule"] = d.routeMsg(b["ID"].(string), "get_rule", outMsg)
+		
+		b["id"] = b["ID"]
+		b["type"] = b["BlockType"]
+
 		delete(b, "InBlocks")
 		delete(b, "OutBlocks")
-		delete(b, "Routes")
+		delete(b, "BlockType")
+		delete(b, "ID")
+
+		if b["type"] != "connection" {
+			blocks = append(blocks, b)
+		} else {
+			conns = append(conns, b)
+		}
 	}
-	return blockList
+
+	exportObj := map[string]interface{}{
+		"blocks": blocks,
+		"connections": conns,
+		"version": FILE_FORMAT,
+	}
+	return exportObj
 }
 
 func (d *Daemon) exportHandler(w *rest.ResponseWriter, r *rest.Request) {
@@ -383,6 +419,127 @@ func (d *Daemon) exportHandler(w *rest.ResponseWriter, r *rest.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
 	fmt.Fprint(w, string(blob))
+}
+
+func (d *Daemon) importHandler(w *rest.ResponseWriter, r *rest.Request) {
+	msg, err := ioutil.ReadAll(io.LimitReader(r.Body, READ_MAX))
+
+	if err != nil {
+		ApiResponse(w, 500, "BAD_REQUEST")
+		return
+	}
+
+	var outMsg interface{}
+
+	if len(msg) > 0 {
+		err = json.Unmarshal(msg, &outMsg)
+		if err != nil {
+			log.Println(msg)
+			ApiResponse(w, 500, "BAD_JSON")
+			return
+		}
+	}
+
+	err = d.importConfig(outMsg)
+
+	if err != nil {
+		ApiResponse(w, 500, "IMPORT_FAIL")
+	}
+
+	ApiResponse(w, 500, "IMPORT_SUCCESS")
+}
+
+func (d *Daemon) importFile(filename string) error {
+	var config interface{}
+
+	b, err := ioutil.ReadFile(filename)
+    if err != nil {
+    	log.Println("could not import " + filename)
+    	return err
+    }
+
+    err = json.Unmarshal(b,&config)
+    if err != nil {
+    	log.Println("could not unmarshal " + filename)
+    	return err
+    }
+
+    err = d.importConfig(config)
+
+    if err != nil {
+    	log.Println("could not import")
+    	return err
+    }
+    return nil
+}
+
+func (d *Daemon) importConfig(config interface{}) error {
+	collisionMap := make(map[string]string)
+
+    cm, ok := config.(map[string]interface{})
+    if !ok {
+    	return errors.New("bad config format")
+    }
+
+    blocks := cm["blocks"].([]interface{})
+    connections := cm["connections"].([]interface{})
+    for _, block := range blocks {
+        b := block.(map[string]interface{})
+    	_, ok := d.blockMap[b["id"].(string)] 
+    	if ok {
+    		var newID string
+    		unique := false
+    		count := 1
+    		for unique == false {
+    			newID = b["id"].(string) + "_" + fmt.Sprintf("%d",count)
+    			_, ok := d.blockMap[newID]
+    			if !ok {
+    				unique = true
+    			}
+    			count++
+    		}
+    		collisionMap[b["id"].(string)] = newID
+    	} else {
+    		collisionMap[b["id"].(string)] = b["id"].(string)
+    	}
+
+
+    	d.CreateBlock(b["type"].(string),collisionMap[b["id"].(string)])
+    	_, ok = b["rule"];
+    	if ok {
+	    	d.routeMsg(b["id"].(string), "set_rule" , b["rule"])
+	    }
+    }
+
+    for _, conn := range connections {
+    	c := conn.(map[string]interface{})
+    	_, ok := d.blockMap[c["id"].(string)] 
+    	if ok {
+    		var newID string
+    		unique := false
+    		count := 1
+    		for unique == false {
+    			newID = c["id"].(string) + "_" + fmt.Sprintf("%d",count)
+    			_, ok := d.blockMap[newID]
+    			if !ok {
+    				unique = true
+    			}
+    			count++
+    		}
+    		collisionMap[c["id"].(string)] = newID
+    	} else {
+    		collisionMap[c["id"].(string)] = c["id"].(string)
+    	}
+
+
+    	d.CreateConnection(collisionMap[c["from"].(string)],collisionMap[c["to"].(string)],collisionMap[c["id"].(string)])
+    }
+
+    for i := 0; i < len(connections) + len(blocks); i++ {
+    	_ = <- idChan
+    }
+
+    return nil
 }
 
 func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
@@ -403,12 +560,12 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 		ID:      ID,
 	}
 
-	/*d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
-		Action:  blocks.CREATE_OUT_CHAN,
-		OutChan: d.blockMap[to].InChan,
-		ID:      to,
-	}*/
 	toParts := strings.Split(to, "/")
+	var route string
+	if len(toParts) == 2 {
+		route = toParts[1]
+	}
+
 	switch len(toParts) {
 	case 1:
 		d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
@@ -419,7 +576,7 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	case 2:
 		d.blockMap[ID].AddChan <- &blocks.OutChanMsg{
 			Action:  blocks.CREATE_OUT_CHAN,
-			OutChan: d.blockMap[toParts[0]].Routes[toParts[1]],
+			OutChan: d.blockMap[toParts[0]].Routes[route],
 			ID:      to,
 		}
 	default:
@@ -428,10 +585,10 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	}
 
 	// add the from block to the list of inblocks for connection.
-	d.blockMap[from].OutBlocks[ID] = true
-	d.blockMap[ID].InBlocks[from] = true
-	d.blockMap[ID].OutBlocks[toParts[0]] = true
-	d.blockMap[toParts[0]].InBlocks[ID] = true
+	d.blockMap[from].OutBlocks[ID] = ""
+	d.blockMap[ID].InBlocks[from] = ""
+	d.blockMap[ID].OutBlocks[toParts[0]] = route
+	d.blockMap[toParts[0]].InBlocks[ID] = route
 
 	log.Println("connected", d.blockMap[from].ID, "to", d.blockMap[toParts[0]].ID)
 
@@ -468,8 +625,8 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	b, _ := blocks.NewBlock(name, ID)
 	//d.createRoutes(b)
 	d.blockMap[b.ID] = b
-	d.blockMap[b.ID].InBlocks = make(map[string]bool)
-	d.blockMap[b.ID].OutBlocks = make(map[string]bool)
+	d.blockMap[b.ID].InBlocks = make(map[string]string)
+	d.blockMap[b.ID].OutBlocks = make(map[string]string)
 
 	// create the block that will be sent to the blockroutine and copy all
 	// chan references from the previously created block
@@ -490,7 +647,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 	log.Println("started block \"" + ID + "\" of type " + name)
 }
 
-func (d *Daemon) Run(port string) {
+func (d *Daemon) Run() {
 
 	// start the ID Service
 	idChan = make(chan string)
@@ -504,6 +661,13 @@ func (d *Daemon) Run(port string) {
 
 	handler := rest.ResourceHandler{
 		EnableRelaxedContentType: true,
+	}
+
+	if len(d.Config) > 0 {
+		err := d.importFile(d.Config)
+		if err != nil {
+			log.Println("could not import config file")
+		}
 	}
 
 	//TODO: make this a _real_ restful API
@@ -522,9 +686,10 @@ func (d *Daemon) Run(port string) {
 		rest.Route{"GET", "/blocks/:id/:route", d.routeHandler},
 		rest.Route{"POST", "/blocks/:id/:route", d.routeHandler},
 		rest.Route{"GET", "/export", d.exportHandler},
+		rest.Route{"POST", "/import", d.importHandler},
 	)
-	log.Println("starting stream tools on port", port)
-	err := http.ListenAndServe(":"+port, &handler)
+	log.Println("starting stream tools on port", d.Port)
+	err := http.ListenAndServe(":"+d.Port, &handler)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

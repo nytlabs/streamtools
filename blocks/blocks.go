@@ -54,8 +54,8 @@ type Block struct {
 	OutChans  map[string]chan *BMsg
 	Routes    map[string]chan *BMsg
 	AddChan   chan *OutChanMsg
-	InBlocks  map[string]bool // bool is dumb.
-	OutBlocks map[string]bool // bool is dumb.
+	InBlocks  map[string]string // contains the route, if specified
+	OutBlocks map[string]string // contains the route, if specified
 	QuitChan  chan bool
 }
 
