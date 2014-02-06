@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	READ_MAX = 1024768
+	READ_MAX    = 1024768
 	FILE_FORMAT = "0.1.0"
 )
 
@@ -27,8 +27,8 @@ var (
 // Daemon keeps track of all the blocks and connections
 type Daemon struct {
 	blockMap map[string]*blocks.Block
-	Port string
-	Config string
+	Port     string
+	Config   string
 }
 
 // The rootHandler returns information about the whole system
@@ -274,7 +274,7 @@ func (d *Daemon) routeMsg(id string, route string, outMsg interface{}) interface
 }
 
 func (d *Daemon) getID() string {
-	id := <-idChan 
+	id := <-idChan
 	_, ok := d.blockMap[id]
 	for ok {
 		id = <-idChan
@@ -390,16 +390,16 @@ func (d *Daemon) makeExport() map[string]interface{} {
 			if len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
 				b["from"] = b["InBlocks"].([]string)[0]
 
-				route := d.blockMap[ b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]] 
+				route := d.blockMap[b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]]
 				if len(route) > 0 {
-					b["to"] = b["OutBlocks"].([]string)[0] 
+					b["to"] = b["OutBlocks"].([]string)[0]
 					b["route"] = route
 				} else {
 					b["to"] = b["OutBlocks"].([]string)[0]
 				}
 			}
 		}
-		
+
 		b["id"] = b["ID"]
 		b["type"] = b["BlockType"]
 
@@ -416,9 +416,9 @@ func (d *Daemon) makeExport() map[string]interface{} {
 	}
 
 	exportObj := map[string]interface{}{
-		"blocks": blocks,
+		"blocks":      blocks,
 		"connections": conns,
-		"version": FILE_FORMAT,
+		"version":     FILE_FORMAT,
 	}
 	return exportObj
 }
@@ -464,96 +464,95 @@ func (d *Daemon) importFile(filename string) error {
 	var config interface{}
 
 	b, err := ioutil.ReadFile(filename)
-    if err != nil {
-    	log.Println("could not import " + filename)
-    	return err
-    }
+	if err != nil {
+		log.Println("could not import " + filename)
+		return err
+	}
 
-    err = json.Unmarshal(b,&config)
-    if err != nil {
-    	log.Println("could not unmarshal " + filename)
-    	return err
-    }
+	err = json.Unmarshal(b, &config)
+	if err != nil {
+		log.Println("could not unmarshal " + filename)
+		return err
+	}
 
-    err = d.importConfig(config)
+	err = d.importConfig(config)
 
-    if err != nil {
-    	log.Println("could not import")
-    	return err
-    }
-    return nil
+	if err != nil {
+		log.Println("could not import")
+		return err
+	}
+	return nil
 }
 
 func (d *Daemon) importConfig(config interface{}) error {
 	collisionMap := make(map[string]string)
 
-    cm, ok := config.(map[string]interface{})
-    if !ok {
-    	return errors.New("bad config format")
-    }
+	cm, ok := config.(map[string]interface{})
+	if !ok {
+		return errors.New("bad config format")
+	}
 
-    blocks := cm["blocks"].([]interface{})
-    connections := cm["connections"].([]interface{})
-    for _, block := range blocks {
-        b := block.(map[string]interface{})
-    	_, ok := d.blockMap[b["id"].(string)] 
-    	if ok {
-    		var newID string
-    		unique := false
-    		count := 1
-    		for unique == false {
-    			newID = b["id"].(string) + "_" + fmt.Sprintf("%d",count)
-    			_, ok := d.blockMap[newID]
-    			if !ok {
-    				unique = true
-    			}
-    			count++
-    		}
-    		collisionMap[b["id"].(string)] = newID
-    	} else {
-    		collisionMap[b["id"].(string)] = b["id"].(string)
-    	}
+	blocks := cm["blocks"].([]interface{})
+	connections := cm["connections"].([]interface{})
+	for _, block := range blocks {
+		b := block.(map[string]interface{})
+		_, ok := d.blockMap[b["id"].(string)]
+		if ok {
+			var newID string
+			unique := false
+			count := 1
+			for unique == false {
+				newID = b["id"].(string) + "_" + fmt.Sprintf("%d", count)
+				_, ok := d.blockMap[newID]
+				if !ok {
+					unique = true
+				}
+				count++
+			}
+			collisionMap[b["id"].(string)] = newID
+		} else {
+			collisionMap[b["id"].(string)] = b["id"].(string)
+		}
 
+		d.CreateBlock(b["type"].(string), collisionMap[b["id"].(string)])
+		_, ok = b["rule"]
+		if ok {
+			d.routeMsg(collisionMap[b["id"].(string)], "set_rule", b["rule"])
+		}
+	}
 
-    	d.CreateBlock(b["type"].(string),collisionMap[b["id"].(string)])
-    	_, ok = b["rule"];
-    	if ok {
-	    	d.routeMsg(collisionMap[b["id"].(string)], "set_rule" , b["rule"])
-	    }
-    }
+	for _, conn := range connections {
+		c := conn.(map[string]interface{})
+		_, ok := d.blockMap[c["id"].(string)]
+		if ok {
+			var newID string
+			unique := false
+			count := 1
+			for unique == false {
+				newID = c["id"].(string) + "_" + fmt.Sprintf("%d", count)
+				_, ok := d.blockMap[newID]
+				if !ok {
+					unique = true
+				}
+				count++
+			}
+			collisionMap[c["id"].(string)] = newID
+		} else {
+			collisionMap[c["id"].(string)] = c["id"].(string)
+		}
 
-    for _, conn := range connections {
-    	c := conn.(map[string]interface{})
-    	_, ok := d.blockMap[c["id"].(string)] 
-    	if ok {
-    		var newID string
-    		unique := false
-    		count := 1
-    		for unique == false {
-    			newID = c["id"].(string) + "_" + fmt.Sprintf("%d",count)
-    			_, ok := d.blockMap[newID]
-    			if !ok {
-    				unique = true
-    			}
-    			count++
-    		}
-    		collisionMap[c["id"].(string)] = newID
-    	} else {
-    		collisionMap[c["id"].(string)] = c["id"].(string)
-    	}
+		toBlock := collisionMap[c["to"].(string)]
+		_, ok = c["route"]
+		if ok {
+			toBlock = toBlock + "/" + c["route"].(string)
+		}
+		fromBlock := collisionMap[c["from"].(string)]
+		blockID := collisionMap[c["id"].(string)]
 
-    	toBlock := collisionMap[c["to"].(string)]
-    	_, ok = c["route"]
-    	if ok {
-    		toBlock = toBlock + "/" + c["route"].(string)
-    	}
-    	fromBlock := collisionMap[c["from"].(string)]
-    	blockID := collisionMap[c["id"].(string)]
+		d.CreateConnection(fromBlock, toBlock, blockID)
+	}
 
-    	d.CreateConnection(fromBlock,toBlock,blockID)
-    }
-
-    return nil
+	return nil
 }
 
 func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
@@ -688,11 +687,11 @@ func (d *Daemon) Run() {
 	//TODO: make this a _real_ restful API
 	handler.SetRoutes(
 		rest.Route{"GET", "/", d.rootHandler},
-		rest.Route{"GET", "/static/main.css", d.cssHandler },
-		rest.Route{"GET", "/static/d3.v3.min.js", d.d3Handler },
-		rest.Route{"GET", "/static/main.js", d.mainjsHandler },
-		rest.Route{"GET", "/static/jquery-2.1.0.min.js", d.jqueryHandler },
-		rest.Route{"GET", "/static/underscore-min.js", d.underscoreHandler },		
+		rest.Route{"GET", "/static/main.css", d.cssHandler},
+		rest.Route{"GET", "/static/d3.v3.min.js", d.d3Handler},
+		rest.Route{"GET", "/static/main.js", d.mainjsHandler},
+		rest.Route{"GET", "/static/jquery-2.1.0.min.js", d.jqueryHandler},
+		rest.Route{"GET", "/static/underscore-min.js", d.underscoreHandler},
 		rest.Route{"GET", "/library", d.libraryHandler},
 		rest.Route{"GET", "/list", d.listHandler},
 		rest.Route{"GET", "/create", d.createHandler},
