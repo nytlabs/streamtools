@@ -16,7 +16,7 @@ import (
 
 const (
 	READ_MAX    = 1024768
-	FILE_FORMAT = "0.1.0"
+	VERSION = "0.1.2"
 )
 
 var (
@@ -34,42 +34,36 @@ type Daemon struct {
 // The rootHandler returns information about the whole system
 // TODO: create a generic static file handler
 func (d *Daemon) rootHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data, _ := Asset("gui/index.html")
 	w.Write(data)
 }
 
 func (d *Daemon) cssHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	data, _ := Asset("gui/static/main.css")
 	w.Write(data)
 }
 
 func (d *Daemon) d3Handler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/d3.v3.min.js")
 	w.Write(data)
 }
 
 func (d *Daemon) mainjsHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/main.js")
 	w.Write(data)
 }
 
 func (d *Daemon) jqueryHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/jquery-2.1.0.min.js")
 	w.Write(data)
 }
 
 func (d *Daemon) underscoreHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 	data, _ := Asset("gui/static/underscore-min.js")
 	w.Write(data)
@@ -340,7 +334,6 @@ func (d *Daemon) routeHandler(w *rest.ResponseWriter, r *rest.Request) {
 }
 
 func (d *Daemon) libraryHandler(w *rest.ResponseWriter, r *rest.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(blocks.LibraryBlob)))
 	fmt.Fprint(w, blocks.LibraryBlob)
@@ -377,17 +370,21 @@ func (d *Daemon) makeExport() map[string]interface{} {
 	for _, b := range blockList {
 		_, ok := d.blockMap[b["ID"].(string)]
 		if !ok {
+			log.Println("not exporting block: %s", b["ID"].(string))
 			continue
 		}
 
-		delete(b, "Routes")
 
+		// if the block has a rule, we need to get it so we can place it in 
+		// export obj
 		_, ok = d.blockMap[b["ID"].(string)].Routes["get_rule"]
 		if ok {
 			var outMsg interface{}
 			b["rule"] = d.routeMsg(b["ID"].(string), "get_rule", outMsg)
 		} else {
-			if len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
+			// if the block is a connection, we don't need to get a rule
+			// we DO need to figure out its input and output blocks.
+			if b["BlockType"] == "connection" && len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
 				b["from"] = b["InBlocks"].([]string)[0]
 
 				route := d.blockMap[b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]]
@@ -407,6 +404,7 @@ func (d *Daemon) makeExport() map[string]interface{} {
 		delete(b, "OutBlocks")
 		delete(b, "BlockType")
 		delete(b, "ID")
+		delete(b, "Routes")
 
 		if b["type"] != "connection" {
 			blocks = append(blocks, b)
@@ -418,7 +416,7 @@ func (d *Daemon) makeExport() map[string]interface{} {
 	exportObj := map[string]interface{}{
 		"blocks":      blocks,
 		"connections": conns,
-		"version":     FILE_FORMAT,
+		"version":     VERSION,
 	}
 	return exportObj
 }
@@ -426,7 +424,6 @@ func (d *Daemon) makeExport() map[string]interface{} {
 func (d *Daemon) exportHandler(w *rest.ResponseWriter, r *rest.Request) {
 	blob, _ := json.Marshal(d.makeExport())
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
 	fmt.Fprint(w, string(blob))
@@ -558,7 +555,6 @@ func (d *Daemon) importConfig(config interface{}) error {
 func (d *Daemon) listHandler(w *rest.ResponseWriter, r *rest.Request) {
 	blob, _ := json.Marshal(d.listBlocks())
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.Header().Set("Content-Length", strconv.Itoa(len(blob)))
 	fmt.Fprint(w, string(blob))
@@ -574,7 +570,7 @@ func (d *Daemon) CreateConnection(from string, to string, ID string) error {
 	}
 
 	toParts := strings.Split(to, "/")
-	log.Println(to, toParts)
+
 	var route string
 	if len(toParts) == 2 {
 		route = toParts[1]
@@ -662,7 +658,7 @@ func (d *Daemon) CreateBlock(name string, ID string) {
 }
 
 func (d *Daemon) Run() {
-
+	log.Printf("starting streamtools %s on port %s\n", VERSION, d.Port)
 	// start the ID Service
 	idChan = make(chan string)
 	go IDService(idChan)
@@ -702,7 +698,7 @@ func (d *Daemon) Run() {
 		rest.Route{"GET", "/export", d.exportHandler},
 		rest.Route{"POST", "/import", d.importHandler},
 	)
-	log.Println("starting stream tools on port", d.Port)
+
 	err := http.ListenAndServe(":"+d.Port, &handler)
 	if err != nil {
 		log.Fatalf(err.Error())
