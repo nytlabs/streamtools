@@ -446,6 +446,9 @@ func (d *Daemon) importHandler(w *rest.ResponseWriter, r *rest.Request) {
 			ApiResponse(w, 500, "BAD_JSON")
 			return
 		}
+	} else {
+		ApiResponse(w, 500, "BAD_JSON")
+		return
 	}
 
 	err = d.importConfig(outMsg)
