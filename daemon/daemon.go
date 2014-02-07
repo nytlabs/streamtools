@@ -374,26 +374,24 @@ func (d *Daemon) makeExport() map[string]interface{} {
 			continue
 		}
 
-
-		// if the block has a rule, we need to get it so we can place it in 
-		// export obj
 		_, ok = d.blockMap[b["ID"].(string)].Routes["get_rule"]
 		if ok {
+			// if the block has a rule, we need to get it so we can place it in 
+			// export obj
 			var outMsg interface{}
 			b["rule"] = d.routeMsg(b["ID"].(string), "get_rule", outMsg)
-		} else {
+		} else if b["BlockType"] == "connection" && len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
 			// if the block is a connection, we don't need to get a rule
 			// we DO need to figure out its input and output blocks.
-			if b["BlockType"] == "connection" && len(b["InBlocks"].([]string)) == 1 && len(b["OutBlocks"].([]string)) == 1 {
-				b["from"] = b["InBlocks"].([]string)[0]
+			
+			b["from"] = b["InBlocks"].([]string)[0]
 
-				route := d.blockMap[b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]]
-				if len(route) > 0 {
-					b["to"] = b["OutBlocks"].([]string)[0]
-					b["route"] = route
-				} else {
-					b["to"] = b["OutBlocks"].([]string)[0]
-				}
+			route := d.blockMap[b["ID"].(string)].OutBlocks[b["OutBlocks"].([]string)[0]]
+			if len(route) > 0 {
+				b["to"] = b["OutBlocks"].([]string)[0]
+				b["route"] = route
+			} else {
+				b["to"] = b["OutBlocks"].([]string)[0]
 			}
 		}
 
