@@ -87,6 +87,11 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToBeanstalkd,
 		},
+		&BlockTemplate{
+			BlockType:  "toMongoDB",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ToMongoDB,
+		},
 
 		/// state blocks
 		&BlockTemplate{
