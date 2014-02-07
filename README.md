@@ -33,6 +33,7 @@ health warning
 ==============
 
 *Note that streamtools is very new!* This means we're developing it very rapidly, and some things aren't going to work. If you find a bug please do let us know! And, if you think of something you'd like to see, please do request it! Both of these things can be done on our [issues page](https://github.com/nytlabs/streamtools/issues?milestone=&page=1&state=open). 
+
 ![screen shot 2014-02-06 at 4 22 51 pm](https://f.cloud.github.com/assets/597897/2103977/151b99ce-8f75-11e3-99b9-188024ce742a.png)
 
 contributing
