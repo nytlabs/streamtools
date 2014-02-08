@@ -32,7 +32,7 @@ func Unpack(b *Block) {
 					Msg:          outMsg,
 					ResponseChan: nil,
 				}
-				broadcast(b.OutChans, out)
+				broadcast(b.OutChans, &out)
 			}
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)

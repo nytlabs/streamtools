@@ -11,17 +11,20 @@ type readWriteHandler struct {
 }
 
 func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
-	var msg BMsg
+	var msg interface{}
 	err := json.Unmarshal(message.Body, &msg)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	self.toOut <- msg
+	out := BMsg{
+		Msg: msg,
+	}
+	self.toOut <- out
 	return nil
 }
 
-// NSQStream connects to an NSQ topic and emits each message into streamtools.
-func NSQStream(b *Block) {
+// connects to an NSQ topic and emits each message into streamtools.
+func FromNSQ(b *Block) {
 
 	type fromNSQRule struct {
 		ReadTopic   string
@@ -37,7 +40,7 @@ func NSQStream(b *Block) {
 	for {
 		select {
 		case msg := <-toOut:
-			broadcast(b.OutChans, msg)
+			broadcast(b.OutChans, &msg)
 		case msg := <-b.Routes["set_rule"]:
 			if rule == nil {
 				rule = &fromNSQRule{}

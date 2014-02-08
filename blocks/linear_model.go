@@ -65,7 +65,7 @@ func LinearModel(b *Block) {
 			out := BMsg{
 				Msg: outMsg,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

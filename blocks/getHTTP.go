@@ -2,6 +2,7 @@ package blocks
 
 import (
 	"encoding/json"
+	"github.com/nytlabs/gojee" // jee
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,10 +12,11 @@ import (
 func GetHTTP(b *Block) {
 
 	type getRule struct {
-		Endpoint string
+		Path string
 	}
 
 	var rule *getRule
+	var tree *jee.TokenTree
 	client := &http.Client{}
 
 	// TODO check the endpoint for happiness
@@ -27,7 +29,16 @@ func GetHTTP(b *Block) {
 				rule = &getRule{}
 			}
 			unmarshal(msg, rule)
-
+			token, err := jee.Lexer(rule.Path)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &getRule{})
@@ -37,12 +48,25 @@ func GetHTTP(b *Block) {
 		case <-b.QuitChan:
 			quit(b)
 			return
-		case <-b.InChan:
+		case msg := <-b.InChan:
 			if rule == nil {
 				break
 			}
+			if tree == nil {
+				break
+			}
+			urlInterface, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			urlString, ok := urlInterface.(string)
+			if !ok {
+				log.Println("couldn't assert url to a string")
+				continue
+			}
 
-			resp, err := client.Get(rule.Endpoint)
+			resp, err := client.Get(urlString)
 			defer resp.Body.Close()
 			if err != nil {
 				log.Println(err.Error())
@@ -54,17 +78,17 @@ func GetHTTP(b *Block) {
 				log.Println(err)
 				break
 			}
-			var msg interface{}
-			err = json.Unmarshal(body, &msg)
+			var outMsg interface{}
+			err = json.Unmarshal(body, &outMsg)
 			if err != nil {
 				log.Println(err)
 				break
 			}
 			out := BMsg{
-				Msg:          msg,
+				Msg:          outMsg,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		}
 	}
 }

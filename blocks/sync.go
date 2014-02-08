@@ -91,7 +91,7 @@ func Sync(b *Block) {
 				Msg:          item.(*PQMessage).val,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		}
 	}
 

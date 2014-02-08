@@ -29,7 +29,7 @@ func Date(b *Block) {
 				Msg:          msg,
 				ResponseChan: nil,
 			}
-			broadcast(b.OutChans, outMsg)
+			broadcast(b.OutChans, &outMsg)
 			timer.Reset(d)
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {

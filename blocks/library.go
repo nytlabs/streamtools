@@ -21,82 +21,51 @@ func BuildLibrary() {
 			RouteNames: []string{"last_message", "rate"},
 			Routine:    Connection,
 		},
-		////////// TESTING BLOCKS
+
+		// generators : genX
 		&BlockTemplate{
-			BlockType:  "blocked",
-			RouteNames: []string{"get_rule"},
-			Routine:    Blocked,
-		},
-		////////////////////
-		&BlockTemplate{
-			BlockType:  "ticker",
+			BlockType:  "genTicker",
 			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Ticker,
+			Routine:    GenTicker,
 		},
 		&BlockTemplate{
-			BlockType:  "tolog",
+			BlockType:  "genRandom",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    GenRandom,
+		},
+
+		/// sources : fromX
+		&BlockTemplate{
+			BlockType:  "fromNSQ",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    FromNSQ,
+		},
+		&BlockTemplate{
+			BlockType:  "fromHTTPStream",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    FromHTTPStream,
+		},
+		&BlockTemplate{
+			BlockType:  "fromSQS",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    FromSQS,
+		},
+		&BlockTemplate{
+			BlockType:  "fromPost",
+			RouteNames: []string{"in"},
+			Routine:    FromPost,
+		},
+
+		/// sinks: toX
+		&BlockTemplate{
+			BlockType:  "toLog",
 			RouteNames: []string{},
 			Routine:    ToLog,
 		},
 		&BlockTemplate{
-			BlockType:  "random",
+			BlockType:  "toWebsocket",
 			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Random,
-		},
-		&BlockTemplate{
-			BlockType:  "count",
-			RouteNames: []string{"set_rule", "get_rule", "count", "poll"},
-			Routine:    Count,
-		},
-		&BlockTemplate{
-			BlockType:  "mask",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Mask,
-		},
-		&BlockTemplate{
-			BlockType:  "unpack",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Unpack,
-		},
-		&BlockTemplate{
-			BlockType:  "sync",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Sync,
-		},
-		&BlockTemplate{
-			BlockType:  "postValue",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    PostValue,
-		},
-		&BlockTemplate{
-			BlockType:  "toPost",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Post,
-		},
-		&BlockTemplate{
-			BlockType:  "getHTTP",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    GetHTTP,
-		},
-		&BlockTemplate{
-			BlockType:  "date",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Date,
-		},
-		&BlockTemplate{
-			BlockType:  "NSQStream",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    NSQStream,
-		},
-		&BlockTemplate{
-			BlockType:  "getS3",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    GetS3,
-		},
-		&BlockTemplate{
-			BlockType:  "listS3",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    ListS3,
+			Routine:    ToWebsocket,
 		},
 		&BlockTemplate{
 			BlockType:  "toElasticsearch",
@@ -104,7 +73,7 @@ func BuildLibrary() {
 			Routine:    ToElasticsearch,
 		},
 		&BlockTemplate{
-			BlockType:  "tofile",
+			BlockType:  "toFile",
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    ToFile,
 		},
@@ -114,14 +83,16 @@ func BuildLibrary() {
 			Routine:    ToNSQ,
 		},
 		&BlockTemplate{
-			BlockType:  "filter",
+			BlockType:  "toBeanstalkd",
 			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    Filter,
+			Routine:    ToBeanstalkd,
 		},
+
+		/// state blocks
 		&BlockTemplate{
-			BlockType:  "postHTTP",
-			RouteNames: []string{"in"},
-			Routine:    PostHTTP,
+			BlockType:  "count",
+			RouteNames: []string{"set_rule", "get_rule", "count", "poll"},
+			Routine:    Count,
 		},
 		&BlockTemplate{
 			BlockType:  "timeseries",
@@ -143,6 +114,53 @@ func BuildLibrary() {
 			RouteNames: []string{"set_rule", "get_rule"},
 			Routine:    Pack,
 		},
+        
+		&BlockTemplate{
+			BlockType:  "learn",
+			RouteNames: []string{"set_rule", "get_rule", "state", "poll"},
+			Routine:    Learn,
+		},
+		/// transfer blocks
+		&BlockTemplate{
+			BlockType:  "mask",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Mask,
+		},
+		&BlockTemplate{
+			BlockType:  "unpack",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Unpack,
+		},
+		&BlockTemplate{
+			BlockType:  "sync",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Sync,
+		},
+		&BlockTemplate{
+			BlockType:  "postHTTP",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    PostHTTP,
+		},
+		&BlockTemplate{
+			BlockType:  "getHTTP",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    GetHTTP,
+		},
+		&BlockTemplate{
+			BlockType:  "getS3",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    GetS3,
+		},
+		&BlockTemplate{
+			BlockType:  "listS3",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    ListS3,
+		},
+		&BlockTemplate{
+			BlockType:  "filter",
+			RouteNames: []string{"set_rule", "get_rule"},
+			Routine:    Filter,
+		},
 		&BlockTemplate{
 			BlockType:  "mean",
 			RouteNames: []string{"set_rule", "get_rule", "avg"},
@@ -159,14 +177,9 @@ func BuildLibrary() {
 			Routine:    Var,
 		},
 		&BlockTemplate{
-			BlockType:  "HTTPStream",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    HTTPStream,
-		},
-		&BlockTemplate{
-			BlockType:  "SQSStream",
-			RouteNames: []string{"set_rule", "get_rule"},
-			Routine:    SQSStream,
+			BlockType:  "movingAverage",
+			RouteNames: []string{"set_rule", "get_rule", "moving_average", "poll"},
+			Routine:    MovingAverage,
 		},
 		&BlockTemplate{
 			BlockType:  "map",

@@ -37,7 +37,7 @@ func Filter(b *Block) {
 					Msg: msg.Msg,
 				}
 
-				broadcast(b.OutChans, out)
+				broadcast(b.OutChans, &out)
 			}
 
 		case msg := <-b.Routes["set_rule"]:

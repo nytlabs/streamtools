@@ -2,28 +2,40 @@ package blocks
 
 import (
 	"container/heap"
+	"github.com/nytlabs/gojee"
 	"log"
 	"time"
 )
 
-// Count uses a priority queue to count the number of messages that have been sent
-// to the count block over a duration of time in seconds.
-//
-// Note that this is an exact count and therefore has O(N) memory requirements.
-func Count(b *Block) {
+func pqAverage(pq *PriorityQueue) float64 {
+	var sum float64
+	sum = 0
+	for _, pqmsg := range *pq {
+		v := pqmsg.val
+		val, ok := v.(float64)
+		if !ok {
+			log.Println("non float stored in moving average")
+			continue
+		}
+		sum += val
+	}
+	N := float64(len(*pq))
+	return sum / N
+}
 
-	var err error
+func MovingAverage(b *Block) {
 
-	type countRule struct {
+	type movingAverageRule struct {
 		Window string
+		Path   string
 	}
 
-	type countData struct {
-		Count int
+	type avgData struct {
+		Average float64
 	}
 
-	data := &countData{Count: 0}
-	var rule *countRule
+	var rule *movingAverageRule
+	var tree *jee.TokenTree
 
 	window := time.Duration(0)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
@@ -31,16 +43,16 @@ func Count(b *Block) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
-	emptyByte := make([]byte, 0)
-
 	for {
 		select {
-		case query := <-b.Routes["count"]:
-			data.Count = len(*pq)
+		case query := <-b.Routes["moving_average"]:
+			data := avgData{
+				Average: pqAverage(pq),
+			}
 			marshal(query, data)
 		case <-b.Routes["poll"]:
 			outMsg := map[string]interface{}{
-				"Count": len(*pq),
+				"Averageg": pqAverage(pq),
 			}
 			out := BMsg{
 				Msg: outMsg,
@@ -48,16 +60,26 @@ func Count(b *Block) {
 			broadcast(b.OutChans, &out)
 		case ruleUpdate := <-b.Routes["set_rule"]:
 			if rule == nil {
-				rule = &countRule{}
+				rule = &movingAverageRule{}
 			}
 			unmarshal(ruleUpdate, rule)
+			token, err := jee.Lexer(rule.Path)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 			window, err = time.ParseDuration(rule.Window)
 			if err != nil {
 				log.Println(err.Error())
 			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
-				marshal(msg, &countRule{})
+				marshal(msg, &movingAverageRule{})
 			} else {
 				marshal(msg, rule)
 			}
@@ -66,13 +88,27 @@ func Count(b *Block) {
 			return
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
-		case <-b.InChan:
+		case msg := <-b.InChan:
 			if rule == nil {
 				break
 			}
-
+			if tree == nil {
+				break
+			}
+			val, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			// TODO make this a type swtich and convert anything we can to a
+			// float
+			val, ok := val.(float64)
+			if !ok {
+				log.Println("trying to put a non-float into the moving average")
+				continue
+			}
 			queueMessage := &PQMessage{
-				val: &emptyByte,
+				val: val,
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)

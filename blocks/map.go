@@ -128,7 +128,7 @@ func Map(b *Block) {
 				Msg: result,
 			}
 
-			broadcast(b.OutChans, out)
+			broadcast(b.OutChans, &out)
 		case msg := <-b.AddChan:
 			updateOutChans(msg, b)
 		case <-b.QuitChan:

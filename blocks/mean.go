@@ -1,6 +1,9 @@
 package blocks
 
-import "log"
+import (
+	"github.com/nytlabs/gojee" // jee
+	"log"
+)
 
 // Mean() is an online mean
 // The mean for a stream of data is updated 1 data point at a time.
@@ -17,6 +20,7 @@ func Mean(b *Block) {
 
 	data := &avgData{Avg: 0.0}
 	var rule *avgRule
+	var tree *jee.TokenTree
 
 	N := 0.0
 
@@ -29,6 +33,16 @@ func Mean(b *Block) {
 				rule = &avgRule{}
 			}
 			unmarshal(ruleUpdate, rule)
+			token, err := jee.Lexer(rule.Key)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &avgRule{})
@@ -42,7 +56,14 @@ func Mean(b *Block) {
 			if rule == nil {
 				break
 			}
-			val := getKeyValues(msg, rule.Key)[0]
+			if tree == nil {
+				break
+			}
+			val, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 			var x float64
 			switch val := val.(type) {
 			case float64:
