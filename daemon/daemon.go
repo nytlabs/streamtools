@@ -134,7 +134,8 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, conn := range export.Connections {
-		if d.manager.IdExists(conn.Id) {
+		corrected[conn.Id] = conn.Id
+		for d.manager.IdExists(corrected[conn.Id]) {
 			corrected[conn.Id] = conn.Id + "_" + d.manager.GetId()
 		}
 	}
