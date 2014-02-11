@@ -173,9 +173,41 @@ func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d.ui <- &LogMsg{
-		Type: "BLOCK_CREATED",
+		Type: "CREATE",
 		Data: jblock,
 		Id:   "DAEMON",
+	}
+
+	d.apiWrap(w, 200, jblock)
+}
+
+func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
+	var coord *Coords
+	vars := mux.Vars(r)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(body, &coord)
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
+	}
+
+	mblock, err := d.manager.UpdateBlock(vars["id"], coord)
+
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
+	}
+
+	jblock, err := json.Marshal(mblock)
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
 	}
 
 	d.apiWrap(w, 200, jblock)
@@ -200,11 +232,22 @@ func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := d.manager.DeleteConnection(vars["id"])
+	err := d.manager.DeleteBlock(vars["id"])
 	if err != nil {
 		d.apiWrap(w, 500, d.response(err.Error()))
 		return
 	}
+
+	d.ui <- &LogMsg{
+		Type: "DELETE",
+		Data: struct {
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: "DAEMON",
+	}
+
 	d.apiWrap(w, 200, d.response("OK"))
 }
 
@@ -344,11 +387,13 @@ func (d *Daemon) Run() {
 	r.HandleFunc("/", d.rootHandler)
 	r.HandleFunc("/static/{file}", d.staticHandler)
 	r.HandleFunc("/log", d.serveLogStream)
+	r.HandleFunc("/ui", d.serveUIStream)
 	r.HandleFunc("/import", d.importHandler).Methods("POST")
 	r.HandleFunc("/export", d.exportHandler).Methods("GET")
 	r.HandleFunc("/blocks", d.listBlockHandler).Methods("GET")                     // list all blocks
 	r.HandleFunc("/blocks", d.createBlockHandler).Methods("POST")                  // create block w/o id
 	r.HandleFunc("/blocks/{id}", d.blockInfoHandler).Methods("GET")                // get block info
+	r.HandleFunc("/blocks/{id}", d.updateBlockHandler).Methods("PUT")              // update block
 	r.HandleFunc("/blocks/{id}", d.deleteBlockHandler).Methods("DELETE")           // delete block
 	r.HandleFunc("/blocks/{id}/{route}", d.sendRouteHandler).Methods("POST")       // send to block route
 	r.HandleFunc("/blocks/{id}/{route}", d.queryRouteHandler).Methods("GET")       // get from block route

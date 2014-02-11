@@ -12,12 +12,11 @@ import (
 // connects should set messages route.
 
 type BlockInfo struct {
-	Id   string
-	Type string
-	Rule interface{}
-	X    float64
-	Y    float64
-	in   chan interface{}
+	Id       string
+	Type     string
+	Rule     interface{}
+	Position *Coords
+	in       chan interface{}
 }
 
 type ConnectionInfo struct {
@@ -26,6 +25,11 @@ type ConnectionInfo struct {
 	ToId    string
 	ToRoute string
 	in      chan interface{}
+}
+
+type Coords struct {
+	X float64
+	Y float64
 }
 
 type BlockManager struct {
@@ -96,6 +100,17 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 
 	// if rule != nil
 	// do a send on the rule.
+
+	return block, nil
+}
+
+func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error) {
+	block, ok := b.blockMap[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+	}
+
+	block.Position = coord
 
 	return block, nil
 }
