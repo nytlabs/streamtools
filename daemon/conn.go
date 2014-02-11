@@ -83,5 +83,3 @@ func (c *connection) writePump() {
 		}
 	}
 }
-
-
