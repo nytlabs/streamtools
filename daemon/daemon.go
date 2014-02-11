@@ -12,7 +12,7 @@ import (
 
 const (
 	ADD_CHAN = iota
-	DEL_CHAN
+	DEL_CHAN	
 )
 
 var logStream = hub{
@@ -32,7 +32,7 @@ var uiStream = hub{
 type Daemon struct {
 	manager *BlockManager
 	log     chan *LogMsg
-	ui      chan *LogMsg
+	ui 		chan *LogMsg
 	Port    string
 }
 
@@ -40,7 +40,7 @@ func NewDaemon() *Daemon {
 	return &Daemon{
 		manager: NewBlockManager(),
 		log:     make(chan *LogMsg),
-		ui:      make(chan *LogMsg),
+		ui: 	 make(chan *LogMsg),
 	}
 }
 
@@ -108,7 +108,58 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello!")
+	var export struct {
+		Blocks      []*BlockInfo
+		Connections []*ConnectionInfo
+	}
+	corrected := make(map[string]string)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(body, &export)
+	if err != nil {
+		d.apiWrap(w, 500, d.response(err.Error()))
+		return
+	}
+
+	for _, block := range export.Blocks {
+		corrected[block.Id] = block.Id
+		for d.manager.IdExists(corrected[block.Id]) {
+			corrected[block.Id] = block.Id + "_" + d.manager.GetId()
+		}
+	}
+
+	for _, conn := range export.Connections {
+		if d.manager.IdExists(conn.Id) {
+			corrected[conn.Id] = conn.Id + "_" + d.manager.GetId()
+		}
+	}
+
+	for _, block := range export.Blocks {
+		block.Id = corrected[block.Id]
+		_, err := d.manager.Create(block)
+		if err != nil {
+			d.apiWrap(w, 500, d.response(err.Error()))
+			return
+		}
+	}
+
+	for _, conn := range export.Connections {
+		conn.Id = corrected[conn.Id]
+		conn.FromId = corrected[conn.FromId]
+		conn.ToId = corrected[conn.ToId]
+		_, err := d.manager.Connect(conn)
+		if err != nil {
+			d.apiWrap(w, 500, d.response(err.Error()))
+			return
+		}
+	}
+
+	d.apiWrap(w, 200, d.response("OK"))
 }
 
 func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
@@ -167,15 +218,15 @@ func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d.log <- &LogMsg{
-		Type: "INFO",
-		Data: "BLOCK CREATED",
-		Id:   "DAEMON",
+	    Type: "INFO",
+	    Data: "BLOCK CREATED",
+	    Id: "DAEMON",
 	}
 
 	d.ui <- &LogMsg{
 		Type: "CREATE",
 		Data: jblock,
-		Id:   "DAEMON",
+		Id: "DAEMON",
 	}
 
 	d.apiWrap(w, 200, jblock)
@@ -240,7 +291,7 @@ func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 	d.ui <- &LogMsg{
 		Type: "DELETE",
-		Data: struct {
+		Data: struct{
 			Id string
 		}{
 			vars["id"],
@@ -393,7 +444,7 @@ func (d *Daemon) Run() {
 	r.HandleFunc("/blocks", d.listBlockHandler).Methods("GET")                     // list all blocks
 	r.HandleFunc("/blocks", d.createBlockHandler).Methods("POST")                  // create block w/o id
 	r.HandleFunc("/blocks/{id}", d.blockInfoHandler).Methods("GET")                // get block info
-	r.HandleFunc("/blocks/{id}", d.updateBlockHandler).Methods("PUT")              // update block
+	r.HandleFunc("/blocks/{id}", d.updateBlockHandler).Methods("PUT")           	// update block
 	r.HandleFunc("/blocks/{id}", d.deleteBlockHandler).Methods("DELETE")           // delete block
 	r.HandleFunc("/blocks/{id}/{route}", d.sendRouteHandler).Methods("POST")       // send to block route
 	r.HandleFunc("/blocks/{id}/{route}", d.queryRouteHandler).Methods("GET")       // get from block route

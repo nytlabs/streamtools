@@ -3,8 +3,8 @@ package daemon
 import (
 	"errors"
 	"fmt"
-	"github.com/nytlabs/streamtools/blocks"
 	"strconv"
+	"github.com/nytlabs/streamtools/blocks"
 )
 
 // so i don't forget:
@@ -12,11 +12,11 @@ import (
 // connects should set messages route.
 
 type BlockInfo struct {
-	Id       string
-	Type     string
-	Rule     interface{}
+	Id   string
+	Type string
+	Rule interface{}
 	Position *Coords
-	in       chan interface{}
+	in   chan interface{}
 }
 
 type ConnectionInfo struct {
@@ -35,7 +35,7 @@ type Coords struct {
 type BlockManager struct {
 	blockMap map[string]*BlockInfo
 	connMap  map[string]*ConnectionInfo
-	genId    chan string
+	genId chan string
 }
 
 func IDService(idChan chan string) {
@@ -54,24 +54,24 @@ func NewBlockManager() *BlockManager {
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
-		genId:    idChan,
+		genId: idChan,
 	}
 }
 
-func (b *BlockManager) getID() string {
-	id := <-b.genId
-	ok := b.idExists(id)
+func (b *BlockManager) GetId() string {
+	id := <- b.genId
+	ok := b.IdExists(id)
 	for ok {
-		id = <-b.genId
-		ok = b.idExists(id)
+		id = <- b.genId
+		ok = b.IdExists(id)
 	}
 	return id
 }
 
-func (b *BlockManager) idExists(id string) bool {
+func (b *BlockManager) IdExists(id string) bool {
 	_, okB := b.blockMap[id]
 	_, okC := b.connMap[id]
-	return okB || okC
+	return okB || okC 
 }
 
 func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
@@ -81,11 +81,11 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 
 	// create ID if there is none
 	if block.Id == "" {
-		block.Id = b.getID()
+		block.Id = b.GetId()
 	}
 
 	// make sure ID doesn't already exist
-	if b.idExists(block.Id) {
+	if b.IdExists(block.Id) {
 		return nil, errors.New("Cannot create: id already exists")
 	}
 
@@ -98,7 +98,7 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 	// go blockroutine create block here
 	b.blockMap[block.Id] = block
 
-	// if rule != nil
+	// if rule != nil 
 	// do a send on the rule.
 
 	return block, nil
@@ -142,21 +142,21 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 
 	// create ID if there is none
 	if conn.Id == "" {
-		conn.Id = b.getID()
+		conn.Id = b.GetId()
 	}
 
 	// make sure ID doesn't already exist
-	if b.idExists(conn.Id) {
+	if b.IdExists(conn.Id) {
 		return nil, errors.New("Cannot create: id already exists")
 	}
 
 	// check to see if the blocks that we are attaching to exist
-	fromExists := b.idExists(conn.FromId)
+	fromExists := b.IdExists(conn.FromId)
 	if !fromExists {
 		return nil, errors.New("Cannot create: FromId ID does not exist")
 	}
 
-	toExists := b.idExists(conn.ToId)
+	toExists := b.IdExists(conn.ToId)
 	if !toExists {
 		return nil, errors.New("Cannot create: ToId ID does not exist")
 	}
