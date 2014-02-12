@@ -193,6 +193,16 @@ func (b *BlockManager) DeleteBlock(id string) error {
 		return errors.New(fmt.Sprintf("Cannot delete block %s: does not exist", id))
 	}
 
+	// delete connections that reference this block
+	for _, c := range d.connMap {
+		if c.FromId == id {
+			b.DeleteConnection(c.Id)
+		}
+		if c.ToId == id {
+			b.DeleteConnection(c.Id)
+		}
+	}
+
 	// turn off block here
 	// close channels, whatever.
 
