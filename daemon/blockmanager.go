@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nytlabs/streamtools/blocks"
+	"net/url"
 	"strconv"
 )
 
@@ -74,9 +75,18 @@ func (b *BlockManager) IdExists(id string) bool {
 	return okB || okC
 }
 
+func (b *BlockManager) IdSafe(id string) bool {
+	return url.QueryEscape(id) == id && id != "DAEMON"
+}
+
 func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 	if block == nil {
 		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", block.Id))
+	}
+
+	// check to see if the ID is OK
+	if !b.IdSafe(block.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", block.Id))
 	}
 
 	// create ID if there is none
@@ -140,6 +150,11 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 		return nil, errors.New("Cannot create: no connection data.")
 	}
 
+	// check to see if the ID is OK
+	if !b.IdSafe(conn.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", conn.Id))
+	}
+
 	// create ID if there is none
 	if conn.Id == "" {
 		conn.Id = b.GetId()
@@ -194,7 +209,7 @@ func (b *BlockManager) DeleteBlock(id string) error {
 	}
 
 	// delete connections that reference this block
-	for _, c := range d.connMap {
+	for _, c := range b.connMap {
 		if c.FromId == id {
 			b.DeleteConnection(c.Id)
 		}
