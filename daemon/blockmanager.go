@@ -4,9 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/nytlabs/streamtools/blocks"
-	"net/url"
 	"strconv"
-	"sync"
+	"net/url"
 )
 
 // so i don't forget:
@@ -38,7 +37,6 @@ type BlockManager struct {
 	blockMap map[string]*BlockInfo
 	connMap  map[string]*ConnectionInfo
 	genId    chan string
-	Mu       *sync.Mutex
 }
 
 func IDService(idChan chan string) {
@@ -58,7 +56,6 @@ func NewBlockManager() *BlockManager {
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
 		genId:    idChan,
-		Mu:       &sync.Mutex{},
 	}
 }
 
@@ -155,7 +152,7 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 
 	// check to see if the ID is OK
 	if !b.IdSafe(conn.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", conn.Id))
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id",conn.Id))
 	}
 
 	// create ID if there is none
