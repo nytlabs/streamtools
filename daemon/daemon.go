@@ -12,7 +12,11 @@ import (
 
 const (
 	ADD_CHAN = iota
-	DEL_CHAN	
+	DEL_CHAN
+)
+
+const (
+	VERSION = ".2.1"
 )
 
 var logStream = hub{
@@ -39,8 +43,8 @@ type Daemon struct {
 func NewDaemon() *Daemon {
 	return &Daemon{
 		manager: NewBlockManager(),
-		log:     make(chan *LogMsg),
-		ui: 	 make(chan *LogMsg),
+		log:     make(chan *LogMsg, 10),
+		ui: 	 make(chan *LogMsg, 10),
 	}
 }
 
@@ -116,13 +120,13 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &export)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
@@ -142,10 +146,16 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 
 	for _, block := range export.Blocks {
 		block.Id = corrected[block.Id]
-		_, err := d.manager.Create(block)
+		eblock, err := d.manager.Create(block)
 		if err != nil {
-			d.apiWrap(w, 500, d.response(err.Error()))
+			d.apiWrap(w, r, 500, d.response(err.Error()))
 			return
+		}
+
+		d.ui <- &LogMsg{
+			Type: "CREATE",
+			Data: eblock,
+			Id: "DAEMON",
 		}
 	}
 
@@ -153,14 +163,26 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 		conn.Id = corrected[conn.Id]
 		conn.FromId = corrected[conn.FromId]
 		conn.ToId = corrected[conn.ToId]
-		_, err := d.manager.Connect(conn)
+		econn, err := d.manager.Connect(conn)
 		if err != nil {
-			d.apiWrap(w, 500, d.response(err.Error()))
+			d.apiWrap(w, r, 500, d.response(err.Error()))
 			return
+		}
+
+		d.ui <- &LogMsg{
+			Type: "CREATE",
+			Data: econn,
+			Id: "DAEMON",
 		}
 	}
 
-	d.apiWrap(w, 200, d.response("OK"))
+	d.log <- &LogMsg{
+	    Type: "INFO",
+	    Data: "Import OK",
+	    Id: "DAEMON",
+	}
+
+	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
 func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
@@ -174,20 +196,20 @@ func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
 
 	jex, err := json.Marshal(export)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, 200, jex)
+	d.apiWrap(w, r, 200, jex)
 }
 
 func (d *Daemon) listBlockHandler(w http.ResponseWriter, r *http.Request) {
 	blocks, err := json.Marshal(d.manager.ListBlocks())
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, blocks)
+	d.apiWrap(w, r, 200, blocks)
 }
 
 func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
@@ -195,42 +217,36 @@ func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &block)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	mblock, err := d.manager.Create(block)
 
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
-	}
-
-	jblock, err := json.Marshal(mblock)
-	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
-		return
-	}
-
-	d.log <- &LogMsg{
-	    Type: "INFO",
-	    Data: "BLOCK CREATED",
-	    Id: "DAEMON",
 	}
 
 	d.ui <- &LogMsg{
 		Type: "CREATE",
-		Data: jblock,
+		Data: mblock,
 		Id: "DAEMON",
 	}
 
-	d.apiWrap(w, 200, jblock)
+	jblock, err := json.Marshal(mblock)
+	if err != nil {
+		d.apiWrap(w, r, 500, d.response(err.Error()))
+		return
+	}
+
+	d.apiWrap(w, r, 200, jblock)
 }
 
 func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
@@ -239,30 +255,40 @@ func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &coord)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	mblock, err := d.manager.UpdateBlock(vars["id"], coord)
 
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	jblock, err := json.Marshal(mblock)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, 200, jblock)
+	d.ui <- &LogMsg{
+		Type: "UPDATE",
+		Data: struct{
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: "DAEMON",
+	}
+
+	d.apiWrap(w, r, 200, jblock)
 }
 
 func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
@@ -270,23 +296,23 @@ func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := d.manager.GetBlock(vars["id"])
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	jconn, err := json.Marshal(conn)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, jconn)
+	d.apiWrap(w, r, 200, jconn)
 }
 
 func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	err := d.manager.DeleteBlock(vars["id"])
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
@@ -300,7 +326,7 @@ func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 		Id: "DAEMON",
 	}
 
-	d.apiWrap(w, 200, d.response("OK"))
+	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
 func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
@@ -309,22 +335,33 @@ func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &msg)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 	err = d.manager.Send(vars["id"], vars["route"], msg)
 
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, d.response("OK"))
+
+	d.ui <- &LogMsg{
+		Type: "UPDATE",
+		Data: struct{
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: "DAEMON",
+	}
+
+	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
 func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
@@ -332,26 +369,36 @@ func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 	msg, err := d.manager.Query(vars["id"], vars["route"])
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, 200, jmsg)
+	d.ui <- &LogMsg{
+		Type: "QUERY",
+		Data: struct{
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: "DAEMON",
+	}
+
+	d.apiWrap(w, r, 200, jmsg)
 }
 
 func (d *Daemon) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	conns, err := json.Marshal(d.manager.ListConnections())
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, conns)
+	d.apiWrap(w, r, 200, conns)
 }
 
 func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request) {
@@ -359,30 +406,36 @@ func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &conn)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	mconn, err := d.manager.Connect(conn)
 
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
+	}
+
+	d.ui <- &LogMsg{
+		Type: "CREATE",
+		Data: mconn,
+		Id: "DAEMON",
 	}
 
 	jconn, err := json.Marshal(mconn)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, 200, jconn)
+	d.apiWrap(w, r, 200, jconn)
 }
 
 func (d *Daemon) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
@@ -390,16 +443,16 @@ func (d *Daemon) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := d.manager.GetConnection(vars["id"])
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
 	jconn, err := json.Marshal(conn)
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, jconn)
+	d.apiWrap(w, r, 200, jconn)
 }
 
 func (d *Daemon) response(statusTxt string) []byte {
@@ -409,25 +462,43 @@ func (d *Daemon) response(statusTxt string) []byte {
 		statusTxt,
 	})
 	if err != nil {
-		response = []byte(fmt.Sprintf(`{"daemon":"%s"}`, err.Error()))
+		response = []byte(fmt.Sprintf(`{"DAEMON":"%s"}`, err.Error()))
 	}
 	return response
 }
 
-func (d *Daemon) apiWrap(w http.ResponseWriter, statusCode int, data []byte) {
+func (d *Daemon) apiWrap(w http.ResponseWriter, r  *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	w.Write(data)
+
+	if statusCode == 200 {
+		d.log <- &LogMsg{
+		    Type: "INFO",
+		    Data: fmt.Sprintf("%d", statusCode) +": " + r.URL.Path,
+		    Id: "DAEMON",
+		}
+	} else {
+		var err struct {
+			DAEMON string
+		}
+		_ = json.Unmarshal(data, &err)
+		d.log <- &LogMsg{
+		    Type: "ERROR",
+		    Data: err.DAEMON,
+		    Id: "DAEMON",
+		}
+	}
 }
 
 func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	err := d.manager.DeleteConnection(vars["id"])
 	if err != nil {
-		d.apiWrap(w, 500, d.response(err.Error()))
+		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, 200, d.response("OK"))
+	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
 func (d *Daemon) Run() {
@@ -455,6 +526,12 @@ func (d *Daemon) Run() {
 	r.HandleFunc("/connections/{id}", d.deleteConnectionHandler).Methods("DELETE") // delete connection
 	r.HandleFunc("/connections/{id}/{route}", d.queryRouteHandler).Methods("GET")  // get from block route
 	http.Handle("/", r)
+
+	d.log <- &LogMsg{
+	    Type: "INFO",
+	    Data: fmt.Sprintf("Starting Streamtools %s on port %s", VERSION, d.Port),
+	    Id: "DAEMON",
+	}
 
 	err := http.ListenAndServe(":"+d.Port, nil)
 	if err != nil {
@@ -486,6 +563,7 @@ func BroadcastStream(ui chan *LogMsg, logger chan *LogMsg) {
 				break
 			}
 			uiStream.Broadcast <- j
+			logger <- l
 		}
 	}
 }
