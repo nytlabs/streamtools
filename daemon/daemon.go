@@ -44,13 +44,6 @@ func NewDaemon() *Daemon {
 	}
 }
 
-func addDefaultHeaders(fn http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		fn(w, r)
-	}
-}
-
 func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello!")
 }
@@ -59,6 +52,8 @@ func (d *Daemon) staticHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello!")
 }
 
+// serveLogStream handles websocket connections for the streamtools log.
+// It is write-only. 
 func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
@@ -84,6 +79,9 @@ func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
 	c.readPump(recv)
 }
 
+// serveUIStream handles websocket connections for the streamtools ui.
+// It is read/write. Upon hearing anything sent from the client it dumps
+// the current ST state into the websocket.
 func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
@@ -135,6 +133,8 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	c.readPump(recv)
 }
 
+// importHandler accepts a JSON through POST that updats the state of ST
+// It handles naming collisions by modifying the incoming block pattern.
 func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 	var export struct {
 		Blocks      []*BlockInfo
@@ -221,6 +221,7 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
+// exportHandler creates a JSON file representing the current block system.
 func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
 	export := struct {
 		Blocks      []*BlockInfo
@@ -239,6 +240,7 @@ func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jex)
 }
 
+// listBlockHandler retuns a slice of the current blocks operating in the sytem.
 func (d *Daemon) listBlockHandler(w http.ResponseWriter, r *http.Request) {
 	blocks, err := json.Marshal(d.manager.ListBlocks())
 	if err != nil {
@@ -248,6 +250,8 @@ func (d *Daemon) listBlockHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, blocks)
 }
 
+// createBlockHandler asks the manager to create a block and then return that block
+// if the block has been created.
 func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	var block *BlockInfo
 
@@ -291,6 +295,8 @@ func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jblock)
 }
 
+// updateBlockHandler updates the coordinates of a block. 
+// block.id and block.type can't be changed. block.rule is set through sendRoute
 func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	var coord *Coords
 	vars := mux.Vars(r)
@@ -335,6 +341,7 @@ func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jblock)
 }
 
+// blockInfoHandler returns a block given an id
 func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -352,6 +359,7 @@ func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jconn)
 }
 
+// deleteBlockHandler asks the block manager to delete a block. 
 func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	err := d.manager.DeleteBlock(vars["id"])
@@ -379,6 +387,7 @@ func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
+// sendRouteHandler sends a message to a block's route. (unidirectional)
 func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 	var msg interface{}
 	vars := mux.Vars(r)
@@ -420,6 +429,7 @@ func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
+// queryRouteHandler queries a block and returns a msg. (bidirectional)
 func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -454,6 +464,7 @@ func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jmsg)
 }
 
+// listConnectionHandler returns a slice of the current connections in streamtools.
 func (d *Daemon) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	conns, err := json.Marshal(d.manager.ListConnections())
 	if err != nil {
@@ -463,6 +474,7 @@ func (d *Daemon) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, conns)
 }
 
+// createConnectHandler creates a connection and returns it. 
 func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	var conn *ConnectionInfo
 
@@ -506,6 +518,7 @@ func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 	d.apiWrap(w, r, 200, jconn)
 }
 
+// connectionInfoHandler returns a connection object, given an id.
 func (d *Daemon) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -523,6 +536,7 @@ func (d *Daemon) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, jconn)
 }
 
+// response wraps error responses from the daemon in JSON
 func (d *Daemon) response(statusTxt string) []byte {
 	response, err := json.Marshal(struct {
 		StatusTxt string `json:"daemon"`
@@ -535,6 +549,7 @@ func (d *Daemon) response(statusTxt string) []byte {
 	return response
 }
 
+// apiWrap wraps all HTTP responses with approprite headers, status codes, and logs them.
 func (d *Daemon) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -559,6 +574,7 @@ func (d *Daemon) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int,
 	}
 }
 
+// deleteConnectionHandler deletes a connection, responds with OK.
 func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	err := d.manager.DeleteConnection(vars["id"])
@@ -566,6 +582,23 @@ func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
+	
+	d.log <- &util.LogMsg{
+		Type: util.DELETE,
+		Data: fmt.Sprintf("Connection %s", vars["id"]),
+		Id:   "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.DELETE,
+		Data: struct {
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: "DAEMON",
+	}
+
 	d.apiWrap(w, r, 200, d.response("OK"))
 }
 
@@ -607,6 +640,8 @@ func (d *Daemon) Run() {
 	}
 }
 
+// BroadcastStream routes logs and block system changes to websocket hubs
+// and terminal.
 func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
 	for {
 		select {

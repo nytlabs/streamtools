@@ -1,3 +1,4 @@
+// https://github.com/gorilla/websocket/blob/master/examples/chat/conn.go
 // Copyright 2013 Gary Burd. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -6,8 +7,6 @@ package daemon
 
 import (
 	"github.com/gorilla/websocket"
-	//"log"
-	//"net/http"
 	"time"
 )
 
