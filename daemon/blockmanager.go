@@ -3,8 +3,8 @@ package daemon
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"github.com/nytlabs/streamtools/blocks"
+	"strconv"
 )
 
 // so i don't forget:
@@ -12,11 +12,11 @@ import (
 // connects should set messages route.
 
 type BlockInfo struct {
-	Id   string
-	Type string
-	Rule interface{}
+	Id       string
+	Type     string
+	Rule     interface{}
 	Position *Coords
-	in   chan interface{}
+	in       chan interface{}
 }
 
 type ConnectionInfo struct {
@@ -35,7 +35,7 @@ type Coords struct {
 type BlockManager struct {
 	blockMap map[string]*BlockInfo
 	connMap  map[string]*ConnectionInfo
-	genId chan string
+	genId    chan string
 }
 
 func IDService(idChan chan string) {
@@ -54,15 +54,15 @@ func NewBlockManager() *BlockManager {
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
-		genId: idChan,
+		genId:    idChan,
 	}
 }
 
 func (b *BlockManager) GetId() string {
-	id := <- b.genId
+	id := <-b.genId
 	ok := b.IdExists(id)
 	for ok {
-		id = <- b.genId
+		id = <-b.genId
 		ok = b.IdExists(id)
 	}
 	return id
@@ -71,7 +71,7 @@ func (b *BlockManager) GetId() string {
 func (b *BlockManager) IdExists(id string) bool {
 	_, okB := b.blockMap[id]
 	_, okC := b.connMap[id]
-	return okB || okC 
+	return okB || okC
 }
 
 func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
@@ -98,7 +98,7 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 	// go blockroutine create block here
 	b.blockMap[block.Id] = block
 
-	// if rule != nil 
+	// if rule != nil
 	// do a send on the rule.
 
 	return block, nil
