@@ -382,7 +382,7 @@ func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	d.ui <- &util.LogMsg{
-		Type: util.QUERY,
+		Type: util.UPDATE,
 		Data: struct {
 			Id string
 		}{
