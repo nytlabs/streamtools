@@ -76,7 +76,7 @@ func (b *BlockManager) IdExists(id string) bool {
 
 func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 	if block == nil {
-		return nil, errors.New("Cannot create: no block data.")
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", block.Id))
 	}
 
 	// create ID if there is none
@@ -86,13 +86,13 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 
 	// make sure ID doesn't already exist
 	if b.IdExists(block.Id) {
-		return nil, errors.New("Cannot create: id already exists")
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: id already exists", block.Id))
 	}
 
 	// check block Type
 	_, ok := blocks.Library[block.Type]
 	if !ok {
-		return nil, errors.New("Cannot create: invalid block type")
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid block type %s", block.Id, block.Type))
 	}
 
 	// go blockroutine create block here
@@ -107,7 +107,7 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error) {
 	block, ok := b.blockMap[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+		return nil, errors.New(fmt.Sprintf("Cannot update block %s: does not exist", id))
 	}
 
 	block.Position = coord
@@ -118,7 +118,7 @@ func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error)
 func (b *BlockManager) Send(id string, route string, msg interface{}) error {
 	_, ok := b.blockMap[id]
 	if !ok {
-		return errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+		return errors.New(fmt.Sprintf("Cannot send to block %s: does not exist", id))
 	}
 	// send message to block here
 
@@ -128,7 +128,7 @@ func (b *BlockManager) Send(id string, route string, msg interface{}) error {
 func (b *BlockManager) Query(id string, route string) (interface{}, error) {
 	_, ok := b.blockMap[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
 	}
 	// send qury to block here
 
@@ -147,18 +147,18 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 
 	// make sure ID doesn't already exist
 	if b.IdExists(conn.Id) {
-		return nil, errors.New("Cannot create: id already exists")
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: id already exists", conn.Id))
 	}
 
 	// check to see if the blocks that we are attaching to exist
 	fromExists := b.IdExists(conn.FromId)
 	if !fromExists {
-		return nil, errors.New("Cannot create: FromId ID does not exist")
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: FromId block does not exist", conn.Id))
 	}
 
 	toExists := b.IdExists(conn.ToId)
 	if !toExists {
-		return nil, errors.New("Cannot create: ToId ID does not exist")
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: ToId ID does not exist", conn.Id))
 	}
 
 	// go blockroutine create block here
@@ -170,7 +170,7 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
 	block, ok := b.blockMap[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+		return nil, errors.New(fmt.Sprintf("Cannot get block %s: does not exist", id))
 	}
 
 	// retrieve block's and set it here.
@@ -182,7 +182,7 @@ func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
 func (b *BlockManager) GetConnection(id string) (*ConnectionInfo, error) {
 	_, ok := b.connMap[id]
 	if !ok {
-		return nil, errors.New(fmt.Sprintf("connection ID: %s does not exist", id))
+		return nil, errors.New(fmt.Sprintf("Cannot get connection %s: does not exist", id))
 	}
 	return b.connMap[id], nil
 }
@@ -190,7 +190,7 @@ func (b *BlockManager) GetConnection(id string) (*ConnectionInfo, error) {
 func (b *BlockManager) DeleteBlock(id string) error {
 	_, ok := b.blockMap[id]
 	if !ok {
-		return errors.New(fmt.Sprintf("block ID: %s does not exist", id))
+		return errors.New(fmt.Sprintf("Cannot delete block %s: does not exist", id))
 	}
 
 	// turn off block here
@@ -204,7 +204,7 @@ func (b *BlockManager) DeleteBlock(id string) error {
 func (b *BlockManager) DeleteConnection(id string) error {
 	_, ok := b.connMap[id]
 	if !ok {
-		return errors.New(fmt.Sprintf("connection ID: %s does not exist", id))
+		return errors.New(fmt.Sprintf("Cannot delete connection %s: does not exist", id))
 	}
 
 	// call disconnecting stuff here
