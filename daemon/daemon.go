@@ -5,18 +5,16 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/nytlabs/streamtools/util"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
 	ADD_CHAN = iota
 	DEL_CHAN
-)
-
-const (
-	VERSION = ".2.1"
 )
 
 var logStream = hub{
@@ -35,16 +33,16 @@ var uiStream = hub{
 
 type Daemon struct {
 	manager *BlockManager
-	log     chan *LogMsg
-	ui 		chan *LogMsg
+	log     chan *util.LogMsg
+	ui 		chan *util.LogMsg
 	Port    string
 }
 
 func NewDaemon() *Daemon {
 	return &Daemon{
 		manager: NewBlockManager(),
-		log:     make(chan *LogMsg, 10),
-		ui: 	 make(chan *LogMsg, 10),
+		log:     make(chan *util.LogMsg, 10),
+		ui: 	 make(chan *util.LogMsg, 10),
 	}
 }
 
@@ -152,9 +150,15 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		d.ui <- &LogMsg{
-			Type: "CREATE",
+		d.ui <- &util.LogMsg{
+			Type: util.CREATE,
 			Data: eblock,
+			Id: "DAEMON",
+		}
+
+		d.log <- &util.LogMsg{
+			Type: util.CREATE,
+			Data: fmt.Sprintf("Block %s",block.Id),
 			Id: "DAEMON",
 		}
 	}
@@ -169,15 +173,21 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		d.ui <- &LogMsg{
-			Type: "CREATE",
+		d.log <- &util.LogMsg{
+			Type: util.CREATE,
+			Data: fmt.Sprintf("Connection %s", conn.Id),
+			Id: "DAEMON",
+		}
+
+		d.ui <- &util.LogMsg{
+			Type: util.CREATE,
 			Data: econn,
 			Id: "DAEMON",
 		}
 	}
 
-	d.log <- &LogMsg{
-	    Type: "INFO",
+	d.log <- &util.LogMsg{
+	    Type: util.INFO,
 	    Data: "Import OK",
 	    Id: "DAEMON",
 	}
@@ -234,9 +244,15 @@ func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "CREATE",
+	d.ui <- &util.LogMsg{
+		Type: util.CREATE,
 		Data: mblock,
+		Id: "DAEMON",
+	}
+
+	d.log <- &util.LogMsg{
+		Type: util.CREATE,
+		Data: fmt.Sprintf("Block %s", mblock.Id),
 		Id: "DAEMON",
 	}
 
@@ -278,8 +294,14 @@ func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "UPDATE",
+	d.log <- &util.LogMsg{
+		Type: util.UPDATE,
+		Data: fmt.Sprintf("Block %s", mblock.Id),
+		Id: "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.UPDATE,
 		Data: struct{
 			Id string
 		}{
@@ -316,8 +338,14 @@ func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "DELETE",
+	d.log <- &util.LogMsg{
+		Type: util.DELETE,
+		Data: fmt.Sprintf("Block %s", vars["id"]),
+		Id: "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.DELETE,
 		Data: struct{
 			Id string
 		}{
@@ -351,8 +379,14 @@ func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "UPDATE",
+	d.log <- &util.LogMsg{
+		Type: util.UPDATE,
+		Data: fmt.Sprintf("Block %s", vars["id"]),
+		Id: "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.UPDATE,
 		Data: struct{
 			Id string
 		}{
@@ -379,8 +413,14 @@ func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "QUERY",
+	d.log <- &util.LogMsg{
+		Type: util.QUERY,
+		Data: fmt.Sprintf("Block %s", vars["id"]),
+		Id: "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.QUERY,
 		Data: struct{
 			Id string
 		}{
@@ -423,8 +463,14 @@ func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	d.ui <- &LogMsg{
-		Type: "CREATE",
+	d.log <- &util.LogMsg{
+		Type: util.CREATE,
+		Data: fmt.Sprintf("Connection %s", mconn.Id),
+		Id: "DAEMON",
+	}
+
+	d.ui <- &util.LogMsg{
+		Type: util.CREATE,
 		Data: mconn,
 		Id: "DAEMON",
 	}
@@ -473,8 +519,8 @@ func (d *Daemon) apiWrap(w http.ResponseWriter, r  *http.Request, statusCode int
 	w.Write(data)
 
 	if statusCode == 200 {
-		d.log <- &LogMsg{
-		    Type: "INFO",
+		d.log <- &util.LogMsg{
+		    Type: util.INFO,
 		    Data: fmt.Sprintf("%d", statusCode) +": " + r.URL.Path,
 		    Id: "DAEMON",
 		}
@@ -483,8 +529,8 @@ func (d *Daemon) apiWrap(w http.ResponseWriter, r  *http.Request, statusCode int
 			DAEMON string
 		}
 		_ = json.Unmarshal(data, &err)
-		d.log <- &LogMsg{
-		    Type: "ERROR",
+		d.log <- &util.LogMsg{
+		    Type: util.ERROR,
 		    Data: err.DAEMON,
 		    Id: "DAEMON",
 		}
@@ -527,9 +573,9 @@ func (d *Daemon) Run() {
 	r.HandleFunc("/connections/{id}/{route}", d.queryRouteHandler).Methods("GET")  // get from block route
 	http.Handle("/", r)
 
-	d.log <- &LogMsg{
-	    Type: "INFO",
-	    Data: fmt.Sprintf("Starting Streamtools %s on port %s", VERSION, d.Port),
+	d.log <- &util.LogMsg{
+	    Type: util.INFO,
+	    Data: fmt.Sprintf("Starting Streamtools %s on port %s", util.VERSION, d.Port),
 	    Id: "DAEMON",
 	}
 
@@ -539,13 +585,7 @@ func (d *Daemon) Run() {
 	}
 }
 
-type LogMsg struct {
-	Type string
-	Data interface{}
-	Id   string
-}
-
-func BroadcastStream(ui chan *LogMsg, logger chan *LogMsg) {
+func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
 	for {
 		select {
 		case l := <-logger:
@@ -554,7 +594,7 @@ func BroadcastStream(ui chan *LogMsg, logger chan *LogMsg) {
 				log.Println("could not broadcast")
 				break
 			}
-			log.Println(string(j))
+			fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s",time.Now().Format(time.Stamp), l.Id, util.LogInfo[l.Type], l.Data))
 			logStream.Broadcast <- j
 		case l := <-ui:
 			j, err := json.Marshal(l)
@@ -563,7 +603,6 @@ func BroadcastStream(ui chan *LogMsg, logger chan *LogMsg) {
 				break
 			}
 			uiStream.Broadcast <- j
-			logger <- l
 		}
 	}
 }
