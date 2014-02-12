@@ -36,7 +36,7 @@ type connection struct {
 }
 
 // readPump pumps messages from the websocket connection to the hub.
-func (c *connection) readPump() {
+func (c *connection) readPump(r chan string) {
 	defer func() {
 		c.Hub.unregister <- c
 		c.ws.Close()
@@ -49,7 +49,7 @@ func (c *connection) readPump() {
 		if err != nil {
 			break
 		}
-		c.Hub.Broadcast <- message
+		r <- string(message)
 	}
 }
 

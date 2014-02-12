@@ -9,12 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
-)
-
-const (
-	ADD_CHAN = iota
-	DEL_CHAN
 )
 
 var logStream = hub{
@@ -36,6 +32,7 @@ type Daemon struct {
 	log     chan *util.LogMsg
 	ui      chan *util.LogMsg
 	Port    string
+	Mu      *sync.Mutex
 }
 
 func NewDaemon() *Daemon {
@@ -43,6 +40,7 @@ func NewDaemon() *Daemon {
 		manager: NewBlockManager(),
 		log:     make(chan *util.LogMsg, 10),
 		ui:      make(chan *util.LogMsg, 10),
+		Mu:      &sync.Mutex{},
 	}
 }
 
@@ -82,7 +80,8 @@ func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
 	c := &connection{send: make(chan []byte, 256), ws: ws, Hub: logStream}
 	c.Hub.register <- c
 	go c.writePump()
-	c.readPump()
+	recv := make(chan string)
+	c.readPump(recv)
 }
 
 func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +105,34 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	c := &connection{send: make(chan []byte, 256), ws: ws, Hub: uiStream}
 	c.Hub.register <- c
 	go c.writePump()
-	c.readPump()
+
+	recv := make(chan string)
+
+	go func(r chan string) {
+		for {
+			select {
+			case <-r:
+				// emit block configuration on message
+				d.Mu.Lock()
+				for _, v := range d.manager.ListBlocks() {
+					d.ui <- &util.LogMsg{
+						Type: util.CREATE,
+						Data: v,
+						Id:   "DAEMON",
+					}
+				}
+				for _, v := range d.manager.ListConnections() {
+					d.ui <- &util.LogMsg{
+						Type: util.CREATE,
+						Data: v,
+						Id:   "DAEMON",
+					}
+				}
+				d.Mu.Unlock()
+			}
+		}
+	}(recv)
+	c.readPump(recv)
 }
 
 func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {

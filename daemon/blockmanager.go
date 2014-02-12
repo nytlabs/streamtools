@@ -6,6 +6,7 @@ import (
 	"github.com/nytlabs/streamtools/blocks"
 	"net/url"
 	"strconv"
+	"sync"
 )
 
 // so i don't forget:
@@ -37,6 +38,7 @@ type BlockManager struct {
 	blockMap map[string]*BlockInfo
 	connMap  map[string]*ConnectionInfo
 	genId    chan string
+	Mu       *sync.Mutex
 }
 
 func IDService(idChan chan string) {
@@ -56,6 +58,7 @@ func NewBlockManager() *BlockManager {
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
 		genId:    idChan,
+		Mu:       &sync.Mutex{},
 	}
 }
 
