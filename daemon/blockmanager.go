@@ -3,7 +3,7 @@ package daemon
 import (
 	"errors"
 	"fmt"
-	"github.com/nytlabs/streamtools/blocks"
+	//"github.com/nytlabs/streamtools/blocks"
 	"strconv"
 	"net/url"
 )
@@ -51,7 +51,7 @@ func IDService(idChan chan string) {
 func NewBlockManager() *BlockManager {
 	idChan := make(chan string)
 	go IDService(idChan)
-	blocks.BuildLibrary()
+	//blocks.BuildLibrary()
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
@@ -99,11 +99,19 @@ func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
 		return nil, errors.New(fmt.Sprintf("Cannot create block %s: id already exists", block.Id))
 	}
 
-	// check block Type
-	_, ok := blocks.Library[block.Type]
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid block type %s", block.Id, block.Type))
+	// give the block a position if it doesn't have one.
+	if block.Position == nil {
+		block.Position = &Coords{
+			X: 0,
+			Y: 0,
+		}
 	}
+
+	// check block Type
+	//_, ok := blocks.Library[block.Type]
+	//if !ok {
+	//	return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid block type %s", block.Id, block.Type))
+	//}
 
 	// go blockroutine create block here
 	b.blockMap[block.Id] = block

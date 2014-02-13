@@ -1,0 +1,39 @@
+* {
+    padding: 0px;
+    margin: 0px;
+}
+
+#log {
+    width: 100%;
+    position: absolute;
+    height: 100px;
+    overflow-y: scroll;
+    bottom: 0px;
+    left: 0px;
+}
+
+.log-item {
+    display: block;
+    font-family: Monaco, "Courier New", Courier, monospace;
+    font-size: 12px;
+}
+
+.date {
+    color: rgba(190,190,190,1);
+}
+
+.CREATE {
+    color: rgba(92, 217, 239, 1);
+}
+
+.UPDATE {
+    color: rgba(92, 217, 239, 1);
+}
+
+.ERROR {
+    color: rgba(240, 67, 40, 1);
+}
+
+.INFO {
+    color: rgba(220,220,220,1);
+}

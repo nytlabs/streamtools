@@ -44,12 +44,23 @@ func NewDaemon() *Daemon {
 	}
 }
 
+var resourceType = map[string]string{
+	"lib": "application/javascript; charset=utf-8",
+	"js": "application/javascript; charset=utf-8",
+	"css": "text/css; charset=utf-8",
+}
+
 func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello!")
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data, _ := Asset("gui/index.html")
+	w.Write(data)
 }
 
 func (d *Daemon) staticHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello!")
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", resourceType[vars["type"]])
+	data, _ := Asset("gui/static/" + vars["type"] + "/" + vars["file"])
+	w.Write(data)
 }
 
 // serveLogStream handles websocket connections for the streamtools log.
@@ -609,7 +620,7 @@ func (d *Daemon) Run() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", d.rootHandler)
-	r.HandleFunc("/static/{file}", d.staticHandler)
+	r.HandleFunc("/static/{type}/{file}", d.staticHandler)
 	r.HandleFunc("/log", d.serveLogStream)
 	r.HandleFunc("/ui", d.serveUIStream)
 	r.HandleFunc("/import", d.importHandler).Methods("POST")

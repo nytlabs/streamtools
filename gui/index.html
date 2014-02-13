@@ -2,82 +2,21 @@
 <head>
 <title>Streamtools</title>
 
-<link rel="stylesheet" type="text/css" href="static/main.css">
-<script src="static/d3.v3.min.js"></script>
-<script src="static/jquery-2.1.0.min.js"></script>
-<script src="static/underscore-min.js"></script>
-<script src="static/main.js"></script>
+<link rel="stylesheet" type="text/css" href="static/css/main.css">
+<script src="static/lib/d3.v3.min.js"></script>
+<script src="static/lib/jquery-2.1.0.min.js"></script>
+<script src="static/lib/underscore-min.js"></script>
+<script src="static/js/main.js"></script>
 
-<script type="text/template" id="block_info">
-    <div class="id">
-        <%= block.id %>
-    </div>
-    <div class="type" style="background: <%= block.hsl %>">
-       <%= block.BlockType %>
-    </div>
-</script>
-<script type="text/template" id="block_rule">
-    <% 
-        for(var key in rule) { 
-            type = typeof(rule[key])
-    %>
-        <div class="rule <%=type%>"><%=type%></div>
-        <div class="name"><%=key%></div>
-        <div class="in">
-    <%      switch(type){
-                case 'string':
-                case 'number':
-    %>
-        <input type="text" id="<%= block.ID %>_<%= key %>" value="<%= rule[key]%>">
-    <%               break;
-                case 'object':
-    %>
-        <textarea name="Text1" cols="25" rows="10" id="<%= block.ID %>_<%= key %>"><%= JSON.stringify(rule[key], null, 4) %></textarea>
-    <%               break;
-                case 'boolean':
-    %>
-        <select id="<%= block.ID %>_<%= key %>" >
-            <option value="false" <%= !rule[key] ? 'selected' : '' %> >false</option>
-            <option value="true" <%= rule[key] ? 'selected' : '' %> >true</option>
-        </select>
-    <%               break;
-            }
-    %> 
-        </div>
-    <%  } %>
-
-    <div id="update">update rule</div>
-</script>
-
-<script type="text/template" id="conn_rule">
-    <pre><%= JSON.stringify(data, null, 4) %></pre>
+<script type="text/template" id="log-item-template">
+    <span class="date"><%= item.time %></span>
+    <%= item.id %>
+    <span class="<%= item.type %>"><%= item.type %></span>
+    <%= item.data %>
 </script>
 
 </head>
 <body>
-    <div id="block_bar">
-        <div id="info"></div>
-        <div id="rule"></div>
-        <div id="delete">delete</div>
-    </div>
-    <div id="create">
-        <select id="library">
-        </select>
-        create
-    </div>
-    <div id="connect">
-        connect
-        <div id="source"></div>
-        <div id="target"></div>
-    </div>
-    <div id="term">
-        <input ype="text" id="hiddenTerm" />
-        <div id="response">
-            <pre id="respTxt">
-            </pre>
-        </div>
-        <span id="prompt">streamtools&gt;</span>
-        <span id="command"><span id="start"></span><span id="cursor">&nbsp;</span><span id="end"></span></span>
-    </div>
+<div id="log"></div>
 </body>
 </html>
