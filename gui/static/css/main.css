@@ -61,3 +61,8 @@
     stroke-width: 1px;
     stroke: rgba(80,80,80,1);
 }
+
+.rateLabel {
+    font-size: 12px;
+    font-family: helvetica, sans-serif;
+}

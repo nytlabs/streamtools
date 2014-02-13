@@ -33,8 +33,12 @@
 $(function() {
 
     var library = d3.nest()
-        .key(function(d, i){return d.Type})
-        .rollup(function(d){return d[0]})
+        .key(function(d, i) {
+            return d.Type
+        })
+        .rollup(function(d) {
+            return d[0]
+        })
         .map(JSON.parse($.ajax({
             url: '/library',
             type: 'GET',
@@ -63,15 +67,15 @@ $(function() {
         node = svg.select(".nodeContainer").selectAll(".node");
 
     var drag = d3.behavior.drag()
-        .on("drag", function(d,i) {
+        .on("drag", function(d, i) {
             d.Position.X += d3.event.dx
             d.Position.Y += d3.event.dy
-            d3.select(this).attr("transform", function(d,i){
-                return "translate(" + [ d.Position.X, d.Position.Y ] + ")"
+            d3.select(this).attr("transform", function(d, i) {
+                return "translate(" + [d.Position.X, d.Position.Y] + ")"
             })
             updateLinks();
         })
-        .on("dragend", function(d, i){
+        .on("dragend", function(d, i) {
             $.ajax({
                 url: '/blocks/' + d.Id,
                 type: 'PUT',
@@ -80,100 +84,109 @@ $(function() {
             });
         })
 
-    function logReader() {
-        var logTemplate = $('#log-item-template').html();
-        this.ws = new WebSocket("ws://localhost:7070/log");
+        function logReader() {
+            var logTemplate = $('#log-item-template').html();
+            this.ws = new WebSocket("ws://localhost:7070/log");
 
-        this.ws.onmessage = function(d) {
-            var logData = JSON.parse(d.data);
-            var logItem = $("<div />").addClass("log-item");
-            $("#log").append(logItem);
+            this.ws.onmessage = function(d) {
+                var logData = JSON.parse(d.data);
+                var logItem = $("<div />").addClass("log-item");
+                $("#log").append(logItem);
 
-            var tmpl = _.template(logTemplate, {
-                item: {
-                    type: logData.Type,
-                    time: new Date(),
-                    data: logData.Data,
-                    id: logData.Id,
-                }
-            });
-
-            logItem.html(tmpl);
-
-            var log = document.getElementById('log');
-            log.scrollTop = log.scrollHeight;
-        };
-    }
-
-    function uiReader() {
-        _this = this;
-        _this.handleMsg = null;
-        this.ws = new WebSocket("ws://localhost:7070/ui");
-        this.ws.onopen = function(d) {
-            _this.ws.send("get_state");
-        };
-        this.ws.onmessage = function(d) {
-            var uiMsg = JSON.parse(d.data)
-            var isBlock = uiMsg.Data.hasOwnProperty('Type');
-            switch (uiMsg.Type) {
-                case "CREATE":
-                    if(isBlock){
-                        uiMsg.Data.TypeInfo = library[uiMsg.Data.Type]
-                        blocks.push(uiMsg.Data)
-                    } else {
-                        connections.push(uiMsg.Data)
+                var tmpl = _.template(logTemplate, {
+                    item: {
+                        type: logData.Type,
+                        time: new Date(),
+                        data: logData.Data,
+                        id: logData.Id,
                     }
-                    update();
-                    break
-                case "DELETE":
-                    if(isBlock){
-                        for(var i = 0; i < blocks.length; i++){
-                            blocks.splice(i, 1)
+                });
+
+                logItem.html(tmpl);
+
+                var log = document.getElementById('log');
+                log.scrollTop = log.scrollHeight;
+            };
+        }
+
+        function uiReader() {
+            _this = this;
+            _this.handleMsg = null;
+            this.ws = new WebSocket("ws://localhost:7070/ui");
+            this.ws.onopen = function(d) {
+                _this.ws.send("get_state");
+            };
+            this.ws.onmessage = function(d) {
+                var uiMsg = JSON.parse(d.data)
+                var isBlock = uiMsg.Data.hasOwnProperty('Type');
+                switch (uiMsg.Type) {
+                    case "CREATE":
+                        if (isBlock) {
+                            uiMsg.Data.TypeInfo = library[uiMsg.Data.Type]
+                            blocks.push(uiMsg.Data)
+                        } else {
+                            connections.push(uiMsg.Data)
                         }
-                    } else {
-                        for(var i = 0; i < connections.length; i++){
-                            connections.splice(i, 1)
-                        }
-                    }
-                    update();
-                    break
-                case "UPDATE":
-                    if(isBlock){
-                        var block = null;
-                        for(var i = 0; i < blocks.length; i++){
-                            if(blocks[i].Id === uiMsg.Data.Id){
-                                block = blocks[i];
-                                break;
+                        update();
+                        break
+                    case "DELETE":
+                        if (isBlock) {
+                            for (var i = 0; i < blocks.length; i++) {
+                                blocks.splice(i, 1)
+                            }
+                        } else {
+                            for (var i = 0; i < connections.length; i++) {
+                                connections.splice(i, 1)
                             }
                         }
-                        if(block !== null){
-                            block.Position = uiMsg.Data.Position
-                            update();
+                        update();
+                        break
+                    case "UPDATE":
+                        if (isBlock) {
+                            var block = null;
+                            for (var i = 0; i < blocks.length; i++) {
+                                if (blocks[i].Id === uiMsg.Data.Id) {
+                                    block = blocks[i];
+                                    break;
+                                }
+                            }
+                            if (block !== null) {
+                                block.Position = uiMsg.Data.Position
+                                update();
+                            }
+
                         }
+                        updateLinks();
+                        break
+                    case "QUERY":
+                        break
+                }
+            };
+        }
 
-                    }
-                    updateLinks();
-                    break
-                case "QUERY":
-                    break
-            }
-        };
-    }
+    var d3line2 = d3.svg.line()
+        .x(function(d) {
+            return d.x;
+        })
+        .y(function(d) {
+            return d.y;
+        })
+        .interpolate("monotone");
 
-    function update(){
+    function update() {
         node = node.data(blocks, function(d) {
             return d.Id;
         });
 
         var nodes = node.enter()
             .append("g")
-            .call(drag)
-   
+            .call(drag);
+
         var rects = nodes.append("rect")
-            .attr("class", "node")
+            .attr("class", "node");
 
         var idRects = nodes.append("rect")
-            .attr('class', 'idrect')
+            .attr('class', 'idrect');
 
         nodes.append("svg:text")
             .attr("class", "nodetype")
@@ -183,24 +196,10 @@ $(function() {
             }).each(function(d) {
                 var bbox = this.getBBox();
                 d.width = (d.width > bbox.width ? d.width : bbox.width + 30);
-                d.height = (d.height > bbox.height ? d.height : bbox.height+ 5);
+                d.height = (d.height > bbox.height ? d.height : bbox.height + 5);
             }).attr("dy", function(d) {
                 return 1 * d.height + 5;
             })
-
-        /*nodes.append("svg:text")
-            .attr("class", "nodeid")
-            .attr("dx", 0)
-            .attr("dy", function(d) {
-                return 1 * d.height;
-            })
-            .text(function(d) {
-                return d.Id;
-            }).each(function(d) {
-                var bbox = this.getBBox();
-                d.width = (d.width > bbox.width + 20 ? d.width : bbox.width + 20);
-                d.height = (d.height > bbox.height + 20 ? d.height : bbox.height + 20);
-            });*/
 
         idRects
             .attr('x', 0)
@@ -212,120 +211,181 @@ $(function() {
                 return d.height * 2;
             })
 
-        /*rects
-            .attr('x', 0)
-            .attr('y', 0)
-            .attr('width', function(d) {
-                return d.width;
-            })
-            .attr('height', function(d) {
-                return d.height * 2;
-            })*/
-
         node.attr("transform", function(d) {
             return "translate(" + d.Position.X + ", " + d.Position.Y + ")";
         });
 
         var inRoutes = node.selectAll('.inRoutes')
-            .data(function(d){
+            .data(function(d) {
                 return d.TypeInfo.InRoutes
             })
 
         inRoutes.enter()
             .append("rect")
-            .attr("class","chan-in")
-            .attr("x",function(d, i){
+            .attr("class", "chan-in")
+            .attr("x", function(d, i) {
                 return i * 15
             })
-            .attr("y",0)
+            .attr("y", 0)
             .attr("width", 10)
-            .attr("height",10)
+            .attr("height", 10)
 
         inRoutes.exit().remove();
 
         var queryRoutes = node.selectAll('.queryRoutes')
-            .data(function(d){
+            .data(function(d) {
                 return d.TypeInfo.QueryRoutes
             })
 
         queryRoutes.enter()
             .append("rect")
-            .attr("class","chan-in")
-            .attr("x",function(d, i){
+            .attr("class", "chan-in")
+            .attr("x", function(d, i) {
                 var p = d3.select(this.parentNode).datum()
                 return (p.width - 10)
             })
-            .attr("y",function(d, i){
-                return i * 15
+            .attr("y", function(d, i) {
+                return i * 15;
             })
             .attr("width", 10)
-            .attr("height",10)
+            .attr("height", 10)
 
         queryRoutes.exit().remove();
 
         var outRoutes = node.selectAll('.outRoutes')
-            .data(function(d){
-                return d.TypeInfo.OutRoutes
-            })
+            .data(function(d) {
+                return d.TypeInfo.OutRoutes;
+            });
 
         outRoutes.enter()
             .append("rect")
-            .attr("class","chan-in")
-            .attr("x",function(d, i){
-                return i * 15
+            .attr("class", "chan-in")
+            .attr("x", function(d, i) {
+                return i * 15;
             })
-            .attr("y",function(d, i){
-                var p = d3.select(this.parentNode).datum()
-                return ((p.height * 2) - 10)
+            .attr("y", function(d, i) {
+                var p = d3.select(this.parentNode).datum();
+                return ((p.height * 2) - 10);
             })
             .attr("width", 10)
-            .attr("height",10)
+            .attr("height", 10);
 
         outRoutes.exit().remove();
 
         node.exit().remove();
 
-        link = link.data(connections, function(d){
-            return d.Id
-        })
+        link = link.data(connections, function(d) {
+            return d.Id;
+        });
 
         link.enter()
-            .append("line")
+            .append("svg:path")
             .attr("class", "link")
+            .style("fill", "none")
+            .attr("id", function(d) {
+                return "link_" + d.Id
+            })
+            .each(function(d) {
+                d.path = d3.select(this)[0][0];
+                console.log(d)
+                d.from = node.filter(function(p, i) {
+                    return p.Id == d.FromId;
+                }).datum();
+                d.to = node.filter(function(p, i) {
+                    return p.Id == d.ToId;
+                }).datum();
+                d.rate = 10.00;
+                d.rateLoc = 0.0;
+            });
+
+        var ping = svg.select('.linkContainer').selectAll(".edgePing")
+            .data(connections, function(d) {
+                return d.Id;
+            });
+
+        ping.enter()
+            .append("circle")
+            .attr("class", "edgePing")
+            .attr("r", 4);
+
+        ping.exit().remove();
+
+        var edgeLabel = svg.select('.linkContainer').selectAll(".edgeLabel")
+            .data(connections, function(d) {
+                return d.Id;
+            });
+
+        var ed = edgeLabel.enter()
+            .append("g")
+            .attr("class", "edgeLabel")
+            .append("text")
+            .attr("dy", -2)
+            .attr("text-anchor", "middle")
+            .append("textPath")
+            .attr("class", "rateLabel")
+            .attr("startOffset", "50%")
+            .attr("xlink:href", function(d) {
+                return "#link_" + d.Id;
+            })
+            .text(function(d) {
+                return d.rate;
+            });
+
+        edgeLabel.exit().remove();
 
         updateLinks();
-
         link.exit().remove();
     }
 
+    window.setInterval(function() {
+        d3.selectAll(".rateLabel")
+            .text(function(d) {
+                // this is dumb.
+                // d.rate = Math.sin(+new Date() * .0000001) * Math.random() * 5;
+                return Math.round(100 * d.rate) / 100.0;
+            });
+    }, 100);
+
+    window.setInterval(function() {
+        svg.selectAll('.edgePing')
+            .each(function(d) {
+                d.rate += Math.random();
+                d.rateLoc += 0.001 + Math.min(d.rate, 100) / 4000.0;
+                if (d.rateLoc > 1) d.rateLoc = 0;
+                d.edgePos = d.path.getPointAtLength(d.rateLoc * d.path.getTotalLength())
+            })
+            .attr('cx', function(d) {
+                return d.edgePos.x;
+            })
+            .attr('cy', function(d) {
+                return d.edgePos.y;
+            });
+    }, 1000 / 60);
+
     // updateLinks() is too slow!
-    function updateLinks(){
-        link.attr("x1", function(d){
-                var from = node.filter(function(p, i){ return p.Id == d.FromId }).datum()
-                return from.Position.X + 5
-            })
-            .attr("y1", function(d){
-                var from = node.filter(function(p, i){ return p.Id == d.FromId }).datum()
-                return (from.Position.Y + from.height * 2) - 5
-            })
-            .attr("x2", function(d){
-                var to = node.filter(function(p, i){ return p.Id == d.ToId }).datum()
-                var i = to.TypeInfo.InRoutes.indexOf(d.ToRoute)
-                return to.Position.X + (i * 15) + 5 
-            })
-            .attr("y2", function(d){
-                var to = node.filter(function(p, i){ return p.Id == d.ToId }).datum()
-                return to.Position.Y + 5
-            })
+    function updateLinks() {
+        link.attr("d", function(d) {
+            return d3line2([{
+                x: d.from.Position.X + 5,
+                y: (d.from.Position.Y + d.from.height * 2) - 5
+            }, {
+                x: d.from.Position.X + 5,
+                y: (d.from.Position.Y + d.from.height * 2) + 15
+            }, {
+                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * 15) + 5,
+                y: d.to.Position.Y - 15
+            }, {
+                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * 15) + 5,
+                y: d.to.Position.Y + 5
+            }]);
+        });
     }
 
-    b = new logReader();
-    c = new uiReader();
 
 
 
-
-
+    var b = new logReader();
+    var c = new uiReader();
 
 
 });
