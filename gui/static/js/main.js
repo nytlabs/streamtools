@@ -66,6 +66,10 @@ $(function() {
     var link = svg.select(".linkContainer").selectAll(".link"),
         node = svg.select(".nodeContainer").selectAll(".node");
 
+    var tooltip = d3.select("body")
+        .append("div")
+        .attr('class', 'tooltip')
+
     var drag = d3.behavior.drag()
         .on("drag", function(d, i) {
             d.Position.X += d3.event.dx
@@ -222,13 +226,23 @@ $(function() {
 
         inRoutes.enter()
             .append("rect")
-            .attr("class", "chan-in")
+            .attr("class", "chan in")
             .attr("x", function(d, i) {
                 return i * 15
             })
             .attr("y", 0)
             .attr("width", 10)
             .attr("height", 10)
+            .on("mouseover", function(d) {
+                tooltip.text(d);
+                return tooltip.style("visibility", "visible");
+            })
+            .on("mousemove", function(d) {
+                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            })
+            .on("mouseout", function(d) {
+                return tooltip.style("visibility", "hidden");
+            });
 
         inRoutes.exit().remove();
 
@@ -239,7 +253,7 @@ $(function() {
 
         queryRoutes.enter()
             .append("rect")
-            .attr("class", "chan-in")
+            .attr("class", "chan query")
             .attr("x", function(d, i) {
                 var p = d3.select(this.parentNode).datum()
                 return (p.width - 10)
@@ -249,6 +263,16 @@ $(function() {
             })
             .attr("width", 10)
             .attr("height", 10)
+            .on("mouseover", function(d) {
+                tooltip.text(d);
+                return tooltip.style("visibility", "visible");
+            })
+            .on("mousemove", function(d) {
+                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            })
+            .on("mouseout", function(d) {
+                return tooltip.style("visibility", "hidden");
+            });
 
         queryRoutes.exit().remove();
 
@@ -259,7 +283,7 @@ $(function() {
 
         outRoutes.enter()
             .append("rect")
-            .attr("class", "chan-in")
+            .attr("class", "chan out")
             .attr("x", function(d, i) {
                 return i * 15;
             })
@@ -268,7 +292,17 @@ $(function() {
                 return ((p.height * 2) - 10);
             })
             .attr("width", 10)
-            .attr("height", 10);
+            .attr("height", 10)
+            .on("mouseover", function(d) {
+                tooltip.text(d);
+                return tooltip.style("visibility", "visible");
+            })
+            .on("mousemove", function(d) {
+                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            })
+            .on("mouseout", function(d) {
+                return tooltip.style("visibility", "hidden");
+            });
 
         outRoutes.exit().remove();
 

@@ -66,3 +66,29 @@
     font-size: 12px;
     font-family: helvetica, sans-serif;
 }
+
+.chan {
+    cursor: pointer;
+    fill: rgba(60,60,60,1);
+}
+
+.chan:hover{
+    stroke-width: 1px;
+    stroke: rgba(0,0,0,1);
+}
+
+.tooltip {
+    position: absolute;
+    z-index: 10;
+    visibility: hidden;
+    font-family: helvetica, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    background: rgba(220,220,220,1);
+    color: black;
+    padding: 2px;
+}
+
+.query {
+    fill: rgba(255,80,80,1);
+}
