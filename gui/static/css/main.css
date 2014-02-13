@@ -37,3 +37,27 @@
 .INFO {
     color: rgba(220,220,220,1);
 }
+
+.node {
+    cursor: pointer;
+    stroke-width: 1px;
+    stroke: rgba(80,80,80,1);
+    fill: rgba(180,180,180,1);
+}
+
+.nodetype, .nodeid{
+    cursor: pointer;
+    font-family: helvetica, sans-serif;
+    font-size: 12px;
+}
+
+.idrect {
+    fill: rgba(220,220,220,1);
+    cursor: pointer;
+}
+
+.link {
+    cursor: pointer;
+    stroke-width: 1px;
+    stroke: rgba(80,80,80,1);
+}

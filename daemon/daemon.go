@@ -63,6 +63,13 @@ func (d *Daemon) staticHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
+	// this is a fake library
+	l := []byte(`{"Library":[{"Type":"tolog","InRoutes":["in"],"OutRoutes":[],"QueryRoutes":[]},{"Type":"count","Broadcast":true,"InRoutes":["in","rule","poll"],"OutRoutes":["out"],"QueryRoutes":["rule","count"]},{"Type":"filter","InRoutes":["in","rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"ticker","InRoutes":["rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"random","InRoutes":["poll"],"OutRoutes":["out"],"QueryRoutes":[]}]}`)
+	d.apiWrap(w, r, 200, l)
+}
+
+
 // serveLogStream handles websocket connections for the streamtools log.
 // It is write-only. 
 func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
@@ -124,18 +131,28 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 				// emit block configuration on message
 				d.Mu.Lock()
 				for _, v := range d.manager.ListBlocks() {
-					d.ui <- &util.LogMsg{
-						Type: util.CREATE,
-						Data: v,
-						Id:   "DAEMON",
-					}
+					out, _ := json.Marshal(struct {
+						Type string
+						Data interface{}
+						Id   string
+					}{
+						util.LogInfo[util.CREATE],
+						v,
+						"DAEMON",
+					})
+					c.send <- out
 				}
 				for _, v := range d.manager.ListConnections() {
-					d.ui <- &util.LogMsg{
-						Type: util.CREATE,
-						Data: v,
-						Id:   "DAEMON",
-					}
+					out, _ := json.Marshal(struct {
+						Type string
+						Data interface{}
+						Id   string
+					}{
+						util.LogInfo[util.CREATE],
+						v,
+						"DAEMON",
+					})
+					c.send <- out
 				}
 				d.Mu.Unlock()
 			}
@@ -620,6 +637,7 @@ func (d *Daemon) Run() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", d.rootHandler)
+	r.HandleFunc("/library", d.libraryHandler)
 	r.HandleFunc("/static/{type}/{file}", d.staticHandler)
 	r.HandleFunc("/log", d.serveLogStream)
 	r.HandleFunc("/ui", d.serveUIStream)
