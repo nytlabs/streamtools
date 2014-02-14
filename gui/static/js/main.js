@@ -34,18 +34,16 @@ $(function() {
 
     var library = d3.nest()
         .key(function(d, i) {
-            return d.Type
+            return d.Type;
         })
         .rollup(function(d) {
-            return d[0]
+            return d[0];
         })
         .map(JSON.parse($.ajax({
             url: '/library',
             type: 'GET',
             async: false
-        }).responseText).Library)
-
-    console.log(library)
+        }).responseText).Library);
 
     var blocks = [];
     var connections = [];
@@ -53,9 +51,33 @@ $(function() {
     var width = $(window).width(),
         height = $(window).height();
 
+    var mouse = {
+        x: 0,
+        y: 0
+    };
+
     var svg = d3.select("body").append("svg")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+        .on("dblclick", function() {
+            d3.event.preventDefault();
+            var p = d3.mouse(this);
+            $("#create")
+                .css({
+                    top: p[1],
+                    left: p[0],
+                    "visibility": "visible"
+                });
+            $("#create-input").focus();
+            mouse.x = p[0];
+            mouse.y = p[1];
+        });
+
+    $(window).smartresize(function(e) {
+        svg.attr("width", $(window).width());
+        svg.attr("height", window.innerHeight);
+        start();
+    });
 
     var linkContainer = svg.append('g')
         .attr('class', 'linkContainer');
@@ -68,15 +90,15 @@ $(function() {
 
     var tooltip = d3.select("body")
         .append("div")
-        .attr('class', 'tooltip')
+        .attr('class', 'tooltip');
 
     var drag = d3.behavior.drag()
         .on("drag", function(d, i) {
-            d.Position.X += d3.event.dx
-            d.Position.Y += d3.event.dy
+            d.Position.X += d3.event.dx;
+            d.Position.Y += d3.event.dy;
             d3.select(this).attr("transform", function(d, i) {
-                return "translate(" + [d.Position.X, d.Position.Y] + ")"
-            })
+                return "translate(" + [d.Position.X, d.Position.Y] + ")";
+            });
             updateLinks();
         })
         .on("dragend", function(d, i) {
@@ -86,87 +108,87 @@ $(function() {
                 data: JSON.stringify(d.Position),
                 success: function(result) {}
             });
-        })
+        });
 
-        function logReader() {
-            var logTemplate = $('#log-item-template').html();
-            this.ws = new WebSocket("ws://localhost:7070/log");
+    function logReader() {
+        var logTemplate = $('#log-item-template').html();
+        this.ws = new WebSocket("ws://localhost:7070/log");
 
-            this.ws.onmessage = function(d) {
-                var logData = JSON.parse(d.data);
-                var logItem = $("<div />").addClass("log-item");
-                $("#log").append(logItem);
+        this.ws.onmessage = function(d) {
+            var logData = JSON.parse(d.data);
+            var logItem = $("<div />").addClass("log-item");
+            $("#log").append(logItem);
 
-                var tmpl = _.template(logTemplate, {
-                    item: {
-                        type: logData.Type,
-                        time: new Date(),
-                        data: logData.Data,
-                        id: logData.Id,
-                    }
-                });
-
-                logItem.html(tmpl);
-
-                var log = document.getElementById('log');
-                log.scrollTop = log.scrollHeight;
-            };
-        }
-
-        function uiReader() {
-            _this = this;
-            _this.handleMsg = null;
-            this.ws = new WebSocket("ws://localhost:7070/ui");
-            this.ws.onopen = function(d) {
-                _this.ws.send("get_state");
-            };
-            this.ws.onmessage = function(d) {
-                var uiMsg = JSON.parse(d.data)
-                var isBlock = uiMsg.Data.hasOwnProperty('Type');
-                switch (uiMsg.Type) {
-                    case "CREATE":
-                        if (isBlock) {
-                            uiMsg.Data.TypeInfo = library[uiMsg.Data.Type]
-                            blocks.push(uiMsg.Data)
-                        } else {
-                            connections.push(uiMsg.Data)
-                        }
-                        update();
-                        break
-                    case "DELETE":
-                        if (isBlock) {
-                            for (var i = 0; i < blocks.length; i++) {
-                                blocks.splice(i, 1)
-                            }
-                        } else {
-                            for (var i = 0; i < connections.length; i++) {
-                                connections.splice(i, 1)
-                            }
-                        }
-                        update();
-                        break
-                    case "UPDATE":
-                        if (isBlock) {
-                            var block = null;
-                            for (var i = 0; i < blocks.length; i++) {
-                                if (blocks[i].Id === uiMsg.Data.Id) {
-                                    block = blocks[i];
-                                    break;
-                                }
-                            }
-                            if (block !== null) {
-                                block.Position = uiMsg.Data.Position
-                                update();
-                            }
-
-                        }
-                        updateLinks();
-                        break
-                    case "QUERY":
-                        break
+            var tmpl = _.template(logTemplate, {
+                item: {
+                    type: logData.Type,
+                    time: new Date(),
+                    data: logData.Data,
+                    id: logData.Id,
                 }
-            };
-        }
+            });
+
+            logItem.html(tmpl);
+
+            var log = document.getElementById('log');
+            log.scrollTop = log.scrollHeight;
+        };
+    }
+
+    function uiReader() {
+        _this = this;
+        _this.handleMsg = null;
+        this.ws = new WebSocket("ws://localhost:7070/ui");
+        this.ws.onopen = function(d) {
+            _this.ws.send("get_state");
+        };
+        this.ws.onmessage = function(d) {
+            var uiMsg = JSON.parse(d.data);
+            var isBlock = uiMsg.Data.hasOwnProperty('Type');
+            switch (uiMsg.Type) {
+                case "CREATE":
+                    if (isBlock) {
+                        uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
+                        blocks.push(uiMsg.Data);
+                    } else {
+                        connections.push(uiMsg.Data);
+                    }
+                    update();
+                    break;
+                case "DELETE":
+                    if (isBlock) {
+                        for (var i = 0; i < blocks.length; i++) {
+                            blocks.splice(i, 1);
+                        }
+                    } else {
+                        for (var i = 0; i < connections.length; i++) {
+                            connections.splice(i, 1);
+                        }
+                    }
+                    update();
+                    break;
+                case "UPDATE":
+                    if (isBlock) {
+                        var block = null;
+                        for (var i = 0; i < blocks.length; i++) {
+                            if (blocks[i].Id === uiMsg.Data.Id) {
+                                block = blocks[i];
+                                break;
+                            }
+                        }
+                        if (block !== null) {
+                            block.Position = uiMsg.Data.Position;
+                            update();
+                        }
+
+                    }
+                    updateLinks();
+                    break;
+                case "QUERY":
+                    break;
+            }
+        };
+    }
 
     var d3line2 = d3.svg.line()
         .x(function(d) {
@@ -203,7 +225,7 @@ $(function() {
                 d.height = (d.height > bbox.height ? d.height : bbox.height + 5);
             }).attr("dy", function(d) {
                 return 1 * d.height + 5;
-            })
+            });
 
         idRects
             .attr('x', 0)
@@ -213,7 +235,7 @@ $(function() {
             })
             .attr('height', function(d) {
                 return d.height * 2;
-            })
+            });
 
         node.attr("transform", function(d) {
             return "translate(" + d.Position.X + ", " + d.Position.Y + ")";
@@ -221,14 +243,14 @@ $(function() {
 
         var inRoutes = node.selectAll('.inRoutes')
             .data(function(d) {
-                return d.TypeInfo.InRoutes
-            })
+                return d.TypeInfo.InRoutes;
+            });
 
         inRoutes.enter()
             .append("rect")
             .attr("class", "chan in")
             .attr("x", function(d, i) {
-                return i * 15
+                return i * 15;
             })
             .attr("y", 0)
             .attr("width", 10)
@@ -248,15 +270,15 @@ $(function() {
 
         var queryRoutes = node.selectAll('.queryRoutes')
             .data(function(d) {
-                return d.TypeInfo.QueryRoutes
-            })
+                return d.TypeInfo.QueryRoutes;
+            });
 
         queryRoutes.enter()
             .append("rect")
             .attr("class", "chan query")
             .attr("x", function(d, i) {
-                var p = d3.select(this.parentNode).datum()
-                return (p.width - 10)
+                var p = d3.select(this.parentNode).datum();
+                return (p.width - 10);
             })
             .attr("y", function(d, i) {
                 return i * 15;
@@ -317,11 +339,10 @@ $(function() {
             .attr("class", "link")
             .style("fill", "none")
             .attr("id", function(d) {
-                return "link_" + d.Id
+                return "link_" + d.Id;
             })
             .each(function(d) {
                 d.path = d3.select(this)[0][0];
-                console.log(d)
                 d.from = node.filter(function(p, i) {
                     return p.Id == d.FromId;
                 }).datum();
@@ -386,7 +407,7 @@ $(function() {
                 d.rate += Math.random();
                 d.rateLoc += 0.001 + Math.min(d.rate, 100) / 4000.0;
                 if (d.rateLoc > 1) d.rateLoc = 0;
-                d.edgePos = d.path.getPointAtLength(d.rateLoc * d.path.getTotalLength())
+                d.edgePos = d.path.getPointAtLength(d.rateLoc * d.path.getTotalLength());
             })
             .attr('cx', function(d) {
                 return d.edgePos.x;
@@ -415,7 +436,42 @@ $(function() {
         });
     }
 
+    $("#create-input").focusout(function() {
+        $("#create-input").val('');
+        $("#create").css({
+            "visibility": "hidden"
+        });
+    });
 
+    $("#create-input").keyup(function(k) {
+        if (k.keyCode == 13) {
+            createBlock();
+            $("#create").css({
+                "visibility": "hidden"
+            });
+            $("#create-input").val('');
+        }
+    });
+
+    function createBlock() {
+        var blockType = $("#create-input").val()
+        if (!library.hasOwnProperty(blockType)) {
+            return;
+        }
+
+        $.ajax({
+            url: '/blocks',
+            type: 'POST',
+            data: JSON.stringify({
+                "Type": blockType,
+                "Position": {
+                    "X": mouse.x,
+                    "Y": mouse.y
+                }
+            }),
+            success: function(result) {}
+        });
+    }
 
 
     var b = new logReader();

@@ -92,3 +92,17 @@
 .query {
     fill: rgba(255,80,80,1);
 }
+
+#create{
+    position: absolute;
+    visibility: hidden;
+    z-index: 10;
+}
+
+#create-input{
+    width: 200px;
+}
+
+.bg {
+    fill: white;
+}
