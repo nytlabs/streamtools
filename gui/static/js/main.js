@@ -48,8 +48,8 @@ $(function() {
     var blocks = [];
     var connections = [];
 
-    var width = $(window).width(),
-        height = $(window).height();
+    var width = window.innerWidth,
+        height = window.innerHeight;
 
     var mouse = {
         x: 0,
@@ -59,24 +59,48 @@ $(function() {
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .on("dblclick", function() {
+        .on('mousemove', function() {
             d3.event.preventDefault();
             var p = d3.mouse(this);
-            $("#create")
-                .css({
-                    top: p[1],
-                    left: p[0],
-                    "visibility": "visible"
-                });
-            $("#create-input").focus();
+            mouse.x = p[0];
+            mouse.y = p[1];
+            if (isConnecting) {
+                updateNewConnection();
+            }
+        })
+        .on('mousedown', function() {
+            d3.event.preventDefault();
+            var p = d3.mouse(this);
             mouse.x = p[0];
             mouse.y = p[1];
         });
 
+    var bg = svg.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('class', 'background')
+        .attr('width', width)
+        .attr('height', height)
+        .on("dblclick", function() {
+            $("#create")
+                .css({
+                    top: mouse.y,
+                    left: mouse.x,
+                    "visibility": "visible"
+                });
+            $("#create-input").focus();
+        })
+        .on("click", function() {
+            if (isConnecting) {
+                terminateConnection();
+            }
+        });
+
     $(window).smartresize(function(e) {
-        svg.attr("width", $(window).width());
+        svg.attr("width", window.innerWidth);
         svg.attr("height", window.innerHeight);
-        start();
+        bg.attr('width', window.innerWidth);
+        bg.attr('height', window.innerHeight)
     });
 
     var linkContainer = svg.append('g')
@@ -108,6 +132,15 @@ $(function() {
                 data: JSON.stringify(d.Position),
                 success: function(result) {}
             });
+        });
+
+    var newConnection = svg.select('.linkcontainer').append('path')
+        .attr("id", "newLink")
+        .style("fill", "none")
+        .on("click", function() {
+            if (isConnecting) {
+                terminateConnection();
+            }
         });
 
     function logReader() {
@@ -264,6 +297,8 @@ $(function() {
             })
             .on("mouseout", function(d) {
                 return tooltip.style("visibility", "hidden");
+            }).on("click", function(d) {
+                handleConnection(d3.select(this.parentNode).datum(), d, "in");
             });
 
         inRoutes.exit().remove();
@@ -294,7 +329,7 @@ $(function() {
             })
             .on("mouseout", function(d) {
                 return tooltip.style("visibility", "hidden");
-            });
+            })
 
         queryRoutes.exit().remove();
 
@@ -324,6 +359,8 @@ $(function() {
             })
             .on("mouseout", function(d) {
                 return tooltip.style("visibility", "hidden");
+            }).on("click", function(d) {
+                handleConnection(d3.select(this.parentNode).datum(), d, "out");
             });
 
         outRoutes.exit().remove();
@@ -471,6 +508,92 @@ $(function() {
             }),
             success: function(result) {}
         });
+    }
+
+    var isConnecting = false;
+    var newConn = {};
+
+    function handleConnection(block, route, routeType) {
+        isConnecting = !isConnecting;
+        isConnecting ? startConnection(block, route, routeType) : endConnection(block, route, routeType);
+    }
+
+    function startConnection(block, route, routeType) {
+        newConnection.style("display", "block");
+        newConn = {
+            start: block,
+            startRoute: route,
+            startType: routeType
+        };
+    }
+
+    function endConnection(block, route, routeType) {
+        newConnection.style("display", "none");
+        if (newConn.startType === routeType) {
+            return;
+        }
+
+        var connReq = {
+            "FromId": null,
+            "ToId": null,
+            "ToRoute": null
+        }
+
+        if (newConn.startType == "out") {
+            connReq.FromId = newConn.start.Id;
+            connReq.ToId = block.Id;
+            connReq.ToRoute = route;
+        } else {
+            connReq.FromId = block.Id;
+            connReq.ToId = newConn.start.Id;
+            connReq.ToRoute = newConn.startRoute;
+        }
+
+        $.ajax({
+            url: '/connections',
+            type: 'POST',
+            data: JSON.stringify(connReq),
+            success: function(result) {}
+        });
+
+        terminateConnection();
+    }
+
+    function updateNewConnection() {
+        newConnection.attr('d', function() {
+            return d3line2(newConn.startType == "out" ?
+                [{
+                    x: newConn.start.Position.X + 5,
+                    y: (newConn.start.Position.Y + newConn.start.height * 2) - 5
+                }, {
+                    x: newConn.start.Position.X + 5,
+                    y: (newConn.start.Position.Y + newConn.start.height * 2) + 15
+                }, {
+                    x: mouse.x,
+                    y: mouse.y - 15
+                }, {
+                    x: mouse.x,
+                    y: mouse.y
+                }] :
+                [{
+                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * 15) + 5,
+                    y: newConn.start.Position.Y + 5
+                }, {
+                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * 15) + 5,
+                    y: newConn.start.Position.Y - 15
+                }, {
+                    x: mouse.x,
+                    y: mouse.y + 15
+                }, {
+                    x: mouse.x,
+                    y: mouse.y
+                }]);
+        })
+    }
+
+    function terminateConnection() {
+        isConnecting = false;
+        newConn = {};
     }
 
 
