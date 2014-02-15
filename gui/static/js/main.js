@@ -56,26 +56,35 @@ $(function() {
         y: 0
     };
 
+    var multiSelect = false;
+
+    $(window).mousemove(function(e){
+        mouse = {
+            x: e.clientX,
+            y: e.clientY
+        };
+        if (isConnecting) {
+            updateNewConnection();
+        } 
+    })
+
+    $(window).keydown(function(e){
+        // check to see if any text box is selected
+        // if so, don't allow multiselect
+        if( $('input').is(':focus') ) {
+            return;
+        }
+
+        multiSelect = e.shiftKey
+    })
+
+    $(window).keyup(function(e){
+        multiSelect = e.shiftKey
+    })
+
     var svg = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height)
-        .on('mousemove', function() {
-            d3.event.preventDefault();
-            var p = d3.mouse(this);
-            mouse.x = p[0];
-            mouse.y = p[1];
-            if (isConnecting) {
-                updateNewConnection();
-            }
-        })
-        .on('mousedown', function() {
-            var p = d3.mouse(this);
-            mouse.x = p[0];
-            mouse.y = p[1];
-            if (isConnecting) {
-                updateNewConnection();
-            }
-        });
 
     var bg = svg.append('rect')
         .attr('x', 0)
@@ -96,7 +105,11 @@ $(function() {
             if (isConnecting) {
                 terminateConnection();
             }
-        });
+        })
+        .on("mousedown", function(){
+            d3.selectAll('.selected')
+                .classed('selected', false) 
+        })
 
     $(window).smartresize(function(e) {
         svg.attr("width", window.innerWidth)
@@ -122,9 +135,10 @@ $(function() {
         .on("drag", function(d, i) {
             d.Position.X += d3.event.dx;
             d.Position.Y += d3.event.dy;
-            d3.select(this).attr("transform", function(d, i) {
-                return "translate(" + [d.Position.X, d.Position.Y] + ")";
-            });
+            d3.select(this)
+                .attr("transform", function(d, i) {
+                    return "translate(" + [d.Position.X, d.Position.Y] + ")";
+                })
             updateLinks();
         })
         .on("dragend", function(d, i) {
@@ -191,13 +205,16 @@ $(function() {
                     update();
                     break;
                 case "DELETE":
-                    if (isBlock) {
-                        for (var i = 0; i < blocks.length; i++) {
-                            blocks.splice(i, 1);
+                    for(var i = 0; i < blocks.length; i++){
+                        if(uiMsg.Data.Id == blocks[i].Id){
+                            blocks.splice(i, 1)
+                            break;
                         }
-                    } else {
-                        for (var i = 0; i < connections.length; i++) {
-                            connections.splice(i, 1);
+                    }
+                    for(var i = 0; i < connections.length; i++){
+                        if(uiMsg.Data.Id == connections[i].Id){
+                            connections.splice(i, 1)
+                            break;
                         }
                     }
                     update();
@@ -241,10 +258,11 @@ $(function() {
 
         var nodes = node.enter()
             .append("g")
+            .attr("class", "node")
             .call(drag);
 
-        var rects = nodes.append("rect")
-            .attr("class", "node");
+        //var rects = nodes.append("rect")
+        //    .attr("class", "node");
 
         var idRects = nodes.append("rect")
             .attr('class', 'idrect');
@@ -260,6 +278,14 @@ $(function() {
                 d.height = (d.height > bbox.height ? d.height : bbox.height + 5);
             }).attr("dy", function(d) {
                 return 1 * d.height + 5;
+            })
+            .on('mousedown', function() {
+                if (!multiSelect){
+                    d3.selectAll('.selected')
+                        .classed('selected', false)
+                }
+                d3.select(this.parentNode).select('.idrect')
+                    .classed('selected', true) 
             });
 
         idRects
@@ -270,6 +296,14 @@ $(function() {
             })
             .attr('height', function(d) {
                 return d.height * 2;
+            })
+            .on('mousedown', function() {
+                if (!multiSelect){
+                    d3.selectAll('.selected')
+                        .classed('selected', false) 
+                }
+                d3.select(this)
+                    .classed('selected', true) 
             });
 
         node.attr("transform", function(d) {
@@ -423,6 +457,14 @@ $(function() {
             })
             .text(function(d) {
                 return d.rate;
+            })
+            .on('mousedown', function() {
+                if (!multiSelect){
+                    d3.selectAll('.selected')
+                        .classed('selected', false) 
+                }
+                d3.select(this)
+                    .classed('selected', true) 
             });
 
         edgeLabel.exit().remove();
