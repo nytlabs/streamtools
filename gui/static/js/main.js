@@ -75,6 +75,28 @@ $(function() {
             return;
         }
 
+        // if key is backspace or delete
+        if (e.keyCode == 8 || e.keyCode == 46){
+            e.preventDefault();
+            d3.selectAll('.selected')
+                .each(function(d){
+                    if(this.classList.contains('idrect')){
+                        $.ajax({
+                            url: '/blocks/' + d3.select(this.parentNode).datum().Id,
+                            type: 'DELETE',
+                            success: function(result) {}
+                        });
+                    }
+                    if(this.classList.contains('rateLabel')){
+                        $.ajax({
+                            url: '/connections/' + d3.select(this).datum().Id,
+                            type: 'DELETE',
+                            success: function(result) {}
+                        });
+                    }
+                })
+        }
+
         multiSelect = e.shiftKey
     })
 
@@ -268,7 +290,7 @@ $(function() {
             .attr('class', 'idrect');
 
         nodes.append("svg:text")
-            .attr("class", "nodetype")
+            .attr("class", "nodetype unselectable")
             .attr("dx", 0)
             .text(function(d) {
                 return d.Type;
@@ -450,7 +472,7 @@ $(function() {
             .attr("dy", -2)
             .attr("text-anchor", "middle")
             .append("textPath")
-            .attr("class", "rateLabel")
+            .attr("class", "rateLabel unselectable")
             .attr("startOffset", "50%")
             .attr("xlink:href", function(d) {
                 return "#link_" + d.Id;
@@ -539,6 +561,7 @@ $(function() {
         if (!library.hasOwnProperty(blockType)) {
             return;
         }
+        var offset = $("#create").offset()
 
         $.ajax({
             url: '/blocks',
@@ -546,8 +569,8 @@ $(function() {
             data: JSON.stringify({
                 "Type": blockType,
                 "Position": {
-                    "X": mouse.x,
-                    "Y": mouse.y
+                    "X": offset.left,
+                    "Y": offset.top
                 }
             }),
             success: function(result) {}

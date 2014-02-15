@@ -210,19 +210,29 @@ func (b *BlockManager) GetConnection(id string) (*ConnectionInfo, error) {
 	return b.connMap[id], nil
 }
 
-func (b *BlockManager) DeleteBlock(id string) error {
+func (b *BlockManager) DeleteBlock(id string) ([]string, error) {
+	var delIds []string
+
 	_, ok := b.blockMap[id]
 	if !ok {
-		return errors.New(fmt.Sprintf("Cannot delete block %s: does not exist", id))
+		return nil, errors.New(fmt.Sprintf("Cannot delete block %s: does not exist", id))
 	}
 
 	// delete connections that reference this block
 	for _, c := range b.connMap {
 		if c.FromId == id {
-			b.DeleteConnection(c.Id)
+			delFromId, err := b.DeleteConnection(c.Id)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Cannot delete block %s: FromId %s does not exist", id, c.FromId))
+			}
+			delIds = append(delIds, delFromId)
 		}
 		if c.ToId == id {
-			b.DeleteConnection(c.Id)
+			delToId, err := b.DeleteConnection(c.Id)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Cannot delete block %s: ToId %s does not exist", id, c.ToId))
+			}
+			delIds = append(delIds, delToId)
 		}
 	}
 
@@ -230,14 +240,15 @@ func (b *BlockManager) DeleteBlock(id string) error {
 	// close channels, whatever.
 
 	delete(b.blockMap, id)
+	delIds = append(delIds, id)
 
-	return nil
+	return delIds, nil
 }
 
-func (b *BlockManager) DeleteConnection(id string) error {
+func (b *BlockManager) DeleteConnection(id string) (string, error) {
 	_, ok := b.connMap[id]
 	if !ok {
-		return errors.New(fmt.Sprintf("Cannot delete connection %s: does not exist", id))
+		return "", errors.New(fmt.Sprintf("Cannot delete connection %s: does not exist", id))
 	}
 
 	// call disconnecting stuff here
@@ -245,7 +256,7 @@ func (b *BlockManager) DeleteConnection(id string) error {
 	// turn off connection block
 	delete(b.connMap, id)
 
-	return nil
+	return id, nil
 }
 
 func (b *BlockManager) ListBlocks() []*BlockInfo {

@@ -390,26 +390,28 @@ func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 // deleteBlockHandler asks the block manager to delete a block. 
 func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := d.manager.DeleteBlock(vars["id"])
+	ids, err := d.manager.DeleteBlock(vars["id"])
 	if err != nil {
 		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
 	}
 
-	d.log <- &util.LogMsg{
-		Type: util.DELETE,
-		Data: fmt.Sprintf("Block %s", vars["id"]),
-		Id:   "DAEMON",
-	}
+	for _, v := range ids {
+		d.log <- &util.LogMsg{
+			Type: util.DELETE,
+			Data: fmt.Sprintf("Block %s", v),
+			Id:   "DAEMON",
+		}
 
-	d.ui <- &util.LogMsg{
-		Type: util.DELETE,
-		Data: struct {
-			Id string
-		}{
-			vars["id"],
-		},
-		Id: "DAEMON",
+		d.ui <- &util.LogMsg{
+			Type: util.DELETE,
+			Data: struct {
+				Id string
+			}{
+				v,
+			},
+			Id: "DAEMON",
+		}
 	}
 
 	d.apiWrap(w, r, 200, d.response("OK"))
@@ -605,7 +607,7 @@ func (d *Daemon) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int,
 // deleteConnectionHandler deletes a connection, responds with OK.
 func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	err := d.manager.DeleteConnection(vars["id"])
+	id, err := d.manager.DeleteConnection(vars["id"])
 	if err != nil {
 		d.apiWrap(w, r, 500, d.response(err.Error()))
 		return
@@ -613,7 +615,7 @@ func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 	
 	d.log <- &util.LogMsg{
 		Type: util.DELETE,
-		Data: fmt.Sprintf("Connection %s", vars["id"]),
+		Data: fmt.Sprintf("Connection %s", id),
 		Id:   "DAEMON",
 	}
 
@@ -622,7 +624,7 @@ func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 		Data: struct {
 			Id string
 		}{
-			vars["id"],
+			id,
 		},
 		Id: "DAEMON",
 	}
