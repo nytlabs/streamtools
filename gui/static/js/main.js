@@ -310,7 +310,7 @@ $(function() {
             return "translate(" + d.Position.X + ", " + d.Position.Y + ")";
         });
 
-        var inRoutes = node.selectAll('.inRoutes')
+        var inRoutes = node.selectAll('.in')
             .data(function(d) {
                 return d.TypeInfo.InRoutes;
             });
@@ -339,7 +339,7 @@ $(function() {
 
         inRoutes.exit().remove();
 
-        var queryRoutes = node.selectAll('.queryRoutes')
+        var queryRoutes = node.selectAll('.query')
             .data(function(d) {
                 return d.TypeInfo.QueryRoutes;
             });
@@ -369,7 +369,7 @@ $(function() {
 
         queryRoutes.exit().remove();
 
-        var outRoutes = node.selectAll('.outRoutes')
+        var outRoutes = node.selectAll('.out')
             .data(function(d) {
                 return d.TypeInfo.OutRoutes;
             });
