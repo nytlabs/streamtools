@@ -69,10 +69,12 @@ $(function() {
             }
         })
         .on('mousedown', function() {
-            d3.event.preventDefault();
             var p = d3.mouse(this);
             mouse.x = p[0];
             mouse.y = p[1];
+            if (isConnecting) {
+                updateNewConnection();
+            }
         });
 
     var bg = svg.append('rect')
@@ -97,10 +99,10 @@ $(function() {
         });
 
     $(window).smartresize(function(e) {
-        svg.attr("width", window.innerWidth);
-        svg.attr("height", window.innerHeight);
-        bg.attr('width', window.innerWidth);
-        bg.attr('height', window.innerHeight)
+        svg.attr("width", window.innerWidth)
+            .attr("height", window.innerHeight);
+        bg.attr('width', window.innerWidth)
+            .attr('height', window.innerHeight)
     });
 
     var linkContainer = svg.append('g')
@@ -519,16 +521,16 @@ $(function() {
     }
 
     function startConnection(block, route, routeType) {
-        newConnection.style("display", "block");
         newConn = {
             start: block,
             startRoute: route,
             startType: routeType
         };
+        updateNewConnection();
+        newConnection.style("visibility", "visible");
     }
 
     function endConnection(block, route, routeType) {
-        newConnection.style("display", "none");
         if (newConn.startType === routeType) {
             return;
         }
@@ -592,6 +594,7 @@ $(function() {
     }
 
     function terminateConnection() {
+        newConnection.style("visibility", "hidden");
         isConnecting = false;
         newConn = {};
     }

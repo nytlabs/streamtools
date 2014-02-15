@@ -49,6 +49,12 @@
     cursor: pointer;
     font-family: helvetica, sans-serif;
     font-size: 12px;
+
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+    -o-user-select: none;
+    user-select: none;
 }
 
 .idrect {
@@ -65,6 +71,7 @@
 #newLink {
     stroke-width: 1px;
     stroke: rgba(80,80,255,1);
+    visibility: hidden;
 }
 
 .rateLabel {
@@ -110,4 +117,8 @@
 
 .background {
     fill: rgba(240,240,240,1);
+}
+
+.rateLabel {
+    cursor: pointer;
 }
