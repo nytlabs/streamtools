@@ -1,35 +1,3 @@
-// http://www.paulirish.com/2009/throttled-smartresize-jquery-event-handler/
-(function($, sr) {
-
-    // debouncing function from John Hann
-    // http://unscriptable.com/index.php/2009/03/20/debouncing-javascript-methods/
-    var debounce = function(func, threshold, execAsap) {
-        var timeout;
-
-        return function debounced() {
-            var obj = this,
-                args = arguments;
-
-            function delayed() {
-                if (!execAsap)
-                    func.apply(obj, args);
-                timeout = null;
-            }
-
-            if (timeout)
-                clearTimeout(timeout);
-            else if (execAsap)
-                func.apply(obj, args);
-
-            timeout = setTimeout(delayed, threshold || 100);
-        };
-    };
-    // smartresize 
-    jQuery.fn[sr] = function(fn) {
-        return fn ? this.bind('resize', debounce(fn)) : this.trigger(sr);
-    };
-})(jQuery, 'smartresize');
-
 $(function() {
 
     var library = d3.nest()
@@ -57,37 +25,121 @@ $(function() {
     };
 
     var multiSelect = false;
+    var isConnecting = false;
+    var newConn = {};
+    var log = new logReader();
+    var ui = new uiReader();
 
-    $(window).mousemove(function(e){
+    var svg = d3.select('body').append('svg')
+        .attr('width', width)
+        .attr('height', height)
+
+    var bg = svg.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('class', 'background')
+        .attr('width', width)
+        .attr('height', height)
+        .on('dblclick', function() {
+            $('#create')
+                .css({
+                    top: mouse.y,
+                    left: mouse.x,
+                    'visibility': 'visible'
+                });
+            $('#create-input').focus();
+        })
+        .on('click', function() {
+            if (isConnecting) {
+                terminateConnection();
+            }
+        })
+        .on('mousedown', function() {
+            d3.selectAll('.selected')
+                .classed('selected', false)
+        })
+
+    var linkContainer = svg.append('g')
+        .attr('class', 'linkContainer');
+
+    var nodeContainer = svg.append('g')
+        .attr('class', 'nodeContainer');
+
+    var link = svg.select('.linkContainer').selectAll('.link'),
+        node = svg.select('.nodeContainer').selectAll('.node');
+
+    var tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'tooltip');
+
+    var drag = d3.behavior.drag()
+        .on('drag', function(d, i) {
+            d.Position.X += d3.event.dx;
+            d.Position.Y += d3.event.dy;
+            d3.select(this)
+                .attr('transform', function(d, i) {
+                    return 'translate(' + [d.Position.X, d.Position.Y] + ')';
+                })
+            updateLinks();
+        })
+        .on('dragend', function(d, i) {
+            $.ajax({
+                url: '/blocks/' + d.Id,
+                type: 'PUT',
+                data: JSON.stringify(d.Position),
+                success: function(result) {}
+            });
+        });
+
+    var newConnection = svg.select('.linkcontainer').append('path')
+        .attr('id', 'newLink')
+        .style('fill', 'none')
+        .on('click', function() {
+            if (isConnecting) {
+                terminateConnection();
+            }
+        });
+
+    var lineStyle = d3.svg.line()
+        .x(function(d) {
+            return d.x;
+        })
+        .y(function(d) {
+            return d.y;
+        })
+        .interpolate('monotone');
+
+
+    $(window).mousemove(function(e) {
         mouse = {
             x: e.clientX,
             y: e.clientY
         };
         if (isConnecting) {
             updateNewConnection();
-        } 
+        }
     })
 
-    $(window).keydown(function(e){
+    $(window).keydown(function(e) {
         // check to see if any text box is selected
         // if so, don't allow multiselect
-        if( $('input').is(':focus') ) {
+        if ($('input').is(':focus')) {
             return;
         }
 
         // if key is backspace or delete
-        if (e.keyCode == 8 || e.keyCode == 46){
+        if (e.keyCode == 8 || e.keyCode == 46) {
             e.preventDefault();
             d3.selectAll('.selected')
-                .each(function(d){
-                    if(this.classList.contains('idrect')){
+                .each(function(d) {
+                    if (this.classList.contains('idrect')) {
                         $.ajax({
                             url: '/blocks/' + d3.select(this.parentNode).datum().Id,
                             type: 'DELETE',
                             success: function(result) {}
                         });
                     }
-                    if(this.classList.contains('rateLabel')){
+                    if (this.classList.contains('rateLabel')) {
                         $.ajax({
                             url: '/connections/' + d3.select(this).datum().Id,
                             type: 'DELETE',
@@ -100,95 +152,63 @@ $(function() {
         multiSelect = e.shiftKey
     })
 
-    $(window).keyup(function(e){
+    $(window).keyup(function(e) {
         multiSelect = e.shiftKey
     })
 
-    var svg = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height)
-
-    var bg = svg.append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('class', 'background')
-        .attr('width', width)
-        .attr('height', height)
-        .on("dblclick", function() {
-            $("#create")
-                .css({
-                    top: mouse.y,
-                    left: mouse.x,
-                    "visibility": "visible"
-                });
-            $("#create-input").focus();
-        })
-        .on("click", function() {
-            if (isConnecting) {
-                terminateConnection();
-            }
-        })
-        .on("mousedown", function(){
-            d3.selectAll('.selected')
-                .classed('selected', false) 
-        })
-
     $(window).smartresize(function(e) {
-        svg.attr("width", window.innerWidth)
-            .attr("height", window.innerHeight);
+        svg.attr('width', window.innerWidth)
+            .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight)
     });
 
-    var linkContainer = svg.append('g')
-        .attr('class', 'linkContainer');
+    $('#create-input').focusout(function() {
+        $('#create-input').val('');
+        $('#create').css({
+            'visibility': 'hidden'
+        });
+    });
 
-    var nodeContainer = svg.append('g')
-        .attr('class', 'nodeContainer');
-
-    var link = svg.select(".linkContainer").selectAll(".link"),
-        node = svg.select(".nodeContainer").selectAll(".node");
-
-    var tooltip = d3.select("body")
-        .append("div")
-        .attr('class', 'tooltip');
-
-    var drag = d3.behavior.drag()
-        .on("drag", function(d, i) {
-            d.Position.X += d3.event.dx;
-            d.Position.Y += d3.event.dy;
-            d3.select(this)
-                .attr("transform", function(d, i) {
-                    return "translate(" + [d.Position.X, d.Position.Y] + ")";
-                })
-            updateLinks();
-        })
-        .on("dragend", function(d, i) {
-            $.ajax({
-                url: '/blocks/' + d.Id,
-                type: 'PUT',
-                data: JSON.stringify(d.Position),
-                success: function(result) {}
+    $('#create-input').keyup(function(k) {
+        if (k.keyCode == 13) {
+            createBlock();
+            $('#create').css({
+                'visibility': 'hidden'
             });
-        });
+            $('#create-input').val('');
+        }
+    });
 
-    var newConnection = svg.select('.linkcontainer').append('path')
-        .attr("id", "newLink")
-        .style("fill", "none")
-        .on("click", function() {
-            if (isConnecting) {
-                terminateConnection();
-            }
+    function createBlock() {
+        var blockType = $('#create-input').val()
+        if (!library.hasOwnProperty(blockType)) {
+            return;
+        }
+        var offset = $('#create').offset()
+
+        $.ajax({
+            url: '/blocks',
+            type: 'POST',
+            data: JSON.stringify({
+                'Type': blockType,
+                'Position': {
+                    'X': offset.left,
+                    'Y': offset.top
+                }
+            }),
+            success: function(result) {}
         });
+    }
 
     function logReader() {
         var logTemplate = $('#log-item-template').html();
-        this.ws = new WebSocket("ws://localhost:7070/log");
+        this.ws = new WebSocket('ws://localhost:7070/log');
 
         this.ws.onmessage = function(d) {
             var logData = JSON.parse(d.data);
-            var logItem = $("<div />").addClass("log-item");
-            $("#log").append(logItem);
+            var logItem = $('<div />').addClass('log-item');
+            $('#log').append(logItem);
 
             var tmpl = _.template(logTemplate, {
                 item: {
@@ -209,15 +229,15 @@ $(function() {
     function uiReader() {
         _this = this;
         _this.handleMsg = null;
-        this.ws = new WebSocket("ws://localhost:7070/ui");
+        this.ws = new WebSocket('ws://localhost:7070/ui');
         this.ws.onopen = function(d) {
-            _this.ws.send("get_state");
+            _this.ws.send('get_state');
         };
         this.ws.onmessage = function(d) {
             var uiMsg = JSON.parse(d.data);
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
             switch (uiMsg.Type) {
-                case "CREATE":
+                case 'CREATE':
                     if (isBlock) {
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
@@ -226,22 +246,22 @@ $(function() {
                     }
                     update();
                     break;
-                case "DELETE":
-                    for(var i = 0; i < blocks.length; i++){
-                        if(uiMsg.Data.Id == blocks[i].Id){
+                case 'DELETE':
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (uiMsg.Data.Id == blocks[i].Id) {
                             blocks.splice(i, 1)
                             break;
                         }
                     }
-                    for(var i = 0; i < connections.length; i++){
-                        if(uiMsg.Data.Id == connections[i].Id){
+                    for (var i = 0; i < connections.length; i++) {
+                        if (uiMsg.Data.Id == connections[i].Id) {
                             connections.splice(i, 1)
                             break;
                         }
                     }
                     update();
                     break;
-                case "UPDATE":
+                case 'UPDATE':
                     if (isBlock) {
                         var block = null;
                         for (var i = 0; i < blocks.length; i++) {
@@ -258,20 +278,11 @@ $(function() {
                     }
                     updateLinks();
                     break;
-                case "QUERY":
+                case 'QUERY':
                     break;
             }
         };
     }
-
-    var d3line2 = d3.svg.line()
-        .x(function(d) {
-            return d.x;
-        })
-        .y(function(d) {
-            return d.y;
-        })
-        .interpolate("monotone");
 
     function update() {
         node = node.data(blocks, function(d) {
@@ -279,35 +290,32 @@ $(function() {
         });
 
         var nodes = node.enter()
-            .append("g")
-            .attr("class", "node")
+            .append('g')
+            .attr('class', 'node')
             .call(drag);
 
-        //var rects = nodes.append("rect")
-        //    .attr("class", "node");
-
-        var idRects = nodes.append("rect")
+        var idRects = nodes.append('rect')
             .attr('class', 'idrect');
 
-        nodes.append("svg:text")
-            .attr("class", "nodetype unselectable")
-            .attr("dx", 0)
+        nodes.append('svg:text')
+            .attr('class', 'nodetype unselectable')
+            .attr('dx', 0)
             .text(function(d) {
                 return d.Type;
             }).each(function(d) {
                 var bbox = this.getBBox();
                 d.width = (d.width > bbox.width ? d.width : bbox.width + 30);
                 d.height = (d.height > bbox.height ? d.height : bbox.height + 5);
-            }).attr("dy", function(d) {
+            }).attr('dy', function(d) {
                 return 1 * d.height + 5;
             })
             .on('mousedown', function() {
-                if (!multiSelect){
+                if (!multiSelect) {
                     d3.selectAll('.selected')
                         .classed('selected', false)
                 }
                 d3.select(this.parentNode).select('.idrect')
-                    .classed('selected', true) 
+                    .classed('selected', true)
             });
 
         idRects
@@ -320,16 +328,16 @@ $(function() {
                 return d.height * 2;
             })
             .on('mousedown', function() {
-                if (!multiSelect){
+                if (!multiSelect) {
                     d3.selectAll('.selected')
-                        .classed('selected', false) 
+                        .classed('selected', false)
                 }
                 d3.select(this)
-                    .classed('selected', true) 
+                    .classed('selected', true)
             });
 
-        node.attr("transform", function(d) {
-            return "translate(" + d.Position.X + ", " + d.Position.Y + ")";
+        node.attr('transform', function(d) {
+            return 'translate(' + d.Position.X + ', ' + d.Position.Y + ')';
         });
 
         var inRoutes = node.selectAll('.in')
@@ -338,25 +346,25 @@ $(function() {
             });
 
         inRoutes.enter()
-            .append("rect")
-            .attr("class", "chan in")
-            .attr("x", function(d, i) {
+            .append('rect')
+            .attr('class', 'chan in')
+            .attr('x', function(d, i) {
                 return i * 15;
             })
-            .attr("y", 0)
-            .attr("width", 10)
-            .attr("height", 10)
-            .on("mouseover", function(d) {
+            .attr('y', 0)
+            .attr('width', 10)
+            .attr('height', 10)
+            .on('mouseover', function(d) {
                 tooltip.text(d);
-                return tooltip.style("visibility", "visible");
+                return tooltip.style('visibility', 'visible');
             })
-            .on("mousemove", function(d) {
-                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            .on('mousemove', function(d) {
+                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
             })
-            .on("mouseout", function(d) {
-                return tooltip.style("visibility", "hidden");
-            }).on("click", function(d) {
-                handleConnection(d3.select(this.parentNode).datum(), d, "in");
+            .on('mouseout', function(d) {
+                return tooltip.style('visibility', 'hidden');
+            }).on('click', function(d) {
+                handleConnection(d3.select(this.parentNode).datum(), d, 'in');
             });
 
         inRoutes.exit().remove();
@@ -367,26 +375,26 @@ $(function() {
             });
 
         queryRoutes.enter()
-            .append("rect")
-            .attr("class", "chan query")
-            .attr("x", function(d, i) {
+            .append('rect')
+            .attr('class', 'chan query')
+            .attr('x', function(d, i) {
                 var p = d3.select(this.parentNode).datum();
                 return (p.width - 10);
             })
-            .attr("y", function(d, i) {
+            .attr('y', function(d, i) {
                 return i * 15;
             })
-            .attr("width", 10)
-            .attr("height", 10)
-            .on("mouseover", function(d) {
+            .attr('width', 10)
+            .attr('height', 10)
+            .on('mouseover', function(d) {
                 tooltip.text(d);
-                return tooltip.style("visibility", "visible");
+                return tooltip.style('visibility', 'visible');
             })
-            .on("mousemove", function(d) {
-                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            .on('mousemove', function(d) {
+                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
             })
-            .on("mouseout", function(d) {
-                return tooltip.style("visibility", "hidden");
+            .on('mouseout', function(d) {
+                return tooltip.style('visibility', 'hidden');
             })
 
         queryRoutes.exit().remove();
@@ -397,28 +405,28 @@ $(function() {
             });
 
         outRoutes.enter()
-            .append("rect")
-            .attr("class", "chan out")
-            .attr("x", function(d, i) {
+            .append('rect')
+            .attr('class', 'chan out')
+            .attr('x', function(d, i) {
                 return i * 15;
             })
-            .attr("y", function(d, i) {
+            .attr('y', function(d, i) {
                 var p = d3.select(this.parentNode).datum();
                 return ((p.height * 2) - 10);
             })
-            .attr("width", 10)
-            .attr("height", 10)
-            .on("mouseover", function(d) {
+            .attr('width', 10)
+            .attr('height', 10)
+            .on('mouseover', function(d) {
                 tooltip.text(d);
-                return tooltip.style("visibility", "visible");
+                return tooltip.style('visibility', 'visible');
             })
-            .on("mousemove", function(d) {
-                return tooltip.style("top", (event.pageY - 10) + "px").style("left", (event.pageX + 10) + "px");
+            .on('mousemove', function(d) {
+                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
             })
-            .on("mouseout", function(d) {
-                return tooltip.style("visibility", "hidden");
-            }).on("click", function(d) {
-                handleConnection(d3.select(this.parentNode).datum(), d, "out");
+            .on('mouseout', function(d) {
+                return tooltip.style('visibility', 'hidden');
+            }).on('click', function(d) {
+                handleConnection(d3.select(this.parentNode).datum(), d, 'out');
             });
 
         outRoutes.exit().remove();
@@ -430,11 +438,11 @@ $(function() {
         });
 
         link.enter()
-            .append("svg:path")
-            .attr("class", "link")
-            .style("fill", "none")
-            .attr("id", function(d) {
-                return "link_" + d.Id;
+            .append('svg:path')
+            .attr('class', 'link')
+            .style('fill', 'none')
+            .attr('id', function(d) {
+                return 'link_' + d.Id;
             })
             .each(function(d) {
                 d.path = d3.select(this)[0][0];
@@ -448,45 +456,45 @@ $(function() {
                 d.rateLoc = 0.0;
             });
 
-        var ping = svg.select('.linkContainer').selectAll(".edgePing")
+        var ping = svg.select('.linkContainer').selectAll('.edgePing')
             .data(connections, function(d) {
                 return d.Id;
             });
 
         ping.enter()
-            .append("circle")
-            .attr("class", "edgePing")
-            .attr("r", 4);
+            .append('circle')
+            .attr('class', 'edgePing')
+            .attr('r', 4);
 
         ping.exit().remove();
 
-        var edgeLabel = svg.select('.linkContainer').selectAll(".edgeLabel")
+        var edgeLabel = svg.select('.linkContainer').selectAll('.edgeLabel')
             .data(connections, function(d) {
                 return d.Id;
             });
 
         var ed = edgeLabel.enter()
-            .append("g")
-            .attr("class", "edgeLabel")
-            .append("text")
-            .attr("dy", -2)
-            .attr("text-anchor", "middle")
-            .append("textPath")
-            .attr("class", "rateLabel unselectable")
-            .attr("startOffset", "50%")
-            .attr("xlink:href", function(d) {
-                return "#link_" + d.Id;
+            .append('g')
+            .attr('class', 'edgeLabel')
+            .append('text')
+            .attr('dy', -2)
+            .attr('text-anchor', 'middle')
+            .append('textPath')
+            .attr('class', 'rateLabel unselectable')
+            .attr('startOffset', '50%')
+            .attr('xlink:href', function(d) {
+                return '#link_' + d.Id;
             })
             .text(function(d) {
                 return d.rate;
             })
             .on('mousedown', function() {
-                if (!multiSelect){
+                if (!multiSelect) {
                     d3.selectAll('.selected')
-                        .classed('selected', false) 
+                        .classed('selected', false)
                 }
                 d3.select(this)
-                    .classed('selected', true) 
+                    .classed('selected', true)
             });
 
         edgeLabel.exit().remove();
@@ -496,7 +504,7 @@ $(function() {
     }
 
     window.setInterval(function() {
-        d3.selectAll(".rateLabel")
+        d3.selectAll('.rateLabel')
             .text(function(d) {
                 // this is dumb.
                 // d.rate = Math.sin(+new Date() * .0000001) * Math.random() * 5;
@@ -522,8 +530,8 @@ $(function() {
 
     // updateLinks() is too slow!
     function updateLinks() {
-        link.attr("d", function(d) {
-            return d3line2([{
+        link.attr('d', function(d) {
+            return lineStyle([{
                 x: d.from.Position.X + 5,
                 y: (d.from.Position.Y + d.from.height * 2) - 5
             }, {
@@ -539,47 +547,6 @@ $(function() {
         });
     }
 
-    $("#create-input").focusout(function() {
-        $("#create-input").val('');
-        $("#create").css({
-            "visibility": "hidden"
-        });
-    });
-
-    $("#create-input").keyup(function(k) {
-        if (k.keyCode == 13) {
-            createBlock();
-            $("#create").css({
-                "visibility": "hidden"
-            });
-            $("#create-input").val('');
-        }
-    });
-
-    function createBlock() {
-        var blockType = $("#create-input").val()
-        if (!library.hasOwnProperty(blockType)) {
-            return;
-        }
-        var offset = $("#create").offset()
-
-        $.ajax({
-            url: '/blocks',
-            type: 'POST',
-            data: JSON.stringify({
-                "Type": blockType,
-                "Position": {
-                    "X": offset.left,
-                    "Y": offset.top
-                }
-            }),
-            success: function(result) {}
-        });
-    }
-
-    var isConnecting = false;
-    var newConn = {};
-
     function handleConnection(block, route, routeType) {
         isConnecting = !isConnecting;
         isConnecting ? startConnection(block, route, routeType) : endConnection(block, route, routeType);
@@ -592,7 +559,7 @@ $(function() {
             startType: routeType
         };
         updateNewConnection();
-        newConnection.style("visibility", "visible");
+        newConnection.style('visibility', 'visible');
     }
 
     function endConnection(block, route, routeType) {
@@ -601,12 +568,12 @@ $(function() {
         }
 
         var connReq = {
-            "FromId": null,
-            "ToId": null,
-            "ToRoute": null
+            'FromId': null,
+            'ToId': null,
+            'ToRoute': null
         }
 
-        if (newConn.startType == "out") {
+        if (newConn.startType == 'out') {
             connReq.FromId = newConn.start.Id;
             connReq.ToId = block.Id;
             connReq.ToRoute = route;
@@ -628,7 +595,7 @@ $(function() {
 
     function updateNewConnection() {
         newConnection.attr('d', function() {
-            return d3line2(newConn.startType == "out" ?
+            return lineStyle(newConn.startType == 'out' ?
                 [{
                     x: newConn.start.Position.X + 5,
                     y: (newConn.start.Position.Y + newConn.start.height * 2) - 5
@@ -659,14 +626,8 @@ $(function() {
     }
 
     function terminateConnection() {
-        newConnection.style("visibility", "hidden");
+        newConnection.style('visibility', 'hidden');
         isConnecting = false;
         newConn = {};
     }
-
-
-    var b = new logReader();
-    var c = new uiReader();
-
-
 });

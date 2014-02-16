@@ -38,21 +38,23 @@
     color: rgba(220,220,220,1);
 }
 
-.nodetype, .nodeid{
+.nodetype {
     cursor: pointer;
     font-family: helvetica, sans-serif;
     font-size: 12px;
-
-    -webkit-user-select: none; /* Chrome/Safari */        
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+ */
-    -o-user-select: none;
-    user-select: none;
 }
 
 .idrect {
     fill: rgba(220,220,220,1);
     cursor: pointer;
+}
+
+.unselectable {
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+    -o-user-select: none;
+    user-select: none;
 }
 
 .link {
@@ -70,12 +72,6 @@
 .rateLabel {
     font-size: 12px;
     font-family: helvetica, sans-serif;
-
-    -webkit-user-select: none; /* Chrome/Safari */        
-    -moz-user-select: none; /* Firefox */
-    -ms-user-select: none; /* IE10+ */
-    -o-user-select: none;
-    user-select: none;
 }
 
 .chan {
