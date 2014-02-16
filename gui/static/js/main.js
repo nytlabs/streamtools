@@ -14,6 +14,24 @@ $(function() {
             async: false // required before UI stream starts
         }).responseText).Library);
 
+    var domain = JSON.parse($.ajax({
+        url: '/domain',
+        type: 'GET',
+        async: false // required before UI stream starts
+    }).responseText).Domain;
+
+    var port = JSON.parse($.ajax({
+        url: '/port',
+        type: 'GET',
+        async: false // required before UI stream starts
+    }).responseText).Port;
+
+    var version = JSON.parse($.ajax({
+        url: '/version',
+        type: 'GET',
+        async: false // required before UI stream starts
+    }).responseText).Version;
+
     // constants
     var DELETE = 8,
         BACKSPACE = 46,
@@ -24,7 +42,9 @@ $(function() {
         TIP_OFF = {
             x: 10,
             y: -10,
-        }
+        },
+        RECONNECT_WAIT = 3000,
+        LOG_LIMIT = 100;
 
     var blocks = [], // canonical block data for d3
         connections = [], // canonical connection data for d3
@@ -204,6 +224,16 @@ $(function() {
         }
     });
 
+    $('#log').click(function() {
+        if ($(this).hasClass('log-max')) {
+            $(this).removeClass('log-max');
+            var log = document.getElementById('log');
+            log.scrollTop = log.scrollHeight;
+        } else {
+            $(this).addClass('log-max');
+        }
+    })
+
     function createBlock() {
         var blockType = $('#create-input').val()
         if (!library.hasOwnProperty(blockType)) {
@@ -226,38 +256,91 @@ $(function() {
         });
     }
 
+    function logPush(tmpl) {
+        var logItem = $('<div />').addClass('log-item');
+        $('#log').append(logItem);
+        logItem.html(tmpl);
+
+        var log = document.getElementById('log');
+        log.scrollTop = log.scrollHeight;
+
+        if ($('#log').children().length > LOG_LIMIT) {
+            $('#log').children().eq(0).remove();
+        }
+    }
+
+    function uiReconnect() {
+        var logTemplate = $('#ui-log-item-template').html();
+        var tmpl = _.template(logTemplate, {
+            item: {
+                data: "lost connection to Streamtools. Retrying..."
+            }
+        });
+        logPush(tmpl)
+
+        disconnected();
+        if (ui.ws.readyState == 3) {
+            window.setTimeout(function() {
+                ui = new uiReader();
+                uiReconnect();
+            }, RECONNECT_WAIT);
+        }
+    }
+
+    function logReconnect() {
+        disconnected();
+        if (log.ws.readyState == 3) {
+            window.setTimeout(function() {
+                log = new logReader();
+                logReconnect();
+            }, RECONNECT_WAIT);
+        }
+    }
+
+    function disconnected() {
+        blocks.length = 0;
+        connections.length = 0;
+        isConnecting = false;
+        newConn = {}
+        update();
+    }
+
     function logReader() {
         var logTemplate = $('#log-item-template').html();
-        this.ws = new WebSocket('ws://localhost:7070/log');
+        this.ws = new WebSocket('ws://' + domain + ':' + port + '/log');
 
         this.ws.onmessage = function(d) {
             var logData = JSON.parse(d.data);
-            var logItem = $('<div />').addClass('log-item');
-            $('#log').append(logItem);
-
-            var tmpl = _.template(logTemplate, {
-                item: {
-                    type: logData.Type,
-                    time: new Date(),
-                    data: logData.Data,
-                    id: logData.Id,
-                }
-            });
-
-            logItem.html(tmpl);
-
-            var log = document.getElementById('log');
-            log.scrollTop = log.scrollHeight;
+            for (var i = 0; i < logData.Log.length; i++) {
+                var tmpl = _.template(logTemplate, {
+                    item: {
+                        type: logData.Log[i].Type,
+                        time: new Date(),
+                        data: logData.Log[i].Data,
+                        id: logData.Log[i].Id,
+                    }
+                });
+                logPush(tmpl)
+            }
         };
+        this.ws.onclose = logReconnect
     }
 
     function uiReader() {
         _this = this;
         _this.handleMsg = null;
-        this.ws = new WebSocket('ws://localhost:7070/ui');
+        this.ws = new WebSocket('ws://' + domain + ':' + port + '/ui');
         this.ws.onopen = function(d) {
+            var logTemplate = $('#ui-log-item-template').html();
+            var tmpl = _.template(logTemplate, {
+                item: {
+                    data: "connected to Streamtools " + version
+                }
+            });
+            logPush(tmpl)
             _this.ws.send('get_state');
         };
+        this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
             var uiMsg = JSON.parse(d.data);
             var isBlock = uiMsg.Data.hasOwnProperty('Type');

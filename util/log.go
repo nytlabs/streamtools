@@ -39,10 +39,6 @@ const (
 	BgWhite   = "\x1b[47m"
 )
 
-const (
-	VERSION = "0.2.1"
-)
-
 var LogInfo = map[int]string{
 	0: "ERROR",
 	1: "WARN",

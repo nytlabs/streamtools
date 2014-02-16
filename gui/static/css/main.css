@@ -7,10 +7,21 @@
 #log {
     width: 100%;
     position: absolute;
-    height: 100px;
-    overflow-y: scroll;
     bottom: 0px;
     left: 0px;
+    border-top: 1px solid rgba(180,180,180,1);
+    height: 18px;
+    overflow-y hidden;
+}
+
+#log:hover{
+    background: rgba(200,200,200,.5);
+    cursor:pointer;
+}
+
+.log-max {
+    height: 100% !important;
+    overflow-y: scroll !important;
 }
 
 .log-item {
@@ -20,7 +31,7 @@
 }
 
 .date {
-    color: rgba(190,190,190,1);
+    color: rgba(90,90,90,1);
 }
 
 .CREATE {
@@ -36,7 +47,7 @@
 }
 
 .INFO {
-    color: rgba(220,220,220,1);
+    color: rgba(90,90,90,1);
 }
 
 .nodetype {
@@ -122,4 +133,8 @@
 .selected {
     stroke-width: 1px;
     stroke: rgba(80,80,255,1);
+}
+
+.ui-log{
+    font-weight: bold;
 }

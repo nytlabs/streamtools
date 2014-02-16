@@ -32,6 +32,7 @@ type Daemon struct {
 	log     chan *util.LogMsg
 	ui      chan *util.LogMsg
 	Port    string
+	Domain  string
 	Mu      *sync.Mutex
 }
 
@@ -69,6 +70,20 @@ func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	d.apiWrap(w, r, 200, l)
 }
 
+func (d *Daemon) portHandler(w http.ResponseWriter, r *http.Request) {
+	p := []byte(fmt.Sprintf(`{"Port": "%s"}`, d.Port))
+	d.apiWrap(w, r, 200, p)
+}
+
+func (d *Daemon) domainHandler(w http.ResponseWriter, r *http.Request) {
+	p := []byte(fmt.Sprintf(`{"Domain": "%s"}`, d.Domain))
+	d.apiWrap(w, r, 200, p)
+}
+
+func (d *Daemon) versionHandler(w http.ResponseWriter, r *http.Request) {
+	p := []byte(fmt.Sprintf(`{"Version": "%s"}`, util.VERSION))
+	d.apiWrap(w, r, 200, p)
+}
 
 // serveLogStream handles websocket connections for the streamtools log.
 // It is write-only. 
@@ -643,6 +658,9 @@ func (d *Daemon) Run() {
 	r.HandleFunc("/static/{type}/{file}", d.staticHandler)
 	r.HandleFunc("/log", d.serveLogStream)
 	r.HandleFunc("/ui", d.serveUIStream)
+	r.HandleFunc("/port", d.portHandler)
+	r.HandleFunc("/domain", d.domainHandler)
+	r.HandleFunc("/version", d.versionHandler)
 	r.HandleFunc("/import", d.importHandler).Methods("POST")
 	r.HandleFunc("/export", d.exportHandler).Methods("GET")
 	r.HandleFunc("/blocks", d.listBlockHandler).Methods("GET")                     // list all blocks
@@ -674,8 +692,32 @@ func (d *Daemon) Run() {
 // BroadcastStream routes logs and block system changes to websocket hubs
 // and terminal.
 func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
+	var batch []interface{}
+
+	// we batch the logs every 50 ms so we can cut down on the amount
+	// of messages we send
+	dump := time.NewTicker(50 * time.Millisecond)
+
 	for {
 		select {
+		case <- dump.C:
+			if len(batch) == 0 {
+				break
+			}
+
+			outBatch := struct {
+				Log []interface{}
+			}{
+				batch,
+			}
+
+			joutBatch, err := json.Marshal(outBatch)
+			if err != nil {
+				log.Println("could not broadcast")
+			}
+
+			logStream.Broadcast <- joutBatch
+			batch = nil
 		case l := <-logger:
 			bclog := struct {
 				Type string
@@ -687,13 +729,8 @@ func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
 				l.Id,
 			}
 
-			j, err := json.Marshal(bclog)
-			if err != nil {
-				log.Println("could not broadcast")
-				break
-			}
 			fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s", time.Now().Format(time.Stamp), l.Id, util.LogInfoColor[l.Type], l.Data))
-			logStream.Broadcast <- j
+			batch = append(batch, bclog)
 		case l := <-ui:
 			bclog := struct {
 				Type string
