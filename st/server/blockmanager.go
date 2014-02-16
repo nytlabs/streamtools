@@ -1,11 +1,11 @@
-package daemon
+package server
 
 import (
 	"errors"
 	"fmt"
 	//"github.com/nytlabs/streamtools/blocks"
-	"strconv"
 	"net/url"
+	"strconv"
 )
 
 // so i don't forget:
@@ -160,7 +160,7 @@ func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
 
 	// check to see if the ID is OK
 	if !b.IdSafe(conn.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id",conn.Id))
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", conn.Id))
 	}
 
 	// create ID if there is none

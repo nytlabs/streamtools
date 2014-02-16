@@ -2,24 +2,25 @@ package main
 
 import (
 	"flag"
-	"github.com/nytlabs/streamtools/daemon"
+	"github.com/nytlabs/streamtools/st/server"
 	"log"
 )
 
 var (
 	// port that streamtools reuns on
 	port   = flag.String("port", "7070", "streamtools port")
-	domain = flag.String("domain", "127.0.0.1","streamtools domain")
+	domain = flag.String("domain", "127.0.0.1", "streamtools domain")
 )
 
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	d := daemon.NewDaemon()
+	s := server.NewServer()
 
-	d.Port = *port
-	d.Domain = *domain
+	s.Id = "SERVER"
+	s.Port = *port
+	s.Domain = *domain
 
-	d.Run()
+	s.Run()
 }

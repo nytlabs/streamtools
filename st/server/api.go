@@ -1,11 +1,11 @@
-package daemon
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/nytlabs/streamtools/util"
+	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,67 +27,68 @@ var uiStream = hub{
 	connections: make(map[*connection]bool),
 }
 
-type Daemon struct {
+type Server struct {
 	manager *BlockManager
+	mu      *sync.Mutex
 	log     chan *util.LogMsg
 	ui      chan *util.LogMsg
 	Port    string
 	Domain  string
-	Mu      *sync.Mutex
+	Id      string
 }
 
-func NewDaemon() *Daemon {
-	return &Daemon{
+func NewServer() *Server {
+	return &Server{
 		manager: NewBlockManager(),
 		log:     make(chan *util.LogMsg, 10),
 		ui:      make(chan *util.LogMsg, 10),
-		Mu:      &sync.Mutex{},
+		mu:      &sync.Mutex{},
 	}
 }
 
 var resourceType = map[string]string{
 	"lib": "application/javascript; charset=utf-8",
-	"js": "application/javascript; charset=utf-8",
+	"js":  "application/javascript; charset=utf-8",
 	"css": "text/css; charset=utf-8",
 }
 
-func (d *Daemon) rootHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data, _ := Asset("gui/index.html")
 	w.Write(data)
 }
 
-func (d *Daemon) staticHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) staticHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", resourceType[vars["type"]])
 	data, _ := Asset("gui/static/" + vars["type"] + "/" + vars["file"])
 	w.Write(data)
 }
 
-func (d *Daemon) libraryHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	// this is a fake library
 	l := []byte(`{"Library":[{"Type":"tolog","InRoutes":["in"],"OutRoutes":[],"QueryRoutes":[]},{"Type":"count","Broadcast":true,"InRoutes":["in","rule","poll"],"OutRoutes":["out"],"QueryRoutes":["rule","count"]},{"Type":"filter","InRoutes":["in","rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"ticker","InRoutes":["rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"random","InRoutes":["poll"],"OutRoutes":["out"],"QueryRoutes":[]}]}`)
-	d.apiWrap(w, r, 200, l)
+	s.apiWrap(w, r, 200, l)
 }
 
-func (d *Daemon) portHandler(w http.ResponseWriter, r *http.Request) {
-	p := []byte(fmt.Sprintf(`{"Port": "%s"}`, d.Port))
-	d.apiWrap(w, r, 200, p)
+func (s *Server) portHandler(w http.ResponseWriter, r *http.Request) {
+	p := []byte(fmt.Sprintf(`{"Port": "%s"}`, s.Port))
+	s.apiWrap(w, r, 200, p)
 }
 
-func (d *Daemon) domainHandler(w http.ResponseWriter, r *http.Request) {
-	p := []byte(fmt.Sprintf(`{"Domain": "%s"}`, d.Domain))
-	d.apiWrap(w, r, 200, p)
+func (s *Server) domainHandler(w http.ResponseWriter, r *http.Request) {
+	p := []byte(fmt.Sprintf(`{"Domain": "%s"}`, s.Domain))
+	s.apiWrap(w, r, 200, p)
 }
 
-func (d *Daemon) versionHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 	p := []byte(fmt.Sprintf(`{"Version": "%s"}`, util.VERSION))
-	d.apiWrap(w, r, 200, p)
+	s.apiWrap(w, r, 200, p)
 }
 
 // serveLogStream handles websocket connections for the streamtools log.
-// It is write-only. 
-func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
+// It is write-only.
+func (s *Server) serveLogStream(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
 		return
@@ -115,7 +116,7 @@ func (d *Daemon) serveLogStream(w http.ResponseWriter, r *http.Request) {
 // serveUIStream handles websocket connections for the streamtools ui.
 // It is read/write. Upon hearing anything sent from the client it dumps
 // the current ST state into the websocket.
-func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
+func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", 405)
 		return
@@ -144,8 +145,8 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-r:
 				// emit block configuration on message
-				d.Mu.Lock()
-				for _, v := range d.manager.ListBlocks() {
+				s.mu.Lock()
+				for _, v := range s.manager.ListBlocks() {
 					out, _ := json.Marshal(struct {
 						Type string
 						Data interface{}
@@ -153,11 +154,11 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 					}{
 						util.LogInfo[util.CREATE],
 						v,
-						"DAEMON",
+						s.Id,
 					})
 					c.send <- out
 				}
-				for _, v := range d.manager.ListConnections() {
+				for _, v := range s.manager.ListConnections() {
 					out, _ := json.Marshal(struct {
 						Type string
 						Data interface{}
@@ -165,11 +166,11 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 					}{
 						util.LogInfo[util.CREATE],
 						v,
-						"DAEMON",
+						s.Id,
 					})
 					c.send <- out
 				}
-				d.Mu.Unlock()
+				s.mu.Unlock()
 			}
 		}
 	}(recv)
@@ -178,7 +179,7 @@ func (d *Daemon) serveUIStream(w http.ResponseWriter, r *http.Request) {
 
 // importHandler accepts a JSON through POST that updats the state of ST
 // It handles naming collisions by modifying the incoming block pattern.
-func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 	var export struct {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
@@ -187,48 +188,48 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &export)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	for _, block := range export.Blocks {
 		corrected[block.Id] = block.Id
-		for d.manager.IdExists(corrected[block.Id]) {
-			corrected[block.Id] = block.Id + "_" + d.manager.GetId()
+		for s.manager.IdExists(corrected[block.Id]) {
+			corrected[block.Id] = block.Id + "_" + s.manager.GetId()
 		}
 	}
 
 	for _, conn := range export.Connections {
 		corrected[conn.Id] = conn.Id
-		for d.manager.IdExists(corrected[conn.Id]) {
-			corrected[conn.Id] = conn.Id + "_" + d.manager.GetId()
+		for s.manager.IdExists(corrected[conn.Id]) {
+			corrected[conn.Id] = conn.Id + "_" + s.manager.GetId()
 		}
 	}
 
 	for _, block := range export.Blocks {
 		block.Id = corrected[block.Id]
-		eblock, err := d.manager.Create(block)
+		eblock, err := s.manager.Create(block)
 		if err != nil {
-			d.apiWrap(w, r, 500, d.response(err.Error()))
+			s.apiWrap(w, r, 500, s.response(err.Error()))
 			return
 		}
 
-		d.ui <- &util.LogMsg{
+		s.ui <- &util.LogMsg{
 			Type: util.CREATE,
 			Data: eblock,
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 
-		d.log <- &util.LogMsg{
+		s.log <- &util.LogMsg{
 			Type: util.CREATE,
 			Data: fmt.Sprintf("Block %s", block.Id),
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 	}
 
@@ -236,454 +237,454 @@ func (d *Daemon) importHandler(w http.ResponseWriter, r *http.Request) {
 		conn.Id = corrected[conn.Id]
 		conn.FromId = corrected[conn.FromId]
 		conn.ToId = corrected[conn.ToId]
-		econn, err := d.manager.Connect(conn)
+		econn, err := s.manager.Connect(conn)
 		if err != nil {
-			d.apiWrap(w, r, 500, d.response(err.Error()))
+			s.apiWrap(w, r, 500, s.response(err.Error()))
 			return
 		}
 
-		d.log <- &util.LogMsg{
+		s.log <- &util.LogMsg{
 			Type: util.CREATE,
 			Data: fmt.Sprintf("Connection %s", conn.Id),
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 
-		d.ui <- &util.LogMsg{
+		s.ui <- &util.LogMsg{
 			Type: util.CREATE,
 			Data: econn,
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.INFO,
 		Data: "Import OK",
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.apiWrap(w, r, 200, d.response("OK"))
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // exportHandler creates a JSON file representing the current block system.
-func (d *Daemon) exportHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
 	export := struct {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
 	}{
-		d.manager.ListBlocks(),
-		d.manager.ListConnections(),
+		s.manager.ListBlocks(),
+		s.manager.ListConnections(),
 	}
 
 	jex, err := json.Marshal(export)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, r, 200, jex)
+	s.apiWrap(w, r, 200, jex)
 }
 
 // listBlockHandler retuns a slice of the current blocks operating in the sytem.
-func (d *Daemon) listBlockHandler(w http.ResponseWriter, r *http.Request) {
-	blocks, err := json.Marshal(d.manager.ListBlocks())
+func (s *Server) listBlockHandler(w http.ResponseWriter, r *http.Request) {
+	blocks, err := json.Marshal(s.manager.ListBlocks())
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, r, 200, blocks)
+	s.apiWrap(w, r, 200, blocks)
 }
 
 // createBlockHandler asks the manager to create a block and then return that block
-// if the block has been created.
-func (d *Daemon) createBlockHandler(w http.ResponseWriter, r *http.Request) {
+// if the block has been creates.
+func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	var block *BlockInfo
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &block)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	mblock, err := d.manager.Create(block)
+	mblock, err := s.manager.Create(block)
 
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.CREATE,
 		Data: mblock,
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.CREATE,
 		Data: fmt.Sprintf("Block %s", mblock.Id),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
 	jblock, err := json.Marshal(mblock)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, r, 200, jblock)
+	s.apiWrap(w, r, 200, jblock)
 }
 
-// updateBlockHandler updates the coordinates of a block. 
-// block.id and block.type can't be changed. block.rule is set through sendRoute
-func (d *Daemon) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
+// updateBlockHandler updates the coordinates of a block.
+// block.id and block.type can't be changes. block.rule is set through sendRoute
+func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	var coord *Coords
 	vars := mux.Vars(r)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &coord)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	mblock, err := d.manager.UpdateBlock(vars["id"], coord)
+	mblock, err := s.manager.UpdateBlock(vars["id"], coord)
 
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	jblock, err := json.Marshal(mblock)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.UPDATE,
 		Data: fmt.Sprintf("Block %s", mblock.Id),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.UPDATE,
 		Data: mblock,
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.apiWrap(w, r, 200, jblock)
+	s.apiWrap(w, r, 200, jblock)
 }
 
 // blockInfoHandler returns a block given an id
-func (d *Daemon) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	conn, err := d.manager.GetBlock(vars["id"])
+	conn, err := s.manager.GetBlock(vars["id"])
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	jconn, err := json.Marshal(conn)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, r, 200, jconn)
+	s.apiWrap(w, r, 200, jconn)
 }
 
-// deleteBlockHandler asks the block manager to delete a block. 
-func (d *Daemon) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
+// deleteBlockHandler asks the block manager to delete a block.
+func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	ids, err := d.manager.DeleteBlock(vars["id"])
+	ids, err := s.manager.DeleteBlock(vars["id"])
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	for _, v := range ids {
-		d.log <- &util.LogMsg{
+		s.log <- &util.LogMsg{
 			Type: util.DELETE,
 			Data: fmt.Sprintf("Block %s", v),
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 
-		d.ui <- &util.LogMsg{
+		s.ui <- &util.LogMsg{
 			Type: util.DELETE,
 			Data: struct {
 				Id string
 			}{
 				v,
 			},
-			Id: "DAEMON",
+			Id: s.Id,
 		}
 	}
 
-	d.apiWrap(w, r, 200, d.response("OK"))
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // sendRouteHandler sends a message to a block's route. (unidirectional)
-func (d *Daemon) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 	var msg interface{}
 	vars := mux.Vars(r)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &msg)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	err = d.manager.Send(vars["id"], vars["route"], msg)
+	err = s.manager.Send(vars["id"], vars["route"], msg)
 
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.UPDATE,
 		Data: fmt.Sprintf("Block %s", vars["id"]),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.UPDATE,
 		Data: struct {
 			Id string
 		}{
 			vars["id"],
 		},
-		Id: "DAEMON",
+		Id: s.Id,
 	}
 
-	d.apiWrap(w, r, 200, d.response("OK"))
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // queryRouteHandler queries a block and returns a msg. (bidirectional)
-func (d *Daemon) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	msg, err := d.manager.Query(vars["id"], vars["route"])
+	msg, err := s.manager.Query(vars["id"], vars["route"])
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	jmsg, err := json.Marshal(msg)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.QUERY,
 		Data: fmt.Sprintf("Block %s", vars["id"]),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.QUERY,
 		Data: struct {
 			Id string
 		}{
 			vars["id"],
 		},
-		Id: "DAEMON",
+		Id: s.Id,
 	}
 
-	d.apiWrap(w, r, 200, jmsg)
+	s.apiWrap(w, r, 200, jmsg)
 }
 
 // listConnectionHandler returns a slice of the current connections in streamtools.
-func (d *Daemon) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
-	conns, err := json.Marshal(d.manager.ListConnections())
+func (s *Server) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	conns, err := json.Marshal(s.manager.ListConnections())
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, r, 200, conns)
+	s.apiWrap(w, r, 200, conns)
 }
 
-// createConnectHandler creates a connection and returns it. 
-func (d *Daemon) createConnectionHandler(w http.ResponseWriter, r *http.Request) {
+// createConnectHandler creates a connection and returns it.
+func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	var conn *ConnectionInfo
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	err = json.Unmarshal(body, &conn)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	mconn, err := d.manager.Connect(conn)
+	mconn, err := s.manager.Connect(conn)
 
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.CREATE,
 		Data: fmt.Sprintf("Connection %s", mconn.Id),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.CREATE,
 		Data: mconn,
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
 	jconn, err := json.Marshal(mconn)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	d.apiWrap(w, r, 200, jconn)
+	s.apiWrap(w, r, 200, jconn)
 }
 
-// connectionInfoHandler returns a connection object, given an id.
-func (d *Daemon) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
+// connectionInfoHandler returns a connection object, given an is.
+func (s *Server) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	conn, err := d.manager.GetConnection(vars["id"])
+	conn, err := s.manager.GetConnection(vars["id"])
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
 	jconn, err := json.Marshal(conn)
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	d.apiWrap(w, r, 200, jconn)
+	s.apiWrap(w, r, 200, jconn)
 }
 
 // response wraps error responses from the daemon in JSON
-func (d *Daemon) response(statusTxt string) []byte {
+func (s *Server) response(statusTxt string) []byte {
 	response, err := json.Marshal(struct {
 		StatusTxt string `json:"daemon"`
 	}{
 		statusTxt,
 	})
 	if err != nil {
-		response = []byte(fmt.Sprintf(`{"DAEMON":"%s"}`, err.Error()))
+		response = []byte(fmt.Sprintf(`{"%s":"%s"}`, s.Id, err.Error()))
 	}
 	return response
 }
 
 // apiWrap wraps all HTTP responses with approprite headers, status codes, and logs them.
-func (d *Daemon) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
+func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	w.Write(data)
 
 	if statusCode == 200 {
-		d.log <- &util.LogMsg{
+		s.log <- &util.LogMsg{
 			Type: util.INFO,
 			Data: fmt.Sprintf("%d", statusCode) + ": " + r.URL.Path,
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 	} else {
 		var err struct {
 			DAEMON string
 		}
 		_ = json.Unmarshal(data, &err)
-		d.log <- &util.LogMsg{
+		s.log <- &util.LogMsg{
 			Type: util.ERROR,
 			Data: err.DAEMON,
-			Id:   "DAEMON",
+			Id:   s.Id,
 		}
 	}
 }
 
 // deleteConnectionHandler deletes a connection, responds with OK.
-func (d *Daemon) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id, err := d.manager.DeleteConnection(vars["id"])
+	id, err := s.manager.DeleteConnection(vars["id"])
 	if err != nil {
-		d.apiWrap(w, r, 500, d.response(err.Error()))
+		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
-	
-	d.log <- &util.LogMsg{
+
+	s.log <- &util.LogMsg{
 		Type: util.DELETE,
 		Data: fmt.Sprintf("Connection %s", id),
-		Id:   "DAEMON",
+		Id:   s.Id,
 	}
 
-	d.ui <- &util.LogMsg{
+	s.ui <- &util.LogMsg{
 		Type: util.DELETE,
 		Data: struct {
 			Id string
 		}{
 			id,
 		},
-		Id: "DAEMON",
+		Id: s.Id,
 	}
 
-	d.apiWrap(w, r, 200, d.response("OK"))
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
-func (d *Daemon) Run() {
-	go BroadcastStream(d.ui, d.log)
+func (s *Server) Run() {
+	go BroadcastStream(s.ui, s.log)
 	go logStream.run()
 	go uiStream.run()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/", d.rootHandler)
-	r.HandleFunc("/library", d.libraryHandler)
-	r.HandleFunc("/static/{type}/{file}", d.staticHandler)
-	r.HandleFunc("/log", d.serveLogStream)
-	r.HandleFunc("/ui", d.serveUIStream)
-	r.HandleFunc("/port", d.portHandler)
-	r.HandleFunc("/domain", d.domainHandler)
-	r.HandleFunc("/version", d.versionHandler)
-	r.HandleFunc("/import", d.importHandler).Methods("POST")
-	r.HandleFunc("/export", d.exportHandler).Methods("GET")
-	r.HandleFunc("/blocks", d.listBlockHandler).Methods("GET")                     // list all blocks
-	r.HandleFunc("/blocks", d.createBlockHandler).Methods("POST")                  // create block w/o id
-	r.HandleFunc("/blocks/{id}", d.blockInfoHandler).Methods("GET")                // get block info
-	r.HandleFunc("/blocks/{id}", d.updateBlockHandler).Methods("PUT")              // update block
-	r.HandleFunc("/blocks/{id}", d.deleteBlockHandler).Methods("DELETE")           // delete block
-	r.HandleFunc("/blocks/{id}/{route}", d.sendRouteHandler).Methods("POST")       // send to block route
-	r.HandleFunc("/blocks/{id}/{route}", d.queryRouteHandler).Methods("GET")       // get from block route
-	r.HandleFunc("/connections", d.createConnectionHandler).Methods("POST")        // create connection
-	r.HandleFunc("/connections", d.listConnectionHandler).Methods("GET")           // list connections
-	r.HandleFunc("/connections/{id}", d.connectionInfoHandler).Methods("GET")      // get info for connection
-	r.HandleFunc("/connections/{id}", d.deleteConnectionHandler).Methods("DELETE") // delete connection
-	r.HandleFunc("/connections/{id}/{route}", d.queryRouteHandler).Methods("GET")  // get from block route
+	r.HandleFunc("/", s.rootHandler)
+	r.HandleFunc("/library", s.libraryHandler)
+	r.HandleFunc("/static/{type}/{file}", s.staticHandler)
+	r.HandleFunc("/log", s.serveLogStream)
+	r.HandleFunc("/ui", s.serveUIStream)
+	r.HandleFunc("/port", s.portHandler)
+	r.HandleFunc("/domain", s.domainHandler)
+	r.HandleFunc("/version", s.versionHandler)
+	r.HandleFunc("/import", s.importHandler).Methods("POST")
+	r.HandleFunc("/export", s.exportHandler).Methods("GET")
+	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                     // list all blocks
+	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                  // create block w/o id
+	r.HandleFunc("/blocks/{id}", s.blockInfoHandler).Methods("GET")                // get block info
+	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")              // update block
+	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")           // delete block
+	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")       // send to block route
+	r.HandleFunc("/blocks/{id}/{route}", s.queryRouteHandler).Methods("GET")       // get from block route
+	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")        // create connection
+	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")           // list connections
+	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")      // get info for connection
+	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE") // delete connection
+	r.HandleFunc("/connections/{id}/{route}", s.queryRouteHandler).Methods("GET")  // get from block route
 	http.Handle("/", r)
 
-	d.log <- &util.LogMsg{
+	s.log <- &util.LogMsg{
 		Type: util.INFO,
-		Data: fmt.Sprintf("Starting Streamtools %s on port %s", util.VERSION, d.Port),
-		Id:   "DAEMON",
+		Data: fmt.Sprintf("Starting Streamtools %s on port %s", util.VERSION, s.Port),
+		Id:   s.Id,
 	}
 
-	err := http.ListenAndServe(":"+d.Port, nil)
+	err := http.ListenAndServe(":"+s.Port, nil)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -700,7 +701,7 @@ func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
 
 	for {
 		select {
-		case <- dump.C:
+		case <-dump.C:
 			if len(batch) == 0 {
 				break
 			}
