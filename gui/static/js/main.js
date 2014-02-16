@@ -1,5 +1,6 @@
 $(function() {
 
+    // before anything, we need to load the library.
     var library = d3.nest()
         .key(function(d, i) {
             return d.Type;
@@ -10,30 +11,44 @@ $(function() {
         .map(JSON.parse($.ajax({
             url: '/library',
             type: 'GET',
-            async: false
+            async: false // required before UI stream starts
         }).responseText).Library);
 
-    var blocks = [];
-    var connections = [];
+    // constants
+    var DELETE = 8,
+        BACKSPACE = 46,
+        ROUTE = 10,
+        HALF_ROUTE = ROUTE * 0.5,
+        ROUTE_SPACE = ROUTE * 1.5,
+        CONN_OFFSET = 15,
+        TIP_OFF = {
+            x: 10,
+            y: -10,
+        }
 
-    var width = window.innerWidth,
-        height = window.innerHeight;
+    var blocks = [], // canonical block data for d3
+        connections = [], // canonical connection data for d3
+        width = window.innerWidth,
+        height = window.innerHeight,
+        mouse = {
+            x: 0,
+            y: 0
+        },
+        multiSelect = false, // shift click state
+        isConnecting = false, // connecting state
+        newConn = {}, // connecting state data
+        log = new logReader(),
+        ui = new uiReader();
 
-    var mouse = {
-        x: 0,
-        y: 0
-    };
-
-    var multiSelect = false;
-    var isConnecting = false;
-    var newConn = {};
-    var log = new logReader();
-    var ui = new uiReader();
+    //
+    // SVG elements
+    //
 
     var svg = d3.select('body').append('svg')
         .attr('width', width)
-        .attr('height', height)
+        .attr('height', height);
 
+    // workspace background
     var bg = svg.append('rect')
         .attr('x', 0)
         .attr('y', 0)
@@ -57,11 +72,13 @@ $(function() {
         .on('mousedown', function() {
             d3.selectAll('.selected')
                 .classed('selected', false)
-        })
+        });
 
+    // contains all connection ui
     var linkContainer = svg.append('g')
         .attr('class', 'linkContainer');
 
+    // contains all node ui
     var nodeContainer = svg.append('g')
         .attr('class', 'nodeContainer');
 
@@ -79,10 +96,12 @@ $(function() {
             d3.select(this)
                 .attr('transform', function(d, i) {
                     return 'translate(' + [d.Position.X, d.Position.Y] + ')';
-                })
+                });
             updateLinks();
         })
         .on('dragend', function(d, i) {
+            // need to tell daemon that this block has updated position
+            // so that we can save it and share across clients
             $.ajax({
                 url: '/blocks/' + d.Id,
                 type: 'PUT',
@@ -91,6 +110,7 @@ $(function() {
             });
         });
 
+    // ui element for new connection
     var newConnection = svg.select('.linkcontainer').append('path')
         .attr('id', 'newLink')
         .style('fill', 'none')
@@ -100,6 +120,7 @@ $(function() {
             }
         });
 
+    // so we have a cool angled look
     var lineStyle = d3.svg.line()
         .x(function(d) {
             return d.x;
@@ -109,6 +130,9 @@ $(function() {
         })
         .interpolate('monotone');
 
+    //
+    // GLOBAL EVENTS
+    //
 
     $(window).mousemove(function(e) {
         mouse = {
@@ -128,7 +152,7 @@ $(function() {
         }
 
         // if key is backspace or delete
-        if (e.keyCode == 8 || e.keyCode == 46) {
+        if (e.keyCode == DELETE || e.keyCode == BACKSPACE) {
             e.preventDefault();
             d3.selectAll('.selected')
                 .each(function(d) {
@@ -185,8 +209,9 @@ $(function() {
         if (!library.hasOwnProperty(blockType)) {
             return;
         }
-        var offset = $('#create').offset()
-
+        // we use an offset so that if the user moves the mouse during
+        // id entry, we spawn a block where the dialog is located
+        var offset = $('#create').offset();
         $.ajax({
             url: '/blocks',
             type: 'POST',
@@ -239,6 +264,9 @@ $(function() {
             switch (uiMsg.Type) {
                 case 'CREATE':
                     if (isBlock) {
+                        // we need to get typeinfo from the library
+                        // so that we can load the correct route information
+                        // for that block type
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
                     } else {
@@ -349,17 +377,17 @@ $(function() {
             .append('rect')
             .attr('class', 'chan in')
             .attr('x', function(d, i) {
-                return i * 15;
+                return i * ROUTE_SPACE;
             })
             .attr('y', 0)
-            .attr('width', 10)
-            .attr('height', 10)
+            .attr('width', ROUTE)
+            .attr('height', ROUTE)
             .on('mouseover', function(d) {
                 tooltip.text(d);
                 return tooltip.style('visibility', 'visible');
             })
             .on('mousemove', function(d) {
-                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
+                return tooltip.style('top', (event.pageY + TIP_OFF.y) + 'px').style('left', (event.pageX + TIP_OFF.x) + 'px');
             })
             .on('mouseout', function(d) {
                 return tooltip.style('visibility', 'hidden');
@@ -379,19 +407,19 @@ $(function() {
             .attr('class', 'chan query')
             .attr('x', function(d, i) {
                 var p = d3.select(this.parentNode).datum();
-                return (p.width - 10);
+                return (p.width - ROUTE);
             })
             .attr('y', function(d, i) {
-                return i * 15;
+                return i * ROUTE_SPACE;
             })
-            .attr('width', 10)
-            .attr('height', 10)
+            .attr('width', ROUTE)
+            .attr('height', ROUTE)
             .on('mouseover', function(d) {
                 tooltip.text(d);
                 return tooltip.style('visibility', 'visible');
             })
             .on('mousemove', function(d) {
-                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
+                return tooltip.style('top', (event.pageY + TIP_OFF.y) + 'px').style('left', (event.pageX + TIP_OFF.x) + 'px');
             })
             .on('mouseout', function(d) {
                 return tooltip.style('visibility', 'hidden');
@@ -408,20 +436,20 @@ $(function() {
             .append('rect')
             .attr('class', 'chan out')
             .attr('x', function(d, i) {
-                return i * 15;
+                return i * ROUTE_SPACE;
             })
             .attr('y', function(d, i) {
                 var p = d3.select(this.parentNode).datum();
-                return ((p.height * 2) - 10);
+                return ((p.height * 2) - ROUTE);
             })
-            .attr('width', 10)
-            .attr('height', 10)
+            .attr('width', ROUTE)
+            .attr('height', ROUTE)
             .on('mouseover', function(d) {
                 tooltip.text(d);
                 return tooltip.style('visibility', 'visible');
             })
             .on('mousemove', function(d) {
-                return tooltip.style('top', (event.pageY - 10) + 'px').style('left', (event.pageX + 10) + 'px');
+                return tooltip.style('top', (event.pageY + TIP_OFF.y) + 'px').style('left', (event.pageX + TIP_OFF.x) + 'px');
             })
             .on('mouseout', function(d) {
                 return tooltip.style('visibility', 'hidden');
@@ -503,6 +531,7 @@ $(function() {
         link.exit().remove();
     }
 
+    // update rate label every x ms
     window.setInterval(function() {
         d3.selectAll('.rateLabel')
             .text(function(d) {
@@ -512,6 +541,7 @@ $(function() {
             });
     }, 100);
 
+    // keep the rate balls moving
     window.setInterval(function() {
         svg.selectAll('.edgePing')
             .each(function(d) {
@@ -529,20 +559,21 @@ $(function() {
     }, 1000 / 60);
 
     // updateLinks() is too slow!
+    // generates paths fo all links
     function updateLinks() {
         link.attr('d', function(d) {
             return lineStyle([{
-                x: d.from.Position.X + 5,
-                y: (d.from.Position.Y + d.from.height * 2) - 5
+                x: d.from.Position.X + HALF_ROUTE,
+                y: (d.from.Position.Y + d.from.height * 2) - HALF_ROUTE
             }, {
-                x: d.from.Position.X + 5,
-                y: (d.from.Position.Y + d.from.height * 2) + 15
+                x: d.from.Position.X + HALF_ROUTE,
+                y: (d.from.Position.Y + d.from.height * 2) + ROUTE_SPACE
             }, {
-                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * 15) + 5,
-                y: d.to.Position.Y - 15
+                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * ROUTE_SPACE) + HALF_ROUTE,
+                y: d.to.Position.Y - ROUTE_SPACE
             }, {
-                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * 15) + 5,
-                y: d.to.Position.Y + 5
+                x: d.to.Position.X + (d.to.TypeInfo.InRoutes.indexOf(d.ToRoute) * ROUTE_SPACE) + HALF_ROUTE,
+                y: d.to.Position.Y + HALF_ROUTE
             }]);
         });
     }
@@ -597,27 +628,27 @@ $(function() {
         newConnection.attr('d', function() {
             return lineStyle(newConn.startType == 'out' ?
                 [{
-                    x: newConn.start.Position.X + 5,
-                    y: (newConn.start.Position.Y + newConn.start.height * 2) - 5
+                    x: newConn.start.Position.X + HALF_ROUTE,
+                    y: (newConn.start.Position.Y + newConn.start.height * 2) - HALF_ROUTE
                 }, {
-                    x: newConn.start.Position.X + 5,
-                    y: (newConn.start.Position.Y + newConn.start.height * 2) + 15
+                    x: newConn.start.Position.X + HALF_ROUTE,
+                    y: (newConn.start.Position.Y + newConn.start.height * 2) + ROUTE_SPACE
                 }, {
                     x: mouse.x,
-                    y: mouse.y - 15
+                    y: mouse.y - ROUTE_SPACE
                 }, {
                     x: mouse.x,
                     y: mouse.y
                 }] :
                 [{
-                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * 15) + 5,
-                    y: newConn.start.Position.Y + 5
+                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * ROUTE_SPACE) + HALF_ROUTE,
+                    y: newConn.start.Position.Y + HALF_ROUTE
                 }, {
-                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * 15) + 5,
-                    y: newConn.start.Position.Y - 15
+                    x: newConn.start.Position.X + (newConn.start.TypeInfo.InRoutes.indexOf(newConn.startRoute) * ROUTE_SPACE) + HALF_ROUTE,
+                    y: newConn.start.Position.Y - ROUTE_SPACE
                 }, {
                     x: mouse.x,
-                    y: mouse.y + 15
+                    y: mouse.y + ROUTE_SPACE
                 }, {
                     x: mouse.x,
                     y: mouse.y
