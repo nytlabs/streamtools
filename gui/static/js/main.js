@@ -625,7 +625,9 @@ $(function() {
     }, 100);
 
     // keep the rate balls moving
-    window.setInterval(function() {
+    updatePings();
+
+    function updatePings() {
         svg.selectAll('.edgePing')
             .each(function(d) {
                 d.rate += Math.random();
@@ -639,7 +641,8 @@ $(function() {
             .attr('cy', function(d) {
                 return d.edgePos.y;
             });
-    }, 1000 / 60);
+        requestAnimationFrame(updatePings)
+    }
 
     // updateLinks() is too slow!
     // generates paths fo all links
