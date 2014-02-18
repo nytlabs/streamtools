@@ -13,6 +13,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"count":   NewCount,
 		"toFile":  NewToFile,
 		"fromNSQ": NewFromNSQ,
+		"fromSQS": NewFromSQS,
 	}
 
 	chans := blocks.BlockChans{
@@ -61,6 +62,19 @@ func TestToFile(t *testing.T) {
 func TestFromNSQ(t *testing.T) {
 	log.Println("testing fromNSQ")
 	b, c := newBlock("testingfromNSQ", "fromNSQ")
+	go blocks.BlockRoutine(b)
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	err := <-c.ErrChan
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestFromSQS(t *testing.T) {
+	log.Println("testing FromSQS")
+	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
