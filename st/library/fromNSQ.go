@@ -63,6 +63,7 @@ func (b *FromNSQ) Run() {
 			b.Error(err)
 		case ruleI := <-b.inrule:
 			// convert message to a map of string interfaces
+			// aka keys are strings, values are empty interfaces
 			rule := ruleI.(map[string]interface{})
 
 			// TODO: make this pattern a util so we don't have to copy/paste so much code

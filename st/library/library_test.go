@@ -33,6 +33,39 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 }
 
+func TestFromNSQ(t *testing.T) {
+	log.Println("testing fromNSQ")
+
+	b, c := newBlock("testingfromNSQ", "fromNSQ")
+	go blocks.BlockRoutine(b)
+
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	fooMsg := map[string]interface{}{"ReadTopic": "test", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "nsq_to_file", "MaxInFlight": 100}
+	rule := &blocks.Msg{Msg: fooMsg, Route: "rule"}
+	c.InChan <- rule
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+
+	for {
+		select {
+		case message := <-outChan:
+			log.Println("caught message on outChan")
+			log.Println(message)
+
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		}
+	}
+}
+
 func TestCount(t *testing.T) {
 	log.Println("testing Count")
 	b, c := newBlock("testingCount", "count")
@@ -49,19 +82,6 @@ func TestCount(t *testing.T) {
 func TestToFile(t *testing.T) {
 	log.Println("testing toFile")
 	b, c := newBlock("testingToFile", "toFile")
-	go blocks.BlockRoutine(b)
-	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
-	})
-	err := <-c.ErrChan
-	if err != nil {
-		t.Errorf(err.Error())
-	}
-}
-
-func TestFromNSQ(t *testing.T) {
-	log.Println("testing fromNSQ")
-	b, c := newBlock("testingfromNSQ", "fromNSQ")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
