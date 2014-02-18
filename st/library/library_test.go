@@ -3,6 +3,7 @@ package library
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"log"
+	"os/exec"
 	"testing"
 	"time"
 )
@@ -35,6 +36,13 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 func TestFromNSQ(t *testing.T) {
 	log.Println("testing fromNSQ")
+
+	// send a message to nsq for this test
+	cmd := exec.Command("curl", "-d {}", "http://127.0.0.1:4151/put?topic=test")
+	err := cmd.Run()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	b, c := newBlock("testingfromNSQ", "fromNSQ")
 	go blocks.BlockRoutine(b)
