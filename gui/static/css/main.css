@@ -1,0 +1,140 @@
+* {
+    padding: 0px;
+    margin: 0px;
+    overflow: hidden;
+}
+
+#log {
+    width: 100%;
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    border-top: 1px solid rgba(180,180,180,1);
+    height: 18px;
+    overflow-y hidden;
+}
+
+#log:hover{
+    background: rgba(200,200,200,.5);
+    cursor:pointer;
+}
+
+.log-max {
+    height: 100% !important;
+    overflow-y: scroll !important;
+}
+
+.log-item {
+    display: block;
+    font-family: Monaco, "Courier New", Courier, monospace;
+    font-size: 12px;
+}
+
+.date {
+    color: rgba(90,90,90,1);
+}
+
+.CREATE {
+    color: rgba(92, 217, 239, 1);
+}
+
+.UPDATE {
+    color: rgba(92, 217, 239, 1);
+}
+
+.ERROR {
+    color: rgba(240, 67, 40, 1);
+}
+
+.INFO {
+    color: rgba(90,90,90,1);
+}
+
+.nodetype {
+    cursor: pointer;
+    font-family: helvetica, sans-serif;
+    font-size: 12px;
+}
+
+.idrect {
+    fill: rgba(220,220,220,1);
+    cursor: pointer;
+}
+
+.unselectable {
+    -webkit-user-select: none; /* Chrome/Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+ */
+    -o-user-select: none;
+    user-select: none;
+}
+
+.link {
+    cursor: pointer;
+    stroke-width: 1px;
+    stroke: rgba(80,80,80,1);
+}
+
+#newLink {
+    stroke-width: 1px;
+    stroke: rgba(80,80,255,1);
+    visibility: hidden;
+}
+
+.rateLabel {
+    font-size: 12px;
+    font-family: helvetica, sans-serif;
+}
+
+.chan {
+    cursor: pointer;
+    fill: rgba(60,60,60,1);
+}
+
+.chan:hover{
+    stroke-width: 1px;
+    stroke: rgba(0,0,0,1);
+}
+
+.tooltip {
+    position: absolute;
+    z-index: 10;
+    visibility: hidden;
+    font-family: helvetica, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    background: rgba(220,220,220,1);
+    color: black;
+    padding: 2px;
+}
+
+.query {
+    fill: rgba(255,80,80,1);
+}
+
+#create{
+    position: absolute;
+    visibility: hidden;
+    z-index: 10;
+}
+
+#create-input{
+    width: 200px;
+}
+
+.background {
+    fill: rgba(240,240,240,1);
+}
+
+.rateLabel {
+    cursor: pointer;
+}
+
+.selected {
+    stroke-width: 1px;
+    stroke: rgba(80,80,255,1);
+}
+
+.ui-log{
+    font-weight: bold;
+}
