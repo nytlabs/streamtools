@@ -10,8 +10,9 @@ import (
 func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 	library := map[string]func() blocks.BlockInterface{
-		"count":  NewCount,
-		"toFile": NewToFile,
+		"count":   NewCount,
+		"toFile":  NewToFile,
+		"fromSQS": NewFromSQS,
 	}
 
 	chans := blocks.BlockChans{
@@ -47,6 +48,19 @@ func TestCount(t *testing.T) {
 func TestToFile(t *testing.T) {
 	log.Println("testing toFile")
 	b, c := newBlock("testingToFile", "toFile")
+	go blocks.BlockRoutine(b)
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	err := <-c.ErrChan
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestFromSQS(t *testing.T) {
+	log.Println("testing FromSQS")
+	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true

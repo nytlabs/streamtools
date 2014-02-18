@@ -1,7 +1,10 @@
 package library
 
 import (
+	"bufio"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"os"
 )
@@ -10,9 +13,9 @@ import (
 type ToFile struct {
 	blocks.Block
 	file      *os.File
+	filename  string
 	queryrule chan chan interface{}
 	inrule    chan interface{}
-	inpoll    chan interface{}
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
@@ -51,13 +54,28 @@ func (b *ToFile) Run() {
 			}
 			// set the new file
 			b.file = fo
+			// record the filename
+			b.filename = filename
 		case <-b.quit:
 			// quit the block
+			if b.file != nil {
+				b.file.Close()
+			}
 			return
-		case <-b.in:
+		case msg := <-b.in:
 			// deal with inbound data
-		case <-b.queryrule:
+			w := bufio.NewWriter(b.file)
+			msgStr, err := json.Marshal(msg)
+			if err != nil {
+				b.Error(err)
+			}
+			fmt.Fprintln(w, string(msgStr))
+			w.Flush()
+		case respChan := <-b.queryrule:
 			// deal with a query request
+			respChan <- map[string]interface{}{
+				"Filename": b.filename,
+			}
 		}
 	}
 }
