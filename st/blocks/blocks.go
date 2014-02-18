@@ -53,9 +53,13 @@ func (b *Block) Build(c BlockChans) {
 	b.DelChan = c.DelChan
 	b.ErrChan = c.ErrChan
 	b.QuitChan = c.QuitChan
+
 	// route maps
 	b.inRoutes = make(map[string]chan interface{})
 	b.queryRoutes = make(map[string]chan chan interface{})
+
+	// broadcast channel
+	b.broadcast = make(chan interface{})
 }
 
 func (b *Block) InRoute(routeName string) chan interface{} {
@@ -92,6 +96,7 @@ func (b *Block) Quit() {
 	close(b.DelChan)
 	close(b.ErrChan)
 	close(b.QuitChan)
+	close(b.broadcast)
 }
 
 func (b *Block) Error(e error) {
