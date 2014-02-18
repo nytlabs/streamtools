@@ -25,8 +25,8 @@ func (b *Count) Setup() {
 	b.Kind = "Count"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
-	b.quit = b.InRoute("quit")
 	b.queryrule = b.QueryRoute("rule")
+	b.quit = b.InRoute("quit")
 	b.out = b.Broadcast()
 }
 

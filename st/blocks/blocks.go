@@ -1,18 +1,18 @@
 package blocks
 
 type Msg struct {
-	msg   interface{}
-	route string
+	Msg   interface{}
+	Route string
 }
 
 type AddChanMsg struct {
-	route   string
-	channel chan *Msg
+	Route   string
+	Channel chan *Msg
 }
 
 type QueryMsg struct {
-	route    string
-	respChan chan interface{}
+	Route    string
+	RespChan chan interface{}
 }
 
 type BlockChans struct {
@@ -21,6 +21,7 @@ type BlockChans struct {
 	AddChan   chan *AddChanMsg
 	DelChan   chan *Msg
 	ErrChan   chan error
+	QuitChan  chan bool
 }
 
 type Block struct {
@@ -35,6 +36,7 @@ type Block struct {
 type BlockInterface interface {
 	Setup()
 	Run()
+	Quit()
 	Build(BlockChans)
 	Broadcast() chan interface{}
 	InRoute(string) chan interface{}
@@ -49,6 +51,7 @@ func (b *Block) Build(c BlockChans) {
 	b.AddChan = c.AddChan
 	b.DelChan = c.DelChan
 	b.ErrChan = c.ErrChan
+	b.QuitChan = c.QuitChan
 	// route maps
 	b.inRoutes = make(map[string]chan interface{})
 	b.queryRoutes = make(map[string]chan chan interface{})
@@ -74,6 +77,22 @@ func (b *Block) GetBlock() *Block {
 	return b
 }
 
+func (b *Block) Quit() {
+	b.inRoutes["quit"] <- true
+	for route := range b.inRoutes {
+		close(b.inRoutes[route])
+	}
+	for route := range b.queryRoutes {
+		close(b.queryRoutes[route])
+	}
+	close(b.InChan)
+	close(b.QueryChan)
+	close(b.AddChan)
+	close(b.DelChan)
+	close(b.ErrChan)
+	close(b.QuitChan)
+}
+
 func BlockRoutine(bi BlockInterface) {
 	outChans := make(map[string]chan *Msg)
 
@@ -85,20 +104,23 @@ func BlockRoutine(bi BlockInterface) {
 	for {
 		select {
 		case msg := <-b.InChan:
-			b.inRoutes[msg.route] <- msg.msg
+			b.inRoutes[msg.Route] <- msg.Msg
 		case msg := <-b.QueryChan:
-			b.queryRoutes[msg.route] <- msg.respChan
+			b.queryRoutes[msg.Route] <- msg.RespChan
 		case msg := <-b.AddChan:
-			outChans[msg.route] = msg.channel
+			outChans[msg.Route] = msg.Channel
 		case msg := <-b.DelChan:
-			delete(outChans, msg.route)
+			delete(outChans, msg.Route)
 		case msg := <-b.broadcast:
 			for _, v := range outChans {
 				v <- &Msg{
-					msg:   msg,
-					route: "",
+					Msg:   msg,
+					Route: "",
 				}
 			}
+		case <-b.QuitChan:
+			b.Quit()
+			return
 		}
 	}
 }
