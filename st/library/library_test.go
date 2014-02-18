@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"log"
 	"testing"
 	"time"
 )
@@ -9,7 +10,8 @@ import (
 func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 	library := map[string]func() blocks.BlockInterface{
-		"count": NewCount,
+		"count":  NewCount,
+		"toFile": NewToFile,
 	}
 
 	chans := blocks.BlockChans{
@@ -30,6 +32,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 }
 
 func TestCount(t *testing.T) {
+	log.Println("testing Count")
 	b, c := newBlock("testingCount", "count")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -39,5 +42,17 @@ func TestCount(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+}
 
+func TestToFile(t *testing.T) {
+	log.Println("testing toFile")
+	b, c := newBlock("testingToFile", "toFile")
+	go blocks.BlockRoutine(b)
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	err := <-c.ErrChan
+	if err != nil {
+		t.Errorf(err.Error())
+	}
 }

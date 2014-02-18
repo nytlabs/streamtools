@@ -37,6 +37,7 @@ type BlockInterface interface {
 	Setup()
 	Run()
 	Quit()
+	Error(error)
 	Build(BlockChans)
 	Broadcast() chan interface{}
 	InRoute(string) chan interface{}
@@ -91,6 +92,10 @@ func (b *Block) Quit() {
 	close(b.DelChan)
 	close(b.ErrChan)
 	close(b.QuitChan)
+}
+
+func (b *Block) Error(e error) {
+	b.ErrChan <- e
 }
 
 func BlockRoutine(bi BlockInterface) {
