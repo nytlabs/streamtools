@@ -3,7 +3,6 @@ package library
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"log"
-	"os/exec"
 	"testing"
 	"time"
 )
@@ -14,6 +13,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"count":   NewCount,
 		"toFile":  NewToFile,
 		"fromNSQ": NewFromNSQ,
+		"toNSQ":   NewToNSQ,
 		"fromSQS": NewFromSQS,
 	}
 
@@ -34,28 +34,39 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 }
 
-func TestFromNSQ(t *testing.T) {
-	log.Println("testing fromNSQ")
+func TestToFromNSQ(t *testing.T) {
+	log.Println("testing toNSQ")
 
-	// send a message to nsq for this test
-	cmd := exec.Command("curl", "-d {}", "http://127.0.0.1:4151/put?topic=test")
-	err := cmd.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	toB, toC := newBlock("testingToNSQ", "toNSQ")
+	go blocks.BlockRoutine(toB)
 
-	b, c := newBlock("testingfromNSQ", "fromNSQ")
-	go blocks.BlockRoutine(b)
+	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	toC.InChan <- toRule
 
-	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
-
-	fooMsg := map[string]interface{}{"ReadTopic": "test", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "nsq_to_file", "MaxInFlight": 100}
-	rule := &blocks.Msg{Msg: fooMsg, Route: "rule"}
-	c.InChan <- rule
+	nsqMsg := map[string]interface{}{"Foo": "Bar"}
+	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
+	toC.InChan <- postData
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		log.Println("quitting chan")
+		toC.QuitChan <- true
+	})
+
+	log.Println("testing fromNSQ")
+
+	fromB, fromC := newBlock("testingfromNSQ", "fromNSQ")
+	go blocks.BlockRoutine(fromB)
+
+	outChan := make(chan *blocks.Msg)
+	fromC.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	nsqSetup := map[string]interface{}{"ReadTopic": "librarytest", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "libtestchannel", "MaxInFlight": 100}
+	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
+	fromC.InChan <- fromRule
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		fromC.QuitChan <- true
 	})
 
 	for {
@@ -64,7 +75,7 @@ func TestFromNSQ(t *testing.T) {
 			log.Println("caught message on outChan")
 			log.Println(message)
 
-		case err := <-c.ErrChan:
+		case err := <-fromC.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
 			} else {
