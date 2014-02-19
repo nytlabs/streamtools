@@ -30,19 +30,30 @@ type Block struct {
 	inRoutes    map[string]chan interface{}
 	queryRoutes map[string]chan chan interface{}
 	broadcast   chan interface{}
+	quit 		chan interface{}
+	doesBroadcast bool
 	BlockChans
+}
+
+type BlockDef struct {
+	Type string
+	InRoutes []string
+	QueryRoutes [] string
+	Broadcast bool
 }
 
 type BlockInterface interface {
 	Setup()
 	Run()
-	Quit()
+	CleanUp()
 	Error(error)
 	Build(BlockChans)
+	Quit() chan interface{}
 	Broadcast() chan interface{}
 	InRoute(string) chan interface{}
 	QueryRoute(string) chan chan interface{}
 	GetBlock() *Block
+	GetDef() *BlockDef
 }
 
 func (b *Block) Build(c BlockChans) {
@@ -60,6 +71,9 @@ func (b *Block) Build(c BlockChans) {
 
 	// broadcast channel
 	b.broadcast = make(chan interface{})
+
+	// quit chan
+	b.quit = make(chan interface{})
 }
 
 func (b *Block) InRoute(routeName string) chan interface{} {
@@ -75,28 +89,53 @@ func (b *Block) QueryRoute(routeName string) chan chan interface{} {
 }
 
 func (b *Block) Broadcast() chan interface{} {
+	b.doesBroadcast = true
 	return b.broadcast
+}
+
+func (b *Block) Quit() chan interface{} {
+	return b.quit
 }
 
 func (b *Block) GetBlock() *Block {
 	return b
 }
 
-func (b *Block) Quit() {
+func (b *Block) GetDef() *BlockDef {
+	var inRoutes []string
+	var queryRoutes []string
+
+	for k, _ := range b.inRoutes {
+		inRoutes = append(inRoutes, k)
+	}
+
+	for k, _ := range b.queryRoutes {
+		queryRoutes = append(queryRoutes, k)
+	}
+
+	return &BlockDef{
+		Type: b.Kind,
+		InRoutes: inRoutes,
+		QueryRoutes: queryRoutes, 
+		Broadcast: b.doesBroadcast,
+	}
+}
+
+func (b *Block) CleanUp() {
 	b.inRoutes["quit"] <- true
 	for route := range b.inRoutes {
-		close(b.inRoutes[route])
+		defer close(b.inRoutes[route])
 	}
 	for route := range b.queryRoutes {
-		close(b.queryRoutes[route])
+		defer close(b.queryRoutes[route])
 	}
-	close(b.InChan)
-	close(b.QueryChan)
-	close(b.AddChan)
-	close(b.DelChan)
-	close(b.ErrChan)
-	close(b.QuitChan)
-	close(b.broadcast)
+	defer close(b.InChan)
+	defer close(b.QueryChan)
+	defer close(b.AddChan)
+	defer close(b.DelChan)
+	defer close(b.ErrChan)
+	defer close(b.QuitChan)
+	defer close(b.broadcast)
 }
 
 func (b *Block) Error(e error) {
@@ -107,7 +146,7 @@ func BlockRoutine(bi BlockInterface) {
 	outChans := make(map[string]chan *Msg)
 
 	b := bi.GetBlock()
-
+	
 	bi.Setup()
 	go bi.Run()
 
@@ -129,7 +168,8 @@ func BlockRoutine(bi BlockInterface) {
 				}
 			}
 		case <-b.QuitChan:
-			b.Quit()
+			b.quit <- true
+			b.CleanUp()
 			return
 		}
 	}

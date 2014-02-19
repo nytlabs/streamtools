@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/nytlabs/streamtools/st/util"
+	"github.com/nytlabs/streamtools/st/library"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -66,9 +67,15 @@ func (s *Server) staticHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) libraryHandler(w http.ResponseWriter, r *http.Request) {
-	// this is a fake library
-	l := []byte(`{"Library":[{"Type":"tolog","InRoutes":["in"],"OutRoutes":[],"QueryRoutes":[]},{"Type":"count","Broadcast":true,"InRoutes":["in","rule","poll"],"OutRoutes":["out"],"QueryRoutes":["rule","count"]},{"Type":"filter","InRoutes":["in","rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"ticker","InRoutes":["rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"random","InRoutes":["poll"],"OutRoutes":["out"],"QueryRoutes":[]}]}`)
-	s.apiWrap(w, r, 200, l)
+	lib, err := json.Marshal(library.BlockDefs)
+	if err != nil {
+		s.log <- &util.LogMsg{
+			Type: util.CREATE,
+			Data: "Could not marshal library.",
+			Id:   s.Id,
+		}
+	}
+	s.apiWrap(w, r, 200, lib)
 }
 
 func (s *Server) portHandler(w http.ResponseWriter, r *http.Request) {

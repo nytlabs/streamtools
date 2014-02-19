@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"fmt"
-	//"github.com/nytlabs/streamtools/blocks"
 	"net/url"
 	"strconv"
 )
@@ -51,7 +50,6 @@ func IDService(idChan chan string) {
 func NewBlockManager() *BlockManager {
 	idChan := make(chan string)
 	go IDService(idChan)
-	//blocks.BuildLibrary()
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
