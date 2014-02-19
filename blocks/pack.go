@@ -2,8 +2,8 @@ package blocks
 
 import (
 	"container/heap"
+	"github.com/nytlabs/gojee"
 	"log"
-	"strings"
 	"time"
 )
 
@@ -13,12 +13,12 @@ import (
 func Pack(b *Block) {
 
 	type bunchRule struct {
-		Branch    string
-		EmitAfter int
+		Path      string
+		EmitAfter string
 	}
 
 	var rule *bunchRule
-	var branch []string
+	var tree *jee.TokenTree
 
 	after := time.Duration(0)
 	waitTimer := time.NewTimer(100 * time.Millisecond)
@@ -39,8 +39,22 @@ func Pack(b *Block) {
 				rule = &bunchRule{}
 			}
 			unmarshal(msg, rule)
-			after = time.Duration(rule.EmitAfter) * time.Second
-			branch = strings.Split(rule.Branch, ".")
+			token, err := jee.Lexer(rule.Path)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
+
+			after, err = time.ParseDuration(rule.EmitAfter)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
 				marshal(msg, &bunchRule{})
@@ -51,14 +65,19 @@ func Pack(b *Block) {
 			if rule == nil {
 				break
 			}
+			if tree == nil {
+				break
+			}
 
-			id, err := Get(msg.Msg, branch...)
+			id, err := jee.Eval(tree, msg.Msg)
+			if err != nil {
+				log.Println(err.Error())
+				break
+			}
 			idStr, ok := id.(string)
 			if !ok {
-				log.Fatal("type assertion failed")
-			}
-			if err != nil {
-				log.Fatal(err.Error())
+				log.Println("could not assert id to string")
+				break
 			}
 			if len(bunches[idStr]) > 0 {
 				bunches[idStr] = append(bunches[idStr], msg.Msg)
