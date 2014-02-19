@@ -27,6 +27,8 @@ func Pack(b *Block) {
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 
+	log.Println("starting loop")
+
 	for {
 		select {
 		case msg := <-b.AddChan:

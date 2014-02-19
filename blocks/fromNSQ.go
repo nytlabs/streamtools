@@ -53,7 +53,8 @@ func FromNSQ(b *Block) {
 
 			reader, err := nsq.NewReader(rule.ReadTopic, rule.ReadChannel)
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Println(err.Error())
+				break
 			}
 			reader.SetMaxInFlight(rule.MaxInFlight)
 
@@ -61,7 +62,8 @@ func FromNSQ(b *Block) {
 			reader.AddHandler(h)
 			err = reader.ConnectToLookupd(rule.LookupdAddr)
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Println(err.Error())
+				break
 			}
 		case msg := <-b.Routes["get_rule"]:
 			if rule == nil {
