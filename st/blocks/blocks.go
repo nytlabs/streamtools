@@ -2,6 +2,7 @@ package blocks
 
 import(
 	"time"
+    "github.com/nytlabs/streamtools/st/loghub"
 )
 
 type Msg struct {
@@ -28,8 +29,13 @@ type BlockChans struct {
 	QuitChan  chan bool
 }
 
+type LogStreams struct {
+	log			chan interface{}
+	ui 			chan interface{}
+}
+
 type Block struct {
-	Name        string // the name of the block specifed by the user (like MyBlock)
+	Id        	string // the name of the block specifed by the user (like MyBlock)
 	Kind        string // the kind of block this is (like count, toFile, fromSQS)
 	inRoutes    map[string]chan interface{}
 	queryRoutes map[string]chan chan interface{}
@@ -37,6 +43,7 @@ type Block struct {
 	quit 		chan interface{}
 	doesBroadcast bool
 	BlockChans
+	LogStreams
 }
 
 type BlockDef struct {
@@ -50,7 +57,6 @@ type BlockInterface interface {
 	Setup()
 	Run()
 	CleanUp()
-	Error(error)
 	Build(BlockChans)
 	Quit() chan interface{}
 	Broadcast() chan interface{}
@@ -58,6 +64,9 @@ type BlockInterface interface {
 	QueryRoute(string) chan chan interface{}
 	GetBlock() *Block
 	GetDef() *BlockDef
+	Log(interface{})
+	Error(interface{})
+	SetId(string)
 }
 
 func (b *Block) Build(c BlockChans) {
@@ -78,6 +87,13 @@ func (b *Block) Build(c BlockChans) {
 
 	// quit chan
 	b.quit = make(chan interface{})
+
+	b.ui = make(chan interface{})
+	b.log = make(chan interface{})
+}
+
+func (b *Block) SetId(Id string){
+	b.Id = Id
 }
 
 func (b *Block) InRoute(routeName string) chan interface{} {
@@ -106,9 +122,9 @@ func (b *Block) GetBlock() *Block {
 }
 
 func (b *Block) GetDef() *BlockDef {
-	var inRoutes []string
-	var queryRoutes []string
-	var outRoutes []string
+	inRoutes := []string{}
+	queryRoutes := []string{}
+	outRoutes := []string{}
 
 	for k, _ := range b.inRoutes {
 		inRoutes = append(inRoutes, k)
@@ -116,11 +132,11 @@ func (b *Block) GetDef() *BlockDef {
 
 	for k, _ := range b.queryRoutes {
 		queryRoutes = append(queryRoutes, k)
-	}
+	} 
 
 	if b.doesBroadcast {
 		outRoutes = []string{"out"}
-	}
+	} 
 
 	return &BlockDef{
 		Type: b.Kind,
@@ -131,7 +147,6 @@ func (b *Block) GetDef() *BlockDef {
 }
 
 func (b *Block) CleanUp() {
-	b.inRoutes["quit"] <- true
 	for route := range b.inRoutes {
 		defer close(b.inRoutes[route])
 	}
@@ -147,8 +162,20 @@ func (b *Block) CleanUp() {
 	defer close(b.broadcast)
 }
 
-func (b *Block) Error(e error) {
-	b.ErrChan <- e
+func (b *Block) Error(msg interface{}) {
+    loghub.Log <- &loghub.LogMsg{
+        Type: loghub.ERROR,
+        Data: msg,
+        Id:   b.Id,
+    }
+}
+
+func (b *Block) Log(msg interface{}){
+    loghub.Log <- &loghub.LogMsg{
+        Type: loghub.INFO,
+        Data: msg,
+        Id:   b.Id,
+    }
 }
 
 func BlockRoutine(bi BlockInterface) {
@@ -184,12 +211,30 @@ func BlockRoutine(bi BlockInterface) {
 }
 
 type Connection struct {
-	InChan chan *Msg
-	QueryChan chan *QueryMsg
-	AddChan chan *AddChanMsg
-	DelChan chan *Msg
-	QuitChan chan bool
+	Id 	string
 	ToRoute string
+	BlockChans
+	LogStreams
+}
+
+func (c *Connection) SetId(Id string){
+	c.Id = Id
+}
+
+func (c *Connection) Build(chans BlockChans){
+	c.InChan = chans.InChan
+	c.QueryChan = chans.QueryChan
+	c.AddChan = chans.AddChan
+	c.DelChan = chans.DelChan
+	c.QuitChan = chans.QuitChan
+}
+
+func (c *Connection) CleanUp(){
+	defer close(c.InChan)
+	defer close(c.QueryChan)
+	defer close(c.AddChan)
+	defer close(c.DelChan)
+	defer close(c.QuitChan)
 }
 
 func ConnectionRoutine(c *Connection){
@@ -199,15 +244,29 @@ func ConnectionRoutine(c *Connection){
 	outChans := make(map[string]chan *Msg)
 	times := make([]int64,100,100)
 	timesIdx := len(times)
-
+	rateReport := time.NewTicker(100 * time.Millisecond)
 	for{
 		select{
+		case <- rateReport.C:
+			if timesIdx == len(times) {
+				rate = 0
+			} else {
+				rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
+			}
+
+		    loghub.UI <- &loghub.LogMsg{
+		        Type: loghub.UPDATE,
+		        Data: map[string]interface{}{
+		        	"Rate": rate,
+		        },
+		        Id:   c.Id,
+		    }
+
 		case msg := <- c.InChan:
 			last = msg.Msg
-
 			for _, v := range outChans {
 				v <- &Msg{
-					Msg:   msg,
+					Msg:   msg.Msg,
 					Route: c.ToRoute,
 				}
 			}
@@ -222,20 +281,20 @@ func ConnectionRoutine(c *Connection){
 		case msg := <- c.QueryChan:
 			switch msg.Route {
 			case "rate":
-				if timesIdx == len(times) {
-					rate = 0
-				} else {
-					rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
+				msg.RespChan <- map[string]interface{}{
+					"Rate" : rate,
 				}
-				msg.RespChan <- rate
 			case "last":
-				msg.RespChan <- last
+				msg.RespChan <- map[string]interface{}{
+					"Last" : last,
+				}
 			}
 		case msg := <- c.AddChan:
 			outChans[msg.Route] = msg.Channel
 		case msg := <- c.DelChan:
 			delete(outChans, msg.Route)
 		case <- c.QuitChan:
+			c.CleanUp()
 			return
 		}
 	}

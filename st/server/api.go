@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"sync"
 	"log"
+	"runtime"
 )
 
 var logStream = hub{
@@ -333,6 +334,12 @@ func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 		Id:   s.Id,
 	}
 
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
+	}
+
 	jblock, err := json.Marshal(mblock)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
@@ -433,6 +440,12 @@ func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
+	}
+
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
@@ -479,10 +492,10 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // queryRouteHandler queries a block and returns a msg. (bidirectional)
-func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	msg, err := s.manager.Query(vars["id"], vars["route"])
+	msg, err := s.manager.QueryBlock(vars["id"], vars["route"])
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
@@ -512,6 +525,42 @@ func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.apiWrap(w, r, 200, jmsg)
 }
+
+// queryRouteHandler queries a connection and returns a msg. (bidirectional)
+func (s *Server) queryConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	msg, err := s.manager.QueryConnection(vars["id"], vars["route"])
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	jmsg, err := json.Marshal(msg)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.QUERY,
+		Data: fmt.Sprintf("Connection %s", vars["id"]),
+		Id:   s.Id,
+	}
+
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.QUERY,
+		Data: struct {
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: s.Id,
+	}
+
+	s.apiWrap(w, r, 200, jmsg)
+}
+
 
 // listConnectionHandler returns a slice of the current connections in streamtools.
 func (s *Server) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
@@ -555,6 +604,12 @@ func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 	loghub.UI <- &loghub.LogMsg{
 		Type: loghub.CREATE,
 		Data: mconn,
+		Id:   s.Id,
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
 		Id:   s.Id,
 	}
 
@@ -648,6 +703,12 @@ func (s *Server) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 		Id: s.Id,
 	}
 
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
+	}
+
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
@@ -676,12 +737,12 @@ func (s *Server) Run() {
 	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")              // update block
 	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")           // delete block
 	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")       // send to block route
-	r.HandleFunc("/blocks/{id}/{route}", s.queryRouteHandler).Methods("GET")       // get from block route
+	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")       // get from block route
 	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")        // create connection
 	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")           // list connections
 	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")      // get info for connection
 	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE") // delete connection
-	r.HandleFunc("/connections/{id}/{route}", s.queryRouteHandler).Methods("GET")  // get from block route
+	r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET")  // get from block route
 	http.Handle("/", r)
 
 	loghub.Log <- &loghub.LogMsg{

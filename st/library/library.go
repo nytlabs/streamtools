@@ -6,6 +6,11 @@ import(
 
 var Blocks = map[string] func() blocks.BlockInterface {
     "count": NewCount,
+    "ticker": NewTicker,
+    "fromnsq": NewFromNSQ,
+    "tonsq": NewToNSQ,
+    "tofile": NewToFile,
+    "tolog": NewToLog,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}

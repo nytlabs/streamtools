@@ -321,7 +321,7 @@ $(function() {
                     item: {
                         type: logData.Log[i].Type,
                         time: new Date(),
-                        data: logData.Log[i].Data,
+                        data: JSON.stringify(logData.Log[i].Data),
                         id: logData.Log[i].Id,
                     }
                 });
@@ -378,7 +378,8 @@ $(function() {
                     update();
                     break;
                 case 'UPDATE':
-                    if (isBlock) {
+
+                    if (uiMsg.Data.hasOwnProperty('Position')) {
                         var block = null;
                         for (var i = 0; i < blocks.length; i++) {
                             if (blocks[i].Id === uiMsg.Data.Id) {
@@ -390,8 +391,21 @@ $(function() {
                             block.Position = uiMsg.Data.Position;
                             update();
                         }
-
                     }
+
+                    if (uiMsg.Data.hasOwnProperty('Rate')) {
+                        var conn = null;
+                        for (var i = 0; i < connections.length; i++) {
+                            if (connections[i].Id == uiMsg.Id) {
+                                conn = connections[i];
+                                break;
+                            }
+                        }
+                        if (conn !== null) {
+                            conn.rate = uiMsg.Data.Rate;
+                        }
+                    }
+
                     updateLinks();
                     break;
                 case 'QUERY':
@@ -568,7 +582,7 @@ $(function() {
                 d.to = node.filter(function(p, i) {
                     return p.Id == d.ToId;
                 }).datum();
-                d.rate = 10.00;
+                d.rate = 0.00;
                 d.rateLoc = 0.0;
             });
 
@@ -625,7 +639,7 @@ $(function() {
             .text(function(d) {
                 // this is dumb.
                 // d.rate = Math.sin(+new Date() * .0000001) * Math.random() * 5;
-                return Math.round(100 * d.rate) / 100.0;
+                return Math.round(d.rate * 100) / 100.0;
             });
     }, 100);
 
@@ -635,7 +649,7 @@ $(function() {
     function updatePings() {
         svg.selectAll('.edgePing')
             .each(function(d) {
-                d.rate += Math.random();
+                //d.rate += Math.random();
                 d.rateLoc += 0.001 + Math.min(d.rate, 100) / 4000.0;
                 if (d.rateLoc > 1) d.rateLoc = 0;
                 d.edgePos = d.path.getPointAtLength(d.rateLoc * d.path.getTotalLength());
