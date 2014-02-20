@@ -17,6 +17,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"fromSQS": NewFromSQS,
 		"ticker":  NewTicker,
 		"sync":    NewSync,
+		"filter":  NewFilter,
 	}
 
 	chans := blocks.BlockChans{
@@ -42,7 +43,7 @@ func TestToFromNSQ(t *testing.T) {
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
 	go blocks.BlockRoutine(toB)
 
-	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
+	ruleMsg := map[string]string{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
 
@@ -142,6 +143,31 @@ func TestSync(t *testing.T) {
 func TestTicker(t *testing.T) {
 	log.Println("testing Ticker")
 	b, c := newBlock("testingTicker", "ticker")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestFilter(t *testing.T) {
+	log.Println("testing Filter")
+	b, c := newBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{

@@ -2,10 +2,8 @@ package library
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/bitly/go-nsq"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -41,30 +39,10 @@ func (b *ToNSQ) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			// convert message to a map of string interfaces
-			rule := ruleI.(map[string]interface{})
+			rule := ruleI.(map[string]string)
 
-			topicI, ok := rule["Topic"]
-			if !ok {
-				b.Error(errors.New("Topic was not in rule"))
-				continue
-			}
-			topic, ok := topicI.(string)
-			if !ok {
-				b.Error(errors.New("Topic was not a string"))
-				continue
-			}
-
-			nsqdTCPAddrsI, ok := rule["NsqdTCPAddrs"]
-			if !ok {
-				b.Error(errors.New("NsqdTCPAddrs was not in rule"))
-				continue
-			}
-			nsqdTCPAddrs, ok := nsqdTCPAddrsI.(string)
-			if !ok {
-				b.Error(errors.New("NsqdTCPAddrs was not a string"))
-				continue
-			}
+			topic := rule["Topic"]
+			nsqdTCPAddrs := rule["NsqdTCPAddrs"]
 
 			writer = nsq.NewWriter(nsqdTCPAddrs)
 
@@ -72,21 +50,14 @@ func (b *ToNSQ) Run() {
 			b.nsqdTCPAddrs = nsqdTCPAddrs
 
 		case msg := <-b.in:
-			log.Println("received message on inroute for topic: ", b.topic)
-			log.Println(msg)
 			msgStr, err := json.Marshal(msg)
-			log.Println("msgStr:", string(msgStr))
 			if err != nil {
 				b.Error(err)
 			}
-			frameType, data, err := writer.Publish(b.topic, []byte(msgStr))
-			log.Println("frametype:", frameType)
-			log.Println("data:", data)
+			_, _, err = writer.Publish(b.topic, []byte(msgStr))
 			if err != nil {
-				log.Println("error:", err.Error())
 				b.Error(err)
 			}
-			log.Println("done with toNSQ/in")
 
 		case <-b.quit:
 			return
