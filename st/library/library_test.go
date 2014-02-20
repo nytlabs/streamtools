@@ -142,10 +142,10 @@ func TestTicker(t *testing.T) {
 		case err := <-c.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
+			} else {
+				return
 			}
-		case out := <-outChan:
-			log.Println(out)
+		case <-outChan:
 		}
 	}
-
 }

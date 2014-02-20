@@ -1,9 +1,5 @@
 package blocks
 
-import (
-	"log"
-)
-
 type Msg struct {
 	Msg   interface{}
 	Route string
@@ -122,12 +118,10 @@ func BlockRoutine(bi BlockInterface) {
 		case msg := <-b.QueryChan:
 			b.queryRoutes[msg.Route] <- msg.RespChan
 		case msg := <-b.AddChan:
-			log.Println("adding channel")
 			outChans[msg.Route] = msg.Channel
 		case msg := <-b.DelChan:
 			delete(outChans, msg.Route)
 		case msg := <-b.broadcast:
-			log.Println("broadcasting")
 			for _, v := range outChans {
 				v <- &Msg{
 					Msg:   msg,
