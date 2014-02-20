@@ -41,7 +41,7 @@ func TestToFromNSQ(t *testing.T) {
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
 	go blocks.BlockRoutine(toB)
 
-	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
+	ruleMsg := map[string]string{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
 
