@@ -16,6 +16,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"toNSQ":   NewToNSQ,
 		"fromSQS": NewFromSQS,
 		"ticker":  NewTicker,
+		"sync":    NewSync,
 	}
 
 	chans := blocks.BlockChans{
@@ -115,6 +116,19 @@ func TestToFile(t *testing.T) {
 func TestFromSQS(t *testing.T) {
 	log.Println("testing FromSQS")
 	b, c := newBlock("testingFromSQS", "fromSQS")
+	go blocks.BlockRoutine(b)
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	err := <-c.ErrChan
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestSync(t *testing.T) {
+	log.Println("testing Sync")
+	b, c := newBlock("testingSync", "sync")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
