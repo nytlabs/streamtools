@@ -10,14 +10,15 @@ import (
 func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 	library := map[string]func() blocks.BlockInterface{
-		"count":   NewCount,
-		"toFile":  NewToFile,
-		"fromNSQ": NewFromNSQ,
-		"toNSQ":   NewToNSQ,
-		"fromSQS": NewFromSQS,
-		"ticker":  NewTicker,
-		"filter":  NewFilter,
-		"mask":    NewMask,
+		"count":          NewCount,
+		"toFile":         NewToFile,
+		"fromNSQ":        NewFromNSQ,
+		"toNSQ":          NewToNSQ,
+		"fromSQS":        NewFromSQS,
+		"ticker":         NewTicker,
+		"filter":         NewFilter,
+		"mask":           NewMask,
+		"fromHTTPStream": NewFromHTTPStream,
 	}
 
 	chans := blocks.BlockChans{
@@ -180,6 +181,31 @@ func TestFilter(t *testing.T) {
 func TestMask(t *testing.T) {
 	log.Println("testing Mask")
 	b, c := newBlock("testingMask", "mask")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestFromHTTPStream(t *testing.T) {
+	log.Println("testing FromHTTPStream")
+	b, c := newBlock("testingFromHTTPStream", "fromHTTPStream")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{
