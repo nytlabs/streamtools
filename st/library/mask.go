@@ -74,7 +74,7 @@ func (b *Mask) Run() {
 		case ruleI := <-b.inrule:
 			rule := ruleI.(map[string]string)
 			fmt.Println(rule)
-			//b.mask := rule["Mask"]
+			b.mask = rule["Mask"]
 
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
