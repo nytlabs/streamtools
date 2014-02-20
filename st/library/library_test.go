@@ -228,23 +228,39 @@ func TestFilter(t *testing.T) {
 	log.Println("testing Filter")
 	b, c := newBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
+
+	ruleMsg := map[string]string{"Filter": ".device == 'iPhone'"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
-		Route:   "out",
-		Channel: outChan,
-	}
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
+
 	for {
 		select {
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]string)
+			if message["Filter"] != ".device == 'iPhone'" {
+				log.Println("Filter should be .device == 'iPhone', but instead is: ", message["Filter"])
+				t.Fail()
+			}
+
+		case message := <-outChan:
+			log.Println(message)
+
 		case err := <-c.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
 			} else {
 				return
 			}
-		case <-outChan:
 		}
 	}
 }

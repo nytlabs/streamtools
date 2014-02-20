@@ -73,7 +73,7 @@ func (b *Filter) Run() {
 
 		case c := <-b.queryrule:
 			// deal with a query request
-			c <- map[string]interface{}{
+			c <- map[string]string{
 				"Filter": b.filter,
 			}
 		case <-b.quit:
