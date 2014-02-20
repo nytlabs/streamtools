@@ -95,12 +95,40 @@ func TestCount(t *testing.T) {
 	log.Println("testing Count")
 	b, c := newBlock("testingCount", "count")
 	go blocks.BlockRoutine(b)
+
+	ruleMsg := map[string]string{"Window": "1s"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
-	err := <-c.ErrChan
-	if err != nil {
-		t.Errorf(err.Error())
+
+	for {
+		select {
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]string)
+			if message["Window"] != "1s" {
+				log.Println("Count rule's Window should be 1s, but instead is: ", message["Window"])
+				t.Fail()
+			}
+
+		case message := <-outChan:
+			log.Println(message)
+
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		}
 	}
 }
 
@@ -108,12 +136,40 @@ func TestToFile(t *testing.T) {
 	log.Println("testing toFile")
 	b, c := newBlock("testingToFile", "toFile")
 	go blocks.BlockRoutine(b)
+
+	ruleMsg := map[string]string{"Filename": "foobar.log"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
-	err := <-c.ErrChan
-	if err != nil {
-		t.Errorf(err.Error())
+
+	for {
+		select {
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]string)
+			if message["Filename"] != "foobar.log" {
+				log.Println("toFile rule's Filename should be 'foobar.log', but instead is: ", message["Filename"])
+				t.Fail()
+			}
+
+		case message := <-outChan:
+			log.Println(message)
+
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		}
 	}
 }
 
