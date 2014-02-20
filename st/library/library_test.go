@@ -13,6 +13,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"count":   NewCount,
 		"toFile":  NewToFile,
 		"fromSQS": NewFromSQS,
+		"ticker":  NewTicker,
 	}
 
 	chans := blocks.BlockChans{
@@ -69,4 +70,29 @@ func TestFromSQS(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+}
+
+func TestTicker(t *testing.T) {
+	log.Println("testing Ticker")
+	b, c := newBlock("testingTicker", "ticker")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			}
+		case out := <-outChan:
+			log.Println(out)
+		}
+	}
+
 }
