@@ -269,23 +269,39 @@ func TestMask(t *testing.T) {
 	log.Println("testing Mask")
 	b, c := newBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
+
+	ruleMsg := map[string]string{"Mask": "{}"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
-		Route:   "out",
-		Channel: outChan,
-	}
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
+
 	for {
 		select {
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]string)
+			if message["Mask"] != "{}" {
+				log.Println("Mask should be '{}', but instead is: ", message["Mask"])
+				t.Fail()
+			}
+
+		case message := <-outChan:
+			log.Println(message)
+
 		case err := <-c.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
 			} else {
 				return
 			}
-		case <-outChan:
 		}
 	}
 }
