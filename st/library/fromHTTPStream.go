@@ -56,6 +56,7 @@ func (b *FromHTTPStream) Run() {
 			auth := rule["Auth"]
 
 			req, err := http.NewRequest("GET", endpoint, nil)
+
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -79,6 +80,7 @@ func (b *FromHTTPStream) Run() {
 		case <-b.quit:
 			// quit the block
 			return
+
 		default:
 			if res == nil {
 				time.Sleep(500 * time.Millisecond)
@@ -86,6 +88,13 @@ func (b *FromHTTPStream) Run() {
 			}
 			buffer := make([]byte, 5*1024)
 			p, err := res.Body.Read(buffer)
+
+			if err != nil && err.Error() == "EOF" {
+				log.Println("End of stream reached!")
+				res = nil
+				continue
+			}
+
 			if err != nil {
 				log.Fatal(err.Error())
 			}

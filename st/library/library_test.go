@@ -212,9 +212,15 @@ func TestFromHTTPStream(t *testing.T) {
 		Route:   "out",
 		Channel: outChan,
 	}
+
+	ruleMsg := map[string]string{"Endpoint": "http://www.nytimes.com"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
+
 	for {
 		select {
 		case err := <-c.ErrChan:
