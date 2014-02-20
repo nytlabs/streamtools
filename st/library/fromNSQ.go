@@ -2,9 +2,9 @@ package library
 
 import (
 	"encoding/json"
-	"errors"
 	"github.com/bitly/go-nsq"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -66,49 +66,22 @@ func (b *FromNSQ) Run() {
 			// aka keys are strings, values are empty interfaces
 			rule := ruleI.(map[string]interface{})
 
-			// TODO: make this pattern a util so we don't have to copy/paste so much code
-			topicI, ok := rule["ReadTopic"]
-			if !ok {
-				b.Error(errors.New("ReadTopic was not in rule"))
-				continue
-			}
-			topic, ok := topicI.(string)
-			if !ok {
-				b.Error(errors.New("topic was not a string"))
-				continue
+			topic, err := util.ParseString(rule, "ReadTopic")
+			if err != nil {
+				b.Error(err)
 			}
 
-			lookupdAddrI, ok := rule["LookupdAddr"]
-			if !ok {
-				b.Error(errors.New("LookupdAddr was not in rule"))
-				continue
+			lookupdAddr, err := util.ParseString(rule, "LookupdAddr")
+			if err != nil {
+				b.Error(err)
 			}
-			lookupdAddr, ok := lookupdAddrI.(string)
-			if !ok {
-				b.Error(errors.New("LookupdAddr was not a string"))
-				continue
+			maxInFlight, err := util.ParseInt(rule, "MaxInFlight")
+			if err != nil {
+				b.Error(err)
 			}
-
-			maxInFlightI, ok := rule["MaxInFlight"]
-			if !ok {
-				b.Error(errors.New("ReadmaxInFlight was not in rule"))
-				continue
-			}
-			maxInFlight, ok := maxInFlightI.(int)
-			if !ok {
-				b.Error(errors.New("MaxInFlight was not an integer"))
-				continue
-			}
-
-			channelI, ok := rule["ReadChannel"]
-			if !ok {
-				b.Error(errors.New("ReadChannel was not in rule"))
-				continue
-			}
-			channel, ok := channelI.(string)
-			if !ok {
-				b.Error(errors.New("channel was not a string"))
-				continue
+			channel, err := util.ParseString(rule, "ReadChannel")
+			if err != nil {
+				b.Error(err)
 			}
 
 			reader, err := nsq.NewReader(topic, channel)
