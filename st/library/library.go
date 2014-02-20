@@ -10,7 +10,7 @@ var Blocks = map[string] func() blocks.BlockInterface {
 
 var BlockDefs = map[string]*blocks.BlockDef{}
 
-func BuildLibrary(){
+func Start(){
     for k, newBlock := range Blocks {
         b := newBlock()
         b.Build(blocks.BlockChans{nil,nil,nil,nil,nil,nil})

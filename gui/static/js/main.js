@@ -1,7 +1,7 @@
 $(function() {
 
     // before anything, we need to load the library.
-    var library = d3.nest()
+    /*var library = d3.nest()
         .key(function(d, i) {
             return d.Type;
         })
@@ -12,7 +12,12 @@ $(function() {
             url: '/library',
             type: 'GET',
             async: false // required before UI stream starts
-        }).responseText).Library);
+        }).responseText).Library);*/
+    var library = JSON.parse($.ajax({
+        url: '/library',
+        type: 'GET',
+        async: false // required before UI stream starts
+    }).responseText);
 
     var domain = JSON.parse($.ajax({
         url: '/domain',

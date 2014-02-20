@@ -1,5 +1,9 @@
 package blocks
 
+import(
+	"time"
+)
+
 type Msg struct {
 	Msg   interface{}
 	Route string
@@ -39,7 +43,7 @@ type BlockDef struct {
 	Type string
 	InRoutes []string
 	QueryRoutes [] string
-	Broadcast bool
+	OutRoutes []string
 }
 
 type BlockInterface interface {
@@ -104,6 +108,7 @@ func (b *Block) GetBlock() *Block {
 func (b *Block) GetDef() *BlockDef {
 	var inRoutes []string
 	var queryRoutes []string
+	var outRoutes []string
 
 	for k, _ := range b.inRoutes {
 		inRoutes = append(inRoutes, k)
@@ -113,11 +118,15 @@ func (b *Block) GetDef() *BlockDef {
 		queryRoutes = append(queryRoutes, k)
 	}
 
+	if b.doesBroadcast {
+		outRoutes = []string{"out"}
+	}
+
 	return &BlockDef{
 		Type: b.Kind,
 		InRoutes: inRoutes,
 		QueryRoutes: queryRoutes, 
-		Broadcast: b.doesBroadcast,
+		OutRoutes: outRoutes,
 	}
 }
 
@@ -146,7 +155,6 @@ func BlockRoutine(bi BlockInterface) {
 	outChans := make(map[string]chan *Msg)
 
 	b := bi.GetBlock()
-	
 	bi.Setup()
 	go bi.Run()
 
@@ -170,6 +178,64 @@ func BlockRoutine(bi BlockInterface) {
 		case <-b.QuitChan:
 			b.quit <- true
 			b.CleanUp()
+			return
+		}
+	}
+}
+
+type Connection struct {
+	InChan chan *Msg
+	QueryChan chan *QueryMsg
+	AddChan chan *AddChanMsg
+	DelChan chan *Msg
+	QuitChan chan bool
+	ToRoute string
+}
+
+func ConnectionRoutine(c *Connection){
+	var last interface{}
+	var rate float64
+
+	outChans := make(map[string]chan *Msg)
+	times := make([]int64,100,100)
+	timesIdx := len(times)
+
+	for{
+		select{
+		case msg := <- c.InChan:
+			last = msg.Msg
+
+			for _, v := range outChans {
+				v <- &Msg{
+					Msg:   msg,
+					Route: c.ToRoute,
+				}
+			}
+
+			times = times[1:]
+			times = append(times, time.Now().UnixNano())
+
+			if timesIdx > 0 {
+				timesIdx--
+			}
+
+		case msg := <- c.QueryChan:
+			switch msg.Route {
+			case "rate":
+				if timesIdx == len(times) {
+					rate = 0
+				} else {
+					rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
+				}
+				msg.RespChan <- rate
+			case "last":
+				msg.RespChan <- last
+			}
+		case msg := <- c.AddChan:
+			outChans[msg.Route] = msg.Channel
+		case msg := <- c.DelChan:
+			delete(outChans, msg.Route)
+		case <- c.QuitChan:
 			return
 		}
 	}
