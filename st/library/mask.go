@@ -1,7 +1,6 @@
 package library
 
 import (
-	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
 

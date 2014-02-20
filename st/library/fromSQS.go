@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -52,7 +53,8 @@ func (b *FromSQS) Run() {
 			var outMsg interface{}
 			err := json.Unmarshal(msg, &outMsg)
 			if err != nil {
-				break
+				b.Error(err)
+				continue
 			}
 			b.out <- outMsg
 		case <-b.quit:
@@ -60,7 +62,7 @@ func (b *FromSQS) Run() {
 			return
 		case respChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			respChan <- map[string]string{
 				"SQSEndpoint":  b.SQSEndpoint,
 				"AccessKey":    b.AccessKey,
 				"AccessSecret": b.AccessSecret,

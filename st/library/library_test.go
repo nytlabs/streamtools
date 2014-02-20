@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"log"
 	"testing"
 	"time"
@@ -113,9 +114,9 @@ func TestCount(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			message := messageI.(map[string]string)
-			if message["Window"] != "1s" {
-				log.Println("Count rule's Window should be 1s, but instead is: ", message["Window"])
+			ok := util.CheckRule(messageI, ruleMsg)
+			if !ok {
+				log.Println("Count rule mismatch")
 				t.Fail()
 			}
 
@@ -154,9 +155,9 @@ func TestToFile(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			message := messageI.(map[string]string)
-			if message["Filename"] != "foobar.log" {
-				log.Println("toFile rule's Filename should be 'foobar.log', but instead is: ", message["Filename"])
+			ok := util.CheckRule(messageI, ruleMsg)
+			if !ok {
+				log.Println("ToFile rule mismatch")
 				t.Fail()
 			}
 
@@ -177,12 +178,40 @@ func TestFromSQS(t *testing.T) {
 	log.Println("testing FromSQS")
 	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
+
+	ruleMsg := map[string]string{"SQSEndpoint": "foobarbaz", "AccessKey": "123access", "AccessSecret": "123secret"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
-	err := <-c.ErrChan
-	if err != nil {
-		t.Errorf(err.Error())
+
+	for {
+		select {
+		case messageI := <-queryOutChan:
+			ok := util.CheckRule(messageI, ruleMsg)
+			if !ok {
+				log.Println("FromSQS rule mismatch")
+				t.Fail()
+			}
+
+		case message := <-outChan:
+			log.Println(message)
+
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		}
 	}
 }
 
@@ -246,9 +275,9 @@ func TestFilter(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			message := messageI.(map[string]string)
-			if message["Filter"] != ".device == 'iPhone'" {
-				log.Println("Filter should be .device == 'iPhone', but instead is: ", message["Filter"])
+			ok := util.CheckRule(messageI, ruleMsg)
+			if !ok {
+				log.Println("Filter rule mismatch")
 				t.Fail()
 			}
 
@@ -287,9 +316,9 @@ func TestMask(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			message := messageI.(map[string]string)
-			if message["Mask"] != "{}" {
-				log.Println("Mask should be '{}', but instead is: ", message["Mask"])
+			ok := util.CheckRule(messageI, ruleMsg)
+			if !ok {
+				log.Println("Mask rule mismatch")
 				t.Fail()
 			}
 
