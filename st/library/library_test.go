@@ -19,6 +19,8 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"filter":         NewFilter,
 		"mask":           NewMask,
 		"fromHTTPStream": NewFromHTTPStream,
+		"getHTTP":        NewGetHTTP,
+		"sync":           NewSync,
 	}
 
 	chans := blocks.BlockChans{
@@ -128,6 +130,19 @@ func TestFromSQS(t *testing.T) {
 	}
 }
 
+func TestSync(t *testing.T) {
+	log.Println("testing Sync")
+	b, c := newBlock("testingSync", "sync")
+	go blocks.BlockRoutine(b)
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	err := <-c.ErrChan
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
 func TestTicker(t *testing.T) {
 	log.Println("testing Ticker")
 	b, c := newBlock("testingTicker", "ticker")
@@ -181,6 +196,31 @@ func TestFilter(t *testing.T) {
 func TestMask(t *testing.T) {
 	log.Println("testing Mask")
 	b, c := newBlock("testingMask", "mask")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestGetHTTP(t *testing.T) {
+	log.Println("testing GetHTTP")
+	b, c := newBlock("testingGetHTTP", "getHTTP")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{

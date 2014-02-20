@@ -1,0 +1,119 @@
+package library
+
+import (
+	"container/heap"
+	"errors"
+	"github.com/nytlabs/gojee"
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"time"
+)
+
+// specify those channels we're going to use to communicate with streamtools
+type Sync struct {
+	blocks.Block
+	queryrule chan chan interface{}
+	inrule    chan interface{}
+	in        chan interface{}
+	out       chan interface{}
+	quit      chan interface{}
+}
+
+// we need to build a simple factory so that streamtools can make new blocks of this kind
+func NewSync() blocks.BlockInterface {
+	return &Sync{}
+}
+
+// Setup is called once before running the block. We build up the channels and specify what kind of block this is.
+func (b *Sync) Setup() {
+	b.Kind = "Sync"
+	b.in = b.InRoute("in")
+	b.inrule = b.InRoute("rule")
+	b.queryrule = b.QueryRoute("rule")
+	b.quit = b.InRoute("quit")
+	b.out = b.Broadcast()
+}
+
+// Run is the block's main loop. Here we listen on the different channels we set up.
+func (b *Sync) Run() {
+	var err error
+	var path, lagString string
+	var tree *jee.TokenTree
+	lag := time.Duration(0)
+	emitTick := time.NewTimer(500 * time.Millisecond)
+	pq := &PriorityQueue{}
+	heap.Init(pq)
+	for {
+		select {
+		case <-emitTick.C:
+		case ruleI := <-b.inrule:
+			rule, ok := ruleI.(map[string]string)
+			// set a parameter of the block
+			lagString, ok = rule["Lag"]
+			if !ok {
+				b.Error(errors.New("Lag not specified in rule"))
+				continue
+			}
+			lag, err = time.ParseDuration(lagString)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			path, ok = rule["Path"]
+			// build the parser for the model
+			token, err := jee.Lexer(path)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			tree, err = jee.Parser(token)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+		case <-b.quit:
+			// quit the block
+			return
+		case msg := <-b.in:
+			// deal with inbound data
+			if tree == nil {
+				break
+			}
+			tI, err := jee.Eval(tree, interface{}(msg))
+			if err != nil {
+				b.Error(err)
+			}
+			t, ok := tI.(float64)
+			if !ok {
+				b.Error(errors.New("couldn't convert time value to float64"))
+				continue
+			}
+			ms := time.Unix(0, int64(t*1000000))
+			queueMessage := &PQMessage{
+				val: msg,
+				t:   ms,
+			}
+			heap.Push(pq, queueMessage)
+
+		case respChan := <-b.queryrule:
+			// deal with a query request
+			respChan <- map[string]interface{}{
+				"Lag": lagString,
+			}
+
+		}
+		now := time.Now()
+		for {
+			item, diff := pq.PeekAndShift(now, lag)
+			if item == nil {
+				// then the queue is empty. Pause for 5 seconds before checking again
+				if diff == 0 {
+					diff = time.Duration(500) * time.Millisecond
+				}
+				emitTick.Reset(diff)
+				break
+			}
+			b.out <- item.(*PQMessage).val.(map[string]interface{})
+		}
+
+	}
+}

@@ -35,16 +35,17 @@ func (b *Skeleton) Setup() {
 func (b *Skeleton) Run() {
 	for {
 		select {
-		case <-b.inrule:
+		case ruleI := <-b.inrule:
 			// set a parameter of the block
+			_, _ = ruleI.(map[string]interface{})
 		case <-b.quit:
 			// quit the block
 			return
-		case <-b.in:
+		case _ = <-b.in:
 			// deal with inbound data
 		case <-b.inpoll:
 			// deal with a poll request
-		case <-b.queryrule:
+		case _ = <-b.queryrule:
 			// deal with a query request
 		}
 	}
