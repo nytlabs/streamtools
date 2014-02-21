@@ -21,6 +21,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"fromHTTPStream": NewFromHTTPStream,
 		"getHTTP":        NewGetHTTP,
 		"sync":           NewSync,
+		"fromPost":       NewFromPost,
 	}
 
 	chans := blocks.BlockChans{
@@ -246,6 +247,31 @@ func TestGetHTTP(t *testing.T) {
 func TestFromHTTPStream(t *testing.T) {
 	log.Println("testing FromHTTPStream")
 	b, c := newBlock("testingFromHTTPStream", "fromHTTPStream")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestFromPost(t *testing.T) {
+	log.Println("testing FromPost")
+	b, c := newBlock("testingPst", "fromPost")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{
