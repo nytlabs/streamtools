@@ -1,7 +1,6 @@
 package library
 
 import (
-	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
 
@@ -73,12 +72,11 @@ func (b *Mask) Run() {
 		select {
 		case ruleI := <-b.inrule:
 			rule := ruleI.(map[string]string)
-			fmt.Println(rule)
 			b.mask = rule["Mask"]
 
 		case c := <-b.queryrule:
-			c <- map[string]interface{}{
-				"Mask": b.mask,
+			c <- map[string]string{
+				"Mask": b.mask.(string),
 			}
 		case msg := <-b.in:
 			msgMap, msgOk := msg.(map[string]interface{})

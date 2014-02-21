@@ -61,3 +61,13 @@ func ParseInt(rule map[string]interface{}, key string) (int, error) {
 	}
 	return val, nil
 }
+
+func CheckRule(messageI interface{}, ruleMsg map[string]string) bool {
+	message := messageI.(map[string]string)
+	for key, value := range ruleMsg {
+		if message[key] != value {
+			return false
+		}
+	}
+	return true
+}

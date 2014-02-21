@@ -73,7 +73,7 @@ func (b *ToFile) Run() {
 			w.Flush()
 		case respChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			respChan <- map[string]string{
 				"Filename": b.filename,
 			}
 		}
