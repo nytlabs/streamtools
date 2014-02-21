@@ -3,6 +3,7 @@ package blocks
 import(
 	"time"
     "github.com/nytlabs/streamtools/st/loghub"
+    "fmt"
 )
 
 type Msg struct {
@@ -79,11 +80,11 @@ func (b *Block) Build(c BlockChans) {
 	b.QuitChan = c.QuitChan
 
 	// route maps
-	b.inRoutes = make(map[string]chan interface{})
+	b.inRoutes = make(map[string]chan interface{}, 10) // necessary to stop locking...
 	b.queryRoutes = make(map[string]chan chan interface{})
 
 	// broadcast channel
-	b.broadcast = make(chan interface{})
+	b.broadcast = make(chan interface{}, 10) // necessary to stop locking...
 
 	// quit chan
 	b.quit = make(chan interface{})
@@ -160,6 +161,12 @@ func (b *Block) CleanUp() {
 	defer close(b.ErrChan)
 	defer close(b.QuitChan)
 	defer close(b.broadcast)
+
+    loghub.Log <- &loghub.LogMsg{
+        Type: loghub.INFO,
+        Data: fmt.Sprintf("Block %s Quitting...", b.Id),
+        Id:   b.Id,
+    }
 }
 
 func (b *Block) Error(msg interface{}) {
@@ -243,6 +250,12 @@ func (c *Connection) CleanUp(){
 	defer close(c.AddChan)
 	defer close(c.DelChan)
 	defer close(c.QuitChan)
+
+    loghub.Log <- &loghub.LogMsg{
+        Type: loghub.INFO,
+        Data: fmt.Sprintf("Connection %s Quitting...", c.Id),
+        Id:   c.Id,
+    }
 }
 
 func ConnectionRoutine(c *Connection){
