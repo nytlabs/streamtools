@@ -29,7 +29,6 @@ func NewFromHTTPStream() blocks.BlockInterface {
 
 func (b *FromHTTPStream) Setup() {
 	b.Kind = "FromHTTPStream"
-	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
@@ -51,9 +50,21 @@ func (b *FromHTTPStream) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]string)
-			endpoint := rule["Endpoint"]
-			auth := rule["Auth"]
+			rule := ruleI.(map[string]interface{})
+			endpoint, ok := rule["Endpoint"].(string)
+			if !ok {
+				b.Error("bad endpoint")
+				break
+			}
+			tauth, ok := rule["Auth"]
+			if !ok {
+				tauth = ""
+			}
+			auth, ok := tauth.(string)
+			if !ok {
+				b.Error("bad auth")
+				break
+			}
 
 			req, err := http.NewRequest("GET", endpoint, nil)
 
@@ -112,9 +123,7 @@ func (b *FromHTTPStream) Run() {
 							log.Println("cannot unmarshal json")
 							continue
 						}
-						b.out <- map[string]interface{}{
-							"Msg": outMsg,
-						}
+						b.out <- outMsg
 					}
 				}
 				body.Reset()

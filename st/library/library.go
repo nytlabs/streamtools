@@ -11,6 +11,12 @@ var Blocks = map[string] func() blocks.BlockInterface {
     "tonsq": NewToNSQ,
     "tofile": NewToFile,
     "tolog": NewToLog,
+    "mask": NewMask,
+    "filter": NewFilter,
+    "fromsqs": NewFromSQS,
+    "sync": NewSync,
+    "gethttp": NewGetHTTP,
+    "fromhttpstream": NewFromHTTPStream,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
