@@ -25,11 +25,11 @@ func (b *Mask) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
-func maskJSON(maskMap map[string]interface{}, input map[string]interface{}) interface{} {
+func maskJSON(maskMap map[string]interface{}, input map[string]interface{}) map[string]interface{} {
 	t := make(map[string]interface{})
 
 	if len(maskMap) == 0 {
@@ -71,8 +71,8 @@ func (b *Mask) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]string)
-			b.mask = rule["Mask"]
+			rule := ruleI.(map[string]interface{})
+			b.mask = rule["Mask"].(map[string]interface{})
 
 		case c := <-b.queryrule:
 			c <- map[string]string{
@@ -82,9 +82,7 @@ func (b *Mask) Run() {
 			msgMap, msgOk := msg.(map[string]interface{})
 			maskMap, maskOk := b.mask.(map[string]interface{})
 			if msgOk && maskOk {
-				b.out <- map[string]interface{}{
-					"Msg": maskJSON(maskMap, msgMap),
-				}
+				b.out <- maskJSON(maskMap, msgMap)
 			}
 		case <-b.quit:
 			// quit the block

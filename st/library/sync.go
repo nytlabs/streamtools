@@ -29,7 +29,7 @@ func (b *Sync) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 

@@ -3,9 +3,10 @@ package server
 import (
 	"errors"
 	"fmt"
-	//"github.com/nytlabs/streamtools/blocks"
 	"net/url"
 	"strconv"
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/blocks"
 )
 
 // so i don't forget:
@@ -17,7 +18,7 @@ type BlockInfo struct {
 	Type     string
 	Rule     interface{}
 	Position *Coords
-	in       chan interface{}
+	chans 	 blocks.BlockChans
 }
 
 type ConnectionInfo struct {
@@ -25,7 +26,7 @@ type ConnectionInfo struct {
 	FromId  string
 	ToId    string
 	ToRoute string
-	in      chan interface{}
+	chans 	blocks.BlockChans
 }
 
 type Coords struct {
@@ -51,7 +52,6 @@ func IDService(idChan chan string) {
 func NewBlockManager() *BlockManager {
 	idChan := make(chan string)
 	go IDService(idChan)
-	//blocks.BuildLibrary()
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
@@ -79,47 +79,60 @@ func (b *BlockManager) IdSafe(id string) bool {
 	return url.QueryEscape(id) == id && id != "DAEMON"
 }
 
-func (b *BlockManager) Create(block *BlockInfo) (*BlockInfo, error) {
-	if block == nil {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", block.Id))
+func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
+	if blockInfo == nil {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", blockInfo.Id))
 	}
 
 	// check to see if the ID is OK
-	if !b.IdSafe(block.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", block.Id))
+	if !b.IdSafe(blockInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", blockInfo.Id))
 	}
 
 	// create ID if there is none
-	if block.Id == "" {
-		block.Id = b.GetId()
+	if blockInfo.Id == "" {
+		blockInfo.Id = b.GetId()
 	}
 
 	// make sure ID doesn't already exist
-	if b.IdExists(block.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: id already exists", block.Id))
+	if b.IdExists(blockInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: id already exists", blockInfo.Id))
 	}
 
 	// give the block a position if it doesn't have one.
-	if block.Position == nil {
-		block.Position = &Coords{
+	if blockInfo.Position == nil {
+		blockInfo.Position = &Coords{
 			X: 0,
 			Y: 0,
 		}
 	}
 
-	// check block Type
-	//_, ok := blocks.Library[block.Type]
-	//if !ok {
-	//	return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid block type %s", block.Id, block.Type))
-	//}
+	_, ok := library.Blocks[blockInfo.Type]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid block type %s", blockInfo.Id, blockInfo.Type))
+	}
 
-	// go blockroutine create block here
-	b.blockMap[block.Id] = block
+	// create the block
+	newBlock := library.Blocks[blockInfo.Type]()
 
-	// if rule != nil
-	// do a send on the rule.
+	newBlockChans := blocks.BlockChans{
+		InChan: make(chan *blocks.Msg), 
+		QueryChan: make(chan *blocks.QueryMsg),
+		AddChan: make(chan *blocks.AddChanMsg),
+		DelChan: make(chan *blocks.Msg),
+		ErrChan: make(chan error),
+		QuitChan: make(chan bool),
+	}
 
-	return block, nil
+	newBlock.SetId(blockInfo.Id)
+	newBlock.Build(newBlockChans)
+	go blocks.BlockRoutine(newBlock)
+
+	// save state
+	blockInfo.chans = newBlockChans
+	b.blockMap[blockInfo.Id] = blockInfo
+
+	return blockInfo, nil
 }
 
 func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error) {
@@ -139,55 +152,111 @@ func (b *BlockManager) Send(id string, route string, msg interface{}) error {
 		return errors.New(fmt.Sprintf("Cannot send to block %s: does not exist", id))
 	}
 	// send message to block here
+	b.blockMap[id].chans.InChan <- &blocks.Msg{
+		Msg: msg,
+		Route: route,
+	}
 
 	return nil
 }
 
-func (b *BlockManager) Query(id string, route string) (interface{}, error) {
+func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) {
 	_, ok := b.blockMap[id]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
 	}
-	// send qury to block here
+	returnToSender := make(chan interface{})
+	b.blockMap[id].chans.QueryChan <- &blocks.QueryMsg{
+		Route: route,
+		RespChan: returnToSender,
+	}
+	q := <- returnToSender 
 
-	return nil, nil
+	return q, nil
 }
 
-func (b *BlockManager) Connect(conn *ConnectionInfo) (*ConnectionInfo, error) {
-	if conn == nil {
+func (b *BlockManager) QueryConnection(id string, route string) (interface{}, error) {
+	_, ok := b.connMap[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
+	}
+
+	returnToSender := make(chan interface{})
+	b.connMap[id].chans.QueryChan <- &blocks.QueryMsg{
+		Route: route,
+		RespChan: returnToSender,
+	}
+	q := <- returnToSender 
+
+
+	return q, nil
+}
+
+func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error) {
+	if connInfo == nil {
 		return nil, errors.New("Cannot create: no connection data.")
 	}
 
 	// check to see if the ID is OK
-	if !b.IdSafe(conn.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", conn.Id))
+	if !b.IdSafe(connInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", connInfo.Id))
 	}
 
 	// create ID if there is none
-	if conn.Id == "" {
-		conn.Id = b.GetId()
+	if connInfo.Id == "" {
+		connInfo.Id = b.GetId()
 	}
 
 	// make sure ID doesn't already exist
-	if b.IdExists(conn.Id) {
-		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: id already exists", conn.Id))
+	if b.IdExists(connInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: id already exists", connInfo.Id))
 	}
 
 	// check to see if the blocks that we are attaching to exist
-	fromExists := b.IdExists(conn.FromId)
+	fromExists := b.IdExists(connInfo.FromId)
 	if !fromExists {
-		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: FromId block does not exist", conn.Id))
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: FromId block does not exist", connInfo.Id))
 	}
 
-	toExists := b.IdExists(conn.ToId)
+	toExists := b.IdExists(connInfo.ToId)
 	if !toExists {
-		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: ToId ID does not exist", conn.Id))
+		return nil, errors.New(fmt.Sprintf("Cannot create connection %s: ToId ID does not exist", connInfo.Id))
 	}
 
-	// go blockroutine create block here
-	b.connMap[conn.Id] = conn
+	// create connection info for server
+	// and create connection routine
+	newConn := &blocks.Connection{
+		ToRoute: connInfo.ToRoute,
+	}
 
-	return conn, nil
+	newConnChans := blocks.BlockChans{
+		InChan: make(chan *blocks.Msg), 
+		QueryChan: make(chan *blocks.QueryMsg),
+		AddChan: make(chan *blocks.AddChanMsg),
+		DelChan: make(chan *blocks.Msg),
+		ErrChan: make(chan error),
+		QuitChan: make(chan bool),
+	}
+
+	newConn.SetId(connInfo.Id)
+	newConn.Build(newConnChans)
+	go blocks.ConnectionRoutine(newConn)
+
+	connInfo.chans = newConnChans
+	b.connMap[connInfo.Id] = connInfo
+
+	// ask to connect the blocks together
+	b.blockMap[connInfo.FromId].chans.AddChan <- &blocks.AddChanMsg{
+		Route: connInfo.Id,
+		Channel: connInfo.chans.InChan,
+	}
+
+	b.connMap[connInfo.Id].chans.AddChan <- &blocks.AddChanMsg{
+		Route: connInfo.ToId,
+		Channel: b.blockMap[connInfo.ToId].chans.InChan,
+	}
+
+	return connInfo, nil
 }
 
 func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
@@ -238,6 +307,7 @@ func (b *BlockManager) DeleteBlock(id string) ([]string, error) {
 
 	// turn off block here
 	// close channels, whatever.
+	b.blockMap[id].chans.QuitChan <- true
 
 	delete(b.blockMap, id)
 	delIds = append(delIds, id)
@@ -250,6 +320,12 @@ func (b *BlockManager) DeleteConnection(id string) (string, error) {
 	if !ok {
 		return "", errors.New(fmt.Sprintf("Cannot delete connection %s: does not exist", id))
 	}
+
+	b.blockMap[b.connMap[id].FromId].chans.DelChan <- &blocks.Msg{
+		Route: id,
+	}
+
+	b.connMap[id].chans.QuitChan <- true
 
 	// call disconnecting stuff here
 	// remove channel from FromBlock, etc

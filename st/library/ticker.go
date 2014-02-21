@@ -24,13 +24,12 @@ func (b *Ticker) Setup() {
 	b.Kind = "Ticker"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Ticker) Run() {
-	var err error
 	interval := time.Duration(1) * time.Second
 	ticker := time.NewTicker(interval)
 	for {
@@ -41,19 +40,31 @@ func (b *Ticker) Run() {
 			}
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			rule := ruleI.(map[string]string)
-			interval, err = time.ParseDuration(rule["Interval"])
+			rule, ok := ruleI.(map[string]interface{})
+			if !ok {
+				b.Error("bad input")
+				break
+			}
+
+			intervalS, ok := rule["Interval"].(string)
+			if !ok {
+				b.Error("bad input")
+				break
+			}
+
+			dur, err := time.ParseDuration(intervalS)
 			if err != nil {
 				b.Error(err)
+				break
 			}
-			ticker = time.NewTicker(interval)
+
+			ticker = time.NewTicker(dur)
 		case <-b.quit:
-			// quit the block
 			return
 		case c := <-b.queryrule:
 			// deal with a query request
 			c <- map[string]interface{}{
-				"Interval": interval,
+				"Interval": interval.String(),
 			}
 		}
 	}

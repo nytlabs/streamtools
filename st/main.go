@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/nytlabs/streamtools/st/server"
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/loghub"
 	"log"
 )
 
@@ -15,6 +17,9 @@ var (
 func main() {
 	flag.Parse()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	library.Start()
+	loghub.Start()
 
 	s := server.NewServer()
 

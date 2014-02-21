@@ -6,11 +6,13 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/nytlabs/streamtools/st/util"
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/loghub"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sync"
-	"time"
+	"log"
+	"runtime"
 )
 
 var logStream = hub{
@@ -30,8 +32,6 @@ var uiStream = hub{
 type Server struct {
 	manager *BlockManager
 	mu      *sync.Mutex
-	log     chan *util.LogMsg
-	ui      chan *util.LogMsg
 	Port    string
 	Domain  string
 	Id      string
@@ -40,8 +40,6 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		manager: NewBlockManager(),
-		log:     make(chan *util.LogMsg, 10),
-		ui:      make(chan *util.LogMsg, 10),
 		mu:      &sync.Mutex{},
 	}
 }
@@ -66,9 +64,15 @@ func (s *Server) staticHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) libraryHandler(w http.ResponseWriter, r *http.Request) {
-	// this is a fake library
-	l := []byte(`{"Library":[{"Type":"tolog","InRoutes":["in"],"OutRoutes":[],"QueryRoutes":[]},{"Type":"count","Broadcast":true,"InRoutes":["in","rule","poll"],"OutRoutes":["out"],"QueryRoutes":["rule","count"]},{"Type":"filter","InRoutes":["in","rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"ticker","InRoutes":["rule"],"OutRoutes":["out"],"QueryRoutes":["rule"]},{"Type":"random","InRoutes":["poll"],"OutRoutes":["out"],"QueryRoutes":[]}]}`)
-	s.apiWrap(w, r, 200, l)
+	lib, err := json.Marshal(library.BlockDefs)
+	if err != nil {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.CREATE,
+			Data: "Could not marshal library.",
+			Id:   s.Id,
+		}
+	}
+	s.apiWrap(w, r, 200, lib)
 }
 
 func (s *Server) portHandler(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +107,7 @@ func (s *Server) serveLogStream(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a websocket handshake", 400)
 		return
 	} else if err != nil {
-		log.Println(err)
+		//log.Println(err)
 		return
 	}
 	c := &connection{send: make(chan []byte, 256), ws: ws, Hub: logStream}
@@ -131,7 +135,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a websocket handshake", 400)
 		return
 	} else if err != nil {
-		log.Println(err)
+		//log.Println(err)
 		return
 	}
 	c := &connection{send: make(chan []byte, 256), ws: ws, Hub: uiStream}
@@ -152,7 +156,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						Data interface{}
 						Id   string
 					}{
-						util.LogInfo[util.CREATE],
+						loghub.LogInfo[loghub.CREATE],
 						v,
 						s.Id,
 					})
@@ -164,7 +168,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						Data interface{}
 						Id   string
 					}{
-						util.LogInfo[util.CREATE],
+						loghub.LogInfo[loghub.CREATE],
 						v,
 						s.Id,
 					})
@@ -220,14 +224,14 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		s.ui <- &util.LogMsg{
-			Type: util.CREATE,
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.CREATE,
 			Data: eblock,
 			Id:   s.Id,
 		}
 
-		s.log <- &util.LogMsg{
-			Type: util.CREATE,
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.CREATE,
 			Data: fmt.Sprintf("Block %s", block.Id),
 			Id:   s.Id,
 		}
@@ -243,21 +247,21 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		s.log <- &util.LogMsg{
-			Type: util.CREATE,
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.CREATE,
 			Data: fmt.Sprintf("Connection %s", conn.Id),
 			Id:   s.Id,
 		}
 
-		s.ui <- &util.LogMsg{
-			Type: util.CREATE,
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.CREATE,
 			Data: econn,
 			Id:   s.Id,
 		}
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.INFO,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
 		Data: "Import OK",
 		Id:   s.Id,
 	}
@@ -318,15 +322,21 @@ func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.CREATE,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.CREATE,
 		Data: mblock,
 		Id:   s.Id,
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.CREATE,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.CREATE,
 		Data: fmt.Sprintf("Block %s", mblock.Id),
+		Id:   s.Id,
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
 		Id:   s.Id,
 	}
 
@@ -370,14 +380,14 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.UPDATE,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.UPDATE,
 		Data: fmt.Sprintf("Block %s", mblock.Id),
 		Id:   s.Id,
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.UPDATE,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.UPDATE,
 		Data: mblock,
 		Id:   s.Id,
 	}
@@ -413,14 +423,14 @@ func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, v := range ids {
-		s.log <- &util.LogMsg{
-			Type: util.DELETE,
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.DELETE,
 			Data: fmt.Sprintf("Block %s", v),
 			Id:   s.Id,
 		}
 
-		s.ui <- &util.LogMsg{
-			Type: util.DELETE,
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.DELETE,
 			Data: struct {
 				Id string
 			}{
@@ -428,6 +438,12 @@ func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 			},
 			Id: s.Id,
 		}
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
 	}
 
 	s.apiWrap(w, r, 200, s.response("OK"))
@@ -456,14 +472,14 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.UPDATE,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.UPDATE,
 		Data: fmt.Sprintf("Block %s", vars["id"]),
 		Id:   s.Id,
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.UPDATE,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.UPDATE,
 		Data: struct {
 			Id string
 		}{
@@ -476,10 +492,10 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // queryRouteHandler queries a block and returns a msg. (bidirectional)
-func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
-	msg, err := s.manager.Query(vars["id"], vars["route"])
+	msg, err := s.manager.QueryBlock(vars["id"], vars["route"])
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
@@ -491,14 +507,14 @@ func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.QUERY,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.QUERY,
 		Data: fmt.Sprintf("Block %s", vars["id"]),
 		Id:   s.Id,
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.QUERY,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.QUERY,
 		Data: struct {
 			Id string
 		}{
@@ -509,6 +525,42 @@ func (s *Server) queryRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 	s.apiWrap(w, r, 200, jmsg)
 }
+
+// queryRouteHandler queries a connection and returns a msg. (bidirectional)
+func (s *Server) queryConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+
+	msg, err := s.manager.QueryConnection(vars["id"], vars["route"])
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	jmsg, err := json.Marshal(msg)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.QUERY,
+		Data: fmt.Sprintf("Connection %s", vars["id"]),
+		Id:   s.Id,
+	}
+
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.QUERY,
+		Data: struct {
+			Id string
+		}{
+			vars["id"],
+		},
+		Id: s.Id,
+	}
+
+	s.apiWrap(w, r, 200, jmsg)
+}
+
 
 // listConnectionHandler returns a slice of the current connections in streamtools.
 func (s *Server) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
@@ -543,15 +595,21 @@ func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.CREATE,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.CREATE,
 		Data: fmt.Sprintf("Connection %s", mconn.Id),
 		Id:   s.Id,
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.CREATE,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.CREATE,
 		Data: mconn,
+		Id:   s.Id,
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
 		Id:   s.Id,
 	}
 
@@ -602,8 +660,8 @@ func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int,
 	w.Write(data)
 
 	if statusCode == 200 {
-		s.log <- &util.LogMsg{
-			Type: util.INFO,
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.INFO,
 			Data: fmt.Sprintf("%d", statusCode) + ": " + r.URL.Path,
 			Id:   s.Id,
 		}
@@ -612,8 +670,8 @@ func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int,
 			DAEMON string
 		}
 		_ = json.Unmarshal(data, &err)
-		s.log <- &util.LogMsg{
-			Type: util.ERROR,
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
 			Data: err.DAEMON,
 			Id:   s.Id,
 		}
@@ -629,14 +687,14 @@ func (s *Server) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	s.log <- &util.LogMsg{
-		Type: util.DELETE,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.DELETE,
 		Data: fmt.Sprintf("Connection %s", id),
 		Id:   s.Id,
 	}
 
-	s.ui <- &util.LogMsg{
-		Type: util.DELETE,
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.DELETE,
 		Data: struct {
 			Id string
 		}{
@@ -645,13 +703,22 @@ func (s *Server) deleteConnectionHandler(w http.ResponseWriter, r *http.Request)
 		Id: s.Id,
 	}
 
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
+	}
+
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 func (s *Server) Run() {
-	go BroadcastStream(s.ui, s.log)
 	go logStream.run()
 	go uiStream.run()
+
+
+	loghub.AddLog <- logStream.Broadcast
+	loghub.AddUI <- uiStream.Broadcast
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", s.rootHandler)
@@ -670,16 +737,16 @@ func (s *Server) Run() {
 	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")              // update block
 	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")           // delete block
 	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")       // send to block route
-	r.HandleFunc("/blocks/{id}/{route}", s.queryRouteHandler).Methods("GET")       // get from block route
+	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")       // get from block route
 	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")        // create connection
 	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")           // list connections
 	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")      // get info for connection
 	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE") // delete connection
-	r.HandleFunc("/connections/{id}/{route}", s.queryRouteHandler).Methods("GET")  // get from block route
+	r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET")  // get from block route
 	http.Handle("/", r)
 
-	s.log <- &util.LogMsg{
-		Type: util.INFO,
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
 		Data: fmt.Sprintf("Starting Streamtools %s on port %s", util.VERSION, s.Port),
 		Id:   s.Id,
 	}
@@ -690,65 +757,4 @@ func (s *Server) Run() {
 	}
 }
 
-// BroadcastStream routes logs and block system changes to websocket hubs
-// and terminal.
-func BroadcastStream(ui chan *util.LogMsg, logger chan *util.LogMsg) {
-	var batch []interface{}
 
-	// we batch the logs every 50 ms so we can cut down on the amount
-	// of messages we send
-	dump := time.NewTicker(50 * time.Millisecond)
-
-	for {
-		select {
-		case <-dump.C:
-			if len(batch) == 0 {
-				break
-			}
-
-			outBatch := struct {
-				Log []interface{}
-			}{
-				batch,
-			}
-
-			joutBatch, err := json.Marshal(outBatch)
-			if err != nil {
-				log.Println("could not broadcast")
-			}
-
-			logStream.Broadcast <- joutBatch
-			batch = nil
-		case l := <-logger:
-			bclog := struct {
-				Type string
-				Data interface{}
-				Id   string
-			}{
-				util.LogInfo[l.Type],
-				l.Data,
-				l.Id,
-			}
-
-			fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s", time.Now().Format(time.Stamp), l.Id, util.LogInfoColor[l.Type], l.Data))
-			batch = append(batch, bclog)
-		case l := <-ui:
-			bclog := struct {
-				Type string
-				Data interface{}
-				Id   string
-			}{
-				util.LogInfo[l.Type],
-				l.Data,
-				l.Id,
-			}
-
-			j, err := json.Marshal(bclog)
-			if err != nil {
-				log.Println("could not broadcast")
-				break
-			}
-			uiStream.Broadcast <- j
-		}
-	}
-}

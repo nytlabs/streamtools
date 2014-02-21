@@ -3,7 +3,6 @@ package library
 import (
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 )
 
 type Filter struct {
@@ -13,7 +12,6 @@ type Filter struct {
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
-	filter    string
 }
 
 // a bit of boilerplate for streamtools
@@ -26,17 +24,22 @@ func (b *Filter) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
 func (b *Filter) Run() {
-
+	var filter string
 	var parsed *jee.TokenTree
 
 	for {
 		select {
 		case msg := <-b.in:
+			if parsed == nil {
+				b.Error("no filter set")
+				break
+			}
+
 			e, err := jee.Eval(parsed, msg)
 			if err != nil {
 				b.Error(err)
@@ -49,32 +52,36 @@ func (b *Filter) Run() {
 			}
 
 			if eval == true {
-				b.out <- map[string]interface{}{
-					"Msg": msg,
-				}
+				b.out <- msg
 			}
 
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]string)
-			lexed, err := jee.Lexer(rule["Filter"])
+			rule := ruleI.(map[string]interface{})
+			filterS, ok := rule["Filter"].(string)
+			if !ok {
+				b.Error("bad filter")
+				break
+			}
+
+			lexed, err := jee.Lexer(filterS)
 			if err != nil {
-				log.Println(err)
+				b.Error(err)
 				break
 			}
 
 			tree, err := jee.Parser(lexed)
 			if err != nil {
-				log.Println(err)
+				b.Error(err)
 				break
 			}
 
 			parsed = tree
-			b.filter = rule["Filter"]
+			filter = filterS
 
 		case c := <-b.queryrule:
 			// deal with a query request
 			c <- map[string]string{
-				"Filter": b.filter,
+				"Filter": filter,
 			}
 		case <-b.quit:
 			// quit the block
