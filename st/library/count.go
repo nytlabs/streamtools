@@ -14,6 +14,7 @@ type Count struct {
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
+	windowStr string
 }
 
 // a bit of boilerplate for streamtools
@@ -41,7 +42,8 @@ func (b *Count) Run() {
 		select {
 		case <-waitTimer.C:
 		case rule := <-b.inrule:
-			window, _ = time.ParseDuration(rule.(map[string]interface{})["Window"].(string))
+			b.windowStr = rule.(map[string]string)["Window"]
+			window, _ = time.ParseDuration(b.windowStr)
 		case <-b.quit:
 			return
 		case <-b.in:
@@ -56,8 +58,8 @@ func (b *Count) Run() {
 				"Count": len(*pq),
 			}
 		case c := <-b.queryrule:
-			c <- map[string]interface{}{
-				"Window": window,
+			c <- map[string]string{
+				"Window": b.windowStr,
 			}
 		}
 		for {
