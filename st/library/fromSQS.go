@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
