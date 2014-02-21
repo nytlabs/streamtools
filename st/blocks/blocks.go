@@ -188,8 +188,16 @@ func BlockRoutine(bi BlockInterface) {
 	for {
 		select {
 		case msg := <-b.InChan:
+			_, ok := b.inRoutes[msg.Route]
+			if !ok {
+				break
+			}
 			b.inRoutes[msg.Route] <- msg.Msg
 		case msg := <-b.QueryChan:
+			_, ok := b.queryRoutes[msg.Route]
+			if !ok {
+				break
+			}
 			b.queryRoutes[msg.Route] <- msg.RespChan
 		case msg := <-b.AddChan:
 			outChans[msg.Route] = msg.Channel
