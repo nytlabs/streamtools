@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/loghub"
 	"github.com/nytlabs/streamtools/st/util"
 	"log"
 	"testing"
@@ -50,7 +51,7 @@ func TestToFromNSQ(t *testing.T) {
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
 	go blocks.BlockRoutine(toB)
 
-	ruleMsg := map[string]string{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
+	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
 
@@ -59,7 +60,7 @@ func TestToFromNSQ(t *testing.T) {
 	toC.InChan <- postData
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		log.Println("quitting chan")
+		log.Println("quitting toNSQ chan")
 		toC.QuitChan <- true
 	})
 
@@ -76,17 +77,25 @@ func TestToFromNSQ(t *testing.T) {
 	fromC.InChan <- fromRule
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		log.Println("quitting fromNSQ chan")
 		fromC.QuitChan <- true
 	})
 
 	for {
 		select {
 		case message := <-outChan:
-			log.Println("caught message on outChan")
 			log.Println(message)
 
+		case err := <-toC.ErrChan:
+			if err != nil {
+				log.Println("Caught error on toNSQ chan")
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
 		case err := <-fromC.ErrChan:
 			if err != nil {
+				log.Println("Caught error on fromNSQ chan")
 				t.Errorf(err.Error())
 			} else {
 				return
@@ -96,11 +105,13 @@ func TestToFromNSQ(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	loghub.Start()
+
 	log.Println("testing Count")
 	b, c := newBlock("testingCount", "count")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]string{"Window": "1s"}
+	ruleMsg := map[string]interface{}{"Window": "1s"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 
@@ -141,7 +152,7 @@ func TestToFile(t *testing.T) {
 	b, c := newBlock("testingToFile", "toFile")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]string{"Filename": "foobar.log"}
+	ruleMsg := map[string]interface{}{"Filename": "foobar.log"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 
@@ -182,7 +193,7 @@ func TestFromSQS(t *testing.T) {
 	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]string{"SQSEndpoint": "foobarbaz", "AccessKey": "123access", "AccessSecret": "123secret"}
+	ruleMsg := map[string]interface{}{"SQSEndpoint": "foobarbaz", "AccessKey": "123access", "AccessSecret": "123secret"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 
@@ -261,7 +272,7 @@ func TestFilter(t *testing.T) {
 	b, c := newBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]string{"Filter": ".device == 'iPhone'"}
+	ruleMsg := map[string]interface{}{"Filter": ".device == 'iPhone'"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 
@@ -302,7 +313,7 @@ func TestMask(t *testing.T) {
 	b, c := newBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]string{"Mask": "{}"}
+	ruleMsg := map[string]interface{}{"Mask": "{}"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 
@@ -373,7 +384,7 @@ func TestFromHTTPStream(t *testing.T) {
 		Channel: outChan,
 	}
 
-	ruleMsg := map[string]string{"Endpoint": "http://www.nytimes.com"}
+	ruleMsg := map[string]interface{}{"Endpoint": "http://www.nytimes.com"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 

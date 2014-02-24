@@ -3,6 +3,7 @@ package library
 import (
 	"container/heap"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"log"
 	"time"
 )
 
