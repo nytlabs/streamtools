@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"time"
 )
 
@@ -35,8 +36,7 @@ func (b *Sync) Setup() {
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Sync) Run() {
-	var err error
-	var path, lagString string
+	var lagString string
 	var tree *jee.TokenTree
 	lag := time.Duration(0)
 	emitTick := time.NewTimer(500 * time.Millisecond)
@@ -46,19 +46,22 @@ func (b *Sync) Run() {
 		select {
 		case <-emitTick.C:
 		case ruleI := <-b.inrule:
-			rule, ok := ruleI.(map[string]string)
 			// set a parameter of the block
-			lagString, ok = rule["Lag"]
-			if !ok {
-				b.Error(errors.New("Lag not specified in rule"))
-				continue
+			lagString, err := util.ParseString(ruleI, "Lag")
+			if err != nil {
+				b.Error(err)
+				break
 			}
 			lag, err = time.ParseDuration(lagString)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			path, ok = rule["Path"]
+			path, err := util.ParseString(ruleI, "Path")
+			if err != nil {
+				b.Error(err)
+				break
+			}
 			// build the parser for the model
 			token, err := jee.Lexer(path)
 			if err != nil {
