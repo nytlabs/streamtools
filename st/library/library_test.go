@@ -149,6 +149,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestToFile(t *testing.T) {
+	loghub.Start()
 	log.Println("testing toFile")
 	b, c := newBlock("testingToFile", "toFile")
 	go blocks.BlockRoutine(b)
@@ -190,6 +191,7 @@ func TestToFile(t *testing.T) {
 }
 
 func TestFromSQS(t *testing.T) {
+	loghub.Start()
 	log.Println("testing FromSQS")
 	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
@@ -231,6 +233,7 @@ func TestFromSQS(t *testing.T) {
 }
 
 func TestSync(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Sync")
 	b, c := newBlock("testingSync", "sync")
 	go blocks.BlockRoutine(b)
@@ -244,6 +247,7 @@ func TestSync(t *testing.T) {
 }
 
 func TestTicker(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Ticker")
 	b, c := newBlock("testingTicker", "ticker")
 	go blocks.BlockRoutine(b)
@@ -269,6 +273,7 @@ func TestTicker(t *testing.T) {
 }
 
 func TestFilter(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Filter")
 	b, c := newBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
@@ -310,6 +315,7 @@ func TestFilter(t *testing.T) {
 }
 
 func TestMask(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Mask")
 	b, c := newBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
@@ -351,6 +357,7 @@ func TestMask(t *testing.T) {
 }
 
 func TestGetHTTP(t *testing.T) {
+	loghub.Start()
 	log.Println("testing GetHTTP")
 	b, c := newBlock("testingGetHTTP", "getHTTP")
 	go blocks.BlockRoutine(b)
@@ -376,6 +383,7 @@ func TestGetHTTP(t *testing.T) {
 }
 
 func TestFromHTTPStream(t *testing.T) {
+	loghub.Start()
 	log.Println("testing FromHTTPStream")
 	b, c := newBlock("testingFromHTTPStream", "fromHTTPStream")
 	go blocks.BlockRoutine(b)
@@ -407,6 +415,7 @@ func TestFromHTTPStream(t *testing.T) {
 }
 
 func TestFromPost(t *testing.T) {
+	loghub.Start()
 	log.Println("testing FromPost")
 	b, c := newBlock("testingPst", "fromPost")
 	go blocks.BlockRoutine(b)
@@ -432,6 +441,7 @@ func TestFromPost(t *testing.T) {
 }
 
 func TestMap(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Map")
 	b, c := newBlock("testingMap", "map")
 	go blocks.BlockRoutine(b)
@@ -457,6 +467,7 @@ func TestMap(t *testing.T) {
 }
 
 func TestHistogram(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Histogram")
 	b, c := newBlock("testingHistogram", "histogram")
 	go blocks.BlockRoutine(b)

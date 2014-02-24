@@ -40,10 +40,19 @@ func (b *ToNSQ) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]interface{})
+			//rule := ruleI.(map[string]interface{})
 
-			topic, _ := util.ParseString(rule, "Topic")
-			nsqdTCPAddrs, _ := util.ParseString(rule, "NsqdTCPAddrs")
+			topic, err := util.ParseString(ruleI, "Topic")
+			if err != nil {
+				b.Error(err)
+				break
+			}
+
+			nsqdTCPAddrs, err := util.ParseString(ruleI, "NsqdTCPAddrs")
+			if err != nil {
+				b.Error(err)
+				break
+			}
 
 			writer = nsq.NewWriter(nsqdTCPAddrs)
 

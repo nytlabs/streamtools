@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -39,14 +40,28 @@ func (b *FromSQS) Run() {
 	for {
 		select {
 		case msgI := <-b.inrule:
-			// set a parameter of the block
-			msg := msgI.(map[string]string)
+			SQSEndpoint, err := util.ParseString(msgI, "SQSEndpoint")
+			if err != nil {
+				b.Error(err)
+				break
+			}
+			b.SQSEndpoint = SQSEndpoint
 
-			b.SQSEndpoint = msg["SQSEndpoint"]
-			b.AccessKey = msg["AccessKey"]
-			b.AccessSecret = msg["AccessSecret"]
-			r := sqsReader.NewReader(b.SQSEndpoint, b.AccessKey, b.AccessSecret,
-				b.fromReader)
+			AccessKey, err := util.ParseString(msgI, "AccessKey")
+			if err != nil {
+				b.Error(err)
+				break
+			}
+			b.AccessKey = AccessKey
+
+			AccessSecret, err := util.ParseString(msgI, "AccessSecret")
+			if err != nil {
+				b.Error(err)
+				break
+			}
+			b.AccessSecret = AccessSecret
+
+			r := sqsReader.NewReader(b.SQSEndpoint, b.AccessKey, b.AccessSecret, b.fromReader)
 			go r.Start()
 		case msg := <-b.fromReader:
 			var outMsg interface{}
@@ -61,7 +76,7 @@ func (b *FromSQS) Run() {
 			return
 		case respChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]string{
+			respChan <- map[string]interface{}{
 				"SQSEndpoint":  b.SQSEndpoint,
 				"AccessKey":    b.AccessKey,
 				"AccessSecret": b.AccessSecret,

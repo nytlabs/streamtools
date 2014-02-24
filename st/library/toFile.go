@@ -3,9 +3,9 @@ package library
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"os"
 )
 
@@ -41,13 +41,9 @@ func (b *ToFile) Run() {
 	for {
 		select {
 		case msgI := <-b.inrule:
-			// convert message to map[string]string
-			msg := msgI.(map[string]string)
 			// set a parameter of the block
-			filename, ok := msg["Filename"]
-			if !ok {
-				b.Error(errors.New("Rule message did not contain Filename"))
-			}
+			filename, _ := util.ParseString(msgI, "Filename")
+
 			fo, err := os.Create(filename)
 			if err != nil {
 				b.Error(err)
@@ -73,7 +69,7 @@ func (b *ToFile) Run() {
 			w.Flush()
 		case respChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]string{
+			respChan <- map[string]interface{}{
 				"Filename": b.filename,
 			}
 		}

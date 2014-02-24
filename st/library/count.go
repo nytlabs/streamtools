@@ -3,6 +3,7 @@ package library
 import (
 	"container/heap"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"time"
 )
 
@@ -41,21 +42,10 @@ func (b *Count) Run() {
 		select {
 		case <-waitTimer.C:
 		case rule := <-b.inrule:
-			tmpRule, ok := rule.(map[string]interface{})
-			if !ok {
-				b.Error("bad rule")
-				break
-			}
 
-			tmpDur, ok := tmpRule["Window"]
-			if !ok {
-				b.Error("bad rule")
-				break
-			}
-
-			tmpDurStr, ok := tmpDur.(string)
-			if !ok {
-				b.Error("bad rule")
+			tmpDurStr, err := util.ParseString(rule, "Window")
+			if err != nil {
+				b.Error(err)
 				break
 			}
 
