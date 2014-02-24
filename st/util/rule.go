@@ -1,6 +1,9 @@
 package util
 
-import "errors"
+import (
+	"errors"
+	"github.com/nytlabs/gojee"
+)
 
 func ParseBool(rule map[string]interface{}, key string) (bool, error) {
 	var val bool
@@ -70,4 +73,12 @@ func CheckRule(messageI interface{}, ruleMsg map[string]string) bool {
 		}
 	}
 	return true
+}
+
+func BuildTokenTree(path string) (tree *jee.TokenTree, err error) {
+	token, err := jee.Lexer(path)
+	if err != nil {
+		return nil, err
+	}
+	return jee.Parser(token)
 }

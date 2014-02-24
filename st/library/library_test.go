@@ -24,6 +24,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"sync":           NewSync,
 		"fromPost":       NewFromPost,
 		"map":            NewMap,
+		"histogram":      NewHistogram,
 	}
 
 	chans := blocks.BlockChans{
@@ -421,6 +422,31 @@ func TestFromPost(t *testing.T) {
 func TestMap(t *testing.T) {
 	log.Println("testing Map")
 	b, c := newBlock("testingMap", "map")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestHistogram(t *testing.T) {
+	log.Println("testing Histogram")
+	b, c := newBlock("testingHistogram", "histogram")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{
