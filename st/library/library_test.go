@@ -1,9 +1,12 @@
 package library
 
 import (
+	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/loghub"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 	"time"
@@ -185,10 +188,16 @@ func TestToFile(t *testing.T) {
 func TestFromSQS(t *testing.T) {
 	loghub.Start()
 	log.Println("testing FromSQS")
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "this is a test server")
+	}))
+	defer ts.Close()
+
 	b, c := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"SQSEndpoint": "foobarbaz", "AccessKey": "123access", "AccessSecret": "123secret"}
+	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	c.InChan <- toRule
 

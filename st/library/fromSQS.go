@@ -5,6 +5,7 @@ import (
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
+	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -61,8 +62,11 @@ func (b *FromSQS) Run() {
 			}
 			b.AccessSecret = AccessSecret
 
+			log.Println("creating new reader for endpoint", b.SQSEndpoint)
 			r := sqsReader.NewReader(b.SQSEndpoint, b.AccessKey, b.AccessSecret, b.fromReader)
+			log.Println("starting reader")
 			go r.Start()
+			log.Println("done starting reader")
 		case msg := <-b.fromReader:
 			var outMsg interface{}
 			err := json.Unmarshal(msg, &outMsg)
