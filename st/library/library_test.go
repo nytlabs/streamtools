@@ -206,14 +206,17 @@ func TestFromSQS(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
+			log.Println("got query message")
 			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
 		case message := <-outChan:
+			log.Println("got message")
 			log.Println(message)
 
 		case err := <-c.ErrChan:
+			log.Println("got error")
 			if err != nil {
 				t.Errorf(err.Error())
 			} else {
