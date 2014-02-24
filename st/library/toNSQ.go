@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/bitly/go-nsq"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -39,10 +40,10 @@ func (b *ToNSQ) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]string)
+			rule := ruleI.(map[string]interface{})
 
-			topic := rule["Topic"]
-			nsqdTCPAddrs := rule["NsqdTCPAddrs"]
+			topic, _ := util.ParseString(rule, "Topic")
+			nsqdTCPAddrs, _ := util.ParseString(rule, "NsqdTCPAddrs")
 
 			writer = nsq.NewWriter(nsqdTCPAddrs)
 

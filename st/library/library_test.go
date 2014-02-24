@@ -46,6 +46,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 }
 
 func TestToFromNSQ(t *testing.T) {
+	loghub.Start()
 	log.Println("testing toNSQ")
 
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
