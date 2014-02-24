@@ -3,6 +3,7 @@ package library
 import (
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 type Filter struct {
@@ -56,9 +57,8 @@ func (b *Filter) Run() {
 			}
 
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]interface{})
-			filterS, ok := rule["Filter"].(string)
-			if !ok {
+			filterS, err := util.ParseString(ruleI, "Filter")
+			if err != nil {
 				b.Error("bad filter")
 				break
 			}
@@ -80,7 +80,7 @@ func (b *Filter) Run() {
 
 		case c := <-b.queryrule:
 			// deal with a query request
-			c <- map[string]string{
+			c <- map[string]interface{}{
 				"Filter": filter,
 			}
 		case <-b.quit:

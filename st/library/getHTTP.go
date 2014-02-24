@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"net/http"
 )
@@ -43,17 +44,12 @@ func (b *GetHTTP) Run() {
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			rule, ok := ruleI.(map[string]string)
-			if !ok {
-				b.Error(errors.New("could not assert rule to map[string]string"))
+			path, err := util.ParseString(ruleI, "Path")
+			if err != nil {
+				b.Error(err)
 				continue
 			}
-			path, ok = rule["Path"]
-			if !ok {
-				b.Error(errors.New("could not find Path in rule"))
-				continue
-			}
-			token, err := jee.Lexer(rule["Path"])
+			token, err := jee.Lexer(path)
 			if err != nil {
 				b.Error(err)
 				continue

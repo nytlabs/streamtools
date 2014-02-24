@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -71,11 +72,16 @@ func (b *Mask) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]interface{})
-			b.mask = rule["Mask"].(map[string]interface{})
+			mask, err := util.ParseString(ruleI, "Mask")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			b.mask = mask
 
 		case c := <-b.queryrule:
-			c <- map[string]string{
+			c <- map[string]interface{}{
 				"Mask": b.mask.(string),
 			}
 		case msg := <-b.in:

@@ -54,13 +54,12 @@ func (b *Histogram) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Histogram) Run() {
-	var windowString string
 	var tree *jee.TokenTree
 	var path string
 	waitTimer := time.NewTimer(100 * time.Millisecond)
@@ -71,12 +70,8 @@ func (b *Histogram) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule, ok := ruleI.(map[string]interface{})
-			if !ok {
-				b.Error(errors.New("cannot assert rule to map"))
-			}
 			// window
-			windowString, err := util.ParseString(rule, "Window")
+			windowString, err := util.ParseString(ruleI, "Window")
 			if err != nil {
 				b.Error(err)
 			}
@@ -84,7 +79,7 @@ func (b *Histogram) Run() {
 			if err != nil {
 				b.Error(err)
 			}
-			path, err = util.ParseString(rule, "Path")
+			path, err = util.ParseString(ruleI, "Path")
 			tree, err = util.BuildTokenTree(path)
 			if err != nil {
 				b.Error(err)
@@ -134,7 +129,7 @@ func (b *Histogram) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			out := map[string]interface{}{
-				"Window": windowString,
+				"Window": window.String(),
 				"Path":   path,
 			}
 			respChan <- out

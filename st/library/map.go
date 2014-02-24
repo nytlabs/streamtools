@@ -101,7 +101,7 @@ func (b *Map) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
@@ -118,10 +118,12 @@ func (b *Map) Run() {
 			if !ok {
 				b.Error(errors.New("could not assert rule to map[string]interface{}"))
 			}
-			additive, ok = rule["Additive"].(bool)
+			additiveStr, ok := rule["Additive"]
 			if !ok {
-				b.Error(errors.New("could not assert Additive to bool"))
+				// 'Additive' wasn't set in the rule, but it defaults to true
+				additiveStr = "true"
 			}
+			additive, ok = additiveStr.(bool)
 			mapRuleI, ok := rule["Map"]
 			if !ok {
 				b.Error(errors.New("could not find Map in rule"))

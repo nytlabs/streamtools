@@ -46,13 +46,13 @@ func (b *Count) Run() {
 			tmpDurStr, err := util.ParseString(rule, "Window")
 			if err != nil {
 				b.Error(err)
-				break
+				continue
 			}
 
 			tmpWindow, err := time.ParseDuration(tmpDurStr)
 			if err != nil {
 				b.Error(err)
-				break
+				continue
 			}
 
 			window = tmpWindow

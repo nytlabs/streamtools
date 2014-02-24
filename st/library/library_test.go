@@ -3,8 +3,8 @@ package library
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/loghub"
-	"github.com/nytlabs/streamtools/st/util"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -61,7 +61,6 @@ func TestToFromNSQ(t *testing.T) {
 	toC.InChan <- postData
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		log.Println("quitting toNSQ chan")
 		toC.QuitChan <- true
 	})
 
@@ -78,7 +77,6 @@ func TestToFromNSQ(t *testing.T) {
 	fromC.InChan <- fromRule
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		log.Println("quitting fromNSQ chan")
 		fromC.QuitChan <- true
 	})
 
@@ -89,14 +87,12 @@ func TestToFromNSQ(t *testing.T) {
 
 		case err := <-toC.ErrChan:
 			if err != nil {
-				log.Println("Caught error on toNSQ chan")
 				t.Errorf(err.Error())
 			} else {
 				return
 			}
 		case err := <-fromC.ErrChan:
 			if err != nil {
-				log.Println("Caught error on fromNSQ chan")
 				t.Errorf(err.Error())
 			} else {
 				return
@@ -129,9 +125,7 @@ func TestCount(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			ok := util.CheckRule(messageI, ruleMsg)
-			if !ok {
-				log.Println("Count rule mismatch")
+			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
@@ -171,9 +165,7 @@ func TestToFile(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			ok := util.CheckRule(messageI, ruleMsg)
-			if !ok {
-				log.Println("ToFile rule mismatch")
+			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
@@ -213,9 +205,7 @@ func TestFromSQS(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			ok := util.CheckRule(messageI, ruleMsg)
-			if !ok {
-				log.Println("FromSQS rule mismatch")
+			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
@@ -295,9 +285,7 @@ func TestFilter(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			ok := util.CheckRule(messageI, ruleMsg)
-			if !ok {
-				log.Println("Filter rule mismatch")
+			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
@@ -337,9 +325,7 @@ func TestMask(t *testing.T) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			ok := util.CheckRule(messageI, ruleMsg)
-			if !ok {
-				log.Println("Mask rule mismatch")
+			if !reflect.DeepEqual(messageI, ruleMsg) {
 				t.Fail()
 			}
 
@@ -424,6 +410,11 @@ func TestFromPost(t *testing.T) {
 		Route:   "out",
 		Channel: outChan,
 	}
+
+	inputMsg := map[string]interface{}{"Foo": "BAR"}
+	inputBlock := &blocks.Msg{Msg: inputMsg, Route: "in"}
+	c.InChan <- inputBlock
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
@@ -450,11 +441,25 @@ func TestMap(t *testing.T) {
 		Route:   "out",
 		Channel: outChan,
 	}
+
+	mapMsg := map[string]interface{}{"Foo": ".bar"}
+	ruleMsg := map[string]interface{}{"Map": mapMsg}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
 	for {
 		select {
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]interface{})
+			if !reflect.DeepEqual(message["Map"], ruleMsg["Map"]) {
+				t.Fail()
+			}
 		case err := <-c.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
@@ -476,11 +481,24 @@ func TestHistogram(t *testing.T) {
 		Route:   "out",
 		Channel: outChan,
 	}
+
+	ruleMsg := map[string]interface{}{"Window": "10s", "Path": ".data"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	c.InChan <- toRule
+
+	queryOutChan := make(chan interface{})
+	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		c.QuitChan <- true
 	})
 	for {
 		select {
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				t.Fail()
+			}
+
 		case err := <-c.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())

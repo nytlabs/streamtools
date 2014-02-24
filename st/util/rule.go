@@ -69,16 +69,6 @@ func ParseInt(ruleI interface{}, key string) (int, error) {
 	return val, nil
 }
 
-func CheckRule(messageI interface{}, ruleMsg map[string]interface{}) bool {
-	message := messageI.(map[string]interface{})
-	for key, value := range ruleMsg {
-		if message[key] != value {
-			return false
-		}
-	}
-	return true
-}
-
 func BuildTokenTree(path string) (tree *jee.TokenTree, err error) {
 	token, err := jee.Lexer(path)
 	if err != nil {
