@@ -1,7 +1,6 @@
 package library
 
 import (
-	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/loghub"
 	"log"
@@ -190,7 +189,6 @@ func TestFromSQS(t *testing.T) {
 	log.Println("testing FromSQS")
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, "this is a test server")
 	}))
 	defer ts.Close()
 
