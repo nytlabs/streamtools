@@ -18,6 +18,8 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"gethttp":        NewGetHTTP,
 	"fromhttpstream": NewFromHTTPStream,
 	"gaussian":       NewGaussian,
+	"zipf":           NewZipf,
+	"map":            NewMap,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
