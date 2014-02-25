@@ -200,6 +200,15 @@ func BlockRoutine(bi BlockInterface) {
 				break
 			}
 			b.inRoutes[msg.Route] <- msg.Msg
+
+			if msg.Route == "rule" {
+				loghub.UI <- &loghub.LogMsg{
+					Type: loghub.RULE_UPDATE,
+					Data: map[string]interface{}{},
+					Id:   b.Id,
+				}
+			}
+
 		case msg := <-b.QueryChan:
 			_, ok := b.queryRoutes[msg.Route]
 			if !ok {

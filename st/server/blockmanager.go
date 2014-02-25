@@ -127,6 +127,7 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	// save state
 	blockInfo.chans = newBlockChans
 	b.blockMap[blockInfo.Id] = blockInfo
+	b.updateRule(blockInfo.Id)
 
 	return blockInfo, nil
 }
@@ -255,14 +256,9 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 	return connInfo, nil
 }
 
-func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
-	block, ok := b.blockMap[id]
-	if !ok {
-		return nil, errors.New(fmt.Sprintf("Cannot get block %s: does not exist", id))
-	}
-
+func (b *BlockManager) updateRule(id string) {
 	rule := false
-	
+	block := b.blockMap[id]
 	for _, b := range library.BlockDefs[block.Type].QueryRoutes {
 		rule = b == "rule"
 		if rule {
@@ -273,11 +269,20 @@ func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
 	if rule {
 		q, err := b.QueryBlock(id, "rule")
 		if err != nil {
-			return block, nil
+			return
 		}
 
 		block.Rule = q
 	}
+}
+
+func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
+	block, ok := b.blockMap[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot get block %s: does not exist", id))
+	}
+
+	b.updateRule(id)
 
 	return block, nil
 }

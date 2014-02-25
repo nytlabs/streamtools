@@ -350,13 +350,21 @@ $(function() {
                 }
             });
             logPush(tmpl);
-            _this.ws.send('get_state');
+            _this.ws.send(JSON.stringify({
+                "action": "export"
+            }));
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
             var uiMsg = JSON.parse(d.data);
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
+            console.log(uiMsg)
             switch (uiMsg.Type) {
+                case 'UPDATE_RULE':
+                    _this.ws.send(JSON.stringify({
+                        "action": "block",
+                        "id": uiMsg.Id
+                    }));
                 case 'CREATE':
                     if (isBlock) {
                         // we need to get typeinfo from the library
