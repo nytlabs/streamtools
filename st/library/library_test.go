@@ -548,10 +548,10 @@ func (s *StreamSuite) TestTimeseries(c *C) {
 	}
 }
 
-func TestGaussian(t *testing.T) {
+func (s *StreamSuite) TestGaussian(c *C) {
 	loghub.Start()
 	log.Println("testing Gaussian")
-	b, c := newBlock("testingGaussian", "gaussian")
+	b, ch := newBlock("testingGaussian", "gaussian")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -574,10 +574,9 @@ func TestGaussian(t *testing.T) {
 	}
 }
 
-func TestZipf(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestZipf(c *C) {
 	log.Println("testing Zipf")
-	b, c := newBlock("testingZipf", "zipf")
+	b, ch := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
