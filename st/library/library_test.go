@@ -519,19 +519,19 @@ func (s *StreamSuite) TestHistogram(c *C) {
 
 func TestTimeseries(t *testing.T) {
 	log.Println("testing Timeseries")
-	b, c := newBlock("testingTimeseries", "timeseries")
+	b, ch := newBlock("testingTimeseries", "timeseries")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
 				t.Errorf(err.Error())
 			} else {
