@@ -9,10 +9,6 @@ import (
 	"github.com/nytlabs/streamtools/st/blocks"
 )
 
-// so i don't forget:
-// all blocks should clear a message's route
-// connects should set messages route.
-
 type BlockInfo struct {
 	Id       string
 	Type     string
@@ -265,8 +261,23 @@ func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
 		return nil, errors.New(fmt.Sprintf("Cannot get block %s: does not exist", id))
 	}
 
-	// retrieve block's and set it here.
-	block.Rule = "test" // "retrieve fresh rule from the block here..."
+	rule := false
+	
+	for _, b := range library.BlockDefs[block.Type].QueryRoutes {
+		rule = b == "rule"
+		if rule {
+			break
+		}
+	}
+
+	if rule {
+		q, err := b.QueryBlock(id, "rule")
+		if err != nil {
+			return block, nil
+		}
+
+		block.Rule = q
+	}
 
 	return block, nil
 }
