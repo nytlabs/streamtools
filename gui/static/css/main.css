@@ -138,3 +138,28 @@
 .ui-log{
     font-weight: bold;
 }
+
+.controller .title {
+    min-width: 200px;
+    line-height: 22px;
+    font-size: 14px;
+    border: 1px solid rgba(79,79,79,1);
+    font-weight: bold;
+    color: white;
+    background: black;
+    cursor: pointer;
+}
+
+.controller {
+    font-family: helvetica, arial, sans-serif;
+    position: absolute;
+    background: rgba(158,158,158,1);
+    border: 1px solid black;
+}
+
+.controller .bottom {
+    min-width: 200px;
+    background-color: rgba(158,158,158,1);
+    height: 5px;
+    border-top: 1px solid white;
+}

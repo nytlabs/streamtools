@@ -1,29 +1,30 @@
 package library
 
 import (
+	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"   // util
+	"math/rand"
 )
 
 // specify those channels we're going to use to communicate with streamtools
-type Skeleton struct {
+type Gaussian struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
 	inpoll    chan interface{}
-	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
-func NewSkeleton() blocks.BlockInterface {
-	return &Skeleton{}
+func NewGaussian() blocks.BlockInterface {
+	return &Gaussian{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *Skeleton) Setup() {
-	b.Kind = "Skeleton"
-	b.in = b.InRoute("in")
+func (b *Gaussian) Setup() {
+	b.Kind = "Gaussian"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")
@@ -32,21 +33,38 @@ func (b *Skeleton) Setup() {
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *Skeleton) Run() {
+func (b *Gaussian) Run() {
+	var err error
+	var mean, stddev float64
 	for {
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			_, _ = ruleI.(map[string]interface{})
+			rule, ok := ruleI.(map[string]interface{})
+			if !ok {
+				b.Error(errors.New("couldn't assert rule to map"))
+			}
+			mean, err = util.ParseFloat(rule, "Mean")
+			if err != nil {
+				b.Error(err)
+			}
+			stddev, err = util.ParseFloat(rule, "StdDev")
+			if err != nil {
+				b.Error(err)
+			}
 		case <-b.quit:
 			// quit the block
 			return
-		case _ = <-b.in:
-			// deal with inbound data
 		case <-b.inpoll:
 			// deal with a poll request
-		case _ = <-b.queryrule:
+			b.out <- rand.NormFloat64()*stddev + mean
+		case respChan := <-b.queryrule:
 			// deal with a query request
+			out := map[string]interface{}{
+				"Mean":   mean,
+				"StdDev": stddev,
+			}
+			respChan <- out
 		}
 	}
 }

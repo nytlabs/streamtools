@@ -1,18 +1,6 @@
 $(function() {
 
     // before anything, we need to load the library.
-    /*var library = d3.nest()
-        .key(function(d, i) {
-            return d.Type;
-        })
-        .rollup(function(d) {
-            return d[0];
-        })
-        .map(JSON.parse($.ajax({
-            url: '/library',
-            type: 'GET',
-            async: false // required before UI stream starts
-        }).responseText).Library);*/
     var library = JSON.parse($.ajax({
         url: '/library',
         type: 'GET',
@@ -65,6 +53,8 @@ $(function() {
         log = new logReader(),
         ui = new uiReader();
 
+    var controllerTemplate = $('#controller-template').html();
+
     //
     // SVG elements
     //
@@ -96,7 +86,7 @@ $(function() {
         })
         .on('mousedown', function() {
             d3.selectAll('.selected')
-                .classed('selected', false)
+                .classed('selected', false);
         });
 
     // contains all connection ui
@@ -107,8 +97,12 @@ $(function() {
     var nodeContainer = svg.append('g')
         .attr('class', 'nodeContainer');
 
-    var link = svg.select('.linkContainer').selectAll('.link'),
-        node = svg.select('.nodeContainer').selectAll('.node');
+    var controlContainer = d3.select('body').append('div')
+        .attr('class', 'controlContainer')
+
+    var link = linkContainer.selectAll('.link'),
+        node = nodeContainer.selectAll('.node'),
+        control = controlContainer.selectAll('.controller');
 
     var tooltip = d3.select('body')
         .append('div')
@@ -134,6 +128,16 @@ $(function() {
                 success: function(result) {}
             });
         });
+
+    var dragTitle = d3.behavior.drag()
+        .on('drag', function(d, i) {
+            var pos = $(this.parentNode).offset();
+
+            $(this.parentNode).offset({
+                left: pos.left + mouse.dx,
+                top: pos.top + mouse.dy
+            });
+        })
 
     // ui element for new connection
     var newConnection = svg.select('.linkcontainer').append('path')
@@ -162,12 +166,15 @@ $(function() {
     $(window).mousemove(function(e) {
         mouse = {
             x: e.clientX,
-            y: e.clientY
+            dx: e.clientX - mouse.x,
+            y: e.clientY,
+            dy: e.clientY - mouse.y,
         };
+
         if (isConnecting) {
             updateNewConnection();
         }
-    })
+    });
 
     $(window).keydown(function(e) {
         // check to see if any text box is selected
@@ -195,21 +202,21 @@ $(function() {
                             success: function(result) {}
                         });
                     }
-                })
+                });
         }
 
-        multiSelect = e.shiftKey
-    })
+        multiSelect = e.shiftKey;
+    });
 
     $(window).keyup(function(e) {
-        multiSelect = e.shiftKey
-    })
+        multiSelect = e.shiftKey;
+    });
 
     $(window).smartresize(function(e) {
         svg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
-            .attr('height', window.innerHeight)
+            .attr('height', window.innerHeight);
     });
 
     $('#create-input').focusout(function() {
@@ -237,10 +244,10 @@ $(function() {
         } else {
             $(this).addClass('log-max');
         }
-    })
+    });
 
     function createBlock() {
-        var blockType = $('#create-input').val()
+        var blockType = $('#create-input').val();
         if (!library.hasOwnProperty(blockType)) {
             return;
         }
@@ -281,7 +288,7 @@ $(function() {
                 data: "lost connection to Streamtools. Retrying..."
             }
         });
-        logPush(tmpl)
+        logPush(tmpl);
 
         disconnected();
         if (ui.ws.readyState == 3) {
@@ -306,7 +313,7 @@ $(function() {
         blocks.length = 0;
         connections.length = 0;
         isConnecting = false;
-        newConn = {}
+        newConn = {};
         update();
     }
 
@@ -325,10 +332,10 @@ $(function() {
                         id: logData.Log[i].Id,
                     }
                 });
-                logPush(tmpl)
+                logPush(tmpl);
             }
         };
-        this.ws.onclose = logReconnect
+        this.ws.onclose = logReconnect;
     }
 
     function uiReader() {
@@ -342,7 +349,7 @@ $(function() {
                     data: "connected to Streamtools " + version
                 }
             });
-            logPush(tmpl)
+            logPush(tmpl);
             _this.ws.send('get_state');
         };
         this.ws.onclose = uiReconnect;
@@ -365,13 +372,13 @@ $(function() {
                 case 'DELETE':
                     for (var i = 0; i < blocks.length; i++) {
                         if (uiMsg.Data.Id == blocks[i].Id) {
-                            blocks.splice(i, 1)
+                            blocks.splice(i, 1);
                             break;
                         }
                     }
                     for (var i = 0; i < connections.length; i++) {
                         if (uiMsg.Data.Id == connections[i].Id) {
-                            connections.splice(i, 1)
+                            connections.splice(i, 1);
                             break;
                         }
                     }
@@ -415,6 +422,30 @@ $(function() {
     }
 
     function update() {
+        control = control.data(blocks, function(d) {
+            return d.Id;
+        });
+
+        control.enter().append('div')
+            .classed('controller', true)
+            .attr('data-id', function(d) {
+                return '_' + d.Id;
+            })
+            .each(function(d) {
+                var rendered = _.template(controllerTemplate, {
+                    data: {
+                        Id: d.Id,
+                        Type: d.Type,
+                        routes: [{
+                            Id: "whocares"
+                        }, {
+                            Id: "OK!"
+                        }]
+                    }
+                });
+                d3.select(this).html(rendered).select('.title').call(dragTitle);
+            });
+
         node = node.data(blocks, function(d) {
             return d.Id;
         });
@@ -442,10 +473,10 @@ $(function() {
             .on('mousedown', function() {
                 if (!multiSelect) {
                     d3.selectAll('.selected')
-                        .classed('selected', false)
+                        .classed('selected', false);
                 }
                 d3.select(this.parentNode).select('.idrect')
-                    .classed('selected', true)
+                    .classed('selected', true);
             });
 
         idRects
@@ -460,10 +491,20 @@ $(function() {
             .on('mousedown', function() {
                 if (!multiSelect) {
                     d3.selectAll('.selected')
-                        .classed('selected', false)
+                        .classed('selected', false);
                 }
                 d3.select(this)
-                    .classed('selected', true)
+                    .classed('selected', true);
+            })
+            .on('dblclick', function(d) {
+                d3.select('[data-id=_' + d.Id + ']')
+                    .style('display', 'block')
+                    .style('top', function(d) {
+                        return d.Position.Y;
+                    })
+                    .style('left', function(d) {
+                        return d.Position.X + d.width + 10;
+                    })
             });
 
         node.attr('transform', function(d) {
@@ -525,7 +566,7 @@ $(function() {
             })
             .on('mouseout', function(d) {
                 return tooltip.style('visibility', 'hidden');
-            })
+            });
 
         queryRoutes.exit().remove();
 
@@ -621,10 +662,10 @@ $(function() {
             .on('mousedown', function() {
                 if (!multiSelect) {
                     d3.selectAll('.selected')
-                        .classed('selected', false)
+                        .classed('selected', false);
                 }
                 d3.select(this)
-                    .classed('selected', true)
+                    .classed('selected', true);
             });
 
         edgeLabel.exit().remove();
@@ -660,7 +701,7 @@ $(function() {
             .attr('cy', function(d) {
                 return d.edgePos.y;
             });
-        requestAnimationFrame(updatePings)
+        requestAnimationFrame(updatePings);
     }
 
     // updateLinks() is too slow!
@@ -707,7 +748,7 @@ $(function() {
             'FromId': null,
             'ToId': null,
             'ToRoute': null
-        }
+        };
 
         if (newConn.startType == 'out') {
             connReq.FromId = newConn.start.Id;

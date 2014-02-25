@@ -478,13 +478,14 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		Id:   s.Id,
 	}
 
+	b, err := s.manager.GetBlock(vars["id"])
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+	}
+
 	loghub.UI <- &loghub.LogMsg{
 		Type: loghub.UPDATE,
-		Data: struct {
-			Id string
-		}{
-			vars["id"],
-		},
+		Data: b,
 		Id: s.Id,
 	}
 

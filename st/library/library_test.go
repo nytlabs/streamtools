@@ -30,6 +30,8 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"map":            NewMap,
 		"histogram":      NewHistogram,
 		"timeseries":     NewTimeseries,
+		"gaussian":       NewGaussian,
+		"zipf":           NewZipf,
 	}
 
 	chans := blocks.BlockChans{
@@ -221,11 +223,13 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
+			log.Println("got query message")
 			if !reflect.DeepEqual(messageI, ruleMsg) {
 				c.Fail()
 			}
 
 		case message := <-outChan:
+			log.Println("got message")
 			log.Println(message)
 
 		case err := <-ch.ErrChan:
@@ -520,6 +524,60 @@ func (s *StreamSuite) TestHistogram(c *C) {
 func (s *StreamSuite) TestTimeseries(c *C) {
 	log.Println("testing Timeseries")
 	b, ch := newBlock("testingTimeseries", "timeseries")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	log.Println("adding")
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	log.Println("added")
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+			log.Println("out")
+		}
+	}
+}
+
+func TestGaussian(t *testing.T) {
+	loghub.Start()
+	log.Println("testing Gaussian")
+	b, c := newBlock("testingGaussian", "gaussian")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestZipf(t *testing.T) {
+	loghub.Start()
+	log.Println("testing Zipf")
+	b, c := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{

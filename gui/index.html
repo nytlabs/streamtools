@@ -20,6 +20,14 @@
     <span class="ui-log">client: <%= item.data %></span>
 </script>
 
+<script type="text/template" id="controller-template">
+    <div class="title"><%= data.Id %> (<%=data.Type%>)</div>
+    <% for(var i = 0; i < data.routes.length; i++ ){ %>
+        <%= data.routes[i].Id %>
+    <% } %>
+    <div class="bottom"></div>
+</script>
+
 </head>
 <body>
 <div id="log"></div>
