@@ -2,6 +2,7 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"time"
 )
 
@@ -40,14 +41,8 @@ func (b *Ticker) Run() {
 			}
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			rule, ok := ruleI.(map[string]interface{})
-			if !ok {
-				b.Error("bad input")
-				break
-			}
-
-			intervalS, ok := rule["Interval"].(string)
-			if !ok {
+			intervalS, err := util.ParseString(ruleI, "Interval")
+			if err != nil {
 				b.Error("bad input")
 				break
 			}
