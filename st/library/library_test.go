@@ -29,6 +29,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"fromPost":       NewFromPost,
 		"map":            NewMap,
 		"histogram":      NewHistogram,
+		"timeseries":     NewTimeseries,
 	}
 
 	chans := blocks.BlockChans{
@@ -508,6 +509,31 @@ func (s *StreamSuite) TestHistogram(c *C) {
 		case err := <-ch.ErrChan:
 			if err != nil {
 				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestTimeseries(t *testing.T) {
+	log.Println("testing Timeseries")
+	b, c := newBlock("testingTimeseries", "timeseries")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
 			} else {
 				return
 			}
