@@ -3,6 +3,7 @@ package library
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/loghub"
+	. "launchpad.net/gocheck"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -50,8 +51,19 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 }
 
-func TestToFromNSQ(t *testing.T) {
+// Hook up gocheck into the "go test" runner.
+//func (s *StreamSuite) Test(c *C) { TestingT(t) }
+func Test(t *testing.T) { TestingT(t) }
+
+type StreamSuite struct{}
+
+func (s *StreamSuite) SetUpSuite(c *C) {
 	loghub.Start()
+}
+
+var _ = Suite(&StreamSuite{})
+
+func (s *StreamSuite) TestToFromNSQ(c *C) {
 	log.Println("testing toNSQ")
 
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
@@ -92,13 +104,13 @@ func TestToFromNSQ(t *testing.T) {
 
 		case err := <-toC.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
 		case err := <-fromC.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -106,40 +118,38 @@ func TestToFromNSQ(t *testing.T) {
 	}
 }
 
-func TestCount(t *testing.T) {
-	loghub.Start()
-
+func (s *StreamSuite) TestCount(c *C) {
 	log.Println("testing Count")
-	b, c := newBlock("testingCount", "count")
+	b, ch := newBlock("testingCount", "count")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"Window": "1s"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
 		case message := <-outChan:
 			log.Println(message)
 
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -147,39 +157,38 @@ func TestCount(t *testing.T) {
 	}
 }
 
-func TestToFile(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestToFile(c *C) {
 	log.Println("testing toFile")
-	b, c := newBlock("testingToFile", "toFile")
+	b, ch := newBlock("testingToFile", "toFile")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"Filename": "foobar.log"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
 		case message := <-outChan:
 			log.Println(message)
 
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -187,29 +196,28 @@ func TestToFile(t *testing.T) {
 	}
 }
 
-func TestFromSQS(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestFromSQS(c *C) {
 	log.Println("testing FromSQS")
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 	}))
 	defer ts.Close()
 
-	b, c := newBlock("testingFromSQS", "fromSQS")
+	b, ch := newBlock("testingFromSQS", "fromSQS")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
@@ -217,17 +225,16 @@ func TestFromSQS(t *testing.T) {
 		case messageI := <-queryOutChan:
 			log.Println("got query message")
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
 		case message := <-outChan:
 			log.Println("got message")
 			log.Println(message)
 
-		case err := <-c.ErrChan:
-			log.Println("got error")
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -235,38 +242,36 @@ func TestFromSQS(t *testing.T) {
 	}
 }
 
-func TestSync(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestSync(c *C) {
 	log.Println("testing Sync")
-	b, c := newBlock("testingSync", "sync")
+	b, ch := newBlock("testingSync", "sync")
 	go blocks.BlockRoutine(b)
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
-	err := <-c.ErrChan
+	err := <-ch.ErrChan
 	if err != nil {
-		t.Errorf(err.Error())
+		c.Errorf(err.Error())
 	}
 }
 
-func TestTicker(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestTicker(c *C) {
 	log.Println("testing Ticker")
-	b, c := newBlock("testingTicker", "ticker")
+	b, ch := newBlock("testingTicker", "ticker")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -275,39 +280,38 @@ func TestTicker(t *testing.T) {
 	}
 }
 
-func TestFilter(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestFilter(c *C) {
 	log.Println("testing Filter")
-	b, c := newBlock("testingFilter", "filter")
+	b, ch := newBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"Filter": ".device == 'iPhone'"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
 		case message := <-outChan:
 			log.Println(message)
 
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -315,39 +319,38 @@ func TestFilter(t *testing.T) {
 	}
 }
 
-func TestMask(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestMask(c *C) {
 	log.Println("testing Mask")
-	b, c := newBlock("testingMask", "mask")
+	b, ch := newBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"Mask": "{}"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
 		case message := <-outChan:
 			log.Println(message)
 
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -355,24 +358,23 @@ func TestMask(t *testing.T) {
 	}
 }
 
-func TestGetHTTP(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestGetHTTP(c *C) {
 	log.Println("testing GetHTTP")
-	b, c := newBlock("testingGetHTTP", "getHTTP")
+	b, ch := newBlock("testingGetHTTP", "getHTTP")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -381,30 +383,29 @@ func TestGetHTTP(t *testing.T) {
 	}
 }
 
-func TestFromHTTPStream(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	log.Println("testing FromHTTPStream")
-	b, c := newBlock("testingFromHTTPStream", "fromHTTPStream")
+	b, ch := newBlock("testingFromHTTPStream", "fromHTTPStream")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 
 	ruleMsg := map[string]interface{}{"Endpoint": "http://www.nytimes.com"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -413,29 +414,28 @@ func TestFromHTTPStream(t *testing.T) {
 	}
 }
 
-func TestFromPost(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestFromPost(c *C) {
 	log.Println("testing FromPost")
-	b, c := newBlock("testingPst", "fromPost")
+	b, ch := newBlock("testingPst", "fromPost")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 
 	inputMsg := map[string]interface{}{"Foo": "BAR"}
 	inputBlock := &blocks.Msg{Msg: inputMsg, Route: "in"}
-	c.InChan <- inputBlock
+	ch.InChan <- inputBlock
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -444,13 +444,12 @@ func TestFromPost(t *testing.T) {
 	}
 }
 
-func TestMap(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestMap(c *C) {
 	log.Println("testing Map")
-	b, c := newBlock("testingMap", "map")
+	b, ch := newBlock("testingMap", "map")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
@@ -458,24 +457,24 @@ func TestMap(t *testing.T) {
 	mapMsg := map[string]interface{}{"Foo": ".bar"}
 	ruleMsg := map[string]interface{}{"Map": mapMsg}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			message := messageI.(map[string]interface{})
 			if !reflect.DeepEqual(message["Map"], ruleMsg["Map"]) {
-				t.Fail()
+				c.Fail()
 			}
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -484,37 +483,36 @@ func TestMap(t *testing.T) {
 	}
 }
 
-func TestHistogram(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestHistogram(c *C) {
 	log.Println("testing Histogram")
-	b, c := newBlock("testingHistogram", "histogram")
+	b, ch := newBlock("testingHistogram", "histogram")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 
 	ruleMsg := map[string]interface{}{"Window": "10s", "Path": ".data"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	c.InChan <- toRule
+	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	c.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				t.Fail()
+				c.Fail()
 			}
 
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -523,26 +521,25 @@ func TestHistogram(t *testing.T) {
 	}
 }
 
-func TestTimeseries(t *testing.T) {
-	loghub.Start()
+func (s *StreamSuite) TestTimeseries(c *C) {
 	log.Println("testing Timeseries")
-	b, c := newBlock("testingTimeseries", "timeseries")
+	b, ch := newBlock("testingTimeseries", "timeseries")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	log.Println("adding")
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	log.Println("added")
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -557,18 +554,18 @@ func TestGaussian(t *testing.T) {
 	b, c := newBlock("testingGaussian", "gaussian")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
@@ -583,18 +580,18 @@ func TestZipf(t *testing.T) {
 	b, c := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	c.AddChan <- &blocks.AddChanMsg{
+	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		c.QuitChan <- true
+		ch.QuitChan <- true
 	})
 	for {
 		select {
-		case err := <-c.ErrChan:
+		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
