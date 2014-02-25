@@ -29,6 +29,8 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		"map":            NewMap,
 		"histogram":      NewHistogram,
 		"timeseries":     NewTimeseries,
+		"gaussian":       NewGaussian,
+		"zipf":           NewZipf,
 	}
 
 	chans := blocks.BlockChans{
@@ -522,8 +524,63 @@ func TestHistogram(t *testing.T) {
 }
 
 func TestTimeseries(t *testing.T) {
+	loghub.Start()
 	log.Println("testing Timeseries")
 	b, c := newBlock("testingTimeseries", "timeseries")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	log.Println("adding")
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	log.Println("added")
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+			log.Println("out")
+		}
+	}
+}
+
+func TestGaussian(t *testing.T) {
+	loghub.Start()
+	log.Println("testing Gaussian")
+	b, c := newBlock("testingGaussian", "gaussian")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	c.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		c.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-c.ErrChan:
+			if err != nil {
+				t.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func TestZipf(t *testing.T) {
+	loghub.Start()
+	log.Println("testing Zipf")
+	b, c := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	c.AddChan <- &blocks.AddChanMsg{
