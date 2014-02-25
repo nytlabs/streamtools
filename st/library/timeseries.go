@@ -40,7 +40,7 @@ func (b *Timeseries) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")
-	b.quit = b.InRoute("quit")
+	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
