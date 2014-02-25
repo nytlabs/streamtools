@@ -35,7 +35,9 @@ func (b *Gaussian) Setup() {
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Gaussian) Run() {
 	var err error
-	var mean, stddev float64
+	mean := 0.0
+	stddev := 1.0
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -57,7 +59,9 @@ func (b *Gaussian) Run() {
 			return
 		case <-b.inpoll:
 			// deal with a poll request
-			b.out <- rand.NormFloat64()*stddev + mean
+			b.out <- map[string]interface{}{
+				"sample": rand.NormFloat64()*stddev + mean,
+			}
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			out := map[string]interface{}{
