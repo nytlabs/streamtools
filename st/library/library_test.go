@@ -61,7 +61,7 @@ func (s *StreamSuite) SetUpSuite(c *C) {
 
 var _ = Suite(&StreamSuite{})
 
-func (s *StreamSuite) TestHelloWorld(c *C) {
+func (s *StreamSuite) TestToFromNSQ(c *C) {
 	log.Println("testing toNSQ")
 
 	toB, toC := newBlock("testingToNSQ", "toNSQ")
