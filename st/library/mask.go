@@ -2,7 +2,6 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -13,7 +12,6 @@ type Mask struct {
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
-	mask      interface{}
 }
 
 // a bit of boilerplate for streamtools
@@ -69,26 +67,23 @@ func maskJSON(maskMap map[string]interface{}, input map[string]interface{}) map[
 // The resulting object after the application of Mask would be:
 //        {"a":24, "b":{"d":[1,3,4]}, "x":{"y":5, "z":10}}
 func (b *Mask) Run() {
+	mask := make(map[string]interface{})
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			mask, err := util.ParseString(ruleI, "Mask")
-			if err != nil {
-				b.Error(err)
-				continue
+			rule := ruleI.(map[string]interface{})
+			if tmp, ok := rule["Mask"].(map[string]interface{}); ok {
+				mask = tmp
 			}
-
-			b.mask = mask
-
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
-				"Mask": b.mask.(string),
+				"Mask": mask,
 			}
 		case msg := <-b.in:
 			msgMap, msgOk := msg.(map[string]interface{})
-			maskMap, maskOk := b.mask.(map[string]interface{})
-			if msgOk && maskOk {
-				b.out <- maskJSON(maskMap, msgMap)
+			if msgOk {
+				b.out <- maskJSON(mask, msgMap)
 			}
 		case <-b.quit:
 			// quit the block
