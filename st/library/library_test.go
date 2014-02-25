@@ -517,7 +517,7 @@ func (s *StreamSuite) TestHistogram(c *C) {
 	}
 }
 
-func TestTimeseries(t *testing.T) {
+func (s *StreamSuite) TestTimeseries(c *C) {
 	log.Println("testing Timeseries")
 	b, ch := newBlock("testingTimeseries", "timeseries")
 	go blocks.BlockRoutine(b)
@@ -533,7 +533,7 @@ func TestTimeseries(t *testing.T) {
 		select {
 		case err := <-ch.ErrChan:
 			if err != nil {
-				t.Errorf(err.Error())
+				c.Errorf(err.Error())
 			} else {
 				return
 			}
