@@ -38,6 +38,4 @@ health warning
 
 contributing
 ============
-As always: pull requests are welcome! Our focus at the moment (Spring '14) is to get a fully functioning system together that we can demonstrate. Therefore new blocks are likely to be merged in with more energy than large re-writes of the back-end. Having said that, there is plenty that can and should be done behind the scenes, and we always have an eye to the next major re-factor. 
-
-If you'd like to make a new block the best place to start is to look at the skeleton blocks. We have a [skeleton state](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_state.go) block which demonstrates how to lay out a block that maintains a state. We also have a [skeleton transfer](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_transfer.go) block which demonstrates how to lay out a block that emits zero or one messages upon reciept of an inbound message.
+At the moment (Feb 14) we are in the midst of a large re-write! So stay tuned: you will see large changes in March. Contributing after the rewrite will be a lot easier!
