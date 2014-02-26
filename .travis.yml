@@ -7,4 +7,5 @@ install:
   - go get github.com/bitly/go-nsq
   - go get github.com/nikhan/go-sqsReader
   - go get github.com/nytlabs/gojee
+  - go get launchpad.net/gocheck
 script: "cd st/library && go test"
