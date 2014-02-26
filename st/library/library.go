@@ -8,18 +8,21 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"count":          NewCount,
 	"ticker":         NewTicker,
 	"fromnsq":        NewFromNSQ,
+	"fromhttpstream": NewFromHTTPStream,
+	"fromsqs":        NewFromSQS,
+	"frompost":       NewFromPost,
 	"tonsq":          NewToNSQ,
 	"tofile":         NewToFile,
 	"tolog":          NewToLog,
 	"mask":           NewMask,
 	"filter":         NewFilter,
-	"fromsqs":        NewFromSQS,
 	"sync":           NewSync,
 	"gethttp":        NewGetHTTP,
-	"fromhttpstream": NewFromHTTPStream,
 	"gaussian":       NewGaussian,
 	"zipf":           NewZipf,
 	"map":            NewMap,
+	"histogram":      NewHistogram,
+	"timeseries":     NewTimeseries,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}

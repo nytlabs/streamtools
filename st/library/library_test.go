@@ -14,26 +14,6 @@ import (
 
 func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
-	library := map[string]func() blocks.BlockInterface{
-		"count":          NewCount,
-		"toFile":         NewToFile,
-		"fromNSQ":        NewFromNSQ,
-		"toNSQ":          NewToNSQ,
-		"fromSQS":        NewFromSQS,
-		"ticker":         NewTicker,
-		"filter":         NewFilter,
-		"mask":           NewMask,
-		"fromHTTPStream": NewFromHTTPStream,
-		"getHTTP":        NewGetHTTP,
-		"sync":           NewSync,
-		"fromPost":       NewFromPost,
-		"map":            NewMap,
-		"histogram":      NewHistogram,
-		"timeseries":     NewTimeseries,
-		"gaussian":       NewGaussian,
-		"zipf":           NewZipf,
-	}
-
 	chans := blocks.BlockChans{
 		InChan:    make(chan *blocks.Msg),
 		QueryChan: make(chan *blocks.QueryMsg),
@@ -44,7 +24,7 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 	}
 
 	// actual block
-	b := library[kind]()
+	b := Blocks[kind]()
 	b.Build(chans)
 
 	return b, chans
@@ -66,7 +46,7 @@ var _ = Suite(&StreamSuite{})
 func (s *StreamSuite) TestToFromNSQ(c *C) {
 	log.Println("testing toNSQ")
 
-	toB, toC := newBlock("testingToNSQ", "toNSQ")
+	toB, toC := newBlock("testingToNSQ", "tonsq")
 	go blocks.BlockRoutine(toB)
 
 	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
@@ -83,7 +63,7 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 
 	log.Println("testing fromNSQ")
 
-	fromB, fromC := newBlock("testingfromNSQ", "fromNSQ")
+	fromB, fromC := newBlock("testingfromNSQ", "fromnsq")
 	go blocks.BlockRoutine(fromB)
 
 	outChan := make(chan *blocks.Msg)
@@ -159,7 +139,7 @@ func (s *StreamSuite) TestCount(c *C) {
 
 func (s *StreamSuite) TestToFile(c *C) {
 	log.Println("testing toFile")
-	b, ch := newBlock("testingToFile", "toFile")
+	b, ch := newBlock("testingToFile", "tofile")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"Filename": "foobar.log"}
@@ -203,7 +183,7 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 	}))
 	defer ts.Close()
 
-	b, ch := newBlock("testingFromSQS", "fromSQS")
+	b, ch := newBlock("testingFromSQS", "fromsqs")
 	go blocks.BlockRoutine(b)
 
 	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret"}
@@ -360,7 +340,7 @@ func (s *StreamSuite) TestMask(c *C) {
 
 func (s *StreamSuite) TestGetHTTP(c *C) {
 	log.Println("testing GetHTTP")
-	b, ch := newBlock("testingGetHTTP", "getHTTP")
+	b, ch := newBlock("testingGetHTTP", "gethttp")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -385,7 +365,7 @@ func (s *StreamSuite) TestGetHTTP(c *C) {
 
 func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	log.Println("testing FromHTTPStream")
-	b, ch := newBlock("testingFromHTTPStream", "fromHTTPStream")
+	b, ch := newBlock("testingFromHTTPStream", "fromhttpstream")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -416,7 +396,7 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 
 func (s *StreamSuite) TestFromPost(c *C) {
 	log.Println("testing FromPost")
-	b, ch := newBlock("testingPst", "fromPost")
+	b, ch := newBlock("testingPst", "frompost")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -548,10 +528,10 @@ func (s *StreamSuite) TestTimeseries(c *C) {
 	}
 }
 
-func TestGaussian(t *testing.T) {
+func (s *StreamSuite) TestGaussian(c *C) {
 	loghub.Start()
 	log.Println("testing Gaussian")
-	b, c := newBlock("testingGaussian", "gaussian")
+	b, ch := newBlock("testingGaussian", "gaussian")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -574,10 +554,10 @@ func TestGaussian(t *testing.T) {
 	}
 }
 
-func TestZipf(t *testing.T) {
+func (s *StreamSuite) TestZipf(c *C) {
 	loghub.Start()
 	log.Println("testing Zipf")
-	b, c := newBlock("testingZipf", "zipf")
+	b, ch := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
