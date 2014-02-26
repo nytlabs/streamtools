@@ -32,14 +32,19 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 }
 
 // Hook up gocheck into the "go test" runner.
-//func (s *StreamSuite) Test(c *C) { TestingT(t) }
 func Test(t *testing.T) { TestingT(t) }
 
 type StreamSuite struct{}
 
+// this is run once before the entire test SUITE
 func (s *StreamSuite) SetUpSuite(c *C) {
 	loghub.Start()
 }
+
+// this would be run once before EACH of the tests
+// func (s *StreamSuite) SetUpTest(c *C) {
+//   // do something
+// }
 
 var _ = Suite(&StreamSuite{})
 
@@ -52,6 +57,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
+
+	toQueryChan := make(chan interface{})
+	toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
 
 	nsqMsg := map[string]interface{}{"Foo": "Bar"}
 	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
@@ -73,14 +81,23 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
 	fromC.InChan <- fromRule
 
+	fromQueryChan := make(chan interface{})
+	fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		fromC.QuitChan <- true
 	})
 
 	for {
 		select {
+		case messageI := <-fromQueryChan:
+			c.Assert(messageI, DeepEquals, nsqSetup)
+
+		case messageI := <-toQueryChan:
+			c.Assert(messageI, DeepEquals, ruleMsg)
+
 		case message := <-outChan:
-			log.Println(message)
+			log.Println("printing message from outChan:", message)
 
 		case err := <-toC.ErrChan:
 			if err != nil {
