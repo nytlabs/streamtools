@@ -8,4 +8,6 @@ install:
   - go get github.com/nikhan/go-sqsReader
   - go get github.com/nytlabs/gojee
   - go get launchpad.net/gocheck
+  - go get github.com/mattbaird/elastigo/api
+  - go get github.com/mattbaird/elastigo/core
 script: "cd st/library && go test"
