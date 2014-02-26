@@ -534,7 +534,7 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		Id:   s.Id,
 	}
 
-	b, err := s.manager.GetBlock(vars["id"])
+	/*b, err := s.manager.GetBlock(vars["id"])
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 	}
@@ -543,7 +543,7 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		Type: loghub.UPDATE,
 		Data: b,
 		Id: s.Id,
-	}
+	}*/
 
 	s.apiWrap(w, r, 200, s.response("OK"))
 }

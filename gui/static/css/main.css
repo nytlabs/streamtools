@@ -158,8 +158,15 @@
 }
 
 .controller .bottom {
-    min-width: 200px;
     background-color: rgba(158,158,158,1);
     height: 5px;
     border-top: 1px solid white;
+}
+
+.handle{
+    width: 5px;
+    height: 5px;
+    border-left: 1px solid white;
+    cursor: pointer;
+    float: right;
 }

@@ -137,6 +137,13 @@ $(function() {
                 left: pos.left + mouse.dx,
                 top: pos.top + mouse.dy
             });
+        });
+
+    var resize = d3.behavior.drag()
+        .on('drag', function(d, i) {
+            var controller = $('[data-id=_' + d.Id + ']')
+            controller.width(controller.width() + d3.event.dx)
+            controller.height(controller.height() + d3.event.dy)
         })
 
     // ui element for new connection
@@ -358,13 +365,13 @@ $(function() {
         this.ws.onmessage = function(d) {
             var uiMsg = JSON.parse(d.data);
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
-            console.log(uiMsg)
             switch (uiMsg.Type) {
-                case 'UPDATE_RULE':
+                case 'RULE_UPDATE':
                     _this.ws.send(JSON.stringify({
                         "action": "block",
                         "id": uiMsg.Id
                     }));
+                    break;
                 case 'CREATE':
                     if (isBlock) {
                         // we need to get typeinfo from the library
@@ -393,7 +400,6 @@ $(function() {
                     update();
                     break;
                 case 'UPDATE':
-
                     if (uiMsg.Data.hasOwnProperty('Position')) {
                         var block = null;
                         for (var i = 0; i < blocks.length; i++) {
@@ -404,6 +410,8 @@ $(function() {
                         }
                         if (block !== null) {
                             block.Position = uiMsg.Data.Position;
+                            block.Rule = uiMsg.Data.Rule;
+                            d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
                             update();
                         }
                     }
@@ -434,25 +442,44 @@ $(function() {
             return d.Id;
         });
 
-        control.enter().append('div')
+        var controls = control.enter().append('div')
             .classed('controller', true)
             .attr('data-id', function(d) {
                 return '_' + d.Id;
-            })
-            .each(function(d) {
-                var rendered = _.template(controllerTemplate, {
-                    data: {
-                        Id: d.Id,
-                        Type: d.Type,
-                        routes: [{
-                            Id: "whocares"
-                        }, {
-                            Id: "OK!"
-                        }]
-                    }
-                });
-                d3.select(this).html(rendered).select('.title').call(dragTitle);
             });
+
+        var titles = controls.append('div')
+            .classed('title', true)
+            .html(function(d) {
+                return d.Id + ' (' + d.Type + ')';
+            })
+            .call(dragTitle);
+
+        var bodies = controls.append('div')
+            .classed('body', true)
+            .each(function(d) {
+                this.refresh = function() {
+                    d3.select(this).select('.body').html(_.template(controllerTemplate, {
+                        data: {
+                            Id: d.Id,
+                            Type: d.Type,
+                            Rule: d.Rule,
+                        }
+                    }));
+                };
+            });
+
+        var bottoms = controls.append('div')
+            .classed('bottom', true)
+            .append('div')
+            .classed('handle', true)
+            .call(resize);
+
+        controls.each(function(d) {
+            this.refresh = d3.select(this).select('.body')[0][0].refresh;
+        });
+
+        control.exit().remove();
 
         node = node.data(blocks, function(d) {
             return d.Id;

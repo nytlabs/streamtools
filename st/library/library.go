@@ -17,6 +17,7 @@ var Blocks = map[string] func() blocks.BlockInterface {
     "sync": NewSync,
     "gethttp": NewGetHTTP,
     "fromhttpstream": NewFromHTTPStream,
+    "map": NewMap,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
