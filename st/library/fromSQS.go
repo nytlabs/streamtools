@@ -5,7 +5,6 @@ import (
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -41,10 +40,8 @@ func (b *FromSQS) Run() {
 	var err error
 	fromReader := make(chan []byte)
 	for {
-		log.Println("fromSQS: for")
 		select {
 		case msgI := <-b.inrule:
-			log.Println("fromSQS: inrule")
 			SQSEndpoint, err = util.ParseString(msgI, "SQSEndpoint")
 			if err != nil {
 				b.Error(err)
@@ -63,38 +60,27 @@ func (b *FromSQS) Run() {
 				break
 			}
 
-			log.Println(SQSEndpoint)
-			log.Println(AccessKey)
-			log.Println(AccessSecret)
 			r := sqsReader.NewReader(SQSEndpoint, AccessKey, AccessSecret, fromReader)
-			log.Println("fromSQS starting reader")
 			go r.Start()
-			log.Println("fromSQS started reader")
 
 		case msg := <-fromReader:
-			log.Println("fromSQS: fromReader")
 			var outMsg interface{}
 			err := json.Unmarshal(msg, &outMsg)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			log.Println("fromSQS: sending Out")
 			b.out <- outMsg
-			log.Println("fromSQS: sent Out")
 		case <-b.quit:
-			log.Println("fromSQS: quit")
 			// quit the block
 			return
 		case respChan := <-b.queryrule:
-			log.Println("fromSQS: query rule")
 			// deal with a query request
 			respChan <- map[string]interface{}{
 				"SQSEndpoint":  SQSEndpoint,
 				"AccessKey":    AccessKey,
 				"AccessSecret": AccessSecret,
 			}
-			log.Println("fromSQS: sent response")
 		}
 	}
 }
