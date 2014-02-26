@@ -1,24 +1,24 @@
 BLDDIR = build
 GUIDIR = gui
-DAEMONDIR = daemon
+SERVERDIR = st/server
 BINARIES = st
 
 all: $(BINARIES)
 
 $(BLDDIR)/%:
 	go get github.com/jteeuwen/go-bindata/...
-	go-bindata -pkg=daemon -o daemon/static_bindata.go gui/...
+	go-bindata -pkg=server -o st/server/static_bindata.go gui/...
 	cd blocks && go get .
-	cd daemon && go get .
+	cd st/server && go get .
 	go build -o $(BLDDIR)/st ./st
 
-$(BLDDIR)/st: $(wildcard blocks/*.go daemon/*.go st/*.go)
+$(BLDDIR)/st: $(wildcard blocks/*.go $(SERVERDIR)/*.go st/*.go)
 
 $(BINARIES): %: $(BLDDIR)/%
 
 clean: 
 	rm -rf $(BLDDIR)
-	rm $(DAEMONDIR)/static_bindata.go
+	rm $(SERVERDIR)/static_bindata.go
 
 
 .PHONY: all

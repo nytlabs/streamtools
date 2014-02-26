@@ -1,16 +1,13 @@
 language: go
 
 go:
-  - 1.1
   - 1.2
-  - release
-  - tip
-  
-before_install:
-  - export GOPATH=/home/travis/gopath
-  - export PATH=$GOPATH/bin:$PATH
-  #- mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cd $GOPATH/src/github.com/nytlabs/streamtools
 
-install: make
+install:
+  - go get github.com/bitly/go-nsq
+  - go get github.com/nikhan/go-sqsReader
+  - go get github.com/nytlabs/gojee
+  - go get launchpad.net/gocheck
+  - go get github.com/mattbaird/elastigo/api
+  - go get github.com/mattbaird/elastigo/core
+script: "cd st/library && go test"
