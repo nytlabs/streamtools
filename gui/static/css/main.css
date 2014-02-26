@@ -157,11 +157,11 @@
     border: 1px solid black;
 }
 
-.controller .bottom {
+/*.controller .bottom {
     background-color: rgba(158,158,158,1);
     height: 5px;
     border-top: 1px solid white;
-}
+}*/
 
 .handle{
     width: 5px;
@@ -169,4 +169,24 @@
     border-left: 1px solid white;
     cursor: pointer;
     float: right;
+}
+
+.rule {
+    width: 100%;
+    background: rgba(158,158,158,1);
+    border:none;
+}
+
+.rule:focus{
+    background: white;
+}
+
+.update {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.update:hover {
+    background: rgba(140,140,140,1);
+    cursor: pointer;
 }

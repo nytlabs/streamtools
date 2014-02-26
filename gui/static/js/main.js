@@ -141,10 +141,10 @@ $(function() {
 
     var resize = d3.behavior.drag()
         .on('drag', function(d, i) {
-            var controller = $('[data-id=_' + d.Id + ']')
-            controller.width(controller.width() + d3.event.dx)
-            controller.height(controller.height() + d3.event.dy)
-        })
+            var controller = $('[data-id=_' + d.Id + ']');
+            controller.width(controller.width() + d3.event.dx);
+            controller.height(controller.height() + d3.event.dy);
+        });
 
     // ui element for new connection
     var newConnection = svg.select('.linkcontainer').append('path')
@@ -186,7 +186,7 @@ $(function() {
     $(window).keydown(function(e) {
         // check to see if any text box is selected
         // if so, don't allow multiselect
-        if ($('input').is(':focus')) {
+        if ($('input').is(':focus') || $('textarea').is(':focus')) {
             return;
         }
 
@@ -471,7 +471,40 @@ $(function() {
 
         var bottoms = controls.append('div')
             .classed('bottom', true)
-            .append('div')
+
+        bottoms.append('div')
+            .classed('update', true)
+            .text('update')
+            .on('click', function(d) {
+                var rule = {};
+                for (var key in d.Rule) {
+                    var ruleInput = $('#c_' + d.Id + "_" + key);
+                    var val = ruleInput.val();
+                    var type = ruleInput.attr("data-type");
+                    switch (type) {
+                        case 'boolean':
+                            rule[key] = val === 'true' ? true : false;
+                            break;
+                        case 'string':
+                            rule[key] = val;
+                            break;
+                        case 'object':
+                            rule[key] = JSON.parse(val);
+                            break;
+                        case 'number':
+                            rule[key] = parseFloat(val);
+                            break;
+                    }
+                }
+                $.ajax({
+                    url: '/blocks/' + d.Id + '/rule',
+                    type: 'POST',
+                    data: JSON.stringify(rule),
+                    success: function(result) {}
+                });
+            });
+
+        bottoms.append('div')
             .classed('handle', true)
             .call(resize);
 
