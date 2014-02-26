@@ -1,19 +1,7 @@
 language: go
 
 go:
-  - 1.1
   - 1.2
-  - release
-  - tip
-  
-before_install:
-  - export GOPATH=/home/travis/gopath
-  - export PATH=$GOPATH/bin:$PATH
-  #- mkdir -p $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cp -r * $GOPATH/src/github.com/nytlabs/streamtools 
-  #- cd $GOPATH/src/github.com/nytlabs/streamtools
-
-install: make
 
 branches:
   only:
