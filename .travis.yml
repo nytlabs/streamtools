@@ -3,8 +3,8 @@ language: go
 go:
   - 1.2
 
-branches:
-  only:
-    - redesign
-
+install:
+  - go get github.com/bitly/go-nsq
+  - go get github.com/nikhan/go-sqsReader
+  - go get github.com/nytlabs/gojee
 script: "cd st/library && go test"
