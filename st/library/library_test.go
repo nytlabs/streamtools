@@ -304,7 +304,11 @@ func (s *StreamSuite) TestMask(c *C) {
 	b, ch := newBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"Mask": "{}"}
+	ruleMsg := map[string]interface{}{
+		"Mask": map[string]interface{}{
+			".foo": "{}",
+		},
+	}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
@@ -322,6 +326,7 @@ func (s *StreamSuite) TestMask(c *C) {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
 				c.Fail()
 			}
 
