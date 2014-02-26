@@ -14,3 +14,9 @@ before_install:
   #- cd $GOPATH/src/github.com/nytlabs/streamtools
 
 install: make
+
+branches:
+  only:
+    - redesign
+
+script: "cd st/library && go test"
