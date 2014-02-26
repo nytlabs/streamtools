@@ -133,6 +133,8 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		b.updateRule(blockInfo.Id)
 	}
 
 	return blockInfo, nil
