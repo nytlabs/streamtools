@@ -127,7 +127,13 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	// save state
 	blockInfo.chans = newBlockChans
 	b.blockMap[blockInfo.Id] = blockInfo
-	b.updateRule(blockInfo.Id)
+
+	if blockInfo.Rule != nil {
+		err := b.Send(blockInfo.Id, "rule", blockInfo.Rule)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	return blockInfo, nil
 }

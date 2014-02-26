@@ -286,6 +286,8 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 			Id:   s.Id,
 		}
 
+		log.Println("BLOCK IS :", eblock)
+
 		loghub.Log <- &loghub.LogMsg{
 			Type: loghub.CREATE,
 			Data: fmt.Sprintf("Block %s", block.Id),

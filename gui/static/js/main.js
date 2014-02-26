@@ -365,6 +365,7 @@ $(function() {
         this.ws.onmessage = function(d) {
             var uiMsg = JSON.parse(d.data);
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
+
             switch (uiMsg.Type) {
                 case 'RULE_UPDATE':
                     _this.ws.send(JSON.stringify({
