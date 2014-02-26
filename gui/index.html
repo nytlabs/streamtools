@@ -21,11 +21,39 @@
 </script>
 
 <script type="text/template" id="controller-template">
-    <div class="title"><%= data.Id %> (<%=data.Type%>)</div>
-    <% for(var i = 0; i < data.routes.length; i++ ){ %>
-        <%= data.routes[i].Id %>
-    <% } %>
-    <div class="bottom"></div>
+    <%
+    _.each(data.Rule, function(v, k){ 
+    %>
+        <div class="name"><%= k %></div>
+    <%
+            switch (typeof(v)){
+                case 'string':
+    %>
+         <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="string" value="<%= v %>">
+    <%             
+                break;
+                case 'number':
+    %>
+        <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="number" value="<%= v %>">
+    <%
+                break;
+                case 'boolean': 
+    %>
+        <select id="<%= 'c_' + data.Id + '_' + k %>" data-type="boolean" >
+            <option value="false" <%= !v ? 'selected' : '' %> >false</option>
+            <option value="true" <%= v ? 'selected' : '' %> >true</option>
+        </select>
+
+    <%
+                break;
+                case 'object':
+    %>
+        <textarea class="rule" name="Text1" cols="25" rows="10" id="<%= 'c_' + data.Id + '_' + k %>" data-type="object" ><%= JSON.stringify(v, null, 4) %></textarea>
+    <%
+                break;
+            }
+    }) 
+    %>
 </script>
 
 </head>

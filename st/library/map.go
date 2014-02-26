@@ -163,7 +163,7 @@ func (b *Map) Run() {
 			// deal with a query request
 			rule := map[string]interface{}{
 				"Map":      mapRule,
-				"Additive": true,
+				"Additive": additive,
 			}
 			respChan <- rule
 		}

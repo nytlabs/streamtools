@@ -16,6 +16,7 @@ const (
 	DELETE
 	UPDATE
 	QUERY
+	RULE_UPDATE
 )
 
 const (
@@ -55,6 +56,7 @@ var LogInfo = map[int]string{
 	5: "DELETE",
 	6: "UPDATE",
 	7: "QUERY ",
+	8: "RULE_UPDATE",
 }
 
 var LogInfoColor = map[int]string{
@@ -65,7 +67,8 @@ var LogInfoColor = map[int]string{
 	4: FgCyan + "CREATE" + Reset,
 	5: FgCyan + "DELETE" + Reset,
 	6: FgCyan + "UPDATE" + Reset,
-	7: FgCyan + "QUERY " + Reset,
+	7: FgCyan + "QUERY" + Reset,
+	8: FgCyan + "UPDATE" + Reset,
 }
 
 type LogMsg struct {

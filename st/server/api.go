@@ -147,34 +147,90 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	go func(r chan string) {
 		for {
 			select {
-			case <-r:
-				// emit block configuration on message
-				s.mu.Lock()
-				for _, v := range s.manager.ListBlocks() {
+			case msgWS := <-r:
+				var msg map[string]interface{}
+				err := json.Unmarshal([]byte(msgWS), &msg)
+				if err != nil {
+					loghub.Log <- &loghub.LogMsg{
+						Type: loghub.ERROR,
+						Data: err.Error(),
+						Id:   s.Id,
+					}
+					break
+				}
+
+				_, ok := msg["action"]
+				if !ok {
+					loghub.Log <- &loghub.LogMsg{
+						Type: loghub.ERROR,
+						Data: "could not understand websocket request",
+						Id:   s.Id,
+					}
+					break
+				}
+
+				actStr, ok := msg["action"].(string)
+				if !ok {
+					loghub.Log <- &loghub.LogMsg{
+						Type: loghub.ERROR,
+						Data: "could not understand websocket request",
+						Id:   s.Id,
+					}
+					break
+				}
+
+				switch actStr {
+				case "export":
+					// emit block configuration on message
+					s.mu.Lock()
+					for _, v := range s.manager.ListBlocks() {
+						out, _ := json.Marshal(struct {
+							Type string
+							Data interface{}
+							Id   string
+						}{
+							loghub.LogInfo[loghub.CREATE],
+							v,
+							s.Id,
+						})
+						c.send <- out
+					}
+					for _, v := range s.manager.ListConnections() {
+						out, _ := json.Marshal(struct {
+							Type string
+							Data interface{}
+							Id   string
+						}{
+							loghub.LogInfo[loghub.CREATE],
+							v,
+							s.Id,
+						})
+						c.send <- out
+					}
+					s.mu.Unlock()
+				case "block":
+					_, ok := msg["id"]
+					if !ok {
+						break
+					}
+					idStr, ok := msg["id"].(string)
+					if !ok {
+						break
+					}
+					s.mu.Lock()
+					b, _ := s.manager.GetBlock(idStr)
 					out, _ := json.Marshal(struct {
 						Type string
 						Data interface{}
 						Id   string
 					}{
-						loghub.LogInfo[loghub.CREATE],
-						v,
+						loghub.LogInfo[loghub.UPDATE],
+						b,
 						s.Id,
 					})
 					c.send <- out
+					s.mu.Unlock()
 				}
-				for _, v := range s.manager.ListConnections() {
-					out, _ := json.Marshal(struct {
-						Type string
-						Data interface{}
-						Id   string
-					}{
-						loghub.LogInfo[loghub.CREATE],
-						v,
-						s.Id,
-					})
-					c.send <- out
-				}
-				s.mu.Unlock()
 			}
 		}
 	}(recv)
@@ -229,6 +285,8 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 			Data: eblock,
 			Id:   s.Id,
 		}
+
+		log.Println("BLOCK IS :", eblock)
 
 		loghub.Log <- &loghub.LogMsg{
 			Type: loghub.CREATE,
@@ -478,7 +536,7 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		Id:   s.Id,
 	}
 
-	b, err := s.manager.GetBlock(vars["id"])
+	/*b, err := s.manager.GetBlock(vars["id"])
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 	}
@@ -487,7 +545,7 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 		Type: loghub.UPDATE,
 		Data: b,
 		Id: s.Id,
-	}
+	}*/
 
 	s.apiWrap(w, r, 200, s.response("OK"))
 }

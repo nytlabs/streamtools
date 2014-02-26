@@ -53,7 +53,9 @@ func (b *Ticker) Run() {
 				break
 			}
 
-			ticker = time.NewTicker(dur)
+			interval = dur
+
+			ticker = time.NewTicker(interval)
 		case <-b.quit:
 			return
 		case c := <-b.queryrule:
