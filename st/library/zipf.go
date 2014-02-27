@@ -39,8 +39,11 @@ func (b *Zipf) Setup() {
 func (b *Zipf) Run() {
 	var err error
 	var s, v, imax float64
+	s = 2.0
+	v = 5.0
+	imax = 99.0
 	r := rand.New(rand.NewSource(12345))
-	sampler := rand.NewZipf(r, 2, 5, 99)
+	sampler := rand.NewZipf(r, s, v, uint64(imax))
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -70,14 +73,13 @@ func (b *Zipf) Run() {
 			b.out <- map[string]interface{}{
 				"sample": float64(sampler.Uint64()),
 			}
-		case respChan := <-b.queryrule:
+		case c := <-b.queryrule:
 			// deal with a query request
-			out := map[string]interface{}{
+			c <- map[string]interface{}{
 				"s": s,
 				"v": v,
 				"N": imax,
 			}
-			respChan <- out
 		}
 	}
 }

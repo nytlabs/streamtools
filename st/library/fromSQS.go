@@ -5,6 +5,7 @@ import (
 	"github.com/nikhan/go-sqsReader"           //sqsReader
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
+	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -32,55 +33,68 @@ func (b *FromSQS) Setup() {
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
-	b.fromReader = make(chan []byte)
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *FromSQS) Run() {
+	var SQSEndpoint, AccessKey, AccessSecret string
+	var err error
+	fromReader := make(chan []byte)
 	for {
+		log.Println("fromSQS: for")
 		select {
 		case msgI := <-b.inrule:
-			SQSEndpoint, err := util.ParseString(msgI, "SQSEndpoint")
+			log.Println("fromSQS: inrule")
+			SQSEndpoint, err = util.ParseString(msgI, "SQSEndpoint")
 			if err != nil {
 				b.Error(err)
 				break
 			}
-			b.SQSEndpoint = SQSEndpoint
 
-			AccessKey, err := util.ParseString(msgI, "AccessKey")
+			AccessKey, err = util.ParseString(msgI, "AccessKey")
 			if err != nil {
 				b.Error(err)
 				break
 			}
-			b.AccessKey = AccessKey
 
-			AccessSecret, err := util.ParseString(msgI, "AccessSecret")
+			AccessSecret, err = util.ParseString(msgI, "AccessSecret")
 			if err != nil {
 				b.Error(err)
 				break
 			}
-			b.AccessSecret = AccessSecret
 
-			r := sqsReader.NewReader(b.SQSEndpoint, b.AccessKey, b.AccessSecret, b.fromReader)
+			log.Println(SQSEndpoint)
+			log.Println(AccessKey)
+			log.Println(AccessSecret)
+			r := sqsReader.NewReader(SQSEndpoint, AccessKey, AccessSecret, fromReader)
+			log.Println("fromSQS starting reader")
 			go r.Start()
-		case msg := <-b.fromReader:
+			log.Println("fromSQS started reader")
+
+		case msg := <-fromReader:
+			log.Println("fromSQS: fromReader")
 			var outMsg interface{}
 			err := json.Unmarshal(msg, &outMsg)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
+			log.Println("fromSQS: sending Out")
 			b.out <- outMsg
+			log.Println("fromSQS: sent Out")
 		case <-b.quit:
+			log.Println("fromSQS: quit")
 			// quit the block
 			return
 		case respChan := <-b.queryrule:
+			log.Println("fromSQS: query rule")
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"SQSEndpoint":  b.SQSEndpoint,
-				"AccessKey":    b.AccessKey,
-				"AccessSecret": b.AccessSecret,
+				"SQSEndpoint":  SQSEndpoint,
+				"AccessKey":    AccessKey,
+				"AccessSecret": AccessSecret,
 			}
+			log.Println("fromSQS: sent response")
 		}
 	}
 }
