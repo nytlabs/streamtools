@@ -1,43 +1,107 @@
-streamtools
-===========
+# streamtools
 
 [![Build Status](https://travis-ci.org/nytlabs/streamtools.png?branch=master)](https://travis-ci.org/nytlabs/streamtools)
 
-Streamtools is a creative tool for working with streams of data. It provides a vocabulary of data processing operations, called blocks, that can be connected to create online data processing systems without the need for programming or complicated infrastructure. 
+Streamtools is a graphical toolkit for dealing with streams of data. Streamtools makes it easy to explore, analyse, modify and learn from streams of data.
 
-Streamtools is built upon a few core principles: 
-- Working with data should be a responsive, exploratory practice. Streamtools allows you to immediately ask questions of the data as it flows through the system (see: [Creative Abduction](https://github.com/nytlabs/streamtools/wiki#philosophy)). 
-- In the real world, the character of your data is constantly changing. We designed Streamtools not only to reflect how your data is changing but to let you work with that change (see: [Non-Stationarity](https://github.com/nytlabs/streamtools/wiki#philosophy)).  
-- Working with data should not require complex engineering. Streamtools provides a visual interface and an expressive toolset for working with streams of data. 
+## API
 
-Streamtools is an open source project written in Go and is intended to be used with streams of JSON.
+Streamtools provides a full RESTful HTTP API allowing the developer to programatically control all aspects of streamtools. The API can be broken up into three parts: those endpoints that general aspects of streamtools, those that control blocks and those that control connections.
 
-![s3 polling
-example](https://raw.github.com/mikedewar/streamtools/master/examples/crazy_example.png)
+If you are running streamtools locally, using the default port, all of the GET endpoints can be queried either by visiting in a browser:
 
-getting started
-===============
+    http://localhost:7070/{endpoint}
 
-1. Find a computer to play with. It needs to be Linux or OSX. 
-2. Download the latest [release](https://github.com/nytlabs/streamtools/releases). You need `st-linux` if you're on linux or `st-darwin` if you're on osx.
-3. In a terminal, change directory to wherever you downloaded the file. 
-4. Run `chmod +x st-linux` if you're on linux or `chmod +x st-darwin` on osx. This makes the file you downloaded executeable. 
-5. Now launch streamtools by typing `./st-linux` if you're on linux or `./st-darwin` if you're on osx. Your terminal should say `starting stream tools on port 7070`.
-6. To find the UI visit [http://localhost:7070](http://localhost:7070) in a browser. If you're not running streamtools locally you need some way of accessing port 7070 on your remote box.
-7. Go through our [Hello World](https://github.com/nytlabs/streamtools/wiki/Hello-world) pattern!
-8. Look through the rest of our [patterns](https://github.com/nytlabs/streamtools/wiki#patterns) for inspiration and guidance. 
+For example, if you wanted to see the streamtools library, visit `http://localhost:7070/library`.
 
-Good luck!
+The POST endpoints are expecting you to send data. To use these you'll need to use the command line and a program called `curl`. For example, to create a new `tofile` block you need to send along the JSON definition of the block, like this:
 
-health warning
-==============
+    curl http://localhost:7070/blocks -d'{"Type":"tofile","Rule":{"Filename":"test.json"}}'
 
-*Note that streamtools is very new!* This means we're developing it very rapidly, and some things aren't going to work. If you find a bug please do let us know! And, if you think of something you'd like to see, please do request it! Both of these things can be done on our [issues page](https://github.com/nytlabs/streamtools/issues?milestone=&page=1&state=open). 
+This POSTs the JSON `{"Type":"tofile","Rule":{"Filename":"test.json"}}` to the `/blocks` endpoint.
 
-![screen shot 2014-02-06 at 4 22 51 pm](https://f.cloud.github.com/assets/597897/2103977/151b99ce-8f75-11e3-99b9-188024ce742a.png)
 
-contributing
-============
-As always: pull requests are welcome! Our focus at the moment (Spring '14) is to get a fully functioning system together that we can demonstrate. Therefore new blocks are likely to be merged in with more energy than large re-writes of the back-end. Having said that, there is plenty that can and should be done behind the scenes, and we always have an eye to the next major re-factor. 
+### streamtools
 
-If you'd like to make a new block the best place to start is to look at the skeleton blocks. We have a [skeleton state](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_state.go) block which demonstrates how to lay out a block that maintains a state. We also have a [skeleton transfer](https://github.com/nytlabs/streamtools/blob/master/blocks/skeleton_transfer.go) block which demonstrates how to lay out a block that emits zero or one messages upon reciept of an inbound message.
+GET `/library`
+
+The library endpoint returns a description of all the blocks available in the version of streamtools that is runnning.
+
+GET `/version`
+
+The version endpoint returns the current version of streamtools.
+
+GET `/export`
+
+Export returns a JSON representation of the current streamtools pattern.
+
+POST `/import`
+
+Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it's useful.
+
+### blocks
+
+A block's JSON representation uses the following schema:
+
+    {
+      "Id":
+      "Type":
+      "Rule":{ ... }
+      "Position":{
+        "X":
+        "Y":
+      }
+    }
+
+Only `Type` is required, everything will be automatically generated if you don't specify them. The `Id` is used to uniquely identify that block within streamtools. This is normally just a number but can be any string. `Type` is the type of the block, selected from the streamtools library. `Rule` specifies the block's rule, which will be different for each block. Finally `Position` specifies the x and y coordinates of the block from the top left corner of the screen.
+
+POST `/blocks`
+
+To create a new block, simply POST its JSON representation as described above to the `/blocks` endpoint.
+
+GET `/blocks/{id}`
+
+Returns a JSON representation of the block specified by `{id}`.
+
+DELETE `/blocks/{id}`
+
+Deletes the block specified by `{id}`.
+
+POST `/blocks/{id}/{route}`
+
+Send data to a block. Each block has a set of default routes ("in","rule") and optional routes ("poll"), as well as custom rotues that defined by the block designer as they see fit. This will POST your JSON to the block specified by `{id}` via route `{route}`.
+
+GET `/blocks/{id}/{route}`
+
+Recieve data from a block. Use this endpoint to query block routes that return data. The only default route is `rule` which, in response to a GET query, will return the block's current rule.
+
+### connections
+
+A connection's JSON representation uses the following schema:
+
+{
+  Id:
+  FromId:
+  ToId:
+  ToRoute:
+}
+
+Here, only `Id` is optional. `Id` is used to uniquely refer to the connection inside streamtools. `FromId` refers to the block that data is flowing from. `ToId` refers to the block the data is flowing to. `ToRoute` tells the connection which inbound route to send data to.
+
+POST `/connections`
+
+Post a connection's JSON representation to this endpoint to create it.
+
+GET `/connections`
+
+Lists all the current connections.
+
+GET `/connections/{id}`
+
+Returns the JSON representation of the connection specified by `{id}`.
+
+DELETE `/connections/{id}`
+
+Deletes the connection specified by `{id}`.
+
+r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET")  // get from block route
