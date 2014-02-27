@@ -4,6 +4,10 @@
 
 Streamtools is a graphical toolkit for dealing with streams of data. Streamtools makes it easy to explore, analyse, modify and learn from streams of data.
 
+## Blocks
+
+
+
 ## API
 
 Streamtools provides a full RESTful HTTP API allowing the developer to programatically control all aspects of streamtools. The API can be broken up into three parts: those endpoints that general aspects of streamtools, those that control blocks and those that control connections.
@@ -104,4 +108,6 @@ DELETE `/connections/{id}`
 
 Deletes the connection specified by `{id}`.
 
-r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET")  // get from block route
+GET `/connections/{id}/{route}`
+
+Query a connection via its routes. Each connection has a `rate` route which will return an estimate of the rate of messages coming through it and a `last` route which will return the last message it saw.
