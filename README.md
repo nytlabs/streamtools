@@ -79,12 +79,12 @@ Recieve data from a block. Use this endpoint to query block routes that return d
 
 A connection's JSON representation uses the following schema:
 
-{
-  Id:
-  FromId:
-  ToId:
-  ToRoute:
-}
+    {
+      Id:
+      FromId:
+      ToId:
+      ToRoute:
+    }
 
 Here, only `Id` is optional. `Id` is used to uniquely refer to the connection inside streamtools. `FromId` refers to the block that data is flowing from. `ToId` refers to the block the data is flowing to. `ToRoute` tells the connection which inbound route to send data to.
 
