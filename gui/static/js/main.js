@@ -477,7 +477,7 @@ $(function() {
             .on('click', function(d) {
                 // hide the block controller when X is clicked.
                 $(this).parent().parent().css({
-                    'visibility': 'hidden'
+                    'display': 'none'
                 });
             });
 
