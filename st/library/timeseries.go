@@ -5,7 +5,6 @@ import (
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"log"
 	"time"
 )
 
@@ -48,8 +47,6 @@ func (b *Timeseries) Setup() {
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Timeseries) Run() {
 
-	log.Println("run")
-
 	var err error
 	var data *tsData
 	var path, lagStr string
@@ -57,10 +54,8 @@ func (b *Timeseries) Run() {
 	var lag time.Duration
 
 	for {
-		log.Println("for")
 		select {
 		case ruleI := <-b.inrule:
-			log.Println("rule")
 			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
 			if !ok {
@@ -88,11 +83,9 @@ func (b *Timeseries) Run() {
 			}
 
 		case <-b.quit:
-			log.Println("quit")
 			// quit * time.Second the block
 			return
 		case msg := <-b.in:
-			log.Println("in")
 			if tree == nil {
 				continue
 			}
@@ -120,7 +113,6 @@ func (b *Timeseries) Run() {
 			}
 			data.Values = append(data.Values[1:], d)
 		case respChan := <-b.queryrule:
-			log.Println("query")
 			// deal with a query request
 			respChan <- data
 		}

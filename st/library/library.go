@@ -20,6 +20,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"gethttp":        NewGetHTTP,
 	"gaussian":       NewGaussian,
 	"zipf":           NewZipf,
+	"poisson":        NewPoisson,
 	"map":            NewMap,
 	"histogram":      NewHistogram,
 	"timeseries":     NewTimeseries,

@@ -49,6 +49,7 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 * getHTTP
 * gaussian
 * zipf
+* poisson
 
 ### State Blocks
 
