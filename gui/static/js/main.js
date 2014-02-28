@@ -463,10 +463,23 @@ $(function() {
 
         var titles = controls.append('div')
             .classed('title', true)
+            .call(dragTitle);
+
+        titles.append('div')
+            .classed('name', true)
             .html(function(d) {
                 return d.Id + ' (' + d.Type + ')';
-            })
-            .call(dragTitle);
+            });
+
+        titles.append('div')
+            .classed('close', true)
+            .html('&#215;')
+            .on('click', function(d) {
+                // hide the block controller when X is clicked.
+                $(this).parent().parent().css({
+                    'visibility': 'hidden'
+                });
+            });
 
         var bodies = controls.append('div')
             .classed('body', true)
