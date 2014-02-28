@@ -12,12 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Timeseries struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule  chan chan interface{}
+	querystate chan chan interface{}
+	inrule     chan interface{}
+	inpoll     chan interface{}
+	in         chan interface{}
+	out        chan interface{}
+	quit       chan interface{}
 }
 
 type tsDataPoint struct {
@@ -40,6 +41,7 @@ func (b *Timeseries) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
+	b.querystate = b.QueryRoute("timeseries")
 	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
@@ -122,7 +124,15 @@ func (b *Timeseries) Run() {
 		case respChan := <-b.queryrule:
 			log.Println("query")
 			// deal with a query request
-			respChan <- data
+			respChan <- map[string]interface{}{
+				"Lag":  lagStr,
+				"Path": path,
+			}
+		case respChan := <-b.querystate:
+			out := map[string]interface{}{
+				"timeseries": data,
+			}
+			respChan <- out
 		}
 	}
 }
