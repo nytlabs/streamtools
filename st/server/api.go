@@ -180,6 +180,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 				}
 
 				switch actStr {
+				case "quit": 
+					// so that we don't send to a closed websocket.
+					return
 				case "export":
 					// emit block configuration on message
 					s.mu.Lock()
@@ -208,7 +211,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						c.send <- out
 					}
 					s.mu.Unlock()
-				case "block":
+				case "rule":
 					_, ok := msg["id"]
 					if !ok {
 						break
@@ -224,7 +227,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						Data interface{}
 						Id   string
 					}{
-						loghub.LogInfo[loghub.UPDATE],
+						loghub.LogInfo[loghub.UPDATE_RULE],
 						b,
 						s.Id,
 					})
@@ -445,7 +448,7 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	loghub.UI <- &loghub.LogMsg{
-		Type: loghub.UPDATE,
+		Type: loghub.UPDATE_POSITION,
 		Data: mblock,
 		Id:   s.Id,
 	}

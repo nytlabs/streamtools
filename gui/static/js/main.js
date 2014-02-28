@@ -367,9 +367,9 @@ $(function() {
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
 
             switch (uiMsg.Type) {
-                case 'RULE_UPDATE':
+                case 'RULE_UPDATED':
                     _this.ws.send(JSON.stringify({
-                        "action": "block",
+                        "action": "rule",
                         "id": uiMsg.Id
                     }));
                     break;
@@ -380,10 +380,14 @@ $(function() {
                         // for that block type
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
+                        update();
+                        // we need to update the rule controller for the block.
+                        d3.select('[data-id=_' + uiMsg.Data.Id + ']')[0][0].refresh();
                     } else {
                         connections.push(uiMsg.Data);
+                        update();
                     }
-                    update();
+
                     break;
                 case 'DELETE':
                     for (var i = 0; i < blocks.length; i++) {
@@ -400,38 +404,46 @@ $(function() {
                     }
                     update();
                     break;
-                case 'UPDATE':
-                    if (uiMsg.Data.hasOwnProperty('Position')) {
-                        var block = null;
-                        for (var i = 0; i < blocks.length; i++) {
-                            if (blocks[i].Id === uiMsg.Data.Id) {
-                                block = blocks[i];
-                                break;
-                            }
-                        }
-                        if (block !== null) {
-                            block.Position = uiMsg.Data.Position;
-                            block.Rule = uiMsg.Data.Rule;
-                            d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
-                            update();
+                case 'UPDATE_RULE':
+                    var block = null;
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (blocks[i].Id === uiMsg.Data.Id) {
+                            block = blocks[i];
+                            break;
                         }
                     }
-
-                    if (uiMsg.Data.hasOwnProperty('Rate')) {
-                        var conn = null;
-                        for (var i = 0; i < connections.length; i++) {
-                            if (connections[i].Id == uiMsg.Id) {
-                                conn = connections[i];
-                                break;
-                            }
-                        }
-                        if (conn !== null) {
-                            conn.rate = uiMsg.Data.Rate;
-                        }
+                    if (block !== null) {
+                        block.Rule = uiMsg.Data.Rule;
+                        d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
                     }
-
-                    updateLinks();
                     break;
+                case 'UPDATE_RATE':
+                    var conn = null;
+                    for (var i = 0; i < connections.length; i++) {
+                        if (connections[i].Id == uiMsg.Id) {
+                            conn = connections[i];
+                            break;
+                        }
+                    }
+                    if (conn !== null) {
+                        conn.rate = uiMsg.Data.Rate;
+                    }
+                    break;
+                case 'UPDATE_POSITION':
+                    var block = null;
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (blocks[i].Id === uiMsg.Data.Id) {
+                            block = blocks[i];
+                            break;
+                        }
+                    }
+                    if (block !== null) {
+                        block.Position = uiMsg.Data.Position;
+                        update();
+                        updateLinks();
+                    }
+                    break;
+                case 'UPDATE':
                 case 'QUERY':
                     break;
             }
