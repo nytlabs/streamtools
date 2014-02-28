@@ -109,6 +109,9 @@ $(function() {
         .attr('class', 'tooltip');
 
     var drag = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             d.Position.X += d3.event.dx;
             d.Position.Y += d3.event.dy;
@@ -130,6 +133,9 @@ $(function() {
         });
 
     var dragTitle = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             var pos = $(this.parentNode).offset();
 
@@ -140,6 +146,9 @@ $(function() {
         });
 
     var resize = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             var controller = $('[data-id=_' + d.Id + ']');
             controller.width(controller.width() + d3.event.dx);
@@ -252,6 +261,14 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
+
+    function pauseEvent(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        if (e.preventDefault) e.preventDefault();
+        e.cancelBubble = true;
+        e.returnValue = false;
+        return false;
+    }
 
     function createBlock() {
         var blockType = $('#create-input').val();
@@ -571,7 +588,22 @@ $(function() {
                 }
                 d3.select(this.parentNode).select('.idrect')
                     .classed('selected', true);
+            })
+            .on('dblclick', function(d) {
+                d3.select('[data-id=_' + d.Id + ']')
+                    .style('display', 'block')
+                    .style('top', function(d) {
+                        return d.Position.Y;
+                    })
+                    .style('left', function(d) {
+                        return d.Position.X + d.width + 10;
+                    })
             });
+
+        // the click events for nodes and idRects are exactly the same
+        // and should not be duplicated in future versions.
+        // both of them allow selection on single click and the opening
+        // of the contoller on a double cick. 
 
         idRects
             .attr('x', 0)
