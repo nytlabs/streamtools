@@ -56,6 +56,14 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 * count
 * histogram
 
+## Patterns
+
+### Counting
+
+![count](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.png)
+
+[counting example](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.json)
+
 ## API
 
 Streamtools provides a full RESTful HTTP API allowing the developer to programatically control all aspects of streamtools. The API can be broken up into three parts: those endpoints that general aspects of streamtools, those that control blocks and those that control connections.

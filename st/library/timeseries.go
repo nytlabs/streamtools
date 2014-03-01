@@ -50,13 +50,11 @@ func (b *Timeseries) Setup() {
 func (b *Timeseries) Run() {
 
 	var err error
-	var data *tsData
 	var path, lagStr string
 	var tree *jee.TokenTree
 	var lag time.Duration
-
-	numSamples := 10.0
-	data.Values = make([]tsDataPoint, numSamples)
+	var data tsData
+	var numSamples float64
 
 	for {
 		select {
@@ -91,12 +89,18 @@ func (b *Timeseries) Run() {
 				b.Error(err)
 				continue
 			}
+			data = tsData{
+				Values: make([]tsDataPoint, int(numSamples)),
+			}
 
 		case <-b.quit:
 			// quit * time.Second the block
 			return
 		case msg := <-b.in:
 			if tree == nil {
+				continue
+			}
+			if data.Values == nil {
 				continue
 			}
 			// deal with inbound data
@@ -125,14 +129,20 @@ func (b *Timeseries) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Window": lagStr,
-				"Path":   path,
+				"Window":     lagStr,
+				"Path":       path,
+				"NumSamples": numSamples,
 			}
 		case respChan := <-b.querystate:
 			out := map[string]interface{}{
 				"timeseries": data,
 			}
 			respChan <- out
+		case <-b.inpoll:
+			out := map[string]interface{}{
+				"timeseries": data,
+			}
+			b.out <- out
 		}
 	}
 }
