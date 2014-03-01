@@ -8,7 +8,7 @@ all: $(BINARIES)
 $(BLDDIR)/%:
 	go get github.com/jteeuwen/go-bindata/...
 	go-bindata -pkg=server -o st/server/static_bindata.go gui/...
-	cd blocks && go get .
+	cd st/library && go get .
 	cd st/server && go get .
 	go build -o $(BLDDIR)/st ./st
 

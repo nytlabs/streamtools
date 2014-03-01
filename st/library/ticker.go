@@ -54,7 +54,7 @@ func (b *Ticker) Run() {
 			}
 
 			interval = dur
-
+			ticker.Stop()
 			ticker = time.NewTicker(interval)
 		case <-b.quit:
 			return
