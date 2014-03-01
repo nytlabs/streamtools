@@ -30,8 +30,9 @@ func (b *Filter) Setup() {
 }
 
 func (b *Filter) Run() {
-	var filter string
-	var parsed *jee.TokenTree
+	filter := ". != null"
+	lexed, _ := jee.Lexer(filter)
+	parsed, _ := jee.Parser(lexed)
 
 	for {
 		select {

@@ -8,6 +8,7 @@ package server
 import (
 	"github.com/gorilla/websocket"
 	"time"
+	"encoding/json"
 )
 
 const (
@@ -37,6 +38,10 @@ type connection struct {
 // readPump pumps messages from the websocket connection to the hub.
 func (c *connection) readPump(r chan string) {
 	defer func() {
+		quitMsg, _ := json.Marshal(map[string]interface{}{
+			"action":"quit",
+		})
+		r <- string(quitMsg)
 		c.Hub.unregister <- c
 		c.ws.Close()
 	}()

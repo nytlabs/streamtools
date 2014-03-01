@@ -107,9 +107,10 @@ func (b *Map) Setup() {
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Map) Run() {
-	var additive bool
-	var parsed interface{}
-	var mapRule map[string]interface{}
+	additive := true
+	mapRule := map[string]interface{}{}
+	parsed, _ := parseKeys(mapRule)
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -121,12 +122,13 @@ func (b *Map) Run() {
 			additiveStr, ok := rule["Additive"]
 			if !ok {
 				// 'Additive' wasn't set in the rule, but it defaults to true
-				additiveStr = "true"
+				additiveStr = true
 			}
 			additive, ok = additiveStr.(bool)
 			mapRuleI, ok := rule["Map"]
 			if !ok {
 				b.Error(errors.New("could not find Map in rule"))
+				break
 			}
 			mapRule = mapRuleI.(map[string]interface{})
 			p, err := parseKeys(mapRule)

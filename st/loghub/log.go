@@ -16,7 +16,10 @@ const (
 	DELETE
 	UPDATE
 	QUERY
-	RULE_UPDATE
+	RULE_UPDATED
+	UPDATE_RULE
+	UPDATE_POSITION
+	UPDATE_RATE
 )
 
 const (
@@ -56,7 +59,10 @@ var LogInfo = map[int]string{
 	5: "DELETE",
 	6: "UPDATE",
 	7: "QUERY ",
-	8: "RULE_UPDATE",
+	8: "RULE_UPDATED",
+	9: "UPDATE_RULE",
+	10: "UPDATE_POSITION",
+	11: "UPDATE_RATE",
 }
 
 var LogInfoColor = map[int]string{

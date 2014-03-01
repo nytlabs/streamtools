@@ -144,7 +144,6 @@
     line-height: 22px;
     font-size: 14px;
     border: 1px solid rgba(79,79,79,1);
-    font-weight: bold;
     color: white;
     background: black;
     cursor: pointer;
@@ -189,4 +188,20 @@
 .update:hover {
     background: rgba(140,140,140,1);
     cursor: pointer;
+}
+
+.title .name {
+    font-weight: bold;
+    float: left;
+    display: inline-block;
+}
+
+.title .close {
+    padding-right: 6px;
+    float: right;
+    display: inline-block;
+}
+
+.title .close:hover{
+    color: rgba(90,90,90,1);
 }

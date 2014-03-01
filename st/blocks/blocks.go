@@ -162,27 +162,33 @@ func (b *Block) CleanUp() {
 	defer close(b.QuitChan)
 	defer close(b.broadcast)
 
-    loghub.Log <- &loghub.LogMsg{
-        Type: loghub.INFO,
-        Data: fmt.Sprintf("Block %s Quitting...", b.Id),
-        Id:   b.Id,
-    }
+	go func(){
+	    loghub.Log <- &loghub.LogMsg{
+	        Type: loghub.INFO,
+	        Data: fmt.Sprintf("Block %s Quitting...", b.Id),
+	        Id:   b.Id,
+	    }
+	}()
 }
 
 func (b *Block) Error(msg interface{}) {
-    loghub.Log <- &loghub.LogMsg{
-        Type: loghub.ERROR,
-        Data: msg,
-        Id:   b.Id,
-    }
+	go func(){
+	    loghub.Log <- &loghub.LogMsg{
+	        Type: loghub.ERROR,
+	        Data: msg,
+	        Id:   b.Id,
+	    }
+	}()
 }
 
 func (b *Block) Log(msg interface{}){
-    loghub.Log <- &loghub.LogMsg{
-        Type: loghub.INFO,
-        Data: msg,
-        Id:   b.Id,
-    }
+	go func() {
+	    loghub.Log <- &loghub.LogMsg{
+	        Type: loghub.INFO,
+	        Data: msg,
+	        Id:   b.Id,
+	    }
+	}()
 }
 
 func BlockRoutine(bi BlockInterface) {
@@ -202,11 +208,13 @@ func BlockRoutine(bi BlockInterface) {
 			b.inRoutes[msg.Route] <- msg.Msg
 
 			if msg.Route == "rule" {
-				loghub.UI <- &loghub.LogMsg{
-					Type: loghub.RULE_UPDATE,
-					Data: map[string]interface{}{},
-					Id:   b.Id,
-				}
+				go func(){
+					loghub.UI <- &loghub.LogMsg{
+						Type: loghub.RULE_UPDATED,
+						Data: map[string]interface{}{},
+						Id:   b.Id,
+					}
+				}()
 			}
 
 		case msg := <-b.QueryChan:
@@ -274,7 +282,7 @@ func ConnectionRoutine(c *Connection){
 	outChans := make(map[string]chan *Msg)
 	times := make([]int64,100,100)
 	timesIdx := len(times)
-	rateReport := time.NewTicker(100 * time.Millisecond)
+	rateReport := time.NewTicker(200 * time.Millisecond)
 	for{
 		select{
 		case <- rateReport.C:
@@ -284,13 +292,15 @@ func ConnectionRoutine(c *Connection){
 				rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
 			}
 
-		    loghub.UI <- &loghub.LogMsg{
-		        Type: loghub.UPDATE,
-		        Data: map[string]interface{}{
-		        	"Rate": rate,
-		        },
-		        Id:   c.Id,
-		    }
+			go func(){
+			    loghub.UI <- &loghub.LogMsg{
+			        Type: loghub.UPDATE_RATE,
+			        Data: map[string]interface{}{
+			        	"Rate": rate,
+			        },
+			        Id:   c.Id,
+			    }
+		    }()
 
 		case msg := <- c.InChan:
 			last = msg.Msg
