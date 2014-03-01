@@ -110,7 +110,7 @@ $(function() {
 
     var drag = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             d.Position.X += d3.event.dx;
@@ -134,7 +134,7 @@ $(function() {
 
     var dragTitle = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             var pos = $(this.parentNode).offset();
@@ -147,7 +147,7 @@ $(function() {
 
     var resize = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             var controller = $('[data-id=_' + d.Id + ']');
