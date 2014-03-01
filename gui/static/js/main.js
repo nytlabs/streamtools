@@ -109,6 +109,9 @@ $(function() {
         .attr('class', 'tooltip');
 
     var drag = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             d.Position.X += d3.event.dx;
             d.Position.Y += d3.event.dy;
@@ -130,6 +133,9 @@ $(function() {
         });
 
     var dragTitle = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             var pos = $(this.parentNode).offset();
 
@@ -140,6 +146,9 @@ $(function() {
         });
 
     var resize = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.preventDefault()
+        })
         .on('drag', function(d, i) {
             var controller = $('[data-id=_' + d.Id + ']');
             controller.width(controller.width() + d3.event.dx);
@@ -252,6 +261,14 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
+
+    function pauseEvent(e) {
+        if (e.stopPropagation) e.stopPropagation();
+        if (e.preventDefault) e.preventDefault();
+        e.cancelBubble = true;
+        e.returnValue = false;
+        return false;
+    }
 
     function createBlock() {
         var blockType = $('#create-input').val();
@@ -367,9 +384,9 @@ $(function() {
             var isBlock = uiMsg.Data.hasOwnProperty('Type');
 
             switch (uiMsg.Type) {
-                case 'RULE_UPDATE':
+                case 'RULE_UPDATED':
                     _this.ws.send(JSON.stringify({
-                        "action": "block",
+                        "action": "rule",
                         "id": uiMsg.Id
                     }));
                     break;
@@ -380,10 +397,14 @@ $(function() {
                         // for that block type
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
+                        update();
+                        // we need to update the rule controller for the block.
+                        d3.select('[data-id=_' + uiMsg.Data.Id + ']')[0][0].refresh();
                     } else {
                         connections.push(uiMsg.Data);
+                        update();
                     }
-                    update();
+
                     break;
                 case 'DELETE':
                     for (var i = 0; i < blocks.length; i++) {
@@ -400,38 +421,46 @@ $(function() {
                     }
                     update();
                     break;
-                case 'UPDATE':
-                    if (uiMsg.Data.hasOwnProperty('Position')) {
-                        var block = null;
-                        for (var i = 0; i < blocks.length; i++) {
-                            if (blocks[i].Id === uiMsg.Data.Id) {
-                                block = blocks[i];
-                                break;
-                            }
-                        }
-                        if (block !== null) {
-                            block.Position = uiMsg.Data.Position;
-                            block.Rule = uiMsg.Data.Rule;
-                            d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
-                            update();
+                case 'UPDATE_RULE':
+                    var block = null;
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (blocks[i].Id === uiMsg.Data.Id) {
+                            block = blocks[i];
+                            break;
                         }
                     }
-
-                    if (uiMsg.Data.hasOwnProperty('Rate')) {
-                        var conn = null;
-                        for (var i = 0; i < connections.length; i++) {
-                            if (connections[i].Id == uiMsg.Id) {
-                                conn = connections[i];
-                                break;
-                            }
-                        }
-                        if (conn !== null) {
-                            conn.rate = uiMsg.Data.Rate;
-                        }
+                    if (block !== null) {
+                        block.Rule = uiMsg.Data.Rule;
+                        d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
                     }
-
-                    updateLinks();
                     break;
+                case 'UPDATE_RATE':
+                    var conn = null;
+                    for (var i = 0; i < connections.length; i++) {
+                        if (connections[i].Id == uiMsg.Id) {
+                            conn = connections[i];
+                            break;
+                        }
+                    }
+                    if (conn !== null) {
+                        conn.rate = uiMsg.Data.Rate;
+                    }
+                    break;
+                case 'UPDATE_POSITION':
+                    var block = null;
+                    for (var i = 0; i < blocks.length; i++) {
+                        if (blocks[i].Id === uiMsg.Data.Id) {
+                            block = blocks[i];
+                            break;
+                        }
+                    }
+                    if (block !== null) {
+                        block.Position = uiMsg.Data.Position;
+                        update();
+                        updateLinks();
+                    }
+                    break;
+                case 'UPDATE':
                 case 'QUERY':
                     break;
             }
@@ -451,10 +480,23 @@ $(function() {
 
         var titles = controls.append('div')
             .classed('title', true)
+            .call(dragTitle);
+
+        titles.append('div')
+            .classed('name', true)
             .html(function(d) {
                 return d.Id + ' (' + d.Type + ')';
-            })
-            .call(dragTitle);
+            });
+
+        titles.append('div')
+            .classed('close', true)
+            .html('&#215;')
+            .on('click', function(d) {
+                // hide the block controller when X is clicked.
+                $(this).parent().parent().css({
+                    'display': 'none'
+                });
+            });
 
         var bodies = controls.append('div')
             .classed('body', true)
@@ -546,7 +588,22 @@ $(function() {
                 }
                 d3.select(this.parentNode).select('.idrect')
                     .classed('selected', true);
+            })
+            .on('dblclick', function(d) {
+                d3.select('[data-id=_' + d.Id + ']')
+                    .style('display', 'block')
+                    .style('top', function(d) {
+                        return d.Position.Y;
+                    })
+                    .style('left', function(d) {
+                        return d.Position.X + d.width + 10;
+                    })
             });
+
+        // the click events for nodes and idRects are exactly the same
+        // and should not be duplicated in future versions.
+        // both of them allow selection on single click and the opening
+        // of the contoller on a double cick. 
 
         idRects
             .attr('x', 0)
