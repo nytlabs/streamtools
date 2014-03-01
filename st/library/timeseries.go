@@ -55,6 +55,9 @@ func (b *Timeseries) Run() {
 	var tree *jee.TokenTree
 	var lag time.Duration
 
+	numSamples := 10.0
+	data.Values = make([]tsDataPoint, numSamples)
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -73,12 +76,17 @@ func (b *Timeseries) Run() {
 				b.Error(err)
 				continue
 			}
-			lagStr, err = util.ParseString(rule, "Lag")
+			lagStr, err = util.ParseString(rule, "Window")
 			if err != nil {
 				b.Error(err)
 				continue
 			}
 			lag, err = time.ParseDuration(lagStr)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			numSamples, err = util.ParseFloat(rule, "NumSamples")
 			if err != nil {
 				b.Error(err)
 				continue
@@ -117,8 +125,8 @@ func (b *Timeseries) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Lag":  lagStr,
-				"Path": path,
+				"Window": lagStr,
+				"Path":   path,
 			}
 		case respChan := <-b.querystate:
 			out := map[string]interface{}{
