@@ -116,6 +116,7 @@
     position: absolute;
     visibility: hidden;
     z-index: 10;
+    height: 500px;
 }
 
 #create-input{
@@ -204,4 +205,52 @@
 
 .title .close:hover{
     color: rgba(90,90,90,1);
+}
+
+.typeahead {
+  background-color: #fff;
+}
+
+.typeahead:focus {
+  border: 2px solid #0097cf;
+}
+
+.tt-query {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+
+.tt-hint {
+  color: #999;
+  background-color: transparent !important;
+}
+
+.tt-dropdown-menu {
+  font-family: helvetica, sans-serif;
+  top: inherit !important;
+  padding: 2px 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.tt-suggestion {
+  padding: 2px 5px;
+  font-size: 14px;
+  line-height: 16px;
+}
+
+.tt-suggestion.tt-cursor {
+  color: #fff;
+  background-color: rgba(80,80,255,1);
+
+}
+
+.tt-suggestion p {
+  margin: 0;
+}
+
+.twitter-typeahead {
+    height: 500px;
 }

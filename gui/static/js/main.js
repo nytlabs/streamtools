@@ -55,6 +55,21 @@ $(function() {
 
     var controllerTemplate = $('#controller-template').html();
 
+    var libraryHound = new Bloodhound({
+        datumTokenizer: function(d) {
+            return Bloodhound.tokenizers.whitespace(d.key);
+        },
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: d3.entries(library)
+    });
+
+    libraryHound.initialize();
+
+    $('#create-input').typeahead(null, {
+        displayKey: 'key',
+        source: libraryHound.ttAdapter()
+    });
+
     //
     // SVG elements
     //
@@ -236,7 +251,7 @@ $(function() {
     });
 
     $('#create-input').focusout(function() {
-        $('#create-input').val('');
+        $('#create-input').typeahead('val', '');
         $('#create').css({
             'visibility': 'hidden'
         });
@@ -248,7 +263,7 @@ $(function() {
             $('#create').css({
                 'visibility': 'hidden'
             });
-            $('#create-input').val('');
+            $('#create-input').typeahead('val', '');
         }
     });
 
