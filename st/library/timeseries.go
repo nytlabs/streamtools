@@ -139,8 +139,16 @@ func (b *Timeseries) Run() {
 			}
 			respChan <- out
 		case <-b.inpoll:
+			outArray := make([]interface{}, len(data.Values))
+			for i, d := range data.Values {
+				di := map[string]interface{}{
+					"timestamp": d.Timestamp,
+					"value":     d.Value,
+				}
+				outArray[i] = di
+			}
 			out := map[string]interface{}{
-				"timeseries": data,
+				"timeseries": outArray,
 			}
 			b.out <- out
 		}

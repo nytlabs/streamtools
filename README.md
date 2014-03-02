@@ -60,6 +60,8 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 
 ### Counting
 
+One of the most basic patterns when dealing with stream
+
 ![count](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.png)
 
 [counting example](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.json)
