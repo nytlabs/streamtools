@@ -155,6 +155,7 @@
     position: absolute;
     background: rgba(158,158,158,1);
     border: 1px solid black;
+    display: none; 
 }
 
 /*.controller .bottom {
