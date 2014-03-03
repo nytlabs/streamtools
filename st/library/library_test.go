@@ -32,14 +32,19 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 }
 
 // Hook up gocheck into the "go test" runner.
-//func (s *StreamSuite) Test(c *C) { TestingT(t) }
 func Test(t *testing.T) { TestingT(t) }
 
 type StreamSuite struct{}
 
+// this is run once before the entire test SUITE
 func (s *StreamSuite) SetUpSuite(c *C) {
 	loghub.Start()
 }
+
+// this would be run once before EACH of the tests
+// func (s *StreamSuite) SetUpTest(c *C) {
+//   // do something
+// }
 
 var _ = Suite(&StreamSuite{})
 
@@ -52,6 +57,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	ruleMsg := map[string]interface{}{"Topic": "librarytest", "NsqdTCPAddrs": "127.0.0.1:4150"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
+
+	toQueryChan := make(chan interface{})
+	toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
 
 	nsqMsg := map[string]interface{}{"Foo": "Bar"}
 	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
@@ -73,14 +81,23 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
 	fromC.InChan <- fromRule
 
+	fromQueryChan := make(chan interface{})
+	fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		fromC.QuitChan <- true
 	})
 
 	for {
 		select {
+		case messageI := <-fromQueryChan:
+			c.Assert(messageI, DeepEquals, nsqSetup)
+
+		case messageI := <-toQueryChan:
+			c.Assert(messageI, DeepEquals, ruleMsg)
+
 		case message := <-outChan:
-			log.Println(message)
+			log.Println("printing message from outChan:", message)
 
 		case err := <-toC.ErrChan:
 			if err != nil {
@@ -534,7 +551,6 @@ func (s *StreamSuite) TestTimeseries(c *C) {
 }
 
 func (s *StreamSuite) TestGaussian(c *C) {
-	loghub.Start()
 	log.Println("testing Gaussian")
 	b, ch := newBlock("testingGaussian", "gaussian")
 	go blocks.BlockRoutine(b)
@@ -560,7 +576,6 @@ func (s *StreamSuite) TestGaussian(c *C) {
 }
 
 func (s *StreamSuite) TestZipf(c *C) {
-	loghub.Start()
 	log.Println("testing Zipf")
 	b, ch := newBlock("testingZipf", "zipf")
 	go blocks.BlockRoutine(b)
@@ -600,6 +615,45 @@ func (s *StreamSuite) TestPoisson(c *C) {
 	})
 	for {
 		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func (s *StreamSuite) TestToElasticsearch(c *C) {
+	log.Println("testing ToElasticsearch")
+	b, ch := newBlock("testingToElasticsearch", "toelasticsearch")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+
+	ruleMsg := map[string]interface{}{"Host": "localhost", "Port": "9200", "Index": "librarytest", "IndexType": "foobar"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+
+	queryOutChan := make(chan interface{})
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("rule mismatch:", messageI, ruleMsg)
+				c.Fail()
+			}
+
 		case err := <-ch.ErrChan:
 			if err != nil {
 				c.Errorf(err.Error())
