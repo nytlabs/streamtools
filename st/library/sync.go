@@ -36,7 +36,7 @@ func (b *Sync) Setup() {
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Sync) Run() {
-	var lagString string
+	var lagString, path string
 	var tree *jee.TokenTree
 	lag := time.Duration(0)
 	emitTick := time.NewTimer(500 * time.Millisecond)
@@ -57,7 +57,7 @@ func (b *Sync) Run() {
 				b.Error(err)
 				continue
 			}
-			path, err := util.ParseString(ruleI, "Path")
+			path, err = util.ParseString(ruleI, "Path")
 			if err != nil {
 				b.Error(err)
 				break
@@ -100,7 +100,8 @@ func (b *Sync) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Lag": lagString,
+				"Lag":  lagString,
+				"Path": path,
 			}
 
 		}
