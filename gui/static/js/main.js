@@ -410,6 +410,7 @@ $(function() {
                         // we need to get typeinfo from the library
                         // so that we can load the correct route information
                         // for that block type
+                        library[uiMsg.Data.Type].InRoutes.sort();
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
                         update();
