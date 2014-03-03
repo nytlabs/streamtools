@@ -678,6 +678,11 @@ func (s *StreamSuite) TestToWebsocket(c *C) {
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
+	ruleMsg := map[string]interface{}{"port": "9090"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+	inMsg := map[string]interface{}{"a": "test"}
+	ch.InChan <- &blocks.Msg{Msg: inMsg, Route: "in"}
 	for {
 		select {
 		case err := <-ch.ErrChan:
