@@ -610,3 +610,29 @@ func (s *StreamSuite) TestPoisson(c *C) {
 		}
 	}
 }
+
+func (s *StreamSuite) TestToWebsocket(c *C) {
+	loghub.Start()
+	log.Println("testing towebsocket")
+	b, ch := newBlock("testingtoWebsocket", "towebsocket")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}

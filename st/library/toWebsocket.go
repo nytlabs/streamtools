@@ -1,12 +1,15 @@
 package library
 
 import (
+	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"   // utils
+	"log"
 	"net/http"
 )
 
 // specify those channels we're going to use to communicate with streamtools
-type towebsocket struct {
+type toWebsocket struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
@@ -17,13 +20,14 @@ type towebsocket struct {
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
-func Newtowebsocket() blocks.BlockInterface {
-	return &towebsocket{}
+func NewToWebsocket() blocks.BlockInterface {
+	log.Println("WWWWAAAAAAAAAHHH")
+	return &toWebsocket{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *towebsocket) Setup() {
-	b.Kind = "towebsocket"
+func (b *toWebsocket) Setup() {
+	b.Kind = "toWebsocket"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -33,20 +37,29 @@ func (b *towebsocket) Setup() {
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *towebsocket) Run() {
+func (b *toWebsocket) Run() {
 
 	var addr string
+	var err error
 
 	go h.run()
+	log.Println("h running")
 
 	for {
+		log.Println("for")
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
-			addr := utils.ParseString(rule, "port")
+			if !ok {
+				b.Error(errors.New("couldn't assert rule to map"))
+			}
+			addr, err = util.ParseString(rule, "port")
+			if err != nil {
+				b.Error(err)
+			}
 			http.HandleFunc("/ws", serveWs)
-			err := http.ListenAndServe(*addr, nil)
+			err = http.ListenAndServe(addr, nil)
 			if err != nil {
 				b.Error(err)
 			}
@@ -61,6 +74,7 @@ func (b *towebsocket) Run() {
 			// deal with a query request
 		}
 	}
+	log.Println("done")
 }
 
 type hub struct {
