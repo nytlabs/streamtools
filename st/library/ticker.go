@@ -53,6 +53,11 @@ func (b *Ticker) Run() {
 				break
 			}
 
+			if dur < 0 {
+				b.Error("cannot assign negative interval to ticker")
+				break
+			}
+
 			interval = dur
 			ticker.Stop()
 			ticker = time.NewTicker(interval)

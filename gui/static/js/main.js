@@ -55,6 +55,21 @@ $(function() {
 
     var controllerTemplate = $('#controller-template').html();
 
+    var libraryHound = new Bloodhound({
+        datumTokenizer: function(d) {
+            return Bloodhound.tokenizers.whitespace(d.key);
+        },
+        queryTokenizer: Bloodhound.tokenizers.whitespace,
+        local: d3.entries(library)
+    });
+
+    libraryHound.initialize();
+
+    $('#create-input').typeahead(null, {
+        displayKey: 'key',
+        source: libraryHound.ttAdapter()
+    });
+
     //
     // SVG elements
     //
@@ -110,7 +125,7 @@ $(function() {
 
     var drag = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             d.Position.X += d3.event.dx;
@@ -134,7 +149,7 @@ $(function() {
 
     var dragTitle = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             var pos = $(this.parentNode).offset();
@@ -147,7 +162,7 @@ $(function() {
 
     var resize = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            d3.event.preventDefault()
+            //d3.event.preventDefault()
         })
         .on('drag', function(d, i) {
             var controller = $('[data-id=_' + d.Id + ']');
@@ -236,7 +251,7 @@ $(function() {
     });
 
     $('#create-input').focusout(function() {
-        $('#create-input').val('');
+        $('#create-input').typeahead('val', '');
         $('#create').css({
             'visibility': 'hidden'
         });
@@ -248,7 +263,7 @@ $(function() {
             $('#create').css({
                 'visibility': 'hidden'
             });
-            $('#create-input').val('');
+            $('#create-input').typeahead('val', '');
         }
     });
 
