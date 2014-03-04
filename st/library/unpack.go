@@ -1,51 +1,53 @@
 package library
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"io/ioutil"
-	"net/http"
 )
 
 // specify those channels we're going to use to communicate with streamtools
-type GetHTTP struct {
+type Unpack struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
+	inpoll    chan interface{}
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
-func NewGetHTTP() blocks.BlockInterface {
-	return &GetHTTP{}
+func NewUnpack() blocks.BlockInterface {
+	return &Unpack{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *GetHTTP) Setup() {
-	b.Kind = "GetHTTP"
+func (b *Unpack) Setup() {
+	b.Kind = "Unpack"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
+	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *GetHTTP) Run() {
-	client := &http.Client{}
-	var tree *jee.TokenTree
+func (b *Unpack) Run() {
 	var path string
 	var err error
+	var tree *jee.TokenTree
 	for {
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			path, err = util.ParseString(ruleI, "Path")
+			rule, ok := ruleI.(map[string]interface{})
+			if !ok {
+				b.Error(errors.New("cannot assert rule to map"))
+			}
+			path, err = util.ParseString(rule, "Path")
 			if err != nil {
 				b.Error(err)
 				continue
@@ -60,50 +62,31 @@ func (b *GetHTTP) Run() {
 				b.Error(err)
 				continue
 			}
+
 		case <-b.quit:
 			// quit the block
 			return
 		case msg := <-b.in:
-			// deal with inbound data
 			if tree == nil {
 				continue
 			}
-			urlInterface, err := jee.Eval(tree, msg)
+			arrInterface, err := jee.Eval(tree, msg)
 			if err != nil {
 				b.Error(err)
-				continue
 			}
-			urlString, ok := urlInterface.(string)
-			if !ok {
-				b.Error(errors.New("couldn't assert url to a string"))
-				continue
+			arr := arrInterface.([]interface{})
+			//if !ok {
+			//	b.Error(errors.New("cannot assert " + path + " to array"))
+			//}
+			for _, out := range arr {
+				b.out <- out
 			}
-
-			resp, err := client.Get(urlString)
-			defer resp.Body.Close()
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			var outMsg interface{}
-			err = json.Unmarshal(body, &outMsg)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			b.out <- outMsg
-		case respChan := <-b.queryrule:
+		case c := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			out := map[string]interface{}{
 				"Path": path,
 			}
-
+			c <- out
 		}
 	}
 }
