@@ -372,6 +372,17 @@ $(function() {
                     }
                 });
                 logPush(tmpl);
+
+                if (logData.Log[i].Type == 'ERROR') {
+                    var logItem = logData.Log[i].Id
+                    d3.select('.idrect[data-id=_' + logItem + ']')
+                        .classed('errored', true);
+
+                    setTimeout(function() {
+                        d3.select('.idrect[data-id=_' + logItem + ']')
+                            .classed('errored', false);
+                    }, 500);
+                }
             }
         };
         this.ws.onclose = logReconnect;
@@ -403,6 +414,19 @@ $(function() {
 
             switch (uiMsg.Type) {
                 case 'RULE_UPDATED':
+                    if (d3.select('.idrect[data-id=_' + uiMsg.Id + ']')[0][0] == null) {
+                        break;
+                    }
+                    if (d3.select('.idrect[data-id=_' + uiMsg.Id + ']').classed('updated') == false) {
+                        d3.select('.idrect[data-id=_' + uiMsg.Id + ']')
+                            .classed('updated', true);
+
+                        setTimeout(function() {
+                            d3.select('.idrect[data-id=_' + uiMsg.Id + ']')
+                                .classed('updated', false);
+                        }, 200)
+                    }
+
                     _this.ws.send(JSON.stringify({
                         "action": "rule",
                         "id": uiMsg.Id
@@ -413,11 +437,12 @@ $(function() {
                         // we need to get typeinfo from the library
                         // so that we can load the correct route information
                         // for that block type
+                        library[uiMsg.Data.Type].InRoutes.sort();
                         uiMsg.Data.TypeInfo = library[uiMsg.Data.Type];
                         blocks.push(uiMsg.Data);
                         update();
                         // we need to update the rule controller for the block.
-                        d3.select('[data-id=_' + uiMsg.Data.Id + ']')[0][0].refresh();
+                        d3.select('.controller[data-id=_' + uiMsg.Data.Id + ']')[0][0].refresh();
                     } else {
                         connections.push(uiMsg.Data);
                         update();
@@ -449,7 +474,7 @@ $(function() {
                     }
                     if (block !== null) {
                         block.Rule = uiMsg.Data.Rule;
-                        d3.select('[data-id=_' + block.Id + ']')[0][0].refresh();
+                        d3.select('.controller[data-id=_' + block.Id + ']')[0][0].refresh();
                     }
                     break;
                 case 'UPDATE_RATE':
@@ -585,7 +610,10 @@ $(function() {
             .call(drag);
 
         var idRects = nodes.append('rect')
-            .attr('class', 'idrect');
+            .attr('class', 'idrect')
+            .attr('data-id', function(d) {
+                return '_' + d.Id;
+            });
 
         nodes.append('svg:text')
             .attr('class', 'nodetype unselectable')
@@ -608,7 +636,7 @@ $(function() {
                     .classed('selected', true);
             })
             .on('dblclick', function(d) {
-                d3.select('[data-id=_' + d.Id + ']')
+                d3.select('.controller[data-id=_' + d.Id + ']')
                     .style('display', 'block')
                     .style('top', function(d) {
                         return d.Position.Y;
@@ -641,7 +669,7 @@ $(function() {
                     .classed('selected', true);
             })
             .on('dblclick', function(d) {
-                d3.select('[data-id=_' + d.Id + ']')
+                d3.select('.controller[data-id=_' + d.Id + ']')
                     .style('display', 'block')
                     .style('top', function(d) {
                         return d.Position.Y;
