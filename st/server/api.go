@@ -718,6 +718,7 @@ func (s *Server) response(statusTxt string) []byte {
 // apiWrap wraps all HTTP responses with approprite headers, status codes, and logs them.
 func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.WriteHeader(statusCode)
 	w.Write(data)
 
