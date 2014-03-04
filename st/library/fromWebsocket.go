@@ -6,8 +6,6 @@ import (
     "encoding/json"
     "time"
     "net/http"
-    "io"
-    "io/ioutil"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -35,6 +33,22 @@ func (b *FromWebsocket) Setup() {
     b.out = b.Broadcast()
 }
 
+func recv(ws *websocket.Conn, out chan interface{}){
+    for {
+        _, p, err := ws.ReadMessage()
+        if err != nil {
+           return
+        }
+
+        var outMsg interface{}
+        err = json.Unmarshal(p, &outMsg)
+        if err != nil {
+            continue
+        }
+        out <- outMsg
+    }
+}
+
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *FromWebsocket) Run() {
     var ws *websocket.Conn
@@ -42,12 +56,11 @@ func (b *FromWebsocket) Run() {
     var handshakeDialer = &websocket.Dialer{
         Subprotocols:    []string{"p1", "p2"},
     }
+    listenWS := make(chan interface{})
     wsHeader := http.Header{"Origin": {"http://localhost/"}}
 
-    loop := time.NewTicker(time.Millisecond * 10)
     for {
         select {
-        case <-loop.C:
         case ruleI := <-b.inrule:
             var err error
             // set a parameter of the block
@@ -67,6 +80,9 @@ func (b *FromWebsocket) Run() {
                 b.Error("error reading url")
                 break
             }
+            if ws != nil {
+                ws.Close()
+            }
 
             ws, _, err = handshakeDialer.Dial(surl, wsHeader)          
             if err != nil {
@@ -74,6 +90,8 @@ func (b *FromWebsocket) Run() {
                 break
             }
             ws.SetReadDeadline(time.Time{})  
+            go recv(ws, listenWS)
+
             URL = surl
         case <-b.quit:
             // quit the block
@@ -82,29 +100,8 @@ func (b *FromWebsocket) Run() {
             o <- map[string]interface{}{
                 "url": URL,
             }
-        }
-        if ws != nil {
-
-            for {
-                var r io.Reader
-                var err error
-                _, r, err = ws.NextReader()
-                if err != nil {
-                    b.Error(err)
-                    break
-                }
-                p, err := ioutil.ReadAll(r)
-                if err != nil {
-                    break
-                }
-
-                var outMsg interface{}
-                err = json.Unmarshal(p, &outMsg)
-                if err != nil {
-                    break
-                }
-                b.out <- outMsg
-            }
+        case in := <- listenWS:
+            b.out <- in
         }
     }
 }
