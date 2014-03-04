@@ -53,8 +53,8 @@ func (b *Ticker) Run() {
 				break
 			}
 
-			if dur < 0 {
-				b.Error("cannot assign negative interval to ticker")
+			if dur <= 0 {
+				b.Error("interval must be positive")
 				break
 			}
 
