@@ -389,9 +389,12 @@ $(function() {
                 }
             });
             logPush(tmpl);
-            _this.ws.send(JSON.stringify({
-                "action": "export"
-            }));
+            setTimeout(function() {
+              console.log("updating!");
+              _this.ws.send(JSON.stringify({
+                  "action": "export"
+              }));
+            });
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
