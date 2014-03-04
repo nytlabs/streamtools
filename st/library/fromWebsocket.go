@@ -6,6 +6,8 @@ import (
     "encoding/json"
     "time"
     "net/http"
+    "io"
+    "io/ioutil"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -82,16 +84,27 @@ func (b *FromWebsocket) Run() {
             }
         }
         if ws != nil {
-            _, p, err := ws.ReadMessage()
-            if err != nil {
-                continue
+
+            for {
+                var r io.Reader
+                var err error
+                _, r, err = ws.NextReader()
+                if err != nil {
+                    b.Error(err)
+                    break
+                }
+                p, err := ioutil.ReadAll(r)
+                if err != nil {
+                    break
+                }
+
+                var outMsg interface{}
+                err = json.Unmarshal(p, &outMsg)
+                if err != nil {
+                    break
+                }
+                b.out <- outMsg
             }
-            var outMsg interface{}
-            err = json.Unmarshal(p, &outMsg)
-            if err != nil {
-                continue
-            }
-            b.out <- outMsg
         }
     }
 }
