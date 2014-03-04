@@ -13,6 +13,7 @@ import (
 type Histogram struct {
 	blocks.Block
 	queryrule chan chan interface{}
+	historule chan chan interface{}
 	inrule    chan interface{}
 	inpoll    chan interface{}
 	in        chan interface{}
@@ -53,6 +54,7 @@ func (b *Histogram) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
+	b.historule = b.QueryRoute("histogram")
 	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
@@ -133,6 +135,9 @@ func (b *Histogram) Run() {
 				"Path":   path,
 			}
 			respChan <- out
+		case respChan := <-b.historule:
+			data := buildHistogram(histogram)
+			respChan <- data
 		}
 		for _, pq := range histogram {
 			for {
