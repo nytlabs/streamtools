@@ -411,6 +411,9 @@ $(function() {
 
             switch (uiMsg.Type) {
                 case 'RULE_UPDATED':
+                    if (d3.select('.idrect[data-id=_' + uiMsg.Id + ']')[0][0] == null) {
+                        break;
+                    }
                     if (d3.select('.idrect[data-id=_' + uiMsg.Id + ']').classed('updated') == false) {
                         d3.select('.idrect[data-id=_' + uiMsg.Id + ']')
                             .classed('updated', true);
