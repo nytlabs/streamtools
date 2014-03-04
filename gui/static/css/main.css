@@ -136,6 +136,16 @@
     stroke: rgba(80,80,255,1);
 }
 
+.errored {
+    stroke-width: 2px;
+    stroke: rgba(255,50,50,1);
+}
+
+.updated {
+    stroke-width: 2px;
+    stroke: rgba(50,210,50,1);
+}
+
 .ui-log{
     font-weight: bold;
 }
