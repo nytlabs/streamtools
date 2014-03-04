@@ -39,8 +39,6 @@ func (b *FromWebsocket) Run() {
     var URL string
     var handshakeDialer = &websocket.Dialer{
         Subprotocols:    []string{"p1", "p2"},
-        ReadBufferSize:  1024,
-        WriteBufferSize: 1024,
     }
     wsHeader := http.Header{"Origin": {"http://localhost/"}}
 
@@ -74,7 +72,6 @@ func (b *FromWebsocket) Run() {
                 break
             }
             ws.SetReadDeadline(time.Time{})  
-
             URL = surl
         case <-b.quit:
             // quit the block
