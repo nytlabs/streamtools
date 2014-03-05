@@ -125,7 +125,8 @@ $(function() {
 
     var drag = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            //d3.event.preventDefault()
+            d3.event.sourceEvent.stopPropagation();
+            d3.event.sourceEvent.preventDefault();
         })
         .on('drag', function(d, i) {
             d.Position.X += d3.event.dx;
@@ -149,7 +150,8 @@ $(function() {
 
     var dragTitle = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            //d3.event.preventDefault()
+            d3.event.sourceEvent.stopPropagation();
+            d3.event.sourceEvent.preventDefault();
         })
         .on('drag', function(d, i) {
             var pos = $(this.parentNode).offset();
@@ -160,9 +162,28 @@ $(function() {
             });
         });
 
+    var dragRate = d3.behavior.drag()
+        .on('dragstart', function(d, i) {
+            d3.event.sourceEvent.stopPropagation();
+            d3.event.sourceEvent.preventDefault();
+            d.drag = {
+                x: mouse.x,
+                y: mouse.y
+            }
+        })
+        .on('dragend', function(d, i) {
+            if (Math.pow((mouse.x - d.drag.x), 2) + Math.pow((mouse.y - d.drag.y), 2) > 20) {
+                $.get('connections/' + d.Id + '/last', function(resp) {
+                    createStaticPanel(d.Id + '/last', JSON.stringify(resp.Last, null, 4))
+                })
+            }
+        });
+
+
     var resize = d3.behavior.drag()
         .on('dragstart', function(d, i) {
-            //d3.event.preventDefault()
+            d3.event.sourceEvent.stopPropagation();
+            d3.event.sourceEvent.preventDefault();
         })
         .on('drag', function(d, i) {
             var controller = $('[data-id=_' + d.Id + ']');
@@ -276,6 +297,37 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
+
+    function createStaticPanel(titleTxt, data) {
+        var info = d3.select('body').append('div')
+            .classed('info-panel', true)
+            .style('top', mouse.y + 'px')
+            .style('left', mouse.x + 'px')
+            .style('display', 'block')
+
+        var title = info.append('div')
+            .classed('title', true)
+            .call(dragTitle);
+
+        title.append('div')
+            .classed('name', true)
+            .text(titleTxt);
+
+        title.append('div')
+            .classed('close', true)
+            .html('&#215;')
+            .on('click', function(d) {
+                $(this).parent().parent().remove();
+            });
+
+        body = info.append('div')
+            .classed('body', true);
+
+        body.append('textarea')
+            .classed('info-text', true)
+            .text(data);
+    }
+
 
     function pauseEvent(e) {
         if (e.stopPropagation) e.stopPropagation();
@@ -401,11 +453,10 @@ $(function() {
             });
             logPush(tmpl);
             setTimeout(function() {
-              console.log("updating!");
-              _this.ws.send(JSON.stringify({
-                  "action": "export"
-              }));
-            });
+                _this.ws.send(JSON.stringify({
+                    "action": "export"
+                }));
+            }, 1000);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
@@ -738,6 +789,12 @@ $(function() {
             })
             .on('mouseout', function(d) {
                 return tooltip.style('visibility', 'hidden');
+            })
+            .on('click', function(d) {
+                var p = d3.select(this.parentNode).datum()
+                $.get('blocks/' + p.Id + '/' + d, function(resp) {
+                    createStaticPanel(p.Id + '/' + d, JSON.stringify(resp, null, 4))
+                })
             });
 
         queryRoutes.exit().remove();
@@ -814,7 +871,7 @@ $(function() {
         var edgeLabel = svg.select('.linkContainer').selectAll('.edgeLabel')
             .data(connections, function(d) {
                 return d.Id;
-            });
+            })
 
         var ed = edgeLabel.enter()
             .append('g')
@@ -838,7 +895,8 @@ $(function() {
                 }
                 d3.select(this)
                     .classed('selected', true);
-            });
+            })
+            .call(dragRate)
 
         edgeLabel.exit().remove();
 

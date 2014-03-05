@@ -152,7 +152,7 @@
     font-weight: bold;
 }
 
-.controller .title {
+.controller .title, .info-panel .title {
     min-width: 200px;
     line-height: 22px;
     font-size: 14px;
@@ -162,7 +162,7 @@
     cursor: pointer;
 }
 
-.controller {
+.controller, .info-panel {
     font-family: helvetica, arial, sans-serif;
     position: absolute;
     background: rgba(158,158,158,1);
@@ -188,6 +188,18 @@
     width: 100%;
     background: rgba(158,158,158,1);
     border:none;
+}
+
+.info-text{
+    width: 100%;
+    min-height: 200px;
+}
+
+.rule, .info-text{
+    font-family: Monaco, "Courier New", Courier, monospace;
+    font-size: 10px;
+    white-space: pre; 
+    overflow: auto;
 }
 
 .rule:focus{

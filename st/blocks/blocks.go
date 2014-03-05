@@ -162,33 +162,33 @@ func (b *Block) CleanUp() {
 	defer close(b.QuitChan)
 	defer close(b.broadcast)
 
-	go func(){
+	go func(id string){
 	    loghub.Log <- &loghub.LogMsg{
 	        Type: loghub.INFO,
 	        Data: fmt.Sprintf("Block %s Quitting...", b.Id),
-	        Id:   b.Id,
+	        Id: id,
 	    }
-	}()
+	}(b.Id)
 }
 
 func (b *Block) Error(msg interface{}) {
-	go func(){
+	go func(id string){
 	    loghub.Log <- &loghub.LogMsg{
 	        Type: loghub.ERROR,
 	        Data: msg,
-	        Id:   b.Id,
+	        Id: id,
 	    }
-	}()
+	}(b.Id)
 }
 
 func (b *Block) Log(msg interface{}){
-	go func() {
+	go func(id string) {
 	    loghub.Log <- &loghub.LogMsg{
 	        Type: loghub.INFO,
 	        Data: msg,
-	        Id:   b.Id,
+	        Id: id,
 	    }
-	}()
+	}(b.Id)
 }
 
 func BlockRoutine(bi BlockInterface) {
@@ -208,13 +208,13 @@ func BlockRoutine(bi BlockInterface) {
 			b.inRoutes[msg.Route] <- msg.Msg
 
 			if msg.Route == "rule" {
-				go func(){
+				go func(id string){
 					loghub.UI <- &loghub.LogMsg{
 						Type: loghub.RULE_UPDATED,
 						Data: map[string]interface{}{},
-						Id:   b.Id,
+						Id:   id,
 					}
-				}()
+				}(b.Id)
 			}
 
 		case msg := <-b.QueryChan:
@@ -292,15 +292,15 @@ func ConnectionRoutine(c *Connection){
 				rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
 			}
 
-			go func(){
+			go func(id string, r float64){
 			    loghub.UI <- &loghub.LogMsg{
 			        Type: loghub.UPDATE_RATE,
 			        Data: map[string]interface{}{
-			        	"Rate": rate,
+			        	"Rate": r,
 			        },
-			        Id:   c.Id,
+			        Id:   id,
 			    }
-		    }()
+		    }(c.Id, rate)
 
 		case msg := <- c.InChan:
 			last = msg.Msg
