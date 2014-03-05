@@ -8,10 +8,12 @@ import (
 	"github.com/nytlabs/streamtools/st/util"
 	"github.com/nytlabs/streamtools/st/library"
 	"github.com/nytlabs/streamtools/st/loghub"
+	"github.com/nytlabs/streamtools/st/blocks"
 	"io/ioutil"
 	"net/http"
 	"runtime"
 	"log"
+	"time"
 )
 
 var logStream = hub{
@@ -112,6 +114,79 @@ func (s *Server) serveLogStream(w http.ResponseWriter, r *http.Request) {
 	go c.writePump()
 	recv := make(chan string)
 	c.readPump(recv)
+}
+
+func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blockId, ok := vars["id"]
+	if !ok {
+		s.apiWrap(w, r, 500, s.response("must specify block ID to connect"))
+		return
+	}
+
+	if r.Method != "GET" {
+		http.Error(w, "Method not allowed", 405)
+		return
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	/*if r.Header.Get("Origin") != "http://"+r.Host {
+		http.Error(w, "Origin not allowed", 403)
+		return
+	}*/
+	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
+	if _, ok := err.(websocket.HandshakeError); ok {
+		http.Error(w, "Not a websocket handshake", 400)
+		return
+	} else if err != nil {
+		//log.Println(err)
+		return
+	}
+	c := &connection{send: make(chan []byte, 256), ws: ws}
+	blockChan, connId := s.manager.GetSocket(vars["id"])
+	ticker := time.NewTicker(( 10 * time.Second * 9) / 10)
+	go func(c *connection, bChan chan *blocks.Msg, cId string, bId string){
+		defer func() {
+			_ = s.manager.DeleteSocket(bId, cId)
+			ticker.Stop()
+			c.ws.Close()
+		}()
+		for {
+			select {
+			case msg := <- bChan:
+				message, _ := json.Marshal(msg.Msg)
+				if err := c.write(websocket.TextMessage, message); err != nil {
+					return
+				}
+			case <-ticker.C:
+				if err := c.write(websocket.PingMessage, []byte{}); err != nil {
+					return
+				}
+			}
+		}
+	}(c, blockChan, connId, blockId)
+}
+
+func (s *Server) streamHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	blockId, ok := vars["id"]
+	if !ok {
+		s.apiWrap(w, r, 500, s.response("must specify block ID to connect"))
+		return
+	}
+	blockChan, connId := s.manager.GetSocket(blockId)
+	for{
+		msg := <- blockChan
+		message, _ := json.Marshal(msg.Msg)
+		_, err := w.Write(message)
+		_, err = w.Write([]byte("\r\n"))
+		if err != nil {
+			s.manager.DeleteSocket(blockId, connId)
+			break
+		}
+		if f, ok := w.(http.Flusher); ok {
+      		f.Flush()
+    	}
+	}
 }
 
 // serveUIStream handles websocket connections for the streamtools ui.
@@ -796,6 +871,8 @@ func (s *Server) Run() {
 	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")           // delete block
 	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")       // send to block route
 	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")       // get from block route
+	r.HandleFunc("/ws/{id}", s.websocketHandler).Methods("GET")	                   // websocket handler
+	r.HandleFunc("/stream/{id}", s.streamHandler).Methods("GET")	               // http stream handler
 	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")        // create connection
 	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")           // list connections
 	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")      // get info for connection

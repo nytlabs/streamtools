@@ -267,6 +267,25 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 	return connInfo, nil
 }
 
+func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string) {
+	wsChan := make(chan *blocks.Msg)
+	id := b.GetId()
+
+	b.blockMap[fromId].chans.AddChan <- &blocks.AddChanMsg{
+		Route: id,
+		Channel: wsChan,
+	}
+
+	return wsChan, id
+}
+
+func (b *BlockManager) DeleteSocket(blockId string, connId string) error {
+	b.blockMap[blockId].chans.DelChan <- &blocks.Msg{
+		Route: connId,
+	}
+	return nil
+}
+
 func (b *BlockManager) updateRule(id string) {
 	rule := false
 	block := b.blockMap[id]
