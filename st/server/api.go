@@ -89,6 +89,70 @@ func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, p)
 }
 
+func (s *Server) clearHandler(w http.ResponseWriter, r *http.Request) {
+
+	conns := s.manager.ListConnections();
+	for _, v := range conns {
+		id, err := s.manager.DeleteConnection(v.Id)
+		if err != nil {
+			loghub.Log <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: err.Error(),
+				Id:   s.Id,
+			}
+		}
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.DELETE,
+			Data: struct {
+				Id string
+			}{
+				id,
+			},
+			Id: s.Id,
+		}
+	}
+
+	blocks := s.manager.ListBlocks();
+	for _, v := range blocks{
+		ids, err := s.manager.DeleteBlock(v.Id)
+		if err != nil {
+			loghub.Log <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: err.Error(),
+				Id:   s.Id,
+			}
+			continue
+		}
+
+		for _, id := range ids {
+			loghub.Log <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: fmt.Sprintf("Block %s", id),
+				Id:   s.Id,
+			}
+
+			loghub.UI <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: struct {
+					Id string
+				}{
+					id,
+				},
+				Id: s.Id,
+			}
+		}
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Go routines: %d", runtime.NumGoroutine()),
+		Id:   s.Id,
+	}
+
+	s.apiWrap(w, r, 200, s.response("OK"))
+}
+
 // serveLogStream handles websocket connections for the streamtools log.
 // It is write-only.
 func (s *Server) serveLogStream(w http.ResponseWriter, r *http.Request) {
@@ -862,6 +926,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/port", s.portHandler)
 	r.HandleFunc("/domain", s.domainHandler)
 	r.HandleFunc("/version", s.versionHandler)
+	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")
 	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                     // list all blocks
