@@ -426,7 +426,6 @@ $(function() {
                 logPush(tmpl);
 
                 if (logData.Log[i].Type == 'ERROR') {
-                  console.log("error to logReader")
                     var logItem = logData.Log[i].Id
                     d3.select('.idrect[data-id=_' + logItem + ']')
                         .classed('errored', true);
@@ -457,7 +456,7 @@ $(function() {
                 _this.ws.send(JSON.stringify({
                     "action": "export"
                 }));
-            }, 1000);
+            }, 5000);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
