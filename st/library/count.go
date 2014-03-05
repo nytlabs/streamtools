@@ -9,12 +9,13 @@ import (
 
 type Count struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule  chan chan interface{}
+	querycount chan chan interface{}
+	inrule     chan interface{}
+	inpoll     chan interface{}
+	in         chan interface{}
+	out        chan interface{}
+	quit       chan interface{}
 }
 
 // a bit of boilerplate for streamtools
@@ -28,6 +29,7 @@ func (b *Count) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")
 	b.queryrule = b.QueryRoute("rule")
+	b.querycount = b.QueryRoute("count")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
@@ -72,6 +74,10 @@ func (b *Count) Run() {
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
 				"Window": window.String(),
+			}
+		case c := <-b.querycount:
+			c <- map[string]interface{}{
+				"Count": len(*pq),
 			}
 		}
 		for {

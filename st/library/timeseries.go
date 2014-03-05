@@ -50,9 +50,10 @@ func (b *Timeseries) Setup() {
 func (b *Timeseries) Run() {
 
 	var err error
-	var path, lagStr string
+	//var path, lagStr string
+	var path string
 	var tree *jee.TokenTree
-	var lag time.Duration
+	//var lag time.Duration
 	var data tsData
 	var numSamples float64
 
@@ -74,16 +75,18 @@ func (b *Timeseries) Run() {
 				b.Error(err)
 				continue
 			}
-			lagStr, err = util.ParseString(rule, "Window")
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			lag, err = time.ParseDuration(lagStr)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
+			/*
+				lagStr, err = util.ParseString(rule, "Lag")
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+				lag, err = time.ParseDuration(lagStr)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+			*/
 			numSamples, err = util.ParseFloat(rule, "NumSamples")
 			if err != nil {
 				b.Error(err)
@@ -119,7 +122,8 @@ func (b *Timeseries) Run() {
 				val = v
 			}
 
-			t := float64(time.Now().Add(-lag).Unix())
+			//t := float64(time.Now().Add(-lag).Unix())
+			t := float64(time.Now().Unix())
 
 			d := tsDataPoint{
 				Timestamp: t,
@@ -129,7 +133,7 @@ func (b *Timeseries) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Window":     lagStr,
+				//"Window":     lagStr,
 				"Path":       path,
 				"NumSamples": numSamples,
 			}

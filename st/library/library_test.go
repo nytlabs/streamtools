@@ -24,7 +24,11 @@ func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 	}
 
 	// actual block
-	b := Blocks[kind]()
+	newblock, ok := Blocks[kind]
+	if !ok {
+		log.Println("block", kind, "not found!")
+	}
+	b := newblock()
 	b.Build(chans)
 
 	return b, chans
@@ -716,6 +720,41 @@ func (s *StreamSuite) TestUnpack(c *C) {
 	arr := []interface{}{m}
 	inMsg := map[string]interface{}{"a": arr}
 	ch.InChan <- &blocks.Msg{Msg: inMsg, Route: "in"}
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
+func (s *StreamSuite) TestMovingAverage(c *C) {
+	loghub.Start()
+	log.Println("testing moving average")
+	b, ch := newBlock("testing movingaverave", "movingaverage")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	ruleMsg := map[string]interface{}{"Path": ".a", "Window": "4s"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+	/*
+		m := map[string]string{"b": "test"}
+		arr := []interface{}{m}
+		inMsg := map[string]interface{}{"a": arr}
+		ch.InChan <- &blocks.Msg{Msg: inMsg, Route: "in"}
+	*/
 	for {
 		select {
 		case err := <-ch.ErrChan:

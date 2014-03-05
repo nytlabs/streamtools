@@ -6,6 +6,7 @@ import (
 
 var Blocks = map[string]func() blocks.BlockInterface{
 	"count":           NewCount,
+	"movingaverage":   NewMovingAverage,
 	"ticker":          NewTicker,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
