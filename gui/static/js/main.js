@@ -456,7 +456,7 @@ $(function() {
                 _this.ws.send(JSON.stringify({
                     "action": "export"
                 }));
-            }, 5000);
+            }, 1000);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
