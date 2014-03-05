@@ -80,11 +80,11 @@ func (b *GetHTTP) Run() {
 			}
 
 			resp, err := client.Get(urlString)
-			defer resp.Body.Close()
 			if err != nil {
 				b.Error(err)
 				continue
 			}
+			defer resp.Body.Close()
 
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
