@@ -17,7 +17,7 @@ type FromNSQ struct {
 	topic       string
 	channel     string
 	lookupdAddr string
-	maxInFlight int
+	maxInFlight float64
 }
 
 // a bit of boilerplate for streamtools
@@ -75,7 +75,7 @@ func (b *FromNSQ) Run() {
 			if err != nil {
 				b.Error(err)
 			}
-			maxInFlight, err := util.ParseInt(rule, "MaxInFlight")
+			maxInFlight, err := util.ParseFloat(rule, "MaxInFlight")
 			if err != nil {
 				b.Error(err)
 			}
@@ -88,7 +88,7 @@ func (b *FromNSQ) Run() {
 			if err != nil {
 				b.Error(err)
 			}
-			reader.SetMaxInFlight(maxInFlight)
+			reader.SetMaxInFlight(int(maxInFlight))
 
 			h := readWriteHandler{toOut, toError}
 			reader.AddHandler(h)
