@@ -10,9 +10,8 @@ import (
 	"github.com/nytlabs/streamtools/st/loghub"
 	"io/ioutil"
 	"net/http"
-	"sync"
-	"log"
 	"runtime"
+	"log"
 )
 
 var logStream = hub{
@@ -31,7 +30,6 @@ var uiStream = hub{
 
 type Server struct {
 	manager *BlockManager
-	mu      *sync.Mutex
 	Port    string
 	Domain  string
 	Id      string
@@ -40,7 +38,6 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		manager: NewBlockManager(),
-		mu:      &sync.Mutex{},
 	}
 }
 
@@ -185,7 +182,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 					return
 				case "export":
 					// emit block configuration on message
-					s.mu.Lock()
+					s.manager.Mu.Lock()
 					for _, v := range s.manager.ListBlocks() {
 						out, _ := json.Marshal(struct {
 							Type string
@@ -210,7 +207,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						})
 						c.send <- out
 					}
-					s.mu.Unlock()
+					s.manager.Mu.Unlock()
 				case "rule":
 					_, ok := msg["id"]
 					if !ok {
@@ -220,8 +217,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 					if !ok {
 						break
 					}
-					s.mu.Lock()
+					s.manager.Mu.Lock()
 					b, _ := s.manager.GetBlock(idStr)
+					s.manager.Mu.Unlock()
 					out, _ := json.Marshal(struct {
 						Type string
 						Data interface{}
@@ -232,7 +230,6 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						s.Id,
 					})
 					c.send <- out
-					s.mu.Unlock()
 				}
 			}
 		}
@@ -288,8 +285,6 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 			Data: eblock,
 			Id:   s.Id,
 		}
-
-		log.Println("BLOCK IS :", eblock)
 
 		loghub.Log <- &loghub.LogMsg{
 			Type: loghub.CREATE,
