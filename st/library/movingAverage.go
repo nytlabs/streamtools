@@ -117,12 +117,12 @@ func (b *MovingAverage) Run() {
 		case <-b.inpoll:
 			// deal with a poll request
 			outMsg := map[string]interface{}{
-				"Averageg": pqAverage(pq),
+				"Average": pqAverage(pq),
 			}
 			b.out <- outMsg
 		case c := <-b.queryavg:
 			outMsg := map[string]interface{}{
-				"Averageg": pqAverage(pq),
+				"Average": pqAverage(pq),
 			}
 			c <- outMsg
 		case c := <-b.queryrule:
