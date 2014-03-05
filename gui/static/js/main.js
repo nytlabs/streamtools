@@ -426,6 +426,7 @@ $(function() {
                 logPush(tmpl);
 
                 if (logData.Log[i].Type == 'ERROR') {
+                  console.log("error to logReader")
                     var logItem = logData.Log[i].Id
                     d3.select('.idrect[data-id=_' + logItem + ']')
                         .classed('errored', true);
