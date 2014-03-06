@@ -155,7 +155,7 @@ Import accepts a JSON representation of a pattern, creating it in the running st
 
 ### data
 
-Every block that as an `OUT` route also has a websocket and a long-lived HTTP connection associated with it. These
+Every block that as an `OUT` route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.
 
 WEBSOCKET `/ws/{id}`
 
