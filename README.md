@@ -82,18 +82,23 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 * fromSQS
 * fromNSQ
 * fromHTTPStream
+* fromPost
+* fromWebsocket
 
 ### Sink Blocks
 
 * toNSQ
 * toFile
 * toLog
+* toElasticSearch
+* toWebsocket
 
 ### Transfer Blocks
 
 * map
 * filter
 * sync
+* unpack
 * getHTTP
 * movingAverage
 * gaussian
@@ -104,6 +109,7 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 
 * count
 * histogram
+* timeseries
 
 ## Command Line Options
 
