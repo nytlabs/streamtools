@@ -16,7 +16,15 @@ We call a collection of connected blocks a *pattern*, and it is possible to expo
 
 ## Getting Started - the nuts and bolts
 
-Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user you will need to compile the code yourself.
+### quick start
+
+* download `st` from the streamtools [github](https://github.com/nytlabs/streamtools/releases) releases page
+* run `st` locally or on server
+* in a browser, visit port 7070 of the machine you ran `st` on.
+
+### longer description
+
+Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere that serves up the streamtools webpage. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user you will need to compile the code yourself.
 
 So, first of all, you need to download the streamtools server. It's just a single file, and you can find the latest release on [github](https://github.com/nytlabs/streamtools/releases). Download this file, and move it to your home directory. Now, open a terminal and run the streamtools server by typing `~/st`. You should see streamtools start up, telling you it's running on port 7070.
 
@@ -87,6 +95,7 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 * filter
 * sync
 * getHTTP
+* movingAverage
 * gaussian
 * zipf
 * poisson
@@ -95,16 +104,6 @@ We break blocks up roughly into generator, source, sink, transfer and state bloc
 
 * count
 * histogram
-
-## Patterns
-
-### Counting
-
-One of the most basic patterns when dealing with stream
-
-![count](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.png)
-
-[counting example](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.json)
 
 ## Command Line Options
 
@@ -147,6 +146,18 @@ Export returns a JSON representation of the current streamtools pattern.
 POST `/import`
 
 Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it's useful.
+
+### data
+
+Every block that as an `OUT` route also has a websocket and a long-lived HTTP connection associated with it. These
+
+WEBSOCKET `/ws/{id}`
+
+a websocket emitting every message sent on the block's `OUT` route.
+
+GET `/stream/{id}`
+
+a long-lived HTTP stream of every message sent on the block's `OUT` route.
 
 ### blocks
 
