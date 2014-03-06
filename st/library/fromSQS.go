@@ -134,7 +134,6 @@ func readLoop(r *Reader) {
 						select {
 							case r.OutChan <- []byte(outmsg):
 							case <-stop.C:
-								log.Println("abandoning message")
 								return
 						}
 					}(msg)
@@ -195,7 +194,7 @@ func (b *FromSQS) Run() {
 	var SQSEndpoint, AccessKey, AccessSecret string
 	var err error
 	var r *Reader
-	fromReader := make(chan []byte)
+	fromReader := make(chan []byte, 10000)
 
 	for {
 		select {
@@ -226,7 +225,6 @@ func (b *FromSQS) Run() {
 			if r != nil {
 				r.QuitChan <- true
 			}
-			log.Println("LEN:", len(fromReader))
 			// quit the block
 			return
 		case msg := <-fromReader:
