@@ -81,7 +81,7 @@ func (b *Block) Build(c BlockChans) {
 
 	// route maps
 	b.inRoutes = make(map[string]chan interface{}, 10) // necessary to stop locking...
-	b.queryRoutes = make(map[string]chan chan interface{})
+	b.queryRoutes = make(map[string]chan chan interface{}, 10)
 
 	// broadcast channel
 	b.broadcast = make(chan interface{}, 10) // necessary to stop locking...
@@ -222,7 +222,9 @@ func BlockRoutine(bi BlockInterface) {
 			if !ok {
 				break
 			}
-			b.queryRoutes[msg.Route] <- msg.RespChan
+			go func(){
+				b.queryRoutes[msg.Route] <- msg.RespChan
+			}()
 		case msg := <-b.AddChan:
 			outChans[msg.Route] = msg.Channel
 		case msg := <-b.DelChan:
@@ -283,6 +285,7 @@ func ConnectionRoutine(c *Connection){
 	times := make([]int64,100,100)
 	timesIdx := len(times)
 	rateReport := time.NewTicker(200 * time.Millisecond)
+
 	for{
 		select{
 		case <- rateReport.C:
