@@ -14,6 +14,46 @@ You can connect blocks together, via their routes, using connections. You can co
 
 We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools.
 
+## Getting Started - the nuts and bolts
+
+Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user you will need to compile the code yourself.
+
+So, first of all, you need to download the streamtools server. It's just a single file, and you can find the latest release on [github](https://github.com/nytlabs/streamtools/releases). Download this file, and move it to your home directory. Now, open a terminal and run the streamtools server by typing `~/st`. You should see streamtools start up, telling you it's running on port 7070.
+
+Now, open a browser window and point it at [localhost:7070](http://localhost:7070/). You should see a (nearly) blank page. At the bottom you should see a status bar that says `client: connected to Streamtools` followed by a version number. Congratulations! You're in.
+
+## GUI
+
+Streamtool's GUI aims to be responsive and informative, meaning that you can both create and interrogate a live streaming system. At the same time, it aims to be as minimal as possible - the GUI posses a very tight relationship with the underlying streamtools architecture enabling users of streamtools to see and understand the execution of the system.
+
+### make a block
+
+To make a block, double click anywhere on the background. Type the name of the block you'd like and press enter.
+
+### connect two blocks
+
+To connect two blocks together, first click on an outbound route on the *bottom* of the block you want to connect from. Almost always this route will be labelled `OUT` when you mouse over it. Then click on an inbound route on the *top* of another block. There can be a few inbound routes; common ones are `IN`, `RULE`, and `POLL`. This will create a connection between the blocks.
+
+### set the rule of a block
+
+To set a block's rules, double click it. This will open a window where you can enter rules. When you're done entering rules, hit the update button.
+
+### query a block
+
+You can query a block's rules, or any other queryable route a block has, by clicking on the red squares on the right of the block. These will open a window that shows a JSON representation of that information. An example of a queryable route is `COUNT` for the count block. If you click on the little red square associated with the `COUNT` route, then you'll get a JSON representation of that block's current count.
+
+### delete a block
+
+To delete a block you don't like anymore, click on it and press the delete (backspace) button on your keyboard.
+
+### move a block
+
+To move a block around, simply drag it about the place.
+
+### see the last message that passed through a connection
+
+To see the last message that passed through a connection, click and drag the connection's rate estiamte. This creates a window containing the JSON representation of the last message to pass through that connection.  
+
 ## Blocks
 
 Streamtools contains an ever-increasing set of individual blocks you can use to build patterns. Each block normally has one or more of the following routes, though blocks can also have custom routes as necessary.
@@ -65,6 +105,13 @@ One of the most basic patterns when dealing with stream
 ![count](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.png)
 
 [counting example](https://raw.github.com/mikedewar/streamtools/redesign/examples/count.json)
+
+## Command Line Options
+
+The streamtools server is completely contained in a single binary called `st`. It has a number of options:
+
+* *--port=7070* - specify a port number to run on. Default is 7070.
+* *--domain=localhost* - if you're accessing streamtools through a URL that's not `localhost`, you need to specify it using this option.
 
 ## API
 
@@ -169,3 +216,7 @@ Deletes the connection specified by `{id}`.
 GET `/connections/{id}/{route}`
 
 Query a connection via its routes. Each connection has a `rate` route which will return an estimate of the rate of messages coming through it and a `last` route which will return the last message it saw.
+
+# References
+
+* For background on responsive programming tools see Bret Victor's [learnable programming](http://worrydream.com/#!/LearnableProgramming).
