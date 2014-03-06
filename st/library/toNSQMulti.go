@@ -45,7 +45,7 @@ func (b *ToNSQMulti) Run() {
 	for {
 		select {
 		case <-dump.C:
-			if writer == nil {
+			if writer == nil || len(batch) == 0 {
 				break
 			}
 			_, _, err := writer.MultiPublish(b.topic, batch)
