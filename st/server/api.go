@@ -12,6 +12,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"runtime"
+	"runtime/pprof"
+	"os"
 	"log"
 	"time"
 )
@@ -818,6 +820,26 @@ func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 	s.apiWrap(w, r, 200, jconn)
 }
 
+func (s *Server) topHandler(w http.ResponseWriter, r *http.Request) {
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1) 
+	s.apiWrap(w, r, 200, s.response("OK"))
+}
+
+func (s *Server) profStartHandler(w http.ResponseWriter, r *http.Request) {
+	f, err := os.Create("streamtools.prof")
+    if err != nil {
+        log.Fatal(err)
+    }
+    pprof.StartCPUProfile(f)
+
+	s.apiWrap(w, r, 200, s.response("OK"))
+}
+
+func (s *Server) profStopHandler(w http.ResponseWriter, r *http.Request) {
+    pprof.StopCPUProfile()
+	s.apiWrap(w, r, 200, s.response("OK"))
+}
+
 // connectionInfoHandler returns a connection object, given an is.
 func (s *Server) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -913,7 +935,6 @@ func (s *Server) Run() {
 	go logStream.run()
 	go uiStream.run()
 
-
 	loghub.AddLog <- logStream.Broadcast
 	loghub.AddUI <- uiStream.Broadcast
 
@@ -926,6 +947,9 @@ func (s *Server) Run() {
 	r.HandleFunc("/port", s.portHandler)
 	r.HandleFunc("/domain", s.domainHandler)
 	r.HandleFunc("/version", s.versionHandler)
+	r.HandleFunc("/top", s.topHandler)
+	r.HandleFunc("/profstart", s.profStartHandler)
+	r.HandleFunc("/profstop", s.profStopHandler)
 	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")

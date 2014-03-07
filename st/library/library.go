@@ -29,6 +29,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"histogram":       NewHistogram,
 	"timeseries":      NewTimeseries,
 	"fromwebsocket":   NewFromWebsocket,
+	"tonsqmulti":      NewToNSQMulti,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
