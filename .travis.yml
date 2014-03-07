@@ -2,12 +2,15 @@ language: go
 
 go:
   - 1.2
+  - release
+  
+script: "cd st/library && go test"
 
-install:
-  - go get github.com/bitly/go-nsq
-  - go get github.com/nikhan/go-sqsReader
-  - go get github.com/nytlabs/gojee
+before_install:
+  - export GOPATH=/home/travis/gopath
+  - export PATH=$GOPATH/bin:$PATH
   - go get launchpad.net/gocheck
   - go get github.com/mattbaird/elastigo/api
   - go get github.com/mattbaird/elastigo/core
-script: "cd st/library && go test"
+
+install: make
