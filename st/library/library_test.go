@@ -81,7 +81,8 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	outChan := make(chan *blocks.Msg)
 	fromC.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	nsqSetup := map[string]interface{}{"ReadTopic": "librarytest", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "libtestchannel", "MaxInFlight": 100}
+	var maxInFlight float64 = 100
+	nsqSetup := map[string]interface{}{"ReadTopic": "librarytest", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "libtestchannel", "MaxInFlight": maxInFlight}
 	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
 	fromC.InChan <- fromRule
 
@@ -207,7 +208,7 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 	b, ch := newBlock("testingFromSQS", "fromsqs")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret"}
+	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret", "APIVersion": "2012-11-05", "SignatureVersion": "4", "WaitTimeSeconds": "0", "MaxNumberOfMessages": "10"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
@@ -224,13 +225,14 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			log.Println("got query message")
 			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:")
+				log.Println(messageI)
+				log.Println(ruleMsg)
 				c.Fail()
 			}
 
 		case message := <-outChan:
-			log.Println("got message")
 			log.Println(message)
 
 		case err := <-ch.ErrChan:

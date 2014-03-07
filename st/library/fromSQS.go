@@ -2,19 +2,19 @@ package library
 
 import (
 	"encoding/json"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 	"encoding/xml"
 	"fmt"
 	"github.com/mikedewar/aws4"
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
-	"net/url"
-	"strings"
 	"log"
-	"time"
 	"net"
 	"net/http"
-    "sync"
+	"net/url"
+	"strings"
+	"sync"
+	"time"
 )
 
 type sqsMessage struct {
@@ -23,25 +23,30 @@ type sqsMessage struct {
 }
 
 func dialTimeout(network, addr string) (net.Conn, error) {
-    return net.DialTimeout(network, addr, time.Duration(2 * time.Second))
+	return net.DialTimeout(network, addr, time.Duration(2*time.Second))
 }
 
 func (b *FromSQS) listener() {
 	b.lock.Lock()
 	lAuth := map[string]string{}
+	var err error
 	for k, _ := range b.auth {
-		lAuth[k] = b.auth[k]
+		lAuth[k], err = util.ParseString(b.auth, k)
+		if err != nil {
+			b.Error(err)
+			break
+		}
 	}
 	b.listening = true
 	b.lock.Unlock()
 
 	transport := http.Transport{
-        Dial: dialTimeout,
-    }
+		Dial: dialTimeout,
+	}
 
 	httpclient := &http.Client{
-        Transport: &transport,
-    }
+		Transport: &transport,
+	}
 
 	keys := &aws4.Keys{
 		AccessKey: lAuth["AccessKey"],
@@ -59,12 +64,12 @@ func (b *FromSQS) listener() {
 	query.Set("MaxNumberOfMessages", lAuth["MaxNumberOfMessages"])
 	queryurl := lAuth["SQSEndpoint"] + query.Encode()
 
-    for {
-    	select {
-    	case <-b.stop:
-    		log.Println("Exiting SQS read loop")
-    		return
-    	default:
+	for {
+		select {
+		case <-b.stop:
+			log.Println("Exiting SQS read loop")
+			return
+		default:
 			var m sqsMessage
 			var m1 map[string]interface{}
 
@@ -105,12 +110,12 @@ func (b *FromSQS) listener() {
 						continue
 					}
 
-					go func(outmsg string){
+					go func(outmsg string) {
 						stop := time.NewTimer(1 * time.Second)
 						select {
-							case b.fromListener <- []byte(outmsg):
-							case <-stop.C:
-								return
+						case b.fromListener <- []byte(outmsg):
+						case <-stop.C:
+							return
 						}
 					}(msg)
 
@@ -135,24 +140,23 @@ func (b *FromSQS) listener() {
 			}
 
 			resp.Body.Close()
-    	}
-    }
+		}
+	}
 }
-
 
 // specify those channels we're going to use to communicate with streamtools
 type FromSQS struct {
 	blocks.Block
-	queryrule    chan chan interface{}
-	inrule       chan interface{}
-	out          chan interface{}
-	quit         chan interface{}
+	queryrule chan chan interface{}
+	inrule    chan interface{}
+	out       chan interface{}
+	quit      chan interface{}
 
-    lock         sync.Mutex
-    listening    bool
-    fromListener chan []byte
-    auth         map[string]string
-    stop 		 chan bool
+	lock         sync.Mutex
+	listening    bool
+	fromListener chan []byte
+	auth         map[string]interface{}
+	stop         chan bool
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -169,13 +173,13 @@ func (b *FromSQS) Setup() {
 	b.out = b.Broadcast()
 	b.fromListener = make(chan []byte)
 	b.stop = make(chan bool)
-	b.auth = map[string]string{
-		"SQSEndpoint":  "",
-		"AccessKey":    "",
-		"AccessSecret": "",
-		"APIVersion":      "2012-11-05",
-		"SignatureVersion": "4",
-		"WaitTimeSeconds": "0",
+	b.auth = map[string]interface{}{
+		"SQSEndpoint":         "",
+		"AccessKey":           "",
+		"AccessSecret":        "",
+		"APIVersion":          "2012-11-05",
+		"SignatureVersion":    "4",
+		"WaitTimeSeconds":     "0",
 		"MaxNumberOfMessages": "10",
 	}
 }
