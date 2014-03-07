@@ -1,83 +1,69 @@
-<html>
+<html lang="en" xml:lang="en" dir="ltr" xmlns= "http://www.w3.org/1999/xhtml">
 <head>
 <title>Streamtools</title>
+<meta charset="UTF-8" />
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="en" />
+<link rel="stylesheet" type="text/css" href="static/css/main.css">
+<script src="static/lib/d3.v3.min.js"></script>
+<script src="static/lib/jquery-2.1.0.min.js"></script>
+<script src="static/lib/underscore-min.js"></script>
+<script src="static/lib/typeahead.bundle.min.js"></script>
+<script src="static/lib/resize.js"></script>
+<script src="static/js/main.js"></script>
 
-<link rel="stylesheet" type="text/css" href="static/main.css">
-<script src="static/d3.v3.min.js"></script>
-<script src="static/jquery-2.1.0.min.js"></script>
-<script src="static/underscore-min.js"></script>
-<script src="static/main.js"></script>
-
-<script type="text/template" id="block_info">
-    <div class="id">
-        <%= block.id %>
-    </div>
-    <div class="type" style="background: <%= block.hsl %>">
-       <%= block.BlockType %>
-    </div>
+<script type="text/template" id="log-item-template">
+    <span class="date"><%= item.time %></span>
+    <%= item.id %>
+    <span class="<%= item.type %>"><%= item.type %></span>
+    <%= item.data %>
 </script>
-<script type="text/template" id="block_rule">
-    <% 
-        for(var key in rule) { 
-            type = typeof(rule[key])
+
+<script type="text/template" id="ui-log-item-template">
+    <span class="ui-log">client: <%= item.data %></span>
+</script>
+
+<script type="text/template" id="controller-template">
+    <%
+    _.each(data.Rule, function(v, k){ 
     %>
-        <div class="rule <%=type%>"><%=type%></div>
-        <div class="name"><%=key%></div>
-        <div class="in">
-    <%      switch(type){
+        <div class="name"><%= k %></div>
+    <%
+            switch (typeof(v)){
                 case 'string':
+    %>
+         <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="string" value="<%= v %>">
+    <%             
+                break;
                 case 'number':
     %>
-        <input type="text" id="<%= block.ID %>_<%= key %>" value="<%= rule[key]%>">
-    <%               break;
+        <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="number" value="<%= v %>">
+    <%
+                break;
+                case 'boolean': 
+    %>
+        <select id="<%= 'c_' + data.Id + '_' + k %>" data-type="boolean" >
+            <option value="false" <%= !v ? 'selected' : '' %> >false</option>
+            <option value="true" <%= v ? 'selected' : '' %> >true</option>
+        </select>
+
+    <%
+                break;
                 case 'object':
     %>
-        <textarea name="Text1" cols="25" rows="10" id="<%= block.ID %>_<%= key %>"><%= JSON.stringify(rule[key], null, 4) %></textarea>
-    <%               break;
-                case 'boolean':
-    %>
-        <select id="<%= block.ID %>_<%= key %>" >
-            <option value="false" <%= !rule[key] ? 'selected' : '' %> >false</option>
-            <option value="true" <%= rule[key] ? 'selected' : '' %> >true</option>
-        </select>
-    <%               break;
+        <textarea class="rule" name="Text1" cols="25" rows="10" id="<%= 'c_' + data.Id + '_' + k %>" data-type="object" ><%= JSON.stringify(v, null, 4) %></textarea>
+    <%
+                break;
             }
-    %> 
-        </div>
-    <%  } %>
-
-    <div id="update">update rule</div>
-</script>
-
-<script type="text/template" id="conn_rule">
-    <pre><%= JSON.stringify(data, null, 4) %></pre>
+    }) 
+    %>
 </script>
 
 </head>
 <body>
-    <div id="block_bar">
-        <div id="info"></div>
-        <div id="rule"></div>
-        <div id="delete">delete</div>
-    </div>
-    <div id="create">
-        <select id="library">
-        </select>
-        create
-    </div>
-    <div id="connect">
-        connect
-        <div id="source"></div>
-        <div id="target"></div>
-    </div>
-    <div id="term">
-        <input ype="text" id="hiddenTerm" />
-        <div id="response">
-            <pre id="respTxt">
-            </pre>
-        </div>
-        <span id="prompt">streamtools&gt;</span>
-        <span id="command"><span id="start"></span><span id="cursor">&nbsp;</span><span id="end"></span></span>
-    </div>
+<div id="log"></div>
+<div id="create">
+    <input type="text" name="" id="create-input" placeholder="input type of block to create..."/>
+</div>
 </body>
 </html>
