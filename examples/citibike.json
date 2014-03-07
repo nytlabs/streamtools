@@ -1,1 +1,88 @@
-{"Blocks":[{"Id":"18","Type":"ticker","Rule":{"Interval":"10s"},"Position":{"X":42,"Y":12}},{"Id":"3","Type":"gethttp","Rule":{"Path":".url"},"Position":{"X":166,"Y":165}},{"Id":"10","Type":"filter","Rule":{"Filter":".stationName == 'W 41 St & 8 Ave'"},"Position":{"X":352,"Y":341}},{"Id":"2","Type":"map","Rule":{"Additive":true,"Map":{"url":"'http://citibikenyc.com/stations/json'"}},"Position":{"X":103,"Y":89}},{"Id":"6","Type":"unpack","Rule":{"Path":".stationBeanList"},"Position":{"X":245,"Y":259}}],"Connections":[{"Id":"19","FromId":"18","ToId":"2","ToRoute":"in"},{"Id":"5","FromId":"2","ToId":"3","ToRoute":"in"},{"Id":"7","FromId":"3","ToId":"6","ToRoute":"in"},{"Id":"11","FromId":"6","ToId":"10","ToRoute":"in"}]}
+{
+  "Connections": [
+    {
+      "ToRoute": "in",
+      "ToId": "2",
+      "FromId": "18",
+      "Id": "19"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "3",
+      "FromId": "2",
+      "Id": "5"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "6",
+      "FromId": "3",
+      "Id": "7"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "10",
+      "FromId": "6",
+      "Id": "11"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 12,
+        "X": 42
+      },
+      "Rule": {
+        "Interval": "10s"
+      },
+      "Type": "ticker",
+      "Id": "18"
+    },
+    {
+      "Position": {
+        "Y": 165,
+        "X": 166
+      },
+      "Rule": {
+        "Path": ".url"
+      },
+      "Type": "gethttp",
+      "Id": "3"
+    },
+    {
+      "Position": {
+        "Y": 341,
+        "X": 352
+      },
+      "Rule": {
+        "Filter": ".stationName == 'W 41 St & 8 Ave'"
+      },
+      "Type": "filter",
+      "Id": "10"
+    },
+    {
+      "Position": {
+        "Y": 89,
+        "X": 103
+      },
+      "Rule": {
+        "Map": {
+          "url": "'http://citibikenyc.com/stations/json'"
+        },
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 259,
+        "X": 245
+      },
+      "Rule": {
+        "Path": ".stationBeanList"
+      },
+      "Type": "unpack",
+      "Id": "6"
+    }
+  ]
+}
