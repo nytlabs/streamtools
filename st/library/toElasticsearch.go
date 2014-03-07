@@ -68,7 +68,8 @@ func (b *ToElasticsearch) Run() {
 			// quit the block
 			return
 		case msg := <-b.in:
-			_, err := core.Index(true, b.index, b.indextype, "", msg)
+			var args map[string]interface{}
+			_, err := core.Index(b.index, b.indextype, "", args, msg)
 			if err != nil {
 				b.Error(err)
 			}
