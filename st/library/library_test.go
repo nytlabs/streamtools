@@ -81,7 +81,8 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	outChan := make(chan *blocks.Msg)
 	fromC.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	nsqSetup := map[string]interface{}{"ReadTopic": "librarytest", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "libtestchannel", "MaxInFlight": 100}
+	var maxInFlight float64 = 100
+	nsqSetup := map[string]interface{}{"ReadTopic": "librarytest", "LookupdAddr": "127.0.0.1:4161", "ReadChannel": "libtestchannel", "MaxInFlight": maxInFlight}
 	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
 	fromC.InChan <- fromRule
 
