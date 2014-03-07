@@ -14,6 +14,7 @@ import (
 	"time"
 	"net"
 	"net/http"
+    "sync"
 )
 
 type sqsMessage struct {
@@ -25,74 +26,49 @@ func dialTimeout(network, addr string) (net.Conn, error) {
     return net.DialTimeout(network, addr, time.Duration(2 * time.Second))
 }
 
-type Reader struct {
-	client           *aws4.Client
-	sqsEndpoint      string
-	version          string
-	signatureVersion string
-	waitTime         string
-	maxMsgs          string
-	QuitChan         chan bool   // stops the reader
-	OutChan          chan []byte // output channel for the client
-}
+func (b *FromSQS) listener() {
+	b.lock.Lock()
+	lAuth := map[string]string{}
+	for k, _ := range b.auth {
+		lAuth[k] = b.auth[k]
+	}
+	b.listening = true
+	b.lock.Unlock()
 
-func NewReader(sqsEndpoint, accessKey, accessSecret string, outChan chan []byte) *Reader {
 	transport := http.Transport{
         Dial: dialTimeout,
     }
 
-	client := &http.Client{
+	httpclient := &http.Client{
         Transport: &transport,
     }
 
-	// ensure that the sqsEndpoint has a ? at the end
-	if !strings.HasSuffix(sqsEndpoint, "?") {
-		sqsEndpoint += "?"
-	}
-	AWSSQSAPIVersion := "2012-11-05"
-	AWSSignatureVersion := "4"
 	keys := &aws4.Keys{
-		AccessKey: accessKey,
-		SecretKey: accessSecret,
+		AccessKey: lAuth["AccessKey"],
+		SecretKey: lAuth["AccessSecret"],
 	}
-	c := &aws4.Client{Keys: keys, Client: client}
-	// channels
-	r := &Reader{
-		client:           c,
-		sqsEndpoint:      sqsEndpoint,
-		version:          AWSSQSAPIVersion,
-		signatureVersion: AWSSignatureVersion,
-		waitTime:         "0",  // in seconds
-		maxMsgs:          "10", // in messages
-		QuitChan:         make(chan bool),
-		OutChan:          outChan,
-	}
-	return r
-}
 
-func readLoop(r *Reader) {
+	sqsclient := &aws4.Client{Keys: keys, Client: httpclient}
 
 	query := url.Values{}
 	query.Set("Action", "ReceiveMessage")
 	query.Set("AttributeName", "All")
-	query.Set("Version", r.version)
-	query.Set("SignatureVersion", r.signatureVersion)
-	query.Set("WaitTimeSeconds", r.waitTime)
-	query.Set("MaxNumberOfMessages", r.maxMsgs)
-	queryurl := r.sqsEndpoint + query.Encode()
-	a := time.NewTicker(50 * time.Millisecond)
-	for {
+	query.Set("Version", lAuth["APIVersion"])
+	query.Set("SignatureVersion", lAuth["SignatureVersion"])
+	query.Set("WaitTimeSeconds", lAuth["WaitTimeSeconds"])
+	query.Set("MaxNumberOfMessages", lAuth["MaxNumberOfMessages"])
+	queryurl := lAuth["SQSEndpoint"] + query.Encode()
 
-		select {
-		case <-a.C:
-		case <-r.QuitChan:
-			log.Println("quitting SQS reader...")
-			return
-		}
+    for {
+    	select {
+    	case <-b.stop:
+    		log.Println("Exiting SQS read loop")
+    		return
+    	default:
 			var m sqsMessage
 			var m1 map[string]interface{}
 
-			resp, err := r.client.Get(queryurl)
+			resp, err := sqsclient.Get(queryurl)
 
 			if err != nil {
 				continue
@@ -132,7 +108,7 @@ func readLoop(r *Reader) {
 					go func(outmsg string){
 						stop := time.NewTimer(1 * time.Second)
 						select {
-							case r.OutChan <- []byte(outmsg):
+							case b.fromListener <- []byte(outmsg):
 							case <-stop.C:
 								return
 						}
@@ -143,24 +119,26 @@ func readLoop(r *Reader) {
 
 			delquery := url.Values{}
 			delquery.Set("Action", "DeleteMessageBatch")
-			delquery.Set("Version", r.version)
-			delquery.Set("SignatureVersion", r.signatureVersion)
+			delquery.Set("Version", lAuth["APIVersion"])
+			delquery.Set("SignatureVersion", lAuth["SignatureVersion"])
 			for i, r := range m.ReceiptHandle {
 				id := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.Id", (i + 1))
 				receipt := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.ReceiptHandle", (i + 1))
 				delquery.Add(id, fmt.Sprintf("msg%d", (i+1)))
 				delquery.Add(receipt, r)
 			}
-			delurl := r.sqsEndpoint + delquery.Encode()
+			delurl := lAuth["SQSEndpoint"] + delquery.Encode()
 
-			resp, err = r.client.Get(delurl)
+			resp, err = sqsclient.Get(delurl)
 			if err != nil {
 				continue
 			}
 
 			resp.Body.Close()
-	}
+    	}
+    }
 }
+
 
 // specify those channels we're going to use to communicate with streamtools
 type FromSQS struct {
@@ -168,11 +146,13 @@ type FromSQS struct {
 	queryrule    chan chan interface{}
 	inrule       chan interface{}
 	out          chan interface{}
-	fromReader   chan []byte
 	quit         chan interface{}
-	SQSEndpoint  string
-	AccessKey    string
-	AccessSecret string
+
+    lock         sync.Mutex
+    listening    bool
+    fromListener chan []byte
+    auth         map[string]string
+    stop 		 chan bool
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -187,47 +167,47 @@ func (b *FromSQS) Setup() {
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
+	b.fromListener = make(chan []byte)
+	b.stop = make(chan bool)
+	b.auth = map[string]string{
+		"SQSEndpoint":  "",
+		"AccessKey":    "",
+		"AccessSecret": "",
+		"APIVersion":      "2012-11-05",
+		"SignatureVersion": "4",
+		"WaitTimeSeconds": "0",
+		"MaxNumberOfMessages": "10",
+	}
+}
+
+func (b *FromSQS) stopListening() {
+	if b.listening {
+		b.stop <- true
+		b.listening = false
+	}
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *FromSQS) Run() {
-	var SQSEndpoint, AccessKey, AccessSecret string
 	var err error
-	var r *Reader
-	fromReader := make(chan []byte, 10000)
 
 	for {
 		select {
 		case msgI := <-b.inrule:
-			SQSEndpoint, err = util.ParseString(msgI, "SQSEndpoint")
-			if err != nil {
-				b.Error(err)
-				break
+			for k, _ := range b.auth {
+				b.auth[k], err = util.ParseString(msgI, k)
+				if err != nil {
+					b.Error(err)
+					break
+				}
 			}
 
-			AccessKey, err = util.ParseString(msgI, "AccessKey")
-			if err != nil {
-				b.Error(err)
-				break
-			}
-
-			AccessSecret, err = util.ParseString(msgI, "AccessSecret")
-			if err != nil {
-				b.Error(err)
-				break
-			}
-			if r != nil {
-				r.QuitChan <- true
-			}
-			r = NewReader(SQSEndpoint, AccessKey, AccessSecret, fromReader)
-			go readLoop(r)
+			b.stopListening()
+			go b.listener()
 		case <-b.quit:
-			if r != nil {
-				r.QuitChan <- true
-			}
-			// quit the block
+			b.stopListening()
 			return
-		case msg := <-fromReader:
+		case msg := <-b.fromListener:
 			var outMsg interface{}
 			err := json.Unmarshal(msg, &outMsg)
 			if err != nil {
@@ -237,11 +217,7 @@ func (b *FromSQS) Run() {
 			b.out <- outMsg
 		case respChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
-				"SQSEndpoint":  SQSEndpoint,
-				"AccessKey":    AccessKey,
-				"AccessSecret": AccessSecret,
-			}
+			respChan <- b.auth
 		}
 	}
 }
