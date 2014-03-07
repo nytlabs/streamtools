@@ -124,13 +124,13 @@ Streamtools provides a full RESTful HTTP API allowing the developer to programat
 
 If you are running streamtools locally, using the default port, all of the GET endpoints can be queried either by visiting in a browser:
 
-    http://localhost:7070/{endpoint}
+http://localhost:7070/{endpoint}
 
 For example, if you wanted to see the streamtools library, visit `http://localhost:7070/library`.
 
 The POST endpoints are expecting you to send data. To use these you'll need to use the command line and a program called `curl`. For example, to create a new `tofile` block you need to send along the JSON definition of the block, like this:
 
-    curl http://localhost:7070/blocks -d'{"Type":"tofile","Rule":{"Filename":"test.json"}}'
+curl http://localhost:7070/blocks -d'{"Type":"tofile","Rule":{"Filename":"test.json"}}'
 
 This POSTs the JSON `{"Type":"tofile","Rule":{"Filename":"test.json"}}` to the `/blocks` endpoint.
 
@@ -169,15 +169,15 @@ a long-lived HTTP stream of every message sent on the block's `OUT` route.
 
 A block's JSON representation uses the following schema:
 
-    {
-      "Id":
-      "Type":
-      "Rule":{ ... }
-      "Position":{
-        "X":
-        "Y":
-      }
-    }
+{
+  "Id":
+  "Type":
+  "Rule":{ ... }
+  "Position":{
+    "X":
+    "Y":
+  }
+}
 
 Only `Type` is required, everything will be automatically generated if you don't specify them. The `Id` is used to uniquely identify that block within streamtools. This is normally just a number but can be any string. `Type` is the type of the block, selected from the streamtools library. `Rule` specifies the block's rule, which will be different for each block. Finally `Position` specifies the x and y coordinates of the block from the top left corner of the screen.
 
@@ -205,12 +205,12 @@ Recieve data from a block. Use this endpoint to query block routes that return d
 
 A connection's JSON representation uses the following schema:
 
-    {
-      Id:
-      FromId:
-      ToId:
-      ToRoute:
-    }
+{
+  Id:
+  FromId:
+  ToId:
+  ToRoute:
+}
 
 Here, only `Id` is optional. `Id` is used to uniquely refer to the connection inside streamtools. `FromId` refers to the block that data is flowing from. `ToId` refers to the block the data is flowing to. `ToRoute` tells the connection which inbound route to send data to.
 
