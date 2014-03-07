@@ -9,5 +9,8 @@ script: "cd st/library && go test"
 before_install:
   - export GOPATH=/home/travis/gopath
   - export PATH=$GOPATH/bin:$PATH
+  - go get launchpad.net/gocheck
+  - go get github.com/mattbaird/elastigo/api
+  - go get github.com/mattbaird/elastigo/core
 
 install: make
