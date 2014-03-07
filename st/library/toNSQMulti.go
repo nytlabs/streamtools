@@ -31,7 +31,6 @@ func (b *ToNSQMulti) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
-	b.out = b.Broadcast()
 }
 
 // connects to an NSQ topic and emits each message into streamtools.
