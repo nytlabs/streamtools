@@ -14,7 +14,6 @@ type Pack struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
-	inpoll    chan interface{}
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
