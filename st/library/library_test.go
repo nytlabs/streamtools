@@ -429,6 +429,9 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
+	queryOutChan := make(chan interface{})
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
@@ -441,6 +444,14 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 			} else {
 				return
 			}
+
+		case messageI := <-queryOutChan:
+			message := messageI.(map[string]interface{})
+			if !reflect.DeepEqual(message["Endpoint"], ruleMsg["Endpoint"]) {
+				log.Println("Rule mismatch:", message, ruleMsg)
+				c.Fail()
+			}
+
 		case <-outChan:
 		}
 	}
