@@ -804,3 +804,29 @@ func (s *StreamSuite) TestPack(c *C) {
 		}
 	}
 }
+
+func (s *StreamSuite) TestJoin(c *C) {
+	loghub.Start()
+	log.Println("testing join")
+	b, ch := newBlock("testing join", "join")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
