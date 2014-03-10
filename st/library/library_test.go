@@ -863,6 +863,35 @@ func (s *StreamSuite) TestPack(c *C) {
 	}
 }
 
+func (s *StreamSuite) TestSet(c *C) {
+	loghub.Start()
+	log.Println("testing set")
+	b, ch := newBlock("testing set", "set")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	ruleMsg := map[string]interface{}{"Path": ".a"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case <-outChan:
+		}
+	}
+}
+
 func (s *StreamSuite) TestJoin(c *C) {
 	loghub.Start()
 	log.Println("testing join")
