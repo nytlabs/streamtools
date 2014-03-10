@@ -34,16 +34,25 @@ func (b *Join) Run() {
 		case <-b.quit:
 			return
 		case msg := <-b.inA:
-			A <- msg
+			select {
+			case A <- msg:
+			default:
+				b.Error("the A queue is overflowing")
+			}
 		case msg := <-b.inB:
-			B <- msg
+			select {
+			case B <- msg:
+			default:
+				b.Error("the B queue is overflowing")
+			}
 		case <-b.clear:
+		Clear:
 			for {
 				select {
 				case <-A:
 				case <-B:
 				default:
-					break
+					break Clear
 				}
 			}
 		}
