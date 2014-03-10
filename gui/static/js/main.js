@@ -673,7 +673,8 @@ $(function() {
                 return d.Type;
             }).each(function(d) {
                 var bbox = this.getBBox();
-                d.width = (d.width > bbox.width ? (d.TypeInfo.InRoutes.length * ROUTE + d.TypeInfo.InRoutes.length * ROUTE_SPACE) : bbox.width + 30);
+                d.width = (d.TypeInfo.InRoutes.length * ROUTE + d.TypeInfo.InRoutes.length * ROUTE_SPACE)
+                d.width = (d.width > bbox.width ? d.width : bbox.width + 30);
                 d.height = (d.height > bbox.height ? d.height : bbox.height + 5);
             }).attr('dy', function(d) {
                 return 1 * d.height + 5;
