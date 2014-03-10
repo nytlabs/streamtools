@@ -135,6 +135,9 @@ func (s *StreamSuite) TestCount(c *C) {
 	queryOutChan := make(chan interface{})
 	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
 
+	countChan := make(chan interface{})
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: countChan, Route: "count"}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
@@ -143,6 +146,14 @@ func (s *StreamSuite) TestCount(c *C) {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
+				c.Fail()
+			}
+
+		case messageI := <-countChan:
+			testOutput := map[string]interface{}{
+				"Count": 0,
+			}
+			if !reflect.DeepEqual(messageI, testOutput) {
 				c.Fail()
 			}
 
