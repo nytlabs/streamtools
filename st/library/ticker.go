@@ -37,7 +37,7 @@ func (b *Ticker) Run() {
 		select {
 		case tick := <-ticker.C:
 			b.out <- map[string]interface{}{
-				"tick": tick,
+				"tick": tick.String(),
 			}
 		case ruleI := <-b.inrule:
 			// set a parameter of the block

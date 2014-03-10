@@ -2,7 +2,6 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -36,7 +35,6 @@ func (b *FromPost) Run() {
 			// quit the block
 			return
 		case msg := <-b.in:
-			log.Println(msg)
 			// deal with inbound data
 			b.out <- msg
 		}
