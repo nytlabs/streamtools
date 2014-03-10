@@ -58,7 +58,7 @@ func (b *FromNSQ) Run() {
 	for {
 		select {
 		case msg := <-toOut:
-			b.out <- &msg
+			b.out <- msg
 		case err := <-toError:
 			b.Error(err)
 		case ruleI := <-b.inrule:

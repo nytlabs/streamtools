@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	"github.com/nytlabs/streamtools/st/util"
+	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/library"
 	"github.com/nytlabs/streamtools/st/loghub"
-	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
+	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"runtime/pprof"
-	"os"
-	"log"
 	"time"
 )
 
@@ -92,8 +92,10 @@ func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) clearHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
 
-	conns := s.manager.ListConnections();
+	conns := s.manager.ListConnections()
 	for _, v := range conns {
 		id, err := s.manager.DeleteConnection(v.Id)
 		if err != nil {
@@ -115,8 +117,8 @@ func (s *Server) clearHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	blocks := s.manager.ListBlocks();
-	for _, v := range blocks{
+	blocks := s.manager.ListBlocks()
+	for _, v := range blocks {
 		ids, err := s.manager.DeleteBlock(v.Id)
 		if err != nil {
 			loghub.Log <- &loghub.LogMsg{
@@ -208,17 +210,23 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	c := &connection{send: make(chan []byte, 256), ws: ws}
+
+	s.manager.Mu.Lock()
 	blockChan, connId := s.manager.GetSocket(vars["id"])
-	ticker := time.NewTicker(( 10 * time.Second * 9) / 10)
-	go func(c *connection, bChan chan *blocks.Msg, cId string, bId string){
+	s.manager.Mu.Unlock()
+
+	ticker := time.NewTicker((10 * time.Second * 9) / 10)
+	go func(c *connection, bChan chan *blocks.Msg, cId string, bId string) {
 		defer func() {
+			s.manager.Mu.Lock()
 			_ = s.manager.DeleteSocket(bId, cId)
+			s.manager.Mu.Unlock()
 			ticker.Stop()
 			c.ws.Close()
 		}()
 		for {
 			select {
-			case msg := <- bChan:
+			case msg := <-bChan:
 				message, _ := json.Marshal(msg.Msg)
 				if err := c.write(websocket.TextMessage, message); err != nil {
 					return
@@ -239,19 +247,23 @@ func (s *Server) streamHandler(w http.ResponseWriter, r *http.Request) {
 		s.apiWrap(w, r, 500, s.response("must specify block ID to connect"))
 		return
 	}
+	s.manager.Mu.Lock()
 	blockChan, connId := s.manager.GetSocket(blockId)
-	for{
-		msg := <- blockChan
+	s.manager.Mu.Unlock()
+	for {
+		msg := <-blockChan
 		message, _ := json.Marshal(msg.Msg)
 		_, err := w.Write(message)
 		_, err = w.Write([]byte("\r\n"))
 		if err != nil {
+			s.manager.Mu.Lock()
 			s.manager.DeleteSocket(blockId, connId)
+			s.manager.Mu.Unlock()
 			break
 		}
 		if f, ok := w.(http.Flusher); ok {
-      		f.Flush()
-    	}
+			f.Flush()
+		}
 	}
 }
 
@@ -318,7 +330,7 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 				}
 
 				switch actStr {
-				case "quit": 
+				case "quit":
 					// so that we don't send to a closed websocket.
 					return
 				case "export":
@@ -381,6 +393,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 // importHandler accepts a JSON through POST that updats the state of ST
 // It handles naming collisions by modifying the incoming block pattern.
 func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	var export struct {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
@@ -468,6 +483,9 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 
 // exportHandler creates a JSON file representing the current block system.
 func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	export := struct {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
@@ -487,6 +505,9 @@ func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
 
 // listBlockHandler retuns a slice of the current blocks operating in the sytem.
 func (s *Server) listBlockHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	blocks, err := json.Marshal(s.manager.ListBlocks())
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
@@ -498,6 +519,9 @@ func (s *Server) listBlockHandler(w http.ResponseWriter, r *http.Request) {
 // createBlockHandler asks the manager to create a block and then return that block
 // if the block has been creates.
 func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	var block *BlockInfo
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -549,6 +573,9 @@ func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 // updateBlockHandler updates the coordinates of a block.
 // block.id and block.type can't be changes. block.rule is set through sendRoute
 func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	var coord *Coords
 	vars := mux.Vars(r)
 
@@ -594,6 +621,9 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 // blockInfoHandler returns a block given an id
 func (s *Server) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 
 	conn, err := s.manager.GetBlock(vars["id"])
@@ -612,6 +642,9 @@ func (s *Server) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 // deleteBlockHandler asks the block manager to delete a block.
 func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 	ids, err := s.manager.DeleteBlock(vars["id"])
 	if err != nil {
@@ -648,6 +681,9 @@ func (s *Server) deleteBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 // sendRouteHandler sends a message to a block's route. (unidirectional)
 func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	var msg interface{}
 	vars := mux.Vars(r)
 
@@ -691,6 +727,9 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 // queryRouteHandler queries a block and returns a msg. (bidirectional)
 func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 
 	msg, err := s.manager.QueryBlock(vars["id"], vars["route"])
@@ -726,6 +765,9 @@ func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
 
 // queryRouteHandler queries a connection and returns a msg. (bidirectional)
 func (s *Server) queryConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 
 	msg, err := s.manager.QueryConnection(vars["id"], vars["route"])
@@ -759,9 +801,11 @@ func (s *Server) queryConnectionHandler(w http.ResponseWriter, r *http.Request) 
 	s.apiWrap(w, r, 200, jmsg)
 }
 
-
 // listConnectionHandler returns a slice of the current connections in streamtools.
 func (s *Server) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	conns, err := json.Marshal(s.manager.ListConnections())
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
@@ -772,6 +816,9 @@ func (s *Server) listConnectionHandler(w http.ResponseWriter, r *http.Request) {
 
 // createConnectHandler creates a connection and returns it.
 func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	var conn *ConnectionInfo
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -821,27 +868,30 @@ func (s *Server) createConnectionHandler(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) topHandler(w http.ResponseWriter, r *http.Request) {
-	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1) 
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 func (s *Server) profStartHandler(w http.ResponseWriter, r *http.Request) {
 	f, err := os.Create("streamtools.prof")
-    if err != nil {
-        log.Fatal(err)
-    }
-    pprof.StartCPUProfile(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+	pprof.StartCPUProfile(f)
 
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 func (s *Server) profStopHandler(w http.ResponseWriter, r *http.Request) {
-    pprof.StopCPUProfile()
+	pprof.StopCPUProfile()
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // connectionInfoHandler returns a connection object, given an is.
 func (s *Server) connectionInfoHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 
 	conn, err := s.manager.GetConnection(vars["id"])
@@ -899,6 +949,9 @@ func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int,
 
 // deleteConnectionHandler deletes a connection, responds with OK.
 func (s *Server) deleteConnectionHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
 	vars := mux.Vars(r)
 	id, err := s.manager.DeleteConnection(vars["id"])
 	if err != nil {
@@ -953,20 +1006,20 @@ func (s *Server) Run() {
 	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")
-	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                     // list all blocks
-	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                  // create block w/o id
-	r.HandleFunc("/blocks/{id}", s.blockInfoHandler).Methods("GET")                // get block info
-	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")              // update block
-	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")           // delete block
-	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")       // send to block route
-	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")       // get from block route
-	r.HandleFunc("/ws/{id}", s.websocketHandler).Methods("GET")	                   // websocket handler
-	r.HandleFunc("/stream/{id}", s.streamHandler).Methods("GET")	               // http stream handler
-	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")        // create connection
-	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")           // list connections
-	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")      // get info for connection
-	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE") // delete connection
-	r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET")  // get from block route
+	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                         // list all blocks
+	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                      // create block w/o id
+	r.HandleFunc("/blocks/{id}", s.blockInfoHandler).Methods("GET")                    // get block info
+	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")                  // update block
+	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")               // delete block
+	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")           // send to block route
+	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")           // get from block route
+	r.HandleFunc("/ws/{id}", s.websocketHandler).Methods("GET")                        // websocket handler
+	r.HandleFunc("/stream/{id}", s.streamHandler).Methods("GET")                       // http stream handler
+	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")            // create connection
+	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")               // list connections
+	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")          // get info for connection
+	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE")     // delete connection
+	r.HandleFunc("/connections/{id}/{route}", s.queryConnectionHandler).Methods("GET") // get from block route
 	http.Handle("/", r)
 
 	loghub.Log <- &loghub.LogMsg{
@@ -980,5 +1033,3 @@ func (s *Server) Run() {
 		log.Fatalf(err.Error())
 	}
 }
-
-
