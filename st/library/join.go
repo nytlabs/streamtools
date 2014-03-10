@@ -38,16 +38,14 @@ func (b *Join) Run() {
 		case msg := <-b.inB:
 			B <- msg
 		case <-b.clear:
-			go func() {
-				for {
-					select {
-					case <-A:
-					case <-B:
-					default:
-						return
-					}
+			for {
+				select {
+				case <-A:
+				case <-B:
+				default:
+					break
 				}
-			}()
+			}
 		}
 		for len(A) > 0 && len(B) > 0 {
 			b.out <- map[string]interface{}{
