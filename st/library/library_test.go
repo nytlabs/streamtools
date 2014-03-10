@@ -250,9 +250,7 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
-				log.Println("Rule mismatch:")
-				log.Println(messageI)
-				log.Println(ruleMsg)
+				log.Println("Rule mismatch:", messageI, ruleMsg)
 				c.Fail()
 			}
 
@@ -286,14 +284,21 @@ func (s *StreamSuite) TestTicker(c *C) {
 	log.Println("testing Ticker")
 	b, ch := newBlock("testingTicker", "ticker")
 	go blocks.BlockRoutine(b)
-	outChan := make(chan *blocks.Msg)
-	ch.AddChan <- &blocks.AddChanMsg{
-		Route:   "out",
-		Channel: outChan,
-	}
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
+
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
+	queryOutChan := make(chan interface{})
+	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+
+	ruleMsg := map[string]interface{}{"Interval": "1s"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- toRule
+
 	for {
 		select {
 		case err := <-ch.ErrChan:
@@ -302,7 +307,15 @@ func (s *StreamSuite) TestTicker(c *C) {
 			} else {
 				return
 			}
-		case <-outChan:
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
+				c.Fail()
+			}
+
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			c.Assert(message["tick"], NotNil)
 		}
 	}
 }
