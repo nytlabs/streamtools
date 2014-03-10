@@ -129,6 +129,10 @@ func (s *StreamSuite) TestCount(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
+	inMsgMsg := map[string]interface{}{}
+	inMsg := &blocks.Msg{Msg: inMsgMsg, Route: "in"}
+	ch.InChan <- inMsg
+
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
@@ -142,6 +146,14 @@ func (s *StreamSuite) TestCount(c *C) {
 		ch.QuitChan <- true
 	})
 
+	pollMsg := map[string]interface{}{}
+	toPoll := &blocks.Msg{Msg: pollMsg, Route: "poll"}
+	ch.InChan <- toPoll
+
+	testOutput := map[string]interface{}{
+		"Count": 1,
+	}
+
 	for {
 		select {
 		case messageI := <-queryOutChan:
@@ -150,15 +162,16 @@ func (s *StreamSuite) TestCount(c *C) {
 			}
 
 		case messageI := <-countChan:
-			testOutput := map[string]interface{}{
-				"Count": 0,
-			}
 			if !reflect.DeepEqual(messageI, testOutput) {
+				log.Println("count mismatch", messageI, testOutput)
 				c.Fail()
 			}
 
-		case message := <-outChan:
-			log.Println(message)
+		case messageI := <-outChan:
+			if !reflect.DeepEqual(messageI.Msg, testOutput) {
+				log.Println("poll mismatch", messageI.Msg, testOutput)
+				c.Fail()
+			}
 
 		case err := <-ch.ErrChan:
 			if err != nil {
