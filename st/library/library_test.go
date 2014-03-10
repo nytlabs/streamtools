@@ -558,12 +558,10 @@ func (s *StreamSuite) TestTimeseries(c *C) {
 	b, ch := newBlock("testingTimeseries", "timeseries")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
-	log.Println("adding")
 	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
-	log.Println("added")
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
