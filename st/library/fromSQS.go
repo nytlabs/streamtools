@@ -115,6 +115,7 @@ func (b *FromSQS) listener() {
 						select {
 						case b.fromListener <- []byte(outmsg):
 						case <-stop.C:
+							log.Println("dropping message from SQS (could not send message)")
 							return
 						}
 					}(msg)
