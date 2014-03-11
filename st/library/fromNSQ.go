@@ -68,20 +68,24 @@ func (b *FromNSQ) Run() {
 
 			topic, err := util.ParseString(rule, "ReadTopic")
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
+				break
 			}
 
 			lookupdAddr, err := util.ParseString(rule, "LookupdAddr")
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
+				break
 			}
 			maxInFlight, err := util.ParseFloat(rule, "MaxInFlight")
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
+				break
 			}
 			channel, err := util.ParseString(rule, "ReadChannel")
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
+				break
 			}
 
 			if reader != nil {
@@ -90,7 +94,8 @@ func (b *FromNSQ) Run() {
 
 			reader, err = nsq.NewReader(topic, channel)
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
+				break
 			}
 			reader.SetMaxInFlight(int(maxInFlight))
 
@@ -99,7 +104,7 @@ func (b *FromNSQ) Run() {
 
 			err = reader.ConnectToLookupd(lookupdAddr)
 			if err != nil {
-				b.Error(err)
+				b.Error(err.Error())
 			}
 
 			b.topic = topic
