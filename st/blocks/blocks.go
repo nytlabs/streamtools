@@ -80,8 +80,8 @@ func (b *Block) Build(c BlockChans) {
 	b.QuitChan = c.QuitChan
 
 	// route maps
-	b.inRoutes = make(map[string]chan interface{}, 10) // necessary to stop locking...
-	b.queryRoutes = make(map[string]chan chan interface{}, 10)
+	b.inRoutes = make(map[string]chan interface{}) // necessary to stop locking...
+	b.queryRoutes = make(map[string]chan chan interface{})
 
 	// broadcast channel
 	b.broadcast = make(chan interface{}, 10) // necessary to stop locking...
@@ -98,13 +98,13 @@ func (b *Block) SetId(Id string){
 }
 
 func (b *Block) InRoute(routeName string) chan interface{} {
-	route := make(chan interface{})
+	route := make(chan interface{}, 1000)
 	b.inRoutes[routeName] = route
 	return route
 }
 
 func (b *Block) QueryRoute(routeName string) chan chan interface{} {
-	route := make(chan chan interface{})
+	route := make(chan chan interface{}, 1000)
 	b.queryRoutes[routeName] = route
 	return route
 }
@@ -205,7 +205,25 @@ func BlockRoutine(bi BlockInterface) {
 			if !ok {
 				break
 			}
-			b.inRoutes[msg.Route] <- msg.Msg
+
+			// every in channel is buffered a 1000 messages.
+			// if we cannot immediately send to that in channel we place the msg
+			// in a go routine and notify the user that the block routine's 
+			// buffer has overflowed. this still allows for unrecoverable 
+			// overflows (for example: a stuck run() function), but at least it 
+			// offloads to memory/cpu instead of blocking.
+			select {
+				case b.inRoutes[msg.Route] <- msg.Msg:
+				default:
+					go func(id string, msgOut interface{}){
+						b.inRoutes[msg.Route] <- msgOut
+						loghub.Log <- &loghub.LogMsg{
+							Type: loghub.ERROR,
+							Data: "Dropping messages!",
+							Id:   id,
+						}
+					}(b.Id, msg.Msg)
+			}
 
 			if msg.Route == "rule" {
 				go func(id string){
@@ -222,9 +240,15 @@ func BlockRoutine(bi BlockInterface) {
 			if !ok {
 				break
 			}
-			go func(){
-				b.queryRoutes[msg.Route] <- msg.RespChan
-			}()
+
+			select {
+				case b.queryRoutes[msg.Route] <- msg.RespChan:
+				default:
+					go func(){
+						b.queryRoutes[msg.Route] <- msg.RespChan
+					}()
+			}
+
 		case msg := <-b.AddChan:
 			outChans[msg.Route] = msg.Channel
 		case msg := <-b.DelChan:
