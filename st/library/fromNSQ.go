@@ -84,7 +84,11 @@ func (b *FromNSQ) Run() {
 				b.Error(err)
 			}
 
-			reader, err := nsq.NewReader(topic, channel)
+			if reader != nil {
+				reader.Stop()
+			}
+
+			reader, err = nsq.NewReader(topic, channel)
 			if err != nil {
 				b.Error(err)
 			}
