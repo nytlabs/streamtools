@@ -16,7 +16,7 @@ type Map struct {
 	quit      chan interface{}
 }
 
-func Set(m interface{}, key string, val interface{}) error {
+func setVal(m interface{}, key string, val interface{}) error {
 	min, ok := m.(map[string]interface{})
 	if !ok {
 		return errors.New("type assertion failed")
@@ -36,7 +36,7 @@ func parseKeys(mapRule map[string]interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			Set(t, k, j)
+			setVal(t, k, j)
 		case string:
 			lexed, err := jee.Lexer(r)
 			if err != nil {
@@ -46,7 +46,7 @@ func parseKeys(mapRule map[string]interface{}) (interface{}, error) {
 			if err != nil {
 				return nil, err
 			}
-			Set(t, k, tree)
+			setVal(t, k, tree)
 		}
 	}
 
@@ -63,13 +63,13 @@ func evalMap(mapRule map[string]interface{}, msg map[string]interface{}) (map[st
 			if err != nil {
 				return nil, err
 			}
-			Set(nt, k, e)
+			setVal(nt, k, e)
 		case map[string]interface{}:
 			e, err := evalMap(c, msg)
 			if err != nil {
 				return nil, err
 			}
-			msg[k] = Set(nt, k, e)
+			msg[k] = setVal(nt, k, e)
 		}
 	}
 	return nt, nil
@@ -82,9 +82,9 @@ func recCopy(msg map[string]interface{}) map[string]interface{} {
 	for k, _ := range msg {
 		switch m := msg[k].(type) {
 		case map[string]interface{}:
-			Set(n, k, recCopy(m))
+			setVal(n, k, recCopy(m))
 		default:
-			Set(n, k, m)
+			setVal(n, k, m)
 		}
 	}
 	return n
