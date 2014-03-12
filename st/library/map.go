@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -115,7 +114,6 @@ func (b *Map) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			log.Println("setting rule")
 			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
 			if !ok {
@@ -139,12 +137,10 @@ func (b *Map) Run() {
 			} else {
 				b.Error(err)
 			}
-			log.Println("set rule")
 		case <-b.quit:
 			// quit the block
 			return
 		case msg := <-b.in:
-			log.Println("got inbound data. using rule", mapRule)
 			// deal with inbound data
 			if parsed == nil {
 				continue
@@ -166,14 +162,12 @@ func (b *Map) Run() {
 			b.out <- result
 
 		case respChan := <-b.queryrule:
-			log.Println("getting rule")
 			// deal with a query request
 			rule := map[string]interface{}{
 				"Map":      mapRule,
 				"Additive": additive,
 			}
 			respChan <- rule
-			log.Println("got rule")
 		}
 	}
 }
