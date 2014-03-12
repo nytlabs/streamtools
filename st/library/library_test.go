@@ -543,7 +543,9 @@ func (s *StreamSuite) TestMap(c *C) {
 	// send test input
 	inputMsg := map[string]interface{}{"bar": "something", "foo": "another thing"}
 	inputBlock := &blocks.Msg{Msg: inputMsg, Route: "in"}
-	ch.InChan <- inputBlock
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		ch.InChan <- inputBlock
+	})
 
 	for {
 		select {
