@@ -63,7 +63,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	toC.InChan <- toRule
 
 	toQueryChan := make(chan interface{})
-	toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
+	})
 
 	nsqMsg := map[string]interface{}{"Foo": "Bar"}
 	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
@@ -87,7 +89,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	fromC.InChan <- fromRule
 
 	fromQueryChan := make(chan interface{})
-	fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		fromC.QuitChan <- true

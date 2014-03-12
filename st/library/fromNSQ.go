@@ -10,14 +10,10 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FromNSQ struct {
 	blocks.Block
-	queryrule   chan chan interface{}
-	inrule      chan interface{}
-	out         chan interface{}
-	quit        chan interface{}
-	topic       string
-	channel     string
-	lookupdAddr string
-	maxInFlight float64
+	queryrule chan chan interface{}
+	inrule    chan interface{}
+	out       chan interface{}
+	quit      chan interface{}
 }
 
 // a bit of boilerplate for streamtools
@@ -52,6 +48,9 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 // connects to an NSQ topic and emits each message into streamtools.
 func (b *FromNSQ) Run() {
 	var reader *nsq.Reader
+	var topic, channel, lookupdAddr string
+	var maxInFlight float64
+	var err error
 	toOut := make(chan interface{})
 	toError := make(chan error)
 
@@ -66,22 +65,26 @@ func (b *FromNSQ) Run() {
 			// aka keys are strings, values are empty interfaces
 			rule := ruleI.(map[string]interface{})
 
-			topic, err := util.ParseString(rule, "ReadTopic")
+			topic, err = util.ParseString(rule, "ReadTopic")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 
-			lookupdAddr, err := util.ParseString(rule, "LookupdAddr")
+			lookupdAddr, err = util.ParseString(rule, "LookupdAddr")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
-			maxInFlight, err := util.ParseFloat(rule, "MaxInFlight")
+			maxInFlight, err = util.ParseFloat(rule, "MaxInFlight")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
-			channel, err := util.ParseString(rule, "ReadChannel")
+			channel, err = util.ParseString(rule, "ReadChannel")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 
 			if reader != nil {
@@ -91,6 +94,7 @@ func (b *FromNSQ) Run() {
 			reader, err = nsq.NewReader(topic, channel)
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 			reader.SetMaxInFlight(int(maxInFlight))
 
@@ -100,12 +104,8 @@ func (b *FromNSQ) Run() {
 			err = reader.ConnectToLookupd(lookupdAddr)
 			if err != nil {
 				b.Error(err)
+				continue
 			}
-
-			b.topic = topic
-			b.channel = channel
-			b.maxInFlight = maxInFlight
-			b.lookupdAddr = lookupdAddr
 
 		case <-b.quit:
 			if reader != nil {
@@ -114,10 +114,10 @@ func (b *FromNSQ) Run() {
 			return
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
-				"ReadTopic":   b.topic,
-				"ReadChannel": b.channel,
-				"LookupdAddr": b.lookupdAddr,
-				"MaxInFlight": b.maxInFlight,
+				"ReadTopic":   topic,
+				"ReadChannel": channel,
+				"LookupdAddr": lookupdAddr,
+				"MaxInFlight": maxInFlight,
 			}
 		}
 	}
