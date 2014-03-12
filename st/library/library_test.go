@@ -461,7 +461,7 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 		case messageI := <-queryOutChan:
 			message := messageI.(map[string]interface{})
 			if !reflect.DeepEqual(message["Endpoint"], ruleMsg["Endpoint"]) {
-				log.Println("Rule mismatch:", message, ruleMsg)
+				log.Println("Rule mismatch:", message["Endpoint"], ruleMsg["Endpoint"])
 				c.Fail()
 			}
 
@@ -516,16 +516,23 @@ func (s *StreamSuite) TestMap(c *C) {
 
 	mapMsg := map[string]interface{}{"MegaBar": ".bar"}
 	ruleMsg := map[string]interface{}{"Map": mapMsg, "Additive": false}
+
+	// send rule
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
+	// send rule query in a sec
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
+	// quit after 5
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
 
+	// send test input
 	inputMsg := map[string]interface{}{"bar": "something", "foo": "another thing"}
 	inputBlock := &blocks.Msg{Msg: inputMsg, Route: "in"}
 	ch.InChan <- inputBlock
@@ -535,6 +542,8 @@ func (s *StreamSuite) TestMap(c *C) {
 		case messageI := <-queryOutChan:
 			message := messageI.(map[string]interface{})
 			if !reflect.DeepEqual(message["Map"], ruleMsg["Map"]) {
+				log.Println(messageI)
+				log.Println("was expecting", ruleMsg["Map"], "but got", message["Map"])
 				c.Fail()
 			}
 		case err := <-ch.ErrChan:
