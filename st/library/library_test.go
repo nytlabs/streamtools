@@ -67,9 +67,11 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 		toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
 	})
 
-	nsqMsg := map[string]interface{}{"Foo": "Bar"}
-	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
-	toC.InChan <- postData
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		nsqMsg := map[string]interface{}{"Foo": "Bar"}
+		postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
+		toC.InChan <- postData
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		toC.QuitChan <- true
@@ -447,7 +449,9 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -558,6 +562,7 @@ func (s *StreamSuite) TestMap(c *C) {
 			}
 		case messageI := <-outChan:
 			message := messageI.Msg.(map[string]interface{})
+			log.Println(message)
 			c.Assert(message["MegaBar"], Equals, "something")
 			c.Assert(message["foo"], IsNil)
 		}
@@ -579,7 +584,9 @@ func (s *StreamSuite) TestHistogram(c *C) {
 	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -718,7 +725,9 @@ func (s *StreamSuite) TestToElasticsearch(c *C) {
 	ch.InChan <- rule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true

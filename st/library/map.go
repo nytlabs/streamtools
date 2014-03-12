@@ -144,6 +144,7 @@ func (b *Map) Run() {
 			// quit the block
 			return
 		case msg := <-b.in:
+			log.Println("got inbound data. using rule", mapRule)
 			// deal with inbound data
 			if parsed == nil {
 				continue
