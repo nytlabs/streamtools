@@ -18,8 +18,6 @@ type FromHTTPStream struct {
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
-	endpoint  string
-	auth      string
 }
 
 // a bit of boilerplate for streamtools
@@ -38,7 +36,9 @@ func (b *FromHTTPStream) Setup() {
 // creates a persistent HTTP connection, emitting all messages from
 // the stream into streamtools
 func (b *FromHTTPStream) Run() {
-
+	var endpoint string
+	var ok bool
+	var auth string
 	var body bytes.Buffer
 	// these are the possible delimiters
 	d1 := []byte{125, 10} // this is }\n
@@ -51,7 +51,7 @@ func (b *FromHTTPStream) Run() {
 		select {
 		case ruleI := <-b.inrule:
 			rule := ruleI.(map[string]interface{})
-			endpoint, ok := rule["Endpoint"].(string)
+			endpoint, ok = rule["Endpoint"].(string)
 			if !ok {
 				b.Error("bad endpoint")
 				break
@@ -60,7 +60,7 @@ func (b *FromHTTPStream) Run() {
 			if !ok {
 				tauth = ""
 			}
-			auth, ok := tauth.(string)
+			auth, ok = tauth.(string)
 			if !ok {
 				b.Error("bad auth")
 				break
@@ -80,13 +80,10 @@ func (b *FromHTTPStream) Run() {
 			}
 			defer res.Body.Close()
 
-			b.endpoint = endpoint
-			b.auth = auth
-
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
-				"Endpoint": b.endpoint,
-				"Auth":     b.auth,
+				"Endpoint": endpoint,
+				"Auth":     auth,
 			}
 		case <-b.quit:
 			// quit the block

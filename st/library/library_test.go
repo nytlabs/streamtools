@@ -63,11 +63,15 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	toC.InChan <- toRule
 
 	toQueryChan := make(chan interface{})
-	toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
+	})
 
-	nsqMsg := map[string]interface{}{"Foo": "Bar"}
-	postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
-	toC.InChan <- postData
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		nsqMsg := map[string]interface{}{"Foo": "Bar"}
+		postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
+		toC.InChan <- postData
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		toC.QuitChan <- true
@@ -87,7 +91,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	fromC.InChan <- fromRule
 
 	fromQueryChan := make(chan interface{})
-	fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		fromC.QuitChan <- true
@@ -443,7 +449,9 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -461,7 +469,7 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 		case messageI := <-queryOutChan:
 			message := messageI.(map[string]interface{})
 			if !reflect.DeepEqual(message["Endpoint"], ruleMsg["Endpoint"]) {
-				log.Println("Rule mismatch:", message, ruleMsg)
+				log.Println("Rule mismatch:", message["Endpoint"], ruleMsg["Endpoint"])
 				c.Fail()
 			}
 
@@ -516,16 +524,23 @@ func (s *StreamSuite) TestMap(c *C) {
 
 	mapMsg := map[string]interface{}{"MegaBar": ".bar"}
 	ruleMsg := map[string]interface{}{"Map": mapMsg, "Additive": false}
+
+	// send rule
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
+	// send rule query in a sec
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
+	// quit after 5
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
 
+	// send test input
 	inputMsg := map[string]interface{}{"bar": "something", "foo": "another thing"}
 	inputBlock := &blocks.Msg{Msg: inputMsg, Route: "in"}
 	ch.InChan <- inputBlock
@@ -535,6 +550,8 @@ func (s *StreamSuite) TestMap(c *C) {
 		case messageI := <-queryOutChan:
 			message := messageI.(map[string]interface{})
 			if !reflect.DeepEqual(message["Map"], ruleMsg["Map"]) {
+				log.Println(messageI)
+				log.Println("was expecting", ruleMsg["Map"], "but got", message["Map"])
 				c.Fail()
 			}
 		case err := <-ch.ErrChan:
@@ -545,6 +562,7 @@ func (s *StreamSuite) TestMap(c *C) {
 			}
 		case messageI := <-outChan:
 			message := messageI.Msg.(map[string]interface{})
+			log.Println(message)
 			c.Assert(message["MegaBar"], Equals, "something")
 			c.Assert(message["foo"], IsNil)
 		}
@@ -566,7 +584,9 @@ func (s *StreamSuite) TestHistogram(c *C) {
 	ch.InChan <- toRule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -705,7 +725,9 @@ func (s *StreamSuite) TestToElasticsearch(c *C) {
 	ch.InChan <- rule
 
 	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
