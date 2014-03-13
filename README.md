@@ -71,7 +71,7 @@ Streamtools contains an ever-increasing set of individual blocks you can use to 
 * `rule` : a block will update its rule using message from this route
 * `poll` : a block will emit its state through its `out` route when it recieves any signal on this route
 
-We break blocks up roughly into generator, source, sink, transfer and state blocks. While there is nothing inherent to streamtools that enforces these ideas, we've found that blocks naturally tend to these categories.
+We break blocks up roughly into generator, source, sink, transfer and state blocks. While there is nothing inherent to streamtools that enforces these ideas, we've found that blocks naturally tend to these categories. See the [wiki](https://github.com/nytlabs/streamtools/wiki/blocks) for more details on each block.
 
 ### Generator Blocks
 
