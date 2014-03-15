@@ -4,6 +4,13 @@
 
 Streamtools is a graphical toolkit for dealing with streams of data. Streamtools makes it easy to explore, analyse, modify and learn from streams of data.
 
+Quick links from our wiki:
+
+* [block documentation](https://github.com/nytlabs/streamtools/wiki/blocks)
+* [how to compile](https://github.com/nytlabs/streamtools/wiki/how-to-compile)
+
+Read on to get a quick overview of streamtools.
+
 ## How Streamtools works
 
 Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. A block perfoms some operation on each message it recieves, and that operation is defined by the block's *type*. Each block has zero or more *rules* which define that block's behaviour. Each block has a set of named *routes* that can recieve data, emit data, or respond to queries.
@@ -72,44 +79,6 @@ Streamtools contains an ever-increasing set of individual blocks you can use to 
 * `poll` : a block will emit its state through its `out` route when it recieves any signal on this route
 
 We break blocks up roughly into generator, source, sink, transfer and state blocks. While there is nothing inherent to streamtools that enforces these ideas, we've found that blocks naturally tend to these categories. See the [wiki](https://github.com/nytlabs/streamtools/wiki/blocks) for more details on each block.
-
-### Generator Blocks
-
-* ticker
-
-### Source Blocks
-
-* fromSQS
-* fromNSQ
-* fromHTTPStream
-* fromPost
-* fromWebsocket
-
-### Sink Blocks
-
-* toNSQ
-* toFile
-* toLog
-* toElasticSearch
-* toWebsocket
-
-### Transfer Blocks
-
-* map
-* filter
-* sync
-* unpack
-* getHTTP
-* movingAverage
-* gaussian
-* zipf
-* poisson
-
-### State Blocks
-
-* count
-* histogram
-* timeseries
 
 ## Command Line Options
 
