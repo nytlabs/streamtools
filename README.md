@@ -28,6 +28,8 @@ So, first of all, you need to download the streamtools server. It's just a singl
 
 Now, open a browser window and point it at [localhost:7070](http://localhost:7070/). You should see a (nearly) blank page. At the bottom you should see a status bar that says `client: connected to Streamtools` followed by a version number. Congratulations! You're in.
 
+As a "Hello World", try double-clicking anywhere on the page above the status bar, type `fromhttpstream` and hit enter. This will bring up your first block. Double-click on the block and enter `http://developer.usa.gov/1usagov` in the `Endpoint` text-box. Hit the update button. Now double-click on the page and make a `tolog` block. Finally, connect the two blocks together by first clicking on the `fromhttpstream` block's OUT route (a litle black square on the bottom of the block) to the `tolog` block's IN route (which is the little black square on the top of the block). Click on the status bar and, after a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again. 
+
 ## Command Line Options
 
 The streamtools server is completely contained in a single binary called `st`. It has a number of options:
