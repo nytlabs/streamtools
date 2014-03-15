@@ -16,7 +16,7 @@ Quick links from our wiki:
 
 ### quick start
 
-* download `st` from the streamtools [github](https://github.com/nytlabs/streamtools/releases) releases page
+* download `st` from the [streamtools releases](https://github.com/nytlabs/streamtools/releases)page
 * run `st` locally or on server
 * in a browser, visit port 7070 of the machine you ran `st` on.
 
