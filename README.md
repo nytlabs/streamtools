@@ -32,8 +32,8 @@ Now, open a browser window and point it at [localhost:7070](http://localhost:707
 
 The streamtools server is completely contained in a single binary called `st`. It has a number of options:
 
-* *--port=7070* - specify a port number to run on. Default is 7070.
-* *--domain=localhost* - if you're accessing streamtools through a URL that's not `localhost`, you need to specify it using this option.
+* `--port=7070` - specify a port number to run on. Default is 7070.
+* `--domain=localhost` - if you're accessing streamtools through a URL that's not `localhost`, you need to specify it using this option.
 
 ## How Streamtools works
 
