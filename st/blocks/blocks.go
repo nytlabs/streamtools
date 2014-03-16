@@ -207,22 +207,24 @@ func BlockRoutine(bi BlockInterface) {
 			}
 
 			// every in channel is buffered a 1000 messages.
-			// if we cannot immediately send to that in channel we place the msg
-			// in a go routine and notify the user that the block routine's 
-			// buffer has overflowed. this still allows for unrecoverable 
-			// overflows (for example: a stuck run() function), but at least it 
-			// offloads to memory/cpu instead of blocking.
+			// if we cannot immediately send to that in channel we drop the msg
+			// and notify the user that the block routine's buffer has 
+			// overflowed. 
+
+			// in the future we may want some kind of graceful solution that backs
+			// up to memory, but in the current solution we don't have to check 
+			// to see if run() is still alive. 
+
 			select {
 				case b.inRoutes[msg.Route] <- msg.Msg:
 				default:
-					go func(id string, msgOut interface{}){
-						b.inRoutes[msg.Route] <- msgOut
+					go func(id string){
 						loghub.Log <- &loghub.LogMsg{
 							Type: loghub.ERROR,
-							Data: "Dropping messages!",
+							Data: "critical: block is dropping messages",
 							Id:   id,
 						}
-					}(b.Id, msg.Msg)
+					}(b.Id)
 			}
 
 			if msg.Route == "rule" {
@@ -244,9 +246,17 @@ func BlockRoutine(bi BlockInterface) {
 			select {
 				case b.queryRoutes[msg.Route] <- msg.RespChan:
 				default:
-					go func(){
-						b.queryRoutes[msg.Route] <- msg.RespChan
-					}()
+					msg.RespChan <- map[string]interface{}{
+						"error": "block has timed out",
+					}
+					// note that we can't query right now
+					go func(id string){
+						loghub.Log <- &loghub.LogMsg{
+							Type: loghub.ERROR,
+							Data: "critical: block is dropping messages",
+							Id:   id,
+						}
+					}(b.Id)
 			}
 
 		case msg := <-b.AddChan:
