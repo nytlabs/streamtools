@@ -34,6 +34,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"fromwebsocket":   NewFromWebsocket,
 	"tonsqmulti":      NewToNSQMulti,
 	"fromudp":         NewFromUDP,
+	"tostreamdrill":   NewToStreamdrill,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
