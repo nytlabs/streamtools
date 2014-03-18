@@ -20,17 +20,28 @@ More informatio can be obtained here:
 The configuration of a streamdrill block is very simple. The input
 is expected to be JSON.
 
-- create a name for your streamdrill trend
-- add entities as a colon separated list:
+a) create a name for your streamdrill trend
+b) add entities as a colon separated list:
 
 If your input JSON looks like this:
 	{"city":"Berlin, "station":"Alexanderplatz"}
 
 enter .city:.station to create a trend that tracks co-occurences of
-city and station. 
+city and station.
 
-- pipe some data in
-- open http://localhost:9669/dashboard/#!/
+c) [optional] if you want to have averages of a certain value add
+   the value selector like .count
+
+Again, the JSON:
+  {"city":"Berlin", "station":"Alexanderplatz", "count":3}
+
+This makes sense if the count is not the total count so far, but the
+new arrivals after the last time such an event arrived for the same
+city and station. The value is then represented as an average over
+your selected time frame for the counts. The default is 1.
+
+d) pipe some data in
+e) open http://localhost:9669/dashboard/#!/
 
 You can view the individual trends and even drill into subtrends, like
 checking the most frequented stations for "Berlin" with in a certain
