@@ -1,0 +1,44 @@
+streamdrill block
+=================
+
+streamdrill is a real-time event analysis engine which does three things:
+
+It counts activities over a large set of objects.
+It aggregates these counts over timescales ranging from seconds to weeks.
+It let's you query the top most active objects instantly.
+
+More informatio can be obtained here:
+
+	http://demo.streamdrill.com/docs/?p=intro#features
+
+1. download the streamdrill demo from http://streamdrill.com
+   (move the streamdrill.jar file to this directory)
+2. run streamdrill using the script provided in this directory:
+   ./streamdrill.sh
+3. run streamtools and create your blocks
+
+The configuration of a streamdrill block is very simple. The input
+is expected to be JSON.
+
+- create a name for your streamdrill trend
+- add entities as a colon separated list:
+
+If your input JSON looks like this:
+	{"city":"Berlin, "station":"Alexanderplatz"}
+
+enter .city:.station to create a trend that tracks co-occurences of
+city and station. 
+
+- pipe some data in
+- open http://localhost:9669/dashboard/#!/
+
+You can view the individual trends and even drill into subtrends, like
+checking the most frequented stations for "Berlin" with in a certain
+time frame (currently the default configuration tracks day, hour minute).
+
+
+You may use streamtools to query the results using the REST interface:
+
+	http://localhost:9669/docs/?p=api#query
+
+If you have questions, contact me on Twitter @thinkberg
