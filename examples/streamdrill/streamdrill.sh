@@ -8,4 +8,4 @@ OPTS="-server -XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -XX:+CMSIncrementa
 $JAVA_HOME/bin/java $OPTS \
   -D-Djetty.host=$HOST -Djetty.port=$PORT \
   -Dsd.webapp.auth=none -Dsd.rest.auth=none \
-  -jar streamdrill-launcher-1.1.jar
+  -jar streamdrill.jar
