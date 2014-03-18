@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strings"
 	"io"
-	"fmt"
 	"regexp"
 )
 
@@ -56,11 +55,11 @@ func (b *ToStreamdrill) Run() {
 
 
 			if b.url != "" {
-				b.Log("deleting existing trend")
+				b.Log("deleting existing trend '" + name +"'")
 				delReq, _ := http.NewRequest("DELETE", b.url + "/1/delete/" + b.name, nil)
 				client.Do(delReq)
 			} else {
-				b.Log("deleting trend w/ same name trend (if it exists)")
+				b.Log("deleting trend '" + name +"' w/ same name trend (if it exists)")
 				delReq, _ := http.NewRequest("DELETE", urlS + "/1/delete/" + name, nil)
 				client.Do(delReq)
 			}
@@ -68,7 +67,6 @@ func (b *ToStreamdrill) Run() {
 			b.url = urlS
 			b.name = name
 			b.entities = strings.Split(entities, ":")
-			b.Log(fmt.Sprintf("%d", len(b.entities)))
 
 			createEntities := strings.Replace(strings.Join(b.entities, ":"), ".", "_", -1)
 			callUrl := b.url + "/1/create/" + b.name + "/" + createEntities +"?size=1000000"
@@ -76,7 +74,7 @@ func (b *ToStreamdrill) Run() {
 			if err != nil {
 				b.Error(err)
 			}
-			b.Log("created new trend " + b.name)
+			b.Log("created new trend '" + b.name +"'")
 
 			go func() {
 				u, _ := url.Parse(b.url + "/1/update")
@@ -92,7 +90,7 @@ func (b *ToStreamdrill) Run() {
 				}
 				req.Header.Set("Content-type", "text/tab-separated-values")
 
-				b.Log("setting up streaming connection")
+				b.Log("setting up streaming connection to "+ u.String() +" for trend '" + name +"'")
 
 				r, streamErr := client.Do(req)
 				if streamErr != nil {
