@@ -165,7 +165,7 @@
 .controller, .info-panel {
     font-family: helvetica, arial, sans-serif;
     position: absolute;
-    background: rgba(158,158,158,1);
+    background: rgba(175,170,175,1);
     border: 1px solid black;
     display: none; 
 }
@@ -186,7 +186,7 @@
 
 .rule {
     width: 100%;
-    background: rgba(158,158,158,1);
+    background: white;
     border:none;
 }
 
@@ -199,20 +199,32 @@
     font-family: Monaco, "Courier New", Courier, monospace;
     font-size: 10px;
     white-space: pre; 
-    overflow: auto;
+    padding: 5px;
 }
 
 .rule:focus{
     background: white;
 }
 
+.body .name {
+    padding-left: 5px;
+    padding-top: 7px;
+}
+
 .update {
-    border: 1px solid black;
+    color: black;
+    width: 50px;
+    float: right;
     padding: 5px;
+    box-shadow:  0 0px 0px #fff, 0 0px 1px rgba(100,100,100,.5), inset 0 0px 0px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,.25);
+    margin-right: 5px;
+    border: 1px solid rgba(90,90,90,.5);
+    margin-bottom: 5px;
+    margin-top: 5px;
 }
 
 .update:hover {
-    background: rgba(140,140,140,1);
+    background: rgba(96,152,222,1);
     cursor: pointer;
 }
 
