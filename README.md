@@ -6,7 +6,7 @@ Streamtools is a graphical toolkit for dealing with streams of data. Streamtools
 
 Quick links from our wiki:
 
-* [how to use the GUI](https://github.com/nytlabs/streamtools/wiki/GUI)
+* [how to use the GUI](https://github.com/nytlabs/streamtools/wiki/interface)
 * [block documentation](https://github.com/nytlabs/streamtools/wiki/blocks)
 * [how to use the API](https://github.com/nytlabs/streamtools/wiki/API)
 * [how to compile](https://github.com/nytlabs/streamtools/wiki/how-to-compile)
