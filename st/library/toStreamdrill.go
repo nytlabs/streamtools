@@ -45,7 +45,7 @@ func (b *ToStreamdrill) Run() {
 	// we use this variable for tests
 	var ok bool
 
-	var baseUrl         string = "http://localhost:9669"
+	var baseUrl     string = "http://localhost:9669"
 	var name        string
 	var entities    string
 	var value       string
