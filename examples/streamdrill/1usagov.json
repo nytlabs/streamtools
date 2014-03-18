@@ -1,0 +1,1 @@
+{"Blocks":[{"Id":"1","Type":"tostreamdrill","Rule":{"Entities":".u:.c:.gr","Name":"top-urls","Url":"http://localhost:9669","Value":""},"Position":{"X":830,"Y":431}},{"Id":"2","Type":"fromhttpstream","Rule":{"Auth":"","Endpoint":"http://developer.usa.gov/1usagov"},"Position":{"X":331,"Y":166}}],"Connections":[{"Id":"3","FromId":"2","ToId":"1","ToRoute":"in"}]}

@@ -1,0 +1,70 @@
+{"Blocks": [
+  {
+    "Id": "1",
+    "Type": "fromhttpstream",
+    "Rule": {
+      "Auth": "demo:demo",
+      "Endpoint": "http://localhost:9999/1/stream/retweets/range.json?start=20140315000000"
+    },
+    "Position": {
+      "X": 191,
+      "Y": 157
+    }
+  },
+  {
+    "Id": "2",
+    "Type": "filter",
+    "Rule": {
+      "Filter": ". != null \u0026 .user.location != null \u0026 .user.location != ''"
+    },
+    "Position": {
+      "X": 301,
+      "Y": 363
+    }
+  },
+  {
+    "Id": "4",
+    "Type": "tostreamdrill",
+    "Rule": {
+      "Entities": ".user.location:.user.lang",
+      "Name": "top-locations",
+      "Url": "http://localhost:9669"
+    },
+    "Position": {
+      "X": 306,
+      "Y": 511
+    }
+  },
+  {
+    "Id": "6",
+    "Type": "tostreamdrill",
+    "Rule": {
+      "Entities": ".user.lang",
+      "Name": "user-language",
+      "Url": "http://localhost:9669"
+    },
+    "Position": {
+      "X": 508,
+      "Y": 429
+    }
+  }
+], "Connections": [
+  {
+    "Id": "3",
+    "FromId": "1",
+    "ToId": "2",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "5",
+    "FromId": "2",
+    "ToId": "4",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "7",
+    "FromId": "1",
+    "ToId": "6",
+    "ToRoute": "in"
+  }
+]}

@@ -1,5 +1,8 @@
 #!/bin/bash
-export PATH=$JAVA_HOME/bin:$PATH
+if [ "$JAVA_HOME" == "" ]; then
+  echo "Please set JAVA_HOME."
+  exit
+fi
 [ "$MEM" == "" ] && MEM="2G"
 [ "$HOST" == "" ] && HOST="localhost"
 [ "$PORT" == "" ] && PORT="9669"

@@ -3,7 +3,6 @@ package library
 import (
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 	"net/url"
 	"net/http"
 	"strings"
@@ -20,11 +19,6 @@ type ToStreamdrill struct {
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
-	url       string
-	name      string
-	entities  []string
-	value     string
-	parsedValue     *jee.TokenTree
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -40,7 +34,6 @@ func (b *ToStreamdrill) Setup() {
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
-	b.url = "http://localhost:9669"
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
@@ -49,73 +42,118 @@ func (b *ToStreamdrill) Run() {
 	client := &http.DefaultClient
 	re := regexp.MustCompile("[\r\n]+")
 
+	// we use this variable for tests
+	var ok bool
+
+	var baseUrl         string = "http://localhost:9669"
+	var name        string
+	var entities    string
+	var value       string
+
+	// internal parsed data
+	var splitEntities []string
+	//var parsedEntities []*jee.TokenTree
+	var parsedValue *jee.TokenTree
+
 	for {
 		select {
-		case msgI := <-b.inrule:
-			urlS, _ := util.ParseString(msgI, "Url")
-			name, _ := util.ParseString(msgI, "Name")
-			entities, _ := util.ParseString(msgI, "Entities")
-			value, _ := util.ParseString(msgI, "Value")
+		case ruleI := <-b.inrule:
+			rule := ruleI.(map[string]interface{})
 
-
-			if b.url != "" {
-				b.Log("deleting existing trend '" + name + "'")
-				delReq, _ := http.NewRequest("DELETE", b.url + "/1/delete/" + b.name, nil)
-				client.Do(delReq)
-			} else {
-				b.Log("deleting trend '" + name + "' w/ same name trend (if it exists)")
-				delReq, _ := http.NewRequest("DELETE", urlS + "/1/delete/" + name, nil)
-				client.Do(delReq)
+			// setup base baseUrl
+			baseUrl, ok = rule["Url"].(string)
+			if !ok {
+				b.Error("bad baseUrl")
+				break
 			}
-
-			b.url = urlS
-			b.name = name
-			b.entities = strings.Split(entities, ":")
-			b.value = value
-			if value != "" {
-				lexed, _ := jee.Lexer(value)
-				parsed, _ := jee.Parser(lexed)
-				b.parsedValue = parsed
-			}
-
-			createEntities := strings.Replace(strings.Join(b.entities, ":"), ".", "_", -1)
-			callUrl := b.url + "/1/create/" + b.name + "/" + createEntities + "?size=1000000"
-			_, err := client.Get(callUrl)
+			// check parsability
+			_, err := url.Parse(baseUrl)
 			if err != nil {
-				b.Error(err)
+				b.Error("unparsable baseUrl: " + baseUrl)
+				break;
 			}
-			b.Log("created new trend '" + b.name + "'")
+
+			// setup trend name
+			name, ok = rule["Name"].(string)
+			if !ok {
+				b.Error("must provide a name")
+				break
+			} else {
+				// ensure we start fresh after a change
+				b.Log("deleting trend '" + name + "' w/ same name trend (if it exists)")
+				delReq, _ := http.NewRequest("DELETE", baseUrl + "/1/delete/" + name, nil)
+				res, _ := client.Do(delReq)
+				res.Body.Close()
+			}
+
+			// setup entities
+			entities, ok = rule["Entities"].(string)
+			if !ok {
+				b.Error("must provide entities")
+				break
+			} else {
+				splitEntities = strings.Split(entities, ":")
+
+				// create the trend on streamdrill
+				createUrl := baseUrl + "/1/create/" + name + "/" + strings.Replace(entities, ".", "_", -1) + "?size=1000000"
+				_, err := client.Get(createUrl)
+				if err != nil {
+					b.Error("creating the trend failed")
+					break
+				}
+				b.Log("created new trend '" + name + "'")
+			}
+
+			// (optionall) setup a value parameter
+			value, ok = rule["Value"].(string)
+			if ok {
+				lexed, lexErr := jee.Lexer(value)
+				if lexErr != nil {
+					b.Error(lexErr)
+					continue
+				}
+				parsed, parseErr := jee.Parser(lexed)
+				if parseErr != nil {
+					b.Error(parseErr)
+					continue
+				}
+				parsedValue = parsed
+			}
 
 			go func() {
-				u, _ := url.Parse(b.url + "/1/update")
+				u, err := url.Parse(baseUrl + "/1/update")
+				if err == nil {
+					req := &http.Request{
+						Method:           "POST",
+						ProtoMajor:       1,
+						ProtoMinor:       1,
+						URL:              u,
+						TransferEncoding: []string{"chunked"},
+						Header:           map[string][]string{},
+						Body:             rd,
+					}
+					req.Header.Set("Content-type", "text/tab-separated-values")
 
-				req := &http.Request{
-					Method:           "POST",
-					ProtoMajor:       1,
-					ProtoMinor:       1,
-					URL:              u,
-					TransferEncoding: []string{"chunked"},
-					Header:           map[string][]string{},
-					Body:             rd,
+					b.Log("setting up streaming connection to " + u.String() + " for trend '" + name + "'")
+
+					r, streamErr := client.Do(req)
+					if streamErr != nil {
+						b.Error(streamErr)
+					}
+					defer r.Body.Close()
+				} else {
+					b.Error(err)
+					b.Error("can't establish streaming connection")
 				}
-				req.Header.Set("Content-type", "text/tab-separated-values")
-
-				b.Log("setting up streaming connection to " + u.String() + " for trend '" + name + "'")
-
-				r, streamErr := client.Do(req)
-				if streamErr != nil {
-					b.Error(streamErr)
-				}
-				defer r.Body.Close()
 			}()
 
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Url":      b.url,
-				"Name":     b.name,
-				"Entities": strings.Join(b.entities, ":"),
-				"Value":    b.value,
+				"Url":      baseUrl,
+				"Name":     name,
+				"Entities": entities,
+				"Value":    value,
 			}
 		case <-b.quit:
 			wr.Close();
@@ -124,9 +162,9 @@ func (b *ToStreamdrill) Run() {
 		case msg := <-b.in:
 			var values []string
 
-			for _, key := range b.entities {
+			for _, key := range splitEntities {
 				lexed, _ := jee.Lexer(key)
-				parsed, _ :=jee.Parser(lexed)
+				parsed, _ := jee.Parser(lexed)
 				e, err := jee.Eval(parsed, msg)
 				if err != nil {
 					b.Error(err)
@@ -141,14 +179,13 @@ func (b *ToStreamdrill) Run() {
 			}
 
 
-			if len(values) == len(b.entities) {
+			if len(values) == len(splitEntities) {
 				// put the into streamdrill
-				message := b.name + "\t" + strings.Join(values, "\t")
-				if b.parsedValue != nil {
-					v, err := jee.Eval(b.parsedValue, msg)
+				message := name + "\t" + strings.Join(values, "\t")
+				if parsedValue != nil {
+					v, err := jee.Eval(parsedValue, msg)
 					if err == nil {
 						message = fmt.Sprintf("%s\tv=%f", message, v)
-						b.Log(message)
 					} else {
 						b.Error(err)
 					}
