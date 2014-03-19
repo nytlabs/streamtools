@@ -1,6 +1,7 @@
 package library
 
 import (
+	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/loghub"
 	. "launchpad.net/gocheck"
@@ -409,15 +410,31 @@ func (s *StreamSuite) TestMask(c *C) {
 	}
 }
 
-func (s *StreamSuite) TestGetHTTP(c *C) {
-	log.Println("testing GetHTTP")
-	b, ch := newBlock("testingGetHTTP", "gethttp")
+func (s *StreamSuite) TestGetHTTPXML(c *C) {
+	log.Println("testing GetHTTP with XML")
+	b, ch := newBlock("testingGetHTTPXML", "gethttp")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
 		Route:   "out",
 		Channel: outChan,
 	}
+
+	ruleMsg := map[string]interface{}{"Path": ".url"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- toRule
+
+	queryOutChan := make(chan interface{})
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
+
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		xmlMsg := map[string]interface{}{"url": "https://raw.github.com/nytlabs/streamtools/master/examples/odf.xml"}
+		postData := &blocks.Msg{Msg: xmlMsg, Route: "in"}
+		ch.InChan <- postData
+	})
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
@@ -429,7 +446,60 @@ func (s *StreamSuite) TestGetHTTP(c *C) {
 			} else {
 				return
 			}
-		case <-outChan:
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
+				c.Fail()
+			}
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			fmt.Printf("%s", message["data"])
+		}
+	}
+}
+func (s *StreamSuite) TestGetHTTP(c *C) {
+	log.Println("testing GetHTTP")
+	b, ch := newBlock("testingGetHTTP", "gethttp")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+
+	ruleMsg := map[string]interface{}{"Path": ".url"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- toRule
+
+	queryOutChan := make(chan interface{})
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
+
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		nsqMsg := map[string]interface{}{"url": "https://raw.github.com/nytlabs/streamtools/master/examples/citibike.json"}
+		postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
+				c.Fail()
+			}
+		case msg := <-outChan:
+			log.Println(msg)
 		}
 	}
 }
