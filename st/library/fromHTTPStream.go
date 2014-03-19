@@ -118,9 +118,12 @@ func (b *FromHTTPStream) Run() {
 					if len(blob) > 0 {
 						var outMsg interface{}
 						err := json.Unmarshal(blob, &outMsg)
+						// if the json parsing fails, store data unparsed as "data"
 						if err != nil {
-							log.Println("cannot unmarshal json")
-							continue
+							b.Error(err)
+							outMsg = map[string]interface{}{
+								"data": blob,
+							}
 						}
 						b.out <- outMsg
 					}
