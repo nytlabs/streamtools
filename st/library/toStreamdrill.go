@@ -49,11 +49,13 @@ func (b *ToStreamdrill) Run() {
 	var name        string
 	var entities    string
 	var value       string
+	var timestamp   string
 
 	// internal parsed data
 	var splitEntities []string
 	//var parsedEntities []*jee.TokenTree
 	var parsedValue *jee.TokenTree
+	var parsedTimestamp *jee.TokenTree
 
 	for {
 		select {
@@ -120,6 +122,22 @@ func (b *ToStreamdrill) Run() {
 				parsedValue = parsed
 			}
 
+			// in case the timestamp should be set explicitely
+			timestamp, ok = rule["Timestamp"].(string)
+			if ok {
+				lexed, lexErr := jee.Lexer(timestamp)
+				if lexErr != nil {
+					b.Error(lexErr)
+					continue
+				}
+				parsed, parseErr := jee.Parser(lexed)
+				if parseErr != nil {
+					b.Error(parseErr)
+					continue
+				}
+				parsedTimestamp = parsed
+			}
+
 			go func() {
 				u, err := url.Parse(baseUrl + "/1/update")
 				if err == nil {
@@ -150,10 +168,11 @@ func (b *ToStreamdrill) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Url":      baseUrl,
-				"Name":     name,
-				"Entities": entities,
-				"Value":    value,
+				"Url":       baseUrl,
+				"Name":      name,
+				"Entities":  entities,
+				"Value":     value,
+				"Timestamp": timestamp,
 			}
 		case <-b.quit:
 			wr.Close();
@@ -168,15 +187,16 @@ func (b *ToStreamdrill) Run() {
 				e, err := jee.Eval(parsed, msg)
 				if err != nil {
 					b.Error(err)
-					break
+					continue
 				}
 
 				if e == nil || len(strings.TrimSpace(e.(string))) == 0 {
-					break;
+					continue
 				}
 
 				values = append(values, re.ReplaceAllString(e.(string), " "))
 			}
+
 
 
 			if len(values) == len(splitEntities) {
@@ -186,6 +206,14 @@ func (b *ToStreamdrill) Run() {
 					v, err := jee.Eval(parsedValue, msg)
 					if err == nil {
 						message = fmt.Sprintf("%s\tv=%f", message, v)
+					} else {
+						b.Error(err)
+					}
+				}
+				if parsedTimestamp != nil {
+					v, err := jee.Eval(parsedTimestamp, msg)
+					if err == nil {
+						message = fmt.Sprintf("%s\tts=%d", message, v)
 					} else {
 						b.Error(err)
 					}

@@ -47,6 +47,18 @@ You can view the individual trends and even drill into subtrends, like
 checking the most frequented stations for "Berlin" with in a certain
 time frame (currently the default configuration tracks day, hour minute).
 
+** The Wikipedia Demo **
+
+The Wikipedia loads the wikipedia dumps remotely and creates some fake
+JSON to pipe into streamtools via UDP. If you get blocked for starting
+the script too often, get a local copy and edit wikipedia-stream.pl.
+
+a) start streamtools: build/st
+b) start streamdrill: examples/streamdrill/streamdrill.sh
+c) load demo:
+curl -X POST -d @examples/streamdrill/wikipedia.json http://localhost:7070/import
+
+d) run source stream: perl wikipedia-stream.pl
 
 You may use streamtools to query the results using the REST interface:
 

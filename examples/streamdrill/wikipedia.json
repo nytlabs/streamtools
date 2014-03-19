@@ -1,0 +1,111 @@
+{"Blocks": [
+  {
+    "Id": "1",
+    "Type": "fromudp",
+    "Rule": {
+      "ConnectionString": "localhost:8888"
+    },
+    "Position": {
+      "X": 161,
+      "Y": 93
+    }
+  },
+  {
+    "Id": "2",
+    "Type": "filter",
+    "Rule": {
+      "Filter": ".p != null"
+    },
+    "Position": {
+      "X": 544,
+      "Y": 234
+    }
+  },
+  {
+    "Id": "4",
+    "Type": "tostreamdrill",
+    "Rule": {
+      "Entities": ".p:.t:.l",
+      "Name": "top-project-pages",
+      "Timestamp": ".ts * 1000",
+      "Url": "http://localhost:9669",
+      "Value": ".c"
+    },
+    "Position": {
+      "X": 847,
+      "Y": 328
+    }
+  },
+  {
+    "Id": "7",
+    "Type": "tostreamdrill",
+    "Rule": {
+      "Entities": ".t:.l",
+      "Name": "top-pages",
+      "Timestamp": ".ts * 1000",
+      "Url": "http://localhost:9669",
+      "Value": ".c"
+    },
+    "Position": {
+      "X": 329,
+      "Y": 440
+    }
+  },
+  {
+    "Id": "8",
+    "Type": "tostreamdrill",
+    "Rule": {
+      "Entities": ".l",
+      "Name": "top-languages",
+      "Timestamp": ".ts * 1000",
+      "Url": "http://localhost:9669",
+      "Value": ".c"
+    },
+    "Position": {
+      "X": 547,
+      "Y": 458
+    }
+  },
+  {
+    "Id": "9",
+    "Type": "filter",
+    "Rule": {
+      "Filter": ".l != ''"
+    },
+    "Position": {
+      "X": 419,
+      "Y": 317
+    }
+  }
+], "Connections": [
+  {
+    "Id": "3",
+    "FromId": "1",
+    "ToId": "2",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "5",
+    "FromId": "2",
+    "ToId": "4",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "10",
+    "FromId": "1",
+    "ToId": "9",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "11",
+    "FromId": "9",
+    "ToId": "8",
+    "ToRoute": "in"
+  },
+  {
+    "Id": "12",
+    "FromId": "1",
+    "ToId": "7",
+    "ToRoute": "in"
+  }
+]}
