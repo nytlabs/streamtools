@@ -34,10 +34,16 @@ func (b *FromWebsocket) Setup() {
 	b.out = b.Broadcast()
 }
 
-func recv(ws *websocket.Conn, out chan interface{}) {
+type recvHandler struct {
+	toOut   chan interface{}
+	toError chan error
+}
+
+func (self recvHandler) recv(ws *websocket.Conn, out chan interface{}) {
 	for {
 		_, p, err := ws.ReadMessage()
 		if err != nil {
+			self.toError <- err
 			return
 		}
 
@@ -45,11 +51,12 @@ func recv(ws *websocket.Conn, out chan interface{}) {
 		err = json.Unmarshal(p, &outMsg)
 		// if the json parsing fails, store data unparsed as "data"
 		if err != nil {
+			self.toError <- err
 			outMsg = map[string]interface{}{
 				"data": p,
 			}
 		}
-		out <- outMsg
+		self.toOut <- outMsg
 	}
 }
 
@@ -63,8 +70,15 @@ func (b *FromWebsocket) Run() {
 	listenWS := make(chan interface{})
 	wsHeader := http.Header{"Origin": {"http://localhost/"}}
 
+	toOut := make(chan interface{})
+	toError := make(chan error)
+
 	for {
 		select {
+
+		case msg := <-toOut:
+			b.out <- msg
+
 		case ruleI := <-b.inrule:
 			var err error
 			// set a parameter of the block
@@ -83,7 +97,11 @@ func (b *FromWebsocket) Run() {
 				break
 			}
 			ws.SetReadDeadline(time.Time{})
-			go recv(ws, listenWS)
+			h := recvHandler{toOut, toError}
+			go h.recv(ws, listenWS)
+
+		case err := <-toError:
+			b.Error(err)
 
 		case <-b.quit:
 			// quit the block
