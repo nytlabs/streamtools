@@ -22,6 +22,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"sync":            NewSync,
 	"unpack":          NewUnpack,
 	"pack":            NewPack,
+	"parsexml":        NewParseXML,
 	"set":             NewSet,
 	"join":            NewJoin,
 	"gethttp":         NewGetHTTP,
