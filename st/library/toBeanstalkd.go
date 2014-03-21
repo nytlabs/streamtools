@@ -79,6 +79,7 @@ func (b *ToBeanstalkd) Run() {
 			msgStr, err := json.Marshal(msg)
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 			if conn != nil {
 				_, err := conn.Put(0, 0, ttr, msgStr)
