@@ -47,6 +47,3 @@ You can connect blocks together, via their routes, using connections. You can co
 
 We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools.
 
-# References
-
-* For background on responsive programming tools see Bret Victor's [learnable programming](http://worrydream.com/#!/LearnableProgramming).
