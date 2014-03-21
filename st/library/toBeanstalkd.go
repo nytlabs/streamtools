@@ -11,9 +11,9 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToBeanstalkd struct {
 	blocks.Block
-	host      string
-	tube      string
-	ttr       int
+	//host      string
+	//tube      string
+	//ttr       int
 	queryrule chan chan interface{}
 	inrule    chan interface{}
 	in        chan interface{}
@@ -39,35 +39,37 @@ func (b *ToBeanstalkd) Run() {
 	var conn *lentil.Beanstalkd
 	var tube = "default"
 	var ttr = 0
+	var host = ""
+	var err error
 	for {
 		select {
 		case msgI := <-b.inrule:
 			// set hostname for beanstalkd server
-			host, err := util.ParseString(msgI, "Host")
+			host, err = util.ParseString(msgI, "Host")
 			if err != nil {
 				b.Error(err.Error())
 				continue
 			}
-			b.host = host
+			//b.host = host
 			// set tube name
 			tube, _ = util.ParseString(msgI, "Tube")
-			b.tube = tube
+			//b.tube = tube
 			// set time to reserve
 			ttr, err = util.ParseInt(msgI, "TTR")
 			if err != nil || ttr < 0 {
 				b.Error(errors.New("Error parsing TTR. Setting TTR to 0"))
 				ttr = 0
 			}
-			b.ttr = ttr
+			//b.ttr = ttr
 			// create beanstalkd connection
-			conn, err = lentil.Dial(b.host)
+			conn, err = lentil.Dial(host)
 			if err != nil {
 				// swallowing a panic from lentil here - streamtools must not die
 				b.Error(errors.New("Could not initiate connection with beanstalkd server"))
 				continue
 			}
 			// use the specified tube
-			conn.Use(b.tube)
+			conn.Use(tube)
 		case <-b.quit:
 			// close connection to beanstalkd and quit
 			if conn != nil {
@@ -81,7 +83,7 @@ func (b *ToBeanstalkd) Run() {
 				b.Error(err)
 			}
 			if conn != nil {
-				_, err := conn.Put(0, 0, b.ttr, msgStr)
+				_, err := conn.Put(0, 0, ttr, msgStr)
 				if err != nil {
 					b.Error(err.Error())
 				}
@@ -91,9 +93,9 @@ func (b *ToBeanstalkd) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Host": b.host,
+				"Host": host,
 				"Tube": tube,
-				"TTR":  b.ttr,
+				"TTR":  ttr,
 			}
 		}
 	}
