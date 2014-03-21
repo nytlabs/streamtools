@@ -38,6 +38,7 @@ func (b *ToBeanstalkd) Setup() {
 func (b *ToBeanstalkd) Run() {
     var conn *lentil.Beanstalkd
     var tube = "default"
+    var ttr = 0
 	for {
 		select {
 		case msgI := <-b.inrule:
@@ -61,10 +62,13 @@ func (b *ToBeanstalkd) Run() {
             // use the specified tube
             conn.Use(b.tube)
             // set time to reserve
-            b.ttr, err = util.ParseInt(msgI, "TTR")
-            if err !=nil || b.ttr <= 0 {
-                b.ttr = 0
+            ttr, err = util.ParseInt(msgI, "TTR")
+            if err !=nil || ttr < 0 {
+                //b.Error(errors.New("Error parsing TTR. Setting TTR to 0"))
+                b.Error(err.Error())
+                ttr = 0
             }
+            b.ttr = ttr
 		case <-b.quit:
 			// close connection to beanstalkd and quit
 			if conn != nil {
@@ -78,20 +82,18 @@ func (b *ToBeanstalkd) Run() {
 				b.Error(err)
 			}
             if conn != nil {
-                _, err :=  conn.Put(0, 0 , b.ttr, msgStr)
+                _, err :=  conn.Put(0, 0 , ttr, msgStr)
                 if err != nil {
                     b.Error(err.Error())
                 }
             } else {
                 b.Error(errors.New("Beanstalkd connection not initated or lost. Please check your beanstalkd server or block settings."))
-                //TODO: not sure if this continue is required 
-                continue
             }
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
 				"Host": b.host,
-                "Tube": tube,
+                "Tube": b.tube,
                 "TTR" : b.ttr,
 			}
 		}
