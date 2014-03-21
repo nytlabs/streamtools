@@ -1,9 +1,9 @@
 package blocks
 
-import(
+import (
+	"fmt"
+	"github.com/nytlabs/streamtools/st/loghub"
 	"time"
-    "github.com/nytlabs/streamtools/st/loghub"
-    "fmt"
 )
 
 type Msg struct {
@@ -31,27 +31,27 @@ type BlockChans struct {
 }
 
 type LogStreams struct {
-	log			chan interface{}
-	ui 			chan interface{}
+	log chan interface{}
+	ui  chan interface{}
 }
 
 type Block struct {
-	Id        	string // the name of the block specifed by the user (like MyBlock)
-	Kind        string // the kind of block this is (like count, toFile, fromSQS)
-	inRoutes    map[string]chan interface{}
-	queryRoutes map[string]chan chan interface{}
-	broadcast   chan interface{}
-	quit 		chan interface{}
+	Id            string // the name of the block specifed by the user (like MyBlock)
+	Kind          string // the kind of block this is (like count, toFile, fromSQS)
+	inRoutes      map[string]chan interface{}
+	queryRoutes   map[string]chan chan interface{}
+	broadcast     chan interface{}
+	quit          chan interface{}
 	doesBroadcast bool
 	BlockChans
 	LogStreams
 }
 
 type BlockDef struct {
-	Type string
-	InRoutes []string
-	QueryRoutes [] string
-	OutRoutes []string
+	Type        string
+	InRoutes    []string
+	QueryRoutes []string
+	OutRoutes   []string
 }
 
 type BlockInterface interface {
@@ -93,7 +93,7 @@ func (b *Block) Build(c BlockChans) {
 	b.log = make(chan interface{})
 }
 
-func (b *Block) SetId(Id string){
+func (b *Block) SetId(Id string) {
 	b.Id = Id
 }
 
@@ -133,17 +133,17 @@ func (b *Block) GetDef() *BlockDef {
 
 	for k, _ := range b.queryRoutes {
 		queryRoutes = append(queryRoutes, k)
-	} 
+	}
 
 	if b.doesBroadcast {
 		outRoutes = []string{"out"}
-	} 
+	}
 
 	return &BlockDef{
-		Type: b.Kind,
-		InRoutes: inRoutes,
-		QueryRoutes: queryRoutes, 
-		OutRoutes: outRoutes,
+		Type:        b.Kind,
+		InRoutes:    inRoutes,
+		QueryRoutes: queryRoutes,
+		OutRoutes:   outRoutes,
 	}
 }
 
@@ -162,32 +162,32 @@ func (b *Block) CleanUp() {
 	defer close(b.QuitChan)
 	defer close(b.broadcast)
 
-	go func(id string){
-	    loghub.Log <- &loghub.LogMsg{
-	        Type: loghub.INFO,
-	        Data: fmt.Sprintf("Block %s Quitting...", b.Id),
-	        Id: id,
-	    }
+	go func(id string) {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.INFO,
+			Data: fmt.Sprintf("Block %s Quitting...", b.Id),
+			Id:   id,
+		}
 	}(b.Id)
 }
 
 func (b *Block) Error(msg interface{}) {
-	go func(id string){
-	    loghub.Log <- &loghub.LogMsg{
-	        Type: loghub.ERROR,
-	        Data: msg,
-	        Id: id,
-	    }
+	go func(id string) {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
+			Data: msg,
+			Id:   id,
+		}
 	}(b.Id)
 }
 
-func (b *Block) Log(msg interface{}){
+func (b *Block) Log(msg interface{}) {
 	go func(id string) {
-	    loghub.Log <- &loghub.LogMsg{
-	        Type: loghub.INFO,
-	        Data: msg,
-	        Id: id,
-	    }
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.INFO,
+			Data: msg,
+			Id:   id,
+		}
 	}(b.Id)
 }
 
@@ -208,25 +208,25 @@ func BlockRoutine(bi BlockInterface) {
 
 			// every in channel is buffered a 1000 messages.
 			// if we cannot immediately send to that in channel we place the msg
-			// in a go routine and notify the user that the block routine's 
-			// buffer has overflowed. this still allows for unrecoverable 
-			// overflows (for example: a stuck run() function), but at least it 
+			// in a go routine and notify the user that the block routine's
+			// buffer has overflowed. this still allows for unrecoverable
+			// overflows (for example: a stuck run() function), but at least it
 			// offloads to memory/cpu instead of blocking.
 			select {
-				case b.inRoutes[msg.Route] <- msg.Msg:
-				default:
-					go func(id string, msgOut interface{}){
-						b.inRoutes[msg.Route] <- msgOut
-						loghub.Log <- &loghub.LogMsg{
-							Type: loghub.ERROR,
-							Data: "Dropping messages!",
-							Id:   id,
-						}
-					}(b.Id, msg.Msg)
+			case b.inRoutes[msg.Route] <- msg.Msg:
+			default:
+				go func(id string, msgOut interface{}) {
+					b.inRoutes[msg.Route] <- msgOut
+					loghub.Log <- &loghub.LogMsg{
+						Type: loghub.ERROR,
+						Data: "Dropping messages!",
+						Id:   id,
+					}
+				}(b.Id, msg.Msg)
 			}
 
 			if msg.Route == "rule" {
-				go func(id string){
+				go func(id string) {
 					loghub.UI <- &loghub.LogMsg{
 						Type: loghub.RULE_UPDATED,
 						Data: map[string]interface{}{},
@@ -242,11 +242,11 @@ func BlockRoutine(bi BlockInterface) {
 			}
 
 			select {
-				case b.queryRoutes[msg.Route] <- msg.RespChan:
-				default:
-					go func(){
-						b.queryRoutes[msg.Route] <- msg.RespChan
-					}()
+			case b.queryRoutes[msg.Route] <- msg.RespChan:
+			default:
+				go func() {
+					b.queryRoutes[msg.Route] <- msg.RespChan
+				}()
 			}
 
 		case msg := <-b.AddChan:
@@ -269,17 +269,17 @@ func BlockRoutine(bi BlockInterface) {
 }
 
 type Connection struct {
-	Id 	string
+	Id      string
 	ToRoute string
 	BlockChans
 	LogStreams
 }
 
-func (c *Connection) SetId(Id string){
+func (c *Connection) SetId(Id string) {
 	c.Id = Id
 }
 
-func (c *Connection) Build(chans BlockChans){
+func (c *Connection) Build(chans BlockChans) {
 	c.InChan = chans.InChan
 	c.QueryChan = chans.QueryChan
 	c.AddChan = chans.AddChan
@@ -287,49 +287,49 @@ func (c *Connection) Build(chans BlockChans){
 	c.QuitChan = chans.QuitChan
 }
 
-func (c *Connection) CleanUp(){
+func (c *Connection) CleanUp() {
 	defer close(c.InChan)
 	defer close(c.QueryChan)
 	defer close(c.AddChan)
 	defer close(c.DelChan)
 	defer close(c.QuitChan)
 
-    loghub.Log <- &loghub.LogMsg{
-        Type: loghub.INFO,
-        Data: fmt.Sprintf("Connection %s Quitting...", c.Id),
-        Id:   c.Id,
-    }
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.INFO,
+		Data: fmt.Sprintf("Connection %s Quitting...", c.Id),
+		Id:   c.Id,
+	}
 }
 
-func ConnectionRoutine(c *Connection){
+func ConnectionRoutine(c *Connection) {
 	var last interface{}
 	var rate float64
 
 	outChans := make(map[string]chan *Msg)
-	times := make([]int64,100,100)
+	times := make([]int64, 100, 100)
 	timesIdx := len(times)
 	rateReport := time.NewTicker(200 * time.Millisecond)
 
-	for{
-		select{
-		case <- rateReport.C:
+	for {
+		select {
+		case <-rateReport.C:
 			if timesIdx == len(times) {
 				rate = 0
 			} else {
-				rate = 1000000000.0 * float64(len(times) - timesIdx)/float64(time.Now().UnixNano() - times[timesIdx])
+				rate = 1000000000.0 * float64(len(times)-timesIdx) / float64(time.Now().UnixNano()-times[timesIdx])
 			}
 
-			go func(id string, r float64){
-			    loghub.UI <- &loghub.LogMsg{
-			        Type: loghub.UPDATE_RATE,
-			        Data: map[string]interface{}{
-			        	"Rate": r,
-			        },
-			        Id:   id,
-			    }
-		    }(c.Id, rate)
+			go func(id string, r float64) {
+				loghub.UI <- &loghub.LogMsg{
+					Type: loghub.UPDATE_RATE,
+					Data: map[string]interface{}{
+						"Rate": r,
+					},
+					Id: id,
+				}
+			}(c.Id, rate)
 
-		case msg := <- c.InChan:
+		case msg := <-c.InChan:
 			last = msg.Msg
 			for _, v := range outChans {
 				v <- &Msg{
@@ -345,22 +345,22 @@ func ConnectionRoutine(c *Connection){
 				timesIdx--
 			}
 
-		case msg := <- c.QueryChan:
+		case msg := <-c.QueryChan:
 			switch msg.Route {
 			case "rate":
 				msg.RespChan <- map[string]interface{}{
-					"Rate" : rate,
+					"Rate": rate,
 				}
 			case "last":
 				msg.RespChan <- map[string]interface{}{
-					"Last" : last,
+					"Last": last,
 				}
 			}
-		case msg := <- c.AddChan:
+		case msg := <-c.AddChan:
 			outChans[msg.Route] = msg.Channel
-		case msg := <- c.DelChan:
+		case msg := <-c.DelChan:
 			delete(outChans, msg.Route)
-		case <- c.QuitChan:
+		case <-c.QuitChan:
 			c.CleanUp()
 			return
 		}

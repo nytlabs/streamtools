@@ -67,16 +67,17 @@ func (b *FromHTTPStream) Run() {
 			}
 
 			req, err := http.NewRequest("GET", endpoint, nil)
-
 			if err != nil {
-				log.Fatal(err)
+				b.Error(err)
+				continue
 			}
 			if len(auth) > 0 {
 				req.SetBasicAuth(strings.Split(auth, ":")[0], strings.Split(auth, ":")[1])
 			}
 			res, err = client.Do(req)
 			if err != nil {
-				log.Fatal(err)
+				b.Error(err)
+				continue
 			}
 			defer res.Body.Close()
 
@@ -104,7 +105,8 @@ func (b *FromHTTPStream) Run() {
 			}
 
 			if err != nil {
-				log.Fatal(err.Error())
+				b.Error(err)
+				continue
 			}
 			// catch odd little buffers
 			if p < 2 {
@@ -116,9 +118,11 @@ func (b *FromHTTPStream) Run() {
 					if len(blob) > 0 {
 						var outMsg interface{}
 						err := json.Unmarshal(blob, &outMsg)
+						// if the json parsing fails, store data unparsed as "data"
 						if err != nil {
-							log.Println("cannot unmarshal json")
-							continue
+							outMsg = map[string]interface{}{
+								"data": blob,
+							}
 						}
 						b.out <- outMsg
 					}

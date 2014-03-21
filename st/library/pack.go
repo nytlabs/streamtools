@@ -148,7 +148,7 @@ func (b *Pack) Run() {
 				// we've not seen anything since putting this message in the queue
 
 				msg := map[string]interface{}{
-					"bunch": bunches[idStr],
+					"pack": bunches[idStr],
 				}
 
 				b.out <- msg

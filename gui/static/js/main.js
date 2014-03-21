@@ -179,18 +179,6 @@ $(function() {
             }
         });
 
-
-    var resize = d3.behavior.drag()
-        .on('dragstart', function(d, i) {
-            d3.event.sourceEvent.stopPropagation();
-            d3.event.sourceEvent.preventDefault();
-        })
-        .on('drag', function(d, i) {
-            var controller = $('[data-id=_' + d.Id + ']');
-            controller.width(controller.width() + d3.event.dx);
-            controller.height(controller.height() + d3.event.dy);
-        });
-
     // ui element for new connection
     var newConnection = svg.select('.linkcontainer').append('path')
         .attr('id', 'newLink')
@@ -640,10 +628,6 @@ $(function() {
                     success: function(result) {}
                 });
             });
-
-        bottoms.append('div')
-            .classed('handle', true)
-            .call(resize);
 
         controls.each(function(d) {
             this.refresh = d3.select(this).select('.body')[0][0].refresh;
