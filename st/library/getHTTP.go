@@ -92,10 +92,15 @@ func (b *GetHTTP) Run() {
 				continue
 			}
 			var outMsg interface{}
+			// try treating the body as json first...
 			err = json.Unmarshal(body, &outMsg)
+
+			// if the json parsing fails, store data unparsed as "data"
 			if err != nil {
 				b.Error(err)
-				continue
+				outMsg = map[string]interface{}{
+					"data": body,
+				}
 			}
 			b.out <- outMsg
 		case respChan := <-b.queryrule:

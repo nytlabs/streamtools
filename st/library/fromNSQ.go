@@ -38,8 +38,9 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 	var msg interface{}
 	err := json.Unmarshal(message.Body, &msg)
 	if err != nil {
-		self.toError <- err
-		return err
+		msg = map[string]interface{}{
+			"data": message.Body,
+		}
 	}
 	self.toOut <- msg
 	return nil
