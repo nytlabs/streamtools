@@ -11,9 +11,6 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToBeanstalkd struct {
 	blocks.Block
-	//host      string
-	//tube      string
-	//ttr       int
 	queryrule chan chan interface{}
 	inrule    chan interface{}
 	in        chan interface{}
@@ -50,17 +47,14 @@ func (b *ToBeanstalkd) Run() {
 				b.Error(err.Error())
 				continue
 			}
-			//b.host = host
 			// set tube name
 			tube, _ = util.ParseString(msgI, "Tube")
-			//b.tube = tube
 			// set time to reserve
 			ttr, err = util.ParseInt(msgI, "TTR")
 			if err != nil || ttr < 0 {
 				b.Error(errors.New("Error parsing TTR. Setting TTR to 0"))
 				ttr = 0
 			}
-			//b.ttr = ttr
 			// create beanstalkd connection
 			conn, err = lentil.Dial(host)
 			if err != nil {
