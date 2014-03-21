@@ -3,6 +3,7 @@ package library
 import (
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"io/ioutil"
 	"net/url"
 	"net/http"
 	"strings"
@@ -17,7 +18,7 @@ type ToStreamdrill struct {
 	queryrule chan chan interface{}
 	inrule    chan interface{}
 	in        chan interface{}
-	out       chan interface{}
+//	out       chan interface{}
 	quit      chan interface{}
 }
 
@@ -33,7 +34,7 @@ func (b *ToStreamdrill) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
-	b.out = b.Broadcast()
+//	b.out = b.Broadcast()
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
@@ -82,10 +83,17 @@ func (b *ToStreamdrill) Run() {
 				break
 			} else {
 				// ensure we start fresh after a change
-				b.Log("deleting trend '" + name + "' w/ same name trend (if it exists)")
 				delReq, _ := http.NewRequest("DELETE", baseUrl + "/1/delete/" + name, nil)
-				res, _ := client.Do(delReq)
-				res.Body.Close()
+				resp, err := client.Do(delReq)
+				if err == nil  {
+					_, err = ioutil.ReadAll(resp.Body)
+					if err != nil {
+						b.Error(err)
+						break
+					}
+					b.Log("deleted trend '" + name + "' with the same name")
+					resp.Body.Close()
+				}
 			}
 
 			// setup entities
@@ -98,11 +106,18 @@ func (b *ToStreamdrill) Run() {
 
 				// create the trend on streamdrill
 				createUrl := baseUrl + "/1/create/" + name + "/" + strings.Replace(entities, ".", "_", -1) + "?size=1000000"
-				_, err := client.Get(createUrl)
+				resp, err := client.Get(createUrl)
 				if err != nil {
 					b.Error("creating the trend failed")
 					break
 				}
+				body, err := ioutil.ReadAll(resp.Body)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+				b.Log(body)
+				resp.Body.Close()
 				b.Log("created new trend '" + name + "'")
 			}
 
@@ -181,9 +196,18 @@ func (b *ToStreamdrill) Run() {
 		case msg := <-b.in:
 			var values []string
 
+			// TODO: change this to use pre-parsed entities
 			for _, key := range splitEntities {
-				lexed, _ := jee.Lexer(key)
-				parsed, _ := jee.Parser(lexed)
+				lexed, lexErr := jee.Lexer(key)
+				if lexErr != nil {
+					b.Error(lexErr)
+					continue
+				}
+				parsed, parseErr := jee.Parser(lexed)
+				if parseErr != nil {
+					b.Error(parseErr)
+					continue
+				}
 				e, err := jee.Eval(parsed, msg)
 				if err != nil {
 					b.Error(err)

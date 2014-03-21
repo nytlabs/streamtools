@@ -56,7 +56,7 @@ the script too often, get a local copy and edit wikipedia-stream.pl.
 a) start streamtools: build/st
 b) start streamdrill: examples/streamdrill/streamdrill.sh
 c) load demo:
-curl -X POST -d @examples/streamdrill/wikipedia.json http://localhost:7070/import
+curl -d @examples/streamdrill/wikipedia.json http://localhost:7070/import
 
 d) run source stream: perl wikipedia-stream.pl
 
