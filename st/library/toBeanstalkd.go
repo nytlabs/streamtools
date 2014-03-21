@@ -48,7 +48,11 @@ func (b *ToBeanstalkd) Run() {
 				continue
 			}
 			// set tube name
-			tube, _ = util.ParseString(msgI, "Tube")
+			tube, err = util.ParseString(msgI, "Tube")
+			if err != nil {
+				b.Error(errors.New("Could not parse tube name, setting to 'default'"))
+				tube = "default"
+			}
 			// set time to reserve
 			ttr, err = util.ParseInt(msgI, "TTR")
 			if err != nil || ttr < 0 {
