@@ -49,6 +49,16 @@ func (b *ToBeanstalkd) Run() {
                 continue
             } 
             b.host = host
+            // set tube name
+            tube, _ = util.ParseString(msgI, "Tube")
+            b.tube = tube
+            // set time to reserve
+            ttr, err = util.ParseInt(msgI, "TTR")
+            if err !=nil || ttr < 0 {
+                b.Error(errors.New("Error parsing TTR. Setting TTR to 0"))
+                ttr = 0
+            }
+            b.ttr = ttr
             // create beanstalkd connection
 			conn, err = lentil.Dial(b.host)
             if err != nil {
@@ -56,19 +66,8 @@ func (b *ToBeanstalkd) Run() {
                 b.Error(errors.New("Could not initiate connection with beanstalkd server"))
                 continue
             }
-            // set tube name
-            tube, _ = util.ParseString(msgI, "Tube")
-            b.tube = tube
             // use the specified tube
             conn.Use(b.tube)
-            // set time to reserve
-            ttr, err = util.ParseInt(msgI, "TTR")
-            if err !=nil || ttr < 0 {
-                //b.Error(errors.New("Error parsing TTR. Setting TTR to 0"))
-                b.Error(err.Error())
-                ttr = 0
-            }
-            b.ttr = ttr
 		case <-b.quit:
 			// close connection to beanstalkd and quit
 			if conn != nil {
@@ -82,7 +81,7 @@ func (b *ToBeanstalkd) Run() {
 				b.Error(err)
 			}
             if conn != nil {
-                _, err :=  conn.Put(0, 0 , ttr, msgStr)
+                _, err :=  conn.Put(0, 0 , b.ttr, msgStr)
                 if err != nil {
                     b.Error(err.Error())
                 }
@@ -93,7 +92,7 @@ func (b *ToBeanstalkd) Run() {
 			// deal with a query request
 			respChan <- map[string]interface{}{
 				"Host": b.host,
-                "Tube": b.tube,
+                "Tube": tube,
                 "TTR" : b.ttr,
 			}
 		}
