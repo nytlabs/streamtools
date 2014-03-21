@@ -57,15 +57,16 @@ func ParseInt(ruleI interface{}, key string) (int, error) {
 	rule := ruleI.(map[string]interface{})
 	var val int
 	var ok bool
-
+	var floatval float64
 	foundRule, ok := rule[key]
 	if !ok {
 		return val, errors.New("Key was not in rule")
 	}
-	val, ok = foundRule.(int)
+	floatval, ok = foundRule.(float64)
 	if !ok {
-		return val, errors.New("Key was not an int!")
+		return val, errors.New("Key was not a number")
 	}
+	val = int(floatval)
 	return val, nil
 }
 
