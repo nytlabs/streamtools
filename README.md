@@ -39,11 +39,13 @@ The streamtools server is completely contained in a single binary called `st`. I
 
 ## How Streamtools works
 
-Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. A block perfoms some operation on each message it recieves, and that operation is defined by the block's *type*. Each block has zero or more *rules* which define that block's behaviour. Each block has a set of named *routes* that can recieve data, emit data, or respond to queries.
+Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. 
 
-A block's rule can be set directly by double clicking on a block and typing in the rule manually. Alternatively, a block's rule can be set by sending an appropriately formed message to the block's `rule` route.
+* A block perfoms some operation on each message it recieves, and that operation is defined by the block's *type*. 
+* Each block has zero or more *rules* which define that block's behaviour. 
+* Each block has a set of named *routes* that can recieve data, emit data, or respond to queries.
+* You can connect blocks together, via their routes, using connections. You can connect to any inbound route, and so data flowing through streamtools can be used to set the rules of the blocks in the running pattern.
+* We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. 
 
-You can connect blocks together, via their routes, using connections. You can connect to any inbound route, and so data flowing through streamtools can be used to set the rules of the blocks in the running pattern.
-
-We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools.
+Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools, and about streaming data systems.
 
