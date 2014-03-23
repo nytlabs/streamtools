@@ -12,26 +12,16 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FFT struct {
 	blocks.Block
-	queryrule  chan chan interface{}
-	querystate chan chan interface{}
-	queryfft   chan chan interface{}
-	inrule     chan interface{}
-	inpoll     chan interface{}
-	in         chan interface{}
-	out        chan interface{}
-	quit       chan interface{}
+	queryrule chan chan interface{}
+	queryfft  chan chan interface{}
+	inrule    chan interface{}
+	inpoll    chan interface{}
+	in        chan interface{}
+	out       chan interface{}
+	quit      chan interface{}
 }
 
-type tsDataPoint struct {
-	Timestamp float64
-	Value     float64
-}
-
-type tsData struct {
-	Values []tsDataPoint
-}
-
-func fft(data tsData) {
+func buildFFT(data tsData) [][]float64 {
 	x := make([]float64, len(data.Values))
 	for i, d := range data.Values {
 		x[i] = d.Value
@@ -147,12 +137,12 @@ func (b *FFT) Run() {
 			}
 		case respChan := <-b.queryfft:
 			out := map[string]interface{}{
-				"fft": fft(data),
+				"fft": buildFFT(data),
 			}
 			respChan <- out
 		case <-b.inpoll:
 			out := map[string]interface{}{
-				"fft": fft(data),
+				"fft": buildFFT(data),
 			}
 			b.out <- out
 		}
