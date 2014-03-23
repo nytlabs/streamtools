@@ -10,6 +10,7 @@ Quick links from our wiki:
 * [block documentation](https://github.com/nytlabs/streamtools/wiki/blocks)
 * [how to use the API](https://github.com/nytlabs/streamtools/wiki/API)
 * [how to compile](https://github.com/nytlabs/streamtools/wiki/how-to-compile)
+* [command line options](https://github.com/nytlabs/streamtools/wiki/command-line-options)
 
 
 ## Getting Started - the nuts and bolts
