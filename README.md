@@ -22,7 +22,7 @@ Quick links from our wiki:
 
 ### longer description
 
-Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere that serves up the streamtools webpage. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user you will need to compile the code yourself.
+Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere that serves up the streamtools webpage. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user we do provide binaries but don't know much about how to interact with a Windows machine - you will need to translate these instructions to Windows yourself.
 
 So, first of all, you need to download the streamtools server. It's just a single file, and you can find the latest release on [github](https://github.com/nytlabs/streamtools/releases). Download this file, and move it to your home directory. Now, open a terminal and run the streamtools server by typing `~/st`. You should see streamtools start up, telling you it's running on port 7070.
 
