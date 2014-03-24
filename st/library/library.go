@@ -12,6 +12,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"fromhttpstream":  NewFromHTTPStream,
 	"fromsqs":         NewFromSQS,
 	"frompost":        NewFromPost,
+	"fromanalog":      NewFromAnalog,
 	"tonsq":           NewToNSQ,
 	"toelasticsearch": NewToElasticsearch,
 	"towebsocket":     NewToWebsocket,
