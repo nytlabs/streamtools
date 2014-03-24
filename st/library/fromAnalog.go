@@ -37,6 +37,16 @@ func (b *FromAnalog) Run() {
 	var pinStr, intervalStr string
 	var err error
 	sampler := time.NewTicker(interval)
+// Get the module
+m, e := hwio.GetAnalogModule()
+if e != nil {
+b.Log(e)
+}
+// Enable it.
+e = m.Enable()
+if e != nil {
+b.Log(e)
+}
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -61,7 +71,12 @@ func (b *FromAnalog) Run() {
 				b.Error(err)
 				continue
 			}
-			pin, err = hwio.GetPinWithMode(pinStr, hwio.OUTPUT)
+			pin, err = hwio.GetPin(pinStr)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			err = hwio.PinMode(pin, hwio.INPUT)
 			if err != nil {
 				b.Error(err)
 				continue
