@@ -1,9 +1,9 @@
 package library
 
 import (
-	"fmt"
-	"github.com/clbanning/mxj"
-	"github.com/nytlabs/gojee"                 // jee
+	"encoding/json"
+	"github.com/nytlabs/gojee" // jee
+	"github.com/nytlabs/mxj"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
 )
@@ -93,21 +93,20 @@ func (b *ParseXML) Run() {
 				continue
 			}
 
-			msi := map[string]interface{}(mapVal)
-			for k, v := range msi {
-				switch vt := v.(type) {
-				case map[string]interface{}:
-					fmt.Println("value at key", k, "is a msi", vt)
-				case mxj.Map:
-					fmt.Println("value at key", k, "is a mxj.Map", vt)
-				default:
-					fmt.Println("value at key", k, "is something else", vt)
-				}
-
-				fmt.Println("\t\t", k, ":", v)
+			outMsg, err := json.Marshal(mapVal)
+			if err != nil {
+				b.Error(err)
+				continue
 			}
 
-			b.out <- mapVal
+			var newMsg interface{}
+			err = json.Unmarshal(outMsg, &newMsg)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			b.out <- newMsg
 
 		case respChan := <-b.queryrule:
 			// deal with a query request

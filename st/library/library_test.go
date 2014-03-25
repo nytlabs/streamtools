@@ -1110,8 +1110,11 @@ func (s *StreamSuite) TestParseXML(c *C) {
 				c.Fail()
 			}
 		case messageI := <-outChan:
-
-			log.Println(messageI)
+			message := messageI.Msg.(map[string]interface{})
+			odfbody := message["OdfBody"].(map[string]interface{})
+			competition := odfbody["Competition"].(map[string]interface{})
+			c.Assert(odfbody["DocumentType"], Equals, "DT_GM")
+			c.Assert(competition["Code"], Equals, "OG2014")
 		}
 	}
 }
