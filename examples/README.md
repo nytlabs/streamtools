@@ -11,6 +11,7 @@ See the wiki for [instructions](https://github.com/nytlabs/streamtools/wiki/exam
 
 ## components
 
-* poller.json poll an HTTP endpoint
-* 
+* poller.json : poll an HTTP endpoint
+* random-numbers.json : generate a sequence of random numbers
+* check-join-filter.json : check if a message contains a value in a set and emit if so
 
