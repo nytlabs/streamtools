@@ -14,4 +14,6 @@ See the wiki for [instructions](https://github.com/nytlabs/streamtools/wiki/exam
 * poller.json : poll an HTTP endpoint
 * random-numbers.json : generate a sequence of random numbers
 * check-join-filter.json : check if a message contains a value in a set and emit if so
+* count-clear-filter.json : emit every N messages (aka integrate and fire
+  neuron!)
 
