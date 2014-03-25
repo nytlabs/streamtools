@@ -7,12 +7,12 @@ import (
 var Blocks = map[string]func() blocks.BlockInterface{
 	"count":           NewCount,
 	"movingaverage":   NewMovingAverage,
+	"analogpin":       NewAnalogPin,
 	"ticker":          NewTicker,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
 	"fromsqs":         NewFromSQS,
 	"frompost":        NewFromPost,
-	"fromanalog":      NewFromAnalog,
 	"tonsq":           NewToNSQ,
 	"toelasticsearch": NewToElasticsearch,
 	"towebsocket":     NewToWebsocket,
