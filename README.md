@@ -10,6 +10,7 @@ Quick links from our wiki:
 * [block documentation](https://github.com/nytlabs/streamtools/wiki/blocks)
 * [how to use the API](https://github.com/nytlabs/streamtools/wiki/API)
 * [how to compile](https://github.com/nytlabs/streamtools/wiki/how-to-compile)
+* [command line options](https://github.com/nytlabs/streamtools/wiki/command-line-options)
 
 
 ## Getting Started - the nuts and bolts
@@ -22,7 +23,7 @@ Quick links from our wiki:
 
 ### longer description
 
-Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere that serves up the streamtools webpage. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user you will need to compile the code yourself.
+Mostly, you'll interact with streamtools in the browser. A server program, called `st` runs on a computer somewhere that serves up the streamtools webpage. Either it will be on your local machine, or you can put it on a remote machine somewhere - we often run it on a virtual computer in Amazon's cloud so we can leave streamtools running for long periods of time. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux - if you're a Windows user we do provide binaries but don't know much about how to interact with a Windows machine - you will need to translate these instructions to Windows yourself.
 
 So, first of all, you need to download the streamtools server. It's just a single file, and you can find the latest release on [github](https://github.com/nytlabs/streamtools/releases). Download this file, and move it to your home directory. Now, open a terminal and run the streamtools server by typing `~/st`. You should see streamtools start up, telling you it's running on port 7070.
 
@@ -30,23 +31,15 @@ Now, open a browser window and point it at [localhost:7070](http://localhost:707
 
 As a "Hello World", try double-clicking anywhere on the page above the status bar, type `fromhttpstream` and hit enter. This will bring up your first block. Double-click on the block and enter `http://developer.usa.gov/1usagov` in the `Endpoint` text-box. Hit the update button. Now double-click on the page and make a `tolog` block. Finally, connect the two blocks together by first clicking on the `fromhttpstream` block's OUT route (a litle black square on the bottom of the block) to the `tolog` block's IN route (which is the little black square on the top of the block). Click on the status bar and, after a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again. 
 
-## Command Line Options
-
-The streamtools server is completely contained in a single binary called `st`. It has a number of options:
-
-* `--port=7070` - specify a port number to run on. Default is 7070.
-* `--domain=localhost` - if you're accessing streamtools through a URL that's not `localhost`, you need to specify it using this option.
-
 ## How Streamtools works
 
-Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. A block perfoms some operation on each message it recieves, and that operation is defined by the block's *type*. Each block has zero or more *rules* which define that block's behaviour. Each block has a set of named *routes* that can recieve data, emit data, or respond to queries.
+Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. 
 
-A block's rule can be set directly by double clicking on a block and typing in the rule manually. Alternatively, a block's rule can be set by sending an appropriately formed message to the block's `rule` route.
+* A block perfoms some operation on each message it recieves, and that operation is defined by the block's *type*. 
+* Each block has zero or more *rules* which define that block's behaviour. 
+* Each block has a set of named *routes* that can recieve data, emit data, or respond to queries.
+* You can connect blocks together, via their routes, using connections. You can connect to any inbound route, and so data flowing through streamtools can be used to set the rules of the blocks in the running pattern.
+* We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. 
 
-You can connect blocks together, via their routes, using connections. You can connect to any inbound route, and so data flowing through streamtools can be used to set the rules of the blocks in the running pattern.
+Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools, and about streaming data systems.
 
-We call a collection of connected blocks a *pattern*, and it is possible to export and import whole patterns from a running instance of streamtools. Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools.
-
-# References
-
-* For background on responsive programming tools see Bret Victor's [learnable programming](http://worrydream.com/#!/LearnableProgramming).

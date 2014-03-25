@@ -51,7 +51,6 @@ func (self recvHandler) recv(ws *websocket.Conn, out chan interface{}) {
 		err = json.Unmarshal(p, &outMsg)
 		// if the json parsing fails, store data unparsed as "data"
 		if err != nil {
-			self.toError <- err
 			outMsg = map[string]interface{}{
 				"data": p,
 			}
