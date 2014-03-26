@@ -192,14 +192,31 @@ func (b *Block) Log(msg interface{}) {
 }
 
 func BlockRoutine(bi BlockInterface) {
-	outChans := make(map[string]chan *Msg)
+	var dropped int64
+	dropTicker := time.NewTicker(time.Duration(1 * time.Second))
+	dropTicker.Stop()
 
+	outChans := make(map[string]chan *Msg)
 	b := bi.GetBlock()
 	bi.Setup()
 	go bi.Run()
 
 	for {
 		select {
+		case <- dropTicker.C:
+			go func(id string, count int64) {
+				loghub.Log <- &loghub.LogMsg{
+					Type: loghub.ERROR,
+					Data: fmt.Sprintf("Dropped messages: %d (cannot keep up with stream)", count),
+					Id:   id,
+				}
+			}(b.Id, dropped)
+
+			if dropped == 0 {
+				dropTicker.Stop()
+			}
+
+			dropped = 0
 		case msg := <-b.InChan:
 			_, ok := b.inRoutes[msg.Route]
 			if !ok {
@@ -215,14 +232,12 @@ func BlockRoutine(bi BlockInterface) {
 			select {
 			case b.inRoutes[msg.Route] <- msg.Msg:
 			default:
-				go func(id string, msgOut interface{}) {
-					b.inRoutes[msg.Route] <- msgOut
-					loghub.Log <- &loghub.LogMsg{
-						Type: loghub.ERROR,
-						Data: "Dropping messages!",
-						Id:   id,
-					}
-				}(b.Id, msg.Msg)
+				if dropped == 0 {
+					dropTicker.Stop()
+					dropTicker = time.NewTicker(1 * time.Second)
+				}
+
+				dropped++
 			}
 
 			if msg.Route == "rule" {
