@@ -193,7 +193,7 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 	}*/
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
-		http.Error(w, "Not a websocket handshake", 400)
+		s.apiWrap(w, r, 500, s.response("Not a websocket handshake"))
 		return
 	} else if err != nil {
 		//log.Println(err)
@@ -202,8 +202,13 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 	c := &connection{send: make(chan []byte, 256), ws: ws}
 
 	s.manager.Mu.Lock()
-	blockChan, connId := s.manager.GetSocket(vars["id"])
+	blockChan, connId, err := s.manager.GetSocket(vars["id"])
 	s.manager.Mu.Unlock()
+
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
 
 	ticker := time.NewTicker((10 * time.Second * 9) / 10)
 	go func(c *connection, bChan chan *blocks.Msg, cId string, bId string) {
@@ -238,8 +243,14 @@ func (s *Server) streamHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.manager.Mu.Lock()
-	blockChan, connId := s.manager.GetSocket(blockId)
+	blockChan, connId, err := s.manager.GetSocket(blockId)
 	s.manager.Mu.Unlock()
+
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
 	for {
 		msg := <-blockChan
 		message, _ := json.Marshal(msg.Msg)
