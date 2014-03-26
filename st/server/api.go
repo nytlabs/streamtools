@@ -76,16 +76,6 @@ func (s *Server) libraryHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, lib)
 }
 
-func (s *Server) portHandler(w http.ResponseWriter, r *http.Request) {
-	p := []byte(fmt.Sprintf(`{"Port": "%s"}`, s.Port))
-	s.apiWrap(w, r, 200, p)
-}
-
-func (s *Server) domainHandler(w http.ResponseWriter, r *http.Request) {
-	p := []byte(fmt.Sprintf(`{"Domain": "%s"}`, s.Domain))
-	s.apiWrap(w, r, 200, p)
-}
-
 func (s *Server) versionHandler(w http.ResponseWriter, r *http.Request) {
 	p := []byte(fmt.Sprintf(`{"Version": "%s"}`, util.VERSION))
 	s.apiWrap(w, r, 200, p)
@@ -997,8 +987,6 @@ func (s *Server) Run() {
 	r.HandleFunc("/static/{type}/{file}", s.staticHandler)
 	r.HandleFunc("/log", s.serveLogStream)
 	r.HandleFunc("/ui", s.serveUIStream)
-	r.HandleFunc("/port", s.portHandler)
-	r.HandleFunc("/domain", s.domainHandler)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
 	r.HandleFunc("/profstart", s.profStartHandler)
