@@ -3,10 +3,10 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/library"
 	"net/url"
 	"strconv"
-	"github.com/nytlabs/streamtools/st/library"
-	"github.com/nytlabs/streamtools/st/blocks"
 	"sync"
 )
 
@@ -15,7 +15,7 @@ type BlockInfo struct {
 	Type     string
 	Rule     interface{}
 	Position *Coords
-	chans 	 blocks.BlockChans
+	chans    blocks.BlockChans
 }
 
 type ConnectionInfo struct {
@@ -23,7 +23,7 @@ type ConnectionInfo struct {
 	FromId  string
 	ToId    string
 	ToRoute string
-	chans 	blocks.BlockChans
+	chans   blocks.BlockChans
 }
 
 type Coords struct {
@@ -115,12 +115,12 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	newBlock := library.Blocks[blockInfo.Type]()
 
 	newBlockChans := blocks.BlockChans{
-		InChan: make(chan *blocks.Msg), 
+		InChan:    make(chan *blocks.Msg),
 		QueryChan: make(chan *blocks.QueryMsg),
-		AddChan: make(chan *blocks.AddChanMsg),
-		DelChan: make(chan *blocks.Msg),
-		ErrChan: make(chan error),
-		QuitChan: make(chan bool),
+		AddChan:   make(chan *blocks.AddChanMsg),
+		DelChan:   make(chan *blocks.Msg),
+		ErrChan:   make(chan error),
+		QuitChan:  make(chan bool),
 	}
 
 	newBlock.SetId(blockInfo.Id)
@@ -161,7 +161,7 @@ func (b *BlockManager) Send(id string, route string, msg interface{}) error {
 	}
 	// send message to block here
 	b.blockMap[id].chans.InChan <- &blocks.Msg{
-		Msg: msg,
+		Msg:   msg,
 		Route: route,
 	}
 
@@ -175,10 +175,10 @@ func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) 
 	}
 	returnToSender := make(chan interface{})
 	b.blockMap[id].chans.QueryChan <- &blocks.QueryMsg{
-		Route: route,
+		Route:    route,
 		RespChan: returnToSender,
 	}
-	q := <- returnToSender 
+	q := <-returnToSender
 
 	return q, nil
 }
@@ -191,11 +191,10 @@ func (b *BlockManager) QueryConnection(id string, route string) (interface{}, er
 
 	returnToSender := make(chan interface{})
 	b.connMap[id].chans.QueryChan <- &blocks.QueryMsg{
-		Route: route,
+		Route:    route,
 		RespChan: returnToSender,
 	}
-	q := <- returnToSender 
-
+	q := <-returnToSender
 
 	return q, nil
 }
@@ -238,12 +237,12 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 	}
 
 	newConnChans := blocks.BlockChans{
-		InChan: make(chan *blocks.Msg), 
+		InChan:    make(chan *blocks.Msg),
 		QueryChan: make(chan *blocks.QueryMsg),
-		AddChan: make(chan *blocks.AddChanMsg),
-		DelChan: make(chan *blocks.Msg),
-		ErrChan: make(chan error),
-		QuitChan: make(chan bool),
+		AddChan:   make(chan *blocks.AddChanMsg),
+		DelChan:   make(chan *blocks.Msg),
+		ErrChan:   make(chan error),
+		QuitChan:  make(chan bool),
 	}
 
 	newConn.SetId(connInfo.Id)
@@ -255,28 +254,33 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 
 	// ask to connect the blocks together
 	b.blockMap[connInfo.FromId].chans.AddChan <- &blocks.AddChanMsg{
-		Route: connInfo.Id,
+		Route:   connInfo.Id,
 		Channel: connInfo.chans.InChan,
 	}
 
 	b.connMap[connInfo.Id].chans.AddChan <- &blocks.AddChanMsg{
-		Route: connInfo.ToId,
+		Route:   connInfo.ToId,
 		Channel: b.blockMap[connInfo.ToId].chans.InChan,
 	}
 
 	return connInfo, nil
 }
 
-func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string) {
+func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string, error) {
+	_, ok := b.blockMap[fromId]
+	if !ok {
+		return nil, "", errors.New(fmt.Sprintf("Cannot recieve from block %s: does not exist", fromId))
+	}
+
 	wsChan := make(chan *blocks.Msg)
 	id := b.GetId()
 
 	b.blockMap[fromId].chans.AddChan <- &blocks.AddChanMsg{
-		Route: id,
+		Route:   id,
 		Channel: wsChan,
 	}
 
-	return wsChan, id
+	return wsChan, id, nil
 }
 
 func (b *BlockManager) DeleteSocket(blockId string, connId string) error {
