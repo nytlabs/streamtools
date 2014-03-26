@@ -158,7 +158,7 @@ func (s *StreamSuite) TestCount(c *C) {
 	ch.InChan <- toPoll
 
 	testOutput := map[string]interface{}{
-		"Count": 1,
+		"Count": 1.0,
 	}
 
 	for {
