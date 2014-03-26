@@ -203,7 +203,7 @@ func BlockRoutine(bi BlockInterface) {
 
 	for {
 		select {
-		case <- dropTicker.C:
+		case <-dropTicker.C:
 			go func(id string, count int64) {
 				loghub.Log <- &loghub.LogMsg{
 					Type: loghub.ERROR,
