@@ -93,6 +93,7 @@ func (b *ParseXML) Run() {
 				continue
 			}
 
+			// TODO: replace this json.Marshal / Unmarshal dance with Nik's recursive map copy from the map block
 			outMsg, err := json.Marshal(mapVal)
 			if err != nil {
 				b.Error(err)
