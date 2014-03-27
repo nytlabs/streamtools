@@ -81,7 +81,7 @@ func (b *ParseXML) Run() {
 				xmlData = []byte(v)
 
 			default:
-				b.Error("data should be a string or a []byte (it's not an interface{} or map[string]interface{} either)")
+				b.Error("data should be a string or a []byte")
 				continue
 			}
 
