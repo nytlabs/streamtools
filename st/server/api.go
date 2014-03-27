@@ -696,8 +696,9 @@ func (s *Server) sendRouteHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = json.Unmarshal(body, &msg)
 	if err != nil {
-		s.apiWrap(w, r, 500, s.response(err.Error()))
-		return
+		msg = map[string]interface{}{
+			"data": string(body),
+		}
 	}
 	err = s.manager.Send(vars["id"], vars["route"], msg)
 
