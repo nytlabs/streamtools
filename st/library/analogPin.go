@@ -72,7 +72,7 @@ func (b *AnalogPin) Run() {
 			}
 		case <-b.quit:
 			// quit the block
-			hwio.CloseAll() // TODO only close the pin associated with this block
+			hwio.ClosePin(pin) // TODO only close the pin associated with this block
 			return
 		case c := <-b.queryrule:
 			// deal with a query request
