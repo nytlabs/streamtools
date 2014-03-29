@@ -200,6 +200,7 @@
     font-size: 10px;
     white-space: pre; 
     padding: 5px;
+    overflow: auto;
 }
 
 .rule:focus{
