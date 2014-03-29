@@ -596,7 +596,7 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 
 func (s *StreamSuite) TestFromPost(c *C) {
 	log.Println("testing FromPost")
-	b, ch := newBlock("testingPst", "frompost")
+	b, ch := newBlock("testingPost", "frompost")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -1079,6 +1079,53 @@ func (s *StreamSuite) TestParseXML(c *C) {
 				c.Fail()
 			}
 		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			odfbody := message["OdfBody"].(map[string]interface{})
+			competition := odfbody["Competition"].(map[string]interface{})
+			c.Assert(odfbody["DocumentType"], Equals, "DT_GM")
+			c.Assert(competition["Code"], Equals, "OG2014")
+		}
+	}
+}
+
+func (s *StreamSuite) TestFromPostXML(c *C) {
+	log.Println("testing fromPost with XML")
+	b, ch := newBlock("testingFromPostXML", "frompost")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+
+	var xmldata = string(`
+  <?xml version="1.0" encoding="utf-8"?>
+  <OdfBody DocumentType="DT_GM" Date="20130131" Time="140807885" LogicalDate="20130131" Venue="ACV" Language="ENG" FeedFlag="P" DocumentCode="AS0ACV000" Version="3" Serial="1">
+    <Competition Code="OG2014">
+      <Config SDelay="60" />
+    </Competition>
+  </OdfBody>
+  `)
+
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		postData := &blocks.Msg{Msg: xmldata, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case messageI := <-outChan:
+			log.Println(messageI)
 			message := messageI.Msg.(map[string]interface{})
 			odfbody := message["OdfBody"].(map[string]interface{})
 			competition := odfbody["Competition"].(map[string]interface{})
