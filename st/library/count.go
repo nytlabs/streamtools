@@ -13,6 +13,7 @@ type Count struct {
 	querycount chan chan interface{}
 	inrule     chan interface{}
 	inpoll     chan interface{}
+	clear      chan interface{}
 	in         chan interface{}
 	out        chan interface{}
 	quit       chan interface{}
@@ -28,6 +29,7 @@ func (b *Count) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")
+	b.clear = b.InRoute("clear")
 	b.queryrule = b.QueryRoute("rule")
 	b.querycount = b.QueryRoute("count")
 	b.quit = b.Quit()
@@ -67,9 +69,13 @@ func (b *Count) Run() {
 				t:   time.Now(),
 			}
 			heap.Push(pq, queueMessage)
+		case <-b.clear:
+			for len(*pq) > 0 {
+				heap.Pop(pq)
+			}
 		case <-b.inpoll:
 			b.out <- map[string]interface{}{
-				"Count": len(*pq),
+				"Count": float64(len(*pq)),
 			}
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
@@ -77,7 +83,7 @@ func (b *Count) Run() {
 			}
 		case c := <-b.querycount:
 			c <- map[string]interface{}{
-				"Count": len(*pq),
+				"Count": float64(len(*pq)),
 			}
 		}
 		for {
