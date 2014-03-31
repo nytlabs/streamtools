@@ -200,6 +200,7 @@
     font-size: 10px;
     white-space: pre; 
     padding: 5px;
+    overflow: auto;
 }
 
 .rule:focus{
@@ -211,7 +212,7 @@
     padding-top: 7px;
 }
 
-.update {
+.controller .update {
     color: black;
     width: 50px;
     float: right;
@@ -223,7 +224,7 @@
     margin-top: 5px;
 }
 
-.update:hover {
+.controller .update:hover {
     background: rgba(96,152,222,1);
     cursor: pointer;
 }

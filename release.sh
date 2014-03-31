@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.2.2
+VERSION=0.2.3
 echo "getting go code"
 go get github.com/jteeuwen/go-bindata/...
 go-bindata -pkg=server -o st/server/static_bindata.go gui/...
