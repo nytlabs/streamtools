@@ -55,6 +55,9 @@ func (b *AnalogPin) Run() {
 				b.Error("couldn't conver rule to map")
 				continue
 			}
+			if pinStr != "" {
+				hwio.ClosePin(pin)
+			}
 			pinStr, err = util.ParseString(rule, "Pin")
 			if err != nil {
 				b.Error(err)
