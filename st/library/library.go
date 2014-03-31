@@ -17,6 +17,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"tofile":          NewToFile,
 	"tolog":           NewToLog,
 	"tobeanstalkd":    NewToBeanstalkd,
+	"tomongodb":       NewToMongoDB,
 	"mask":            NewMask,
 	"filter":          NewFilter,
 	"sync":            NewSync,
