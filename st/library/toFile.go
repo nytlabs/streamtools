@@ -64,6 +64,7 @@ func (b *ToFile) Run() {
 			msgStr, err := json.Marshal(msg)
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 			fmt.Fprintln(w, string(msgStr))
 			w.Flush()

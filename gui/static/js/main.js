@@ -7,18 +7,6 @@ $(function() {
         async: false // required before UI stream starts
     }).responseText);
 
-    var domain = JSON.parse($.ajax({
-        url: '/domain',
-        type: 'GET',
-        async: false // required before UI stream starts
-    }).responseText).Domain;
-
-    var port = JSON.parse($.ajax({
-        url: '/port',
-        type: 'GET',
-        async: false // required before UI stream starts
-    }).responseText).Port;
-
     var version = JSON.parse($.ajax({
         url: '/version',
         type: 'GET',
@@ -396,9 +384,15 @@ $(function() {
         update();
     }
 
+    // http://stackoverflow.com/questions/10406930/how-to-construct-a-websocket-uri-relative-to-the-page-uri
+    function url(s) {
+        var l = window.location;
+        return ((l.protocol === "https:") ? "wss://" : "ws://") + l.hostname + (((l.port != 80) && (l.port != 443)) ? ":" + l.port : "") + l.pathname + s;
+    }
+
     function logReader() {
         var logTemplate = $('#log-item-template').html();
-        this.ws = new WebSocket('ws://' + domain + ':' + port + '/log');
+        this.ws = new WebSocket(url('log'));
 
         this.ws.onmessage = function(d) {
             var logData = JSON.parse(d.data);
@@ -431,7 +425,7 @@ $(function() {
     function uiReader() {
         _this = this;
         _this.handleMsg = null;
-        this.ws = new WebSocket('ws://' + domain + ':' + port + '/ui');
+        this.ws = new WebSocket(url('ui'));
         this.ws.onopen = function(d) {
             var logTemplate = $('#ui-log-item-template').html();
             var tmpl = _.template(logTemplate, {

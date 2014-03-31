@@ -158,7 +158,7 @@ func (s *StreamSuite) TestCount(c *C) {
 	ch.InChan <- toPoll
 
 	testOutput := map[string]interface{}{
-		"Count": 1,
+		"Count": 1.0,
 	}
 
 	for {
@@ -596,7 +596,7 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 
 func (s *StreamSuite) TestFromPost(c *C) {
 	log.Println("testing FromPost")
-	b, ch := newBlock("testingPst", "frompost")
+	b, ch := newBlock("testingPost", "frompost")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
@@ -869,37 +869,6 @@ func (s *StreamSuite) TestToElasticsearch(c *C) {
 	}
 }
 
-func (s *StreamSuite) TestToWebsocket(c *C) {
-	loghub.Start()
-	log.Println("testing towebsocket")
-	b, ch := newBlock("testingtoWebsocket", "towebsocket")
-	go blocks.BlockRoutine(b)
-	outChan := make(chan *blocks.Msg)
-	ch.AddChan <- &blocks.AddChanMsg{
-		Route:   "out",
-		Channel: outChan,
-	}
-	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		ch.QuitChan <- true
-	})
-	ruleMsg := map[string]interface{}{"port": "9090"}
-	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
-	ch.InChan <- rule
-	inMsg := map[string]interface{}{"a": "test"}
-	ch.InChan <- &blocks.Msg{Msg: inMsg, Route: "in"}
-	for {
-		select {
-		case err := <-ch.ErrChan:
-			if err != nil {
-				c.Errorf(err.Error())
-			} else {
-				return
-			}
-		case <-outChan:
-		}
-	}
-}
-
 func (s *StreamSuite) TestUnpack(c *C) {
 	loghub.Start()
 	log.Println("testing unpack")
@@ -1054,6 +1023,114 @@ func (s *StreamSuite) TestJoin(c *C) {
 				return
 			}
 		case <-outChan:
+		}
+	}
+}
+
+func (s *StreamSuite) TestParseXML(c *C) {
+	log.Println("testing ParseXML")
+	b, ch := newBlock("testingParseXML", "parsexml")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+
+	// where to find the xml in input
+	ruleMsg := map[string]interface{}{"Path": ".data"}
+	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- toRule
+
+	queryOutChan := make(chan interface{})
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	})
+
+	var xmldata = string(`
+  <?xml version="1.0" encoding="utf-8"?>
+  <OdfBody DocumentType="DT_GM" Date="20130131" Time="140807885" LogicalDate="20130131" Venue="ACV" Language="ENG" FeedFlag="P" DocumentCode="AS0ACV000" Version="3" Serial="1">
+    <Competition Code="OG2014">
+      <Config SDelay="60" />
+    </Competition>
+  </OdfBody>
+  `)
+
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		xmlMsg := map[string]interface{}{"data": xmldata}
+		postData := &blocks.Msg{Msg: xmlMsg, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case messageI := <-queryOutChan:
+			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
+				c.Fail()
+			}
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			odfbody := message["OdfBody"].(map[string]interface{})
+			competition := odfbody["Competition"].(map[string]interface{})
+			c.Assert(odfbody["DocumentType"], Equals, "DT_GM")
+			c.Assert(competition["Code"], Equals, "OG2014")
+		}
+	}
+}
+
+func (s *StreamSuite) TestFromPostXML(c *C) {
+	log.Println("testing fromPost with XML")
+	b, ch := newBlock("testingFromPostXML", "frompost")
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+
+	var xmlstring = string(`
+  <?xml version="1.0" encoding="utf-8"?>
+  <OdfBody DocumentType="DT_GM" Date="20130131" Time="140807885" LogicalDate="20130131" Venue="ACV" Language="ENG" FeedFlag="P" DocumentCode="AS0ACV000" Version="3" Serial="1">
+    <Competition Code="OG2014">
+      <Config SDelay="60" />
+    </Competition>
+  </OdfBody>
+  `)
+
+	var xmldata = map[string]interface{}{
+		"data": xmlstring,
+	}
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		postData := &blocks.Msg{Msg: xmldata, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			messageXML := message["data"].(string)
+			c.Assert(messageXML, Equals, xmlstring)
 		}
 	}
 }
