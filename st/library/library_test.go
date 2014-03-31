@@ -1098,7 +1098,7 @@ func (s *StreamSuite) TestFromPostXML(c *C) {
 		Channel: outChan,
 	}
 
-	var xmldata = string(`
+	var xmlstring = string(`
   <?xml version="1.0" encoding="utf-8"?>
   <OdfBody DocumentType="DT_GM" Date="20130131" Time="140807885" LogicalDate="20130131" Venue="ACV" Language="ENG" FeedFlag="P" DocumentCode="AS0ACV000" Version="3" Serial="1">
     <Competition Code="OG2014">
@@ -1107,6 +1107,9 @@ func (s *StreamSuite) TestFromPostXML(c *C) {
   </OdfBody>
   `)
 
+	var xmldata = map[string]interface{}{
+		"data": xmlstring,
+	}
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
 		postData := &blocks.Msg{Msg: xmldata, Route: "in"}
 		ch.InChan <- postData
@@ -1125,12 +1128,9 @@ func (s *StreamSuite) TestFromPostXML(c *C) {
 				return
 			}
 		case messageI := <-outChan:
-			log.Println(messageI)
 			message := messageI.Msg.(map[string]interface{})
-			odfbody := message["OdfBody"].(map[string]interface{})
-			competition := odfbody["Competition"].(map[string]interface{})
-			c.Assert(odfbody["DocumentType"], Equals, "DT_GM")
-			c.Assert(competition["Code"], Equals, "OG2014")
+			messageXML := message["data"].(string)
+			c.Assert(messageXML, Equals, xmlstring)
 		}
 	}
 }
