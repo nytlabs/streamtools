@@ -56,7 +56,8 @@ func (b *AnalogPin) Run() {
 				continue
 			}
 			if pinStr != "" {
-				hwio.ClosePin(pin)
+				err = hwio.ClosePin(pin)
+				b.Error(err)
 			}
 			pinStr, err = util.ParseString(rule, "Pin")
 			if err != nil {
@@ -75,7 +76,8 @@ func (b *AnalogPin) Run() {
 			}
 		case <-b.quit:
 			// quit the block
-			hwio.ClosePin(pin) // TODO only close the pin associated with this block
+			err = hwio.ClosePin(pin)
+			b.Error(err)
 			return
 		case c := <-b.queryrule:
 			// deal with a query request
