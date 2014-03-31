@@ -12,7 +12,8 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
+	//"reflect"
+	//"strings"
 	"sync"
 	"time"
 )
@@ -71,16 +72,20 @@ func (b *FromSQS) listener() {
 			return
 		default:
 			var m sqsMessage
-			var m1 map[string]interface{}
+			//var m1 map[string]interface{}
 
 			resp, err := sqsclient.Get(queryurl)
 
 			if err != nil {
+				b.Error("could not connect to SQS endpoint")
+				b.Error(err)
 				continue
 			}
 
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
+				b.Error("could not read Body")
+				b.Error(err)
 				continue
 			}
 
@@ -88,38 +93,54 @@ func (b *FromSQS) listener() {
 
 			err = xml.Unmarshal(body, &m)
 			if err != nil {
+				b.Error("could not unmarshal XML")
+				b.Error(err)
 				continue
 			}
 
 			if len(m.Body) == 0 {
+				// no messages on queue
+				time.Sleep(1 * time.Second)
+				//log.Println("sleeping for a second")
 				continue
 			}
 
 			for _, body := range m.Body {
-				err = json.Unmarshal([]byte(body), &m1)
-				if err != nil {
-					continue
-				}
-				msgString, ok := m1["Message"].(string)
-				if !ok {
-					continue
-				}
-				msgs := strings.Split(msgString, "\n")
-				for _, msg := range msgs {
-					if len(msg) == 0 {
+				/*
+					err = json.Unmarshal([]byte(body), &m1)
+					if err != nil {
+						b.Error("could not unmarshal JSON")
+						b.Error(err)
 						continue
 					}
+							message, ok := m1[unpackPath]
+							if !ok {
+								b.Error("could not find", unpackPath, "in JSON")
+								continue
+							}
 
-					go func(outmsg string) {
-						stop := time.NewTimer(1 * time.Second)
-						select {
-						case b.fromListener <- []byte(outmsg):
-						case <-stop.C:
-							return
-						}
-					}(msg)
+							msgString, ok := message.(string)
+							if !ok {
+								log.Println(message)
+								b.Error("could not assert Message to string")
+								b.Error(err)
+								continue
+							}
+							msgs := strings.Split(msgString, "\n")
+						for _, msg := range msgs {
+							if len(msg) == 0 {
+								continue
+							}
+				*/
 
-				}
+				go func(outmsg string) {
+					stop := time.NewTimer(1 * time.Second)
+					select {
+					case b.fromListener <- []byte(outmsg):
+					case <-stop.C:
+						return
+					}
+				}(body)
 			}
 
 			delquery := url.Values{}
@@ -136,6 +157,8 @@ func (b *FromSQS) listener() {
 
 			resp, err = sqsclient.Get(delurl)
 			if err != nil {
+				b.Error("could not delete messages")
+				b.Error(err)
 				continue
 			}
 
