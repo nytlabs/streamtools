@@ -12,7 +12,6 @@ type Unpack struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
-	inpoll    chan interface{}
 	in        chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
@@ -29,7 +28,6 @@ func (b *Unpack) Setup() {
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
@@ -73,11 +71,13 @@ func (b *Unpack) Run() {
 			arrInterface, err := jee.Eval(tree, msg)
 			if err != nil {
 				b.Error(err)
+				continue
 			}
-			arr := arrInterface.([]interface{})
-			//if !ok {
-			//	b.Error(errors.New("cannot assert " + path + " to array"))
-			//}
+			arr, ok := arrInterface.([]interface{})
+			if !ok {
+				b.Error(errors.New("cannot assert " + path + " to array"))
+				continue
+			}
 			for _, out := range arr {
 				b.out <- out
 			}
