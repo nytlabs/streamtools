@@ -1,12 +1,10 @@
 package library
 
 import (
-	"encoding/json"
 	"errors"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
+	"labix.org/v2/mgo"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -39,24 +37,25 @@ func (b *ToMongoDB) Run() {
 	var collection *mgo.Collection
 	var session *mgo.Session
 	var host = ""
+	//var j map[string]interface{}
 	var err error
 	for {
 		select {
 		case msgI := <-b.inrule:
 			// set host string for MongoDB server
-			host, err = util.ParseString(msgI, "Host")
+			host, err = util.ParseNonEmptyString(msgI, "Host")
+			if err != nil {
+				b.Error(err.Error())
+				continue
+			}
+			// set database name
+			dbname, err = util.ParseNonEmptyString(msgI, "Database")
 			if err != nil {
 				b.Error(err.Error())
 				continue
 			}
 			// set collection name
-			dbname, err = util.ParseString(msgI, "Database")
-			if err != nil {
-				b.Error(err.Error())
-				continue
-			}
-			// set time to reserve
-			collectionname, err = util.ParseString(msgI, "Collection")
+			collectionname, err = util.ParseNonEmptyString(msgI, "Collection")
 			if err != nil {
 				b.Error(err.Error())
 			}
@@ -77,14 +76,10 @@ func (b *ToMongoDB) Run() {
 			return
 		case msg := <-b.in:
 			// deal with inbound data
-			msgStr, err := json.Marshal(msg)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
 			if session != nil {
-
-				err := collection.Insert(bson.M{"val":string(msgStr)})
+				// mgo is so cool - it will check if the message can be serialized to valid bson.
+				// So, no need to do a json.marshal on the inbound.
+				err = collection.Insert(msg)
 				if err != nil {
 					b.Error(err.Error())
 				}
@@ -94,9 +89,9 @@ func (b *ToMongoDB) Run() {
 		case respChan := <-b.queryrule:
 			// deal with a query request
 			respChan <- map[string]interface{}{
-				"Host": host,
-				"Database": dbname,
-				"Collection":  collectionname,
+				"Collection": collectionname,
+				"Database":   dbname,
+				"Host":       host,
 			}
 		}
 	}
