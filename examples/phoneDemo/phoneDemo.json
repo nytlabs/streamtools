@@ -2,20 +2,20 @@
   "Connections": [
     {
       "ToRoute": "poll",
-      "ToId": "1",
+      "ToId": "average",
       "FromId": "2",
       "Id": "3"
     },
     {
       "ToRoute": "in",
       "ToId": "4",
-      "FromId": "1",
+      "FromId": "average",
       "Id": "5"
     },
     {
       "ToRoute": "in",
-      "ToId": "1",
-      "FromId": "6",
+      "ToId": "average",
+      "FromId": "postHere",
       "Id": "7"
     }
   ],
