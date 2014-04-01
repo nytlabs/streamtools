@@ -56,6 +56,12 @@ func (b *FromSQS) listener() {
 
 	sqsclient := &aws4.Client{Keys: keys, Client: httpclient}
 
+	parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
+	if err != nil {
+		b.Error(err)
+		return
+	}
+
 	query := url.Values{}
 	query.Set("Action", "ReceiveMessage")
 	query.Set("AttributeName", "All")
@@ -63,7 +69,10 @@ func (b *FromSQS) listener() {
 	query.Set("SignatureVersion", lAuth["SignatureVersion"])
 	query.Set("WaitTimeSeconds", lAuth["WaitTimeSeconds"])
 	query.Set("MaxNumberOfMessages", lAuth["MaxNumberOfMessages"])
-	queryurl := lAuth["SQSEndpoint"] + query.Encode()
+
+	parsedUrl.RawQuery = query.Encode()
+
+	queryurl := parsedUrl.String()
 
 	for {
 		select {
@@ -143,6 +152,12 @@ func (b *FromSQS) listener() {
 				}(body)
 			}
 
+			parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
+			if err != nil {
+				b.Error(err)
+				return
+			}
+
 			delquery := url.Values{}
 			delquery.Set("Action", "DeleteMessageBatch")
 			delquery.Set("Version", lAuth["APIVersion"])
@@ -153,7 +168,8 @@ func (b *FromSQS) listener() {
 				delquery.Add(id, fmt.Sprintf("msg%d", (i+1)))
 				delquery.Add(receipt, r)
 			}
-			delurl := lAuth["SQSEndpoint"] + delquery.Encode()
+			parsedUrl.RawQuery = delquery.Encode()
+			delurl := parsedUrl.String()
 
 			resp, err = sqsclient.Get(delurl)
 			if err != nil {
