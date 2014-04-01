@@ -1,6 +1,7 @@
 package library
 
 import (
+	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -65,6 +66,10 @@ func (b *Set) Run() {
 			if err != nil {
 				b.Error(err)
 				break
+			}
+			if _, ok := v.(string); !ok {
+				b.Error(errors.New("can only build sets of strings"))
+				continue
 			}
 			set[v] = true
 			// deal with inbound data
