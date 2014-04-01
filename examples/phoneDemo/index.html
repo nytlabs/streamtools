@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>streamtools orientation demonstration</title>
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    </head>
+    <body>
+        <script>
+            var color = d3.scale.linear()
+                .domain([-70, 0, 70])
+                .range(["#e74c3c", "white", "#1abc9c"]);
+            var socket = new WebSocket('ws://localhost:7070/ws/average');
+            socket.onmessage = function(event) {
+                var avg = JSON.parse(event.data).Average;
+                $("body").css("background-color", function(){return color(avg)})
+            };
+
+        </script>
+    </body>
+</html>

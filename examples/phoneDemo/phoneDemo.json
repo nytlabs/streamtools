@@ -1,0 +1,65 @@
+{
+  "Connections": [
+    {
+      "ToRoute": "poll",
+      "ToId": "average",
+      "FromId": "2",
+      "Id": "3"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "average",
+      "Id": "5"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "average",
+      "FromId": "postHere",
+      "Id": "7"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 294,
+        "X": 352
+      },
+      "Rule": {
+        "Window": "2s",
+        "Path": ".beta"
+      },
+      "Type": "movingaverage",
+      "Id": "average"
+    },
+    {
+      "Position": {
+        "Y": 102,
+        "X": 328
+      },
+      "Rule": {
+        "Interval": "500ms"
+      },
+      "Type": "ticker",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 470,
+        "X": 445
+      },
+      "Rule": null,
+      "Type": "tolog",
+      "Id": "4"
+    },
+    {
+      "Position": {
+        "Y": 121,
+        "X": 198
+      },
+      "Rule": null,
+      "Type": "frompost",
+      "Id": "postHere"
+    }
+  ]
+}

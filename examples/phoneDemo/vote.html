@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    <title>streamtools orientation demonstration</title>
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    </head>
+    <body>
+    <div id="orientation">orientation</div>
+    <script>
+
+        // SET THE IP:port OF YOUR STREAMTOOLS BOX HERE
+        var IP = "192.168.0.131:7070"
+
+        // get the orientation here
+        var tiltFB
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientation', function(eventData) {
+                tiltFB = eventData.beta;
+            }, false);
+        }
+
+        // color scale
+        var color = d3.scale.linear()
+            .domain([-70, 0, 70])
+            .range(["#e74c3c", "white", "#1abc9c"]);
+
+        // sample the orientation twice a second and post it to streamtools
+        window.setInterval(
+            function(){
+                var msg = { "beta": tiltFB }
+                console.log(tiltFB);
+                $.post("http://" + IP + "/blocks/postHere/in",JSON.stringify(msg),function(a){});
+                $("#orientation").text(tiltFB) ;
+                $("body").css("background-color", function(){return color(tiltFB)})
+            }, 
+            500
+        );
+
+    </script>
+
+</body>
+</html>
