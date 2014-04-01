@@ -232,7 +232,23 @@ func (s *StreamSuite) TestToFile(c *C) {
 func (s *StreamSuite) TestFromSQS(c *C) {
 	log.Println("testing FromSQS")
 
+	sampleResponse := string(`
+<CreateQueueResponse
+  xmlns="http://sqs.us-east-1.amazonaws.com/doc/2012-11-05/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:type="CreateQueueResponse">
+     <CreateQueueResult>
+        <QueueUrl>
+        http://sqs.us-east-1.amazonaws.com/770098461991/queue2
+        </QueueUrl>
+     </CreateQueueResult>
+     <ResponseMetadata>
+        <RequestId>cb919c0a-9bce-4afe-9b48-9bdf2412bb67</RequestId>
+     </ResponseMetadata>
+</CreateQueueResponse>
+  `)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, sampleResponse)
 	}))
 	defer ts.Close()
 
