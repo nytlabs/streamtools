@@ -30,7 +30,7 @@
         "Path": ".beta"
       },
       "Type": "movingaverage",
-      "Id": "1"
+      "Id": "average"
     },
     {
       "Position": {
@@ -59,7 +59,7 @@
       },
       "Rule": null,
       "Type": "frompost",
-      "Id": "6"
+      "Id": "postHere"
     }
   ]
 }
