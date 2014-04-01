@@ -1,10 +1,12 @@
 package library
 
 import (
+	"fmt"
 	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
 	"labix.org/v2/mgo"
+	//"labix.org/v2/mgo/bson"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -38,6 +40,10 @@ func (b *ToMongoDB) Run() {
 	var session *mgo.Session
 	var host = ""
 	var err error
+	var batch = 0
+	var count =0
+	var list []interface{}
+	//var list []bson.M
 	for {
 		select {
 		case msgI := <-b.inrule:
@@ -57,6 +63,16 @@ func (b *ToMongoDB) Run() {
 			collectionname, err = util.ParseNonEmptyString(msgI, "Collection")
 			if err != nil {
 				b.Error(err.Error())
+			}
+			// set number of records to insert at a time
+			batch, err = util.ParseInt(msgI, "BatchSize")
+			if err != nil || batch < 0 {
+				b.Error(errors.New("Error parsing batch size....setting to 0"))
+				batch = 0
+			} else {
+				if batch > 1 {
+					list = make([]interface{}, batch, batch)
+				}
 			}
 			// create MongoDB connection
 			session, err = mgo.Dial(host)
@@ -78,10 +94,32 @@ func (b *ToMongoDB) Run() {
 			if session != nil {
 				// mgo is so cool - it will check if the message can be serialized to valid bson.
 				// so, no need to do a json.marshal on the inbound.
-				err = collection.Insert(msg)
-				if err != nil {
-					b.Error(err.Error())
+				if batch >= 1  {
+					if count < batch {
+						fmt.Println("before insert ", count)
+						list[count] =  msg
+						count = count + 1
+						fmt.Println(count)
+
+					}  
+					if count == batch-1 {
+						fmt.Println(list)
+						err = collection.Insert(list...)
+						if err != nil {
+							b.Error(err.Error())
+						}	
+						list = make([]interface{}, batch, batch)
+						count = 0
+					}
+					
+
+				} else {
+					err = collection.Insert(msg)
+					if err != nil {
+						b.Error(err.Error())
+					}		
 				}
+				
 			} else {
 				b.Error(errors.New("MongoDB connection not initated or lost. Please check your MongoDB server or block settings."))
 			}
@@ -91,6 +129,7 @@ func (b *ToMongoDB) Run() {
 				"Collection": collectionname,
 				"Database":   dbname,
 				"Host":       host,
+				"BatchSize": batch,
 			}
 		}
 	}
