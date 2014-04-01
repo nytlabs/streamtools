@@ -9,7 +9,7 @@ To set up the demo you'll need to edit the vote.html file, and change the `IP`
 variable to your streamtood demo IP. If you're running locally, google for
 "what's my IP" or use `ifconfig` to find out your IP. 
 
-To run it you'll need to run streamtools, import the pattern, and also run a
+To run it you'll need to run streamtools, import the `phoneDemo.json` pattern, and also run a
 webserver to serve up the HTML. On linux or osx you can run
 
     python -m SimpleHTTPServer 8000
