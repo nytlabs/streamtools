@@ -37,7 +37,6 @@ func (b *ToMongoDB) Run() {
 	var collection *mgo.Collection
 	var session *mgo.Session
 	var host = ""
-	//var j map[string]interface{}
 	var err error
 	for {
 		select {
@@ -78,7 +77,7 @@ func (b *ToMongoDB) Run() {
 			// deal with inbound data
 			if session != nil {
 				// mgo is so cool - it will check if the message can be serialized to valid bson.
-				// So, no need to do a json.marshal on the inbound.
+				// so, no need to do a json.marshal on the inbound.
 				err = collection.Insert(msg)
 				if err != nil {
 					b.Error(err.Error())
