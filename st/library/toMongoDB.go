@@ -1,12 +1,10 @@
 package library
 
 import (
-	"fmt"
 	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
 	"labix.org/v2/mgo"
-	//"labix.org/v2/mgo/bson"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -41,9 +39,9 @@ func (b *ToMongoDB) Run() {
 	var host = ""
 	var err error
 	var batch = 0
-	var count =0
+	var count = 0
+	var maxindex = 0
 	var list []interface{}
-	//var list []bson.M
 	for {
 		select {
 		case msgI := <-b.inrule:
@@ -63,6 +61,7 @@ func (b *ToMongoDB) Run() {
 			collectionname, err = util.ParseNonEmptyString(msgI, "Collection")
 			if err != nil {
 				b.Error(err.Error())
+				continue
 			}
 			// set number of records to insert at a time
 			batch, err = util.ParseInt(msgI, "BatchSize")
@@ -72,6 +71,9 @@ func (b *ToMongoDB) Run() {
 			} else {
 				if batch > 1 {
 					list = make([]interface{}, batch, batch)
+					// set maxindex to 1 minus batch size
+					// use maxindex for looping everywhere for consistency
+					maxindex = batch - 1
 				}
 			}
 			// create MongoDB connection
@@ -93,33 +95,30 @@ func (b *ToMongoDB) Run() {
 			// deal with inbound data
 			if session != nil {
 				// mgo is so cool - it will check if the message can be serialized to valid bson.
-				// so, no need to do a json.marshal on the inbound.
-				if batch >= 1  {
-					if count < batch {
-						fmt.Println("before insert ", count)
-						list[count] =  msg
+				// So, no need to do a json.Marshal on the inbound. just append to the list and
+				// batch insert
+				if maxindex >= 1 {
+					if count <= maxindex {
+						list[count] = msg
 						count = count + 1
-						fmt.Println(count)
-
-					}  
-					if count == batch-1 {
-						fmt.Println(list)
+					}
+					if count == maxindex {
+						// insert batch if count reaches batch size
 						err = collection.Insert(list...)
 						if err != nil {
 							b.Error(err.Error())
-						}	
+						}
+						// reset list and count
 						list = make([]interface{}, batch, batch)
 						count = 0
 					}
-					
-
 				} else {
+					// mgo coolness again. No need to do a json.Marshal on the inbound.
 					err = collection.Insert(msg)
 					if err != nil {
 						b.Error(err.Error())
-					}		
+					}
 				}
-				
 			} else {
 				b.Error(errors.New("MongoDB connection not initated or lost. Please check your MongoDB server or block settings."))
 			}
@@ -129,7 +128,7 @@ func (b *ToMongoDB) Run() {
 				"Collection": collectionname,
 				"Database":   dbname,
 				"Host":       host,
-				"BatchSize": batch,
+				"BatchSize":  batch,
 			}
 		}
 	}
