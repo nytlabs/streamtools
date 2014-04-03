@@ -8,6 +8,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"count":           NewCount,
 	"movingaverage":   NewMovingAverage,
 	"analogpin":       NewAnalogPin,
+	"digitalpin":      NewDigitalPin,
 	"ticker":          NewTicker,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
