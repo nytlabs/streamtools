@@ -17,3 +17,8 @@ See the wiki for [instructions](https://github.com/nytlabs/streamtools/wiki/exam
 * count-clear-filter.json : emit every N messages (aka integrate and fire
   neuron!)
 
+## demos
+
+These examples incorporate other technologies to describe systems where streamtools plays an integral part. 
+
+* phoneExample/ : use streamtools to listen to the orientation collected from smartphones and emit the average of the orientation to build a simple crowd-voting mechanism. 
