@@ -4,9 +4,22 @@
     <title>streamtools orientation demonstration</title>
         <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <style>
+            #orientation {
+                width: 400px;
+                height: 400px;
+                top: 50%;
+                left: 50%;
+                margin-top: -200px;
+                margin-left: -200px;
+                font-size:300px;
+                position: absolute;
+                text-align: center;
+            }
+        </style>
     </head>
     <body>
-    <div id="orientation">orientation</div>
+    <div id="orientation"></div>
     <script>
 
         // SET THE IP:port OF YOUR STREAMTOOLS BOX HERE
@@ -31,7 +44,7 @@
                 var msg = { "beta": tiltFB }
                 console.log(tiltFB);
                 $.post("http://" + IP + "/blocks/postHere/in",JSON.stringify(msg),function(a){});
-                $("#orientation").text(tiltFB) ;
+                $("#orientation").text(Math.floor(tiltFB)) ;
                 $("body").css("background-color", function(){return color(tiltFB)})
             }, 
             500

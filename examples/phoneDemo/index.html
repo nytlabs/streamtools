@@ -4,8 +4,22 @@
         <title>streamtools orientation demonstration</title>
         <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
         <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+        <style>
+            #value {
+                width: 400px;
+                height: 400px;
+                top: 50%;
+                left: 50%;
+                margin-top: -200px;
+                margin-left: -200px;
+                font-size:300px;
+                position: absolute;
+                text-align: center;
+            }
+        </style>
     </head>
     <body>
+        <div id="value"></div>
         <script>
             var color = d3.scale.linear()
                 .domain([-70, 0, 70])
@@ -14,6 +28,7 @@
             socket.onmessage = function(event) {
                 var avg = JSON.parse(event.data).Average;
                 $("body").css("background-color", function(){return color(avg)})
+                $("#value").text(Math.floor(avg))
             };
 
         </script>
