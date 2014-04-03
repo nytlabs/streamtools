@@ -31,7 +31,7 @@
                 var msg = { "beta": tiltFB }
                 console.log(tiltFB);
                 $.post("http://" + IP + "/blocks/postHere/in",JSON.stringify(msg),function(a){});
-                $("#orientation").text(tiltFB) ;
+                $("#orientation").text(Math.floor(tiltFB)) ;
                 $("body").css("background-color", function(){return color(tiltFB)})
             }, 
             500
