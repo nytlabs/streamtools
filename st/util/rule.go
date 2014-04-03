@@ -37,6 +37,17 @@ func ParseString(ruleI interface{}, key string) (string, error) {
 	return val, nil
 }
 
+func ParseRequiredString(ruleI interface{}, key string) (string, error) {
+	val, err := ParseString(ruleI, key)
+	if err != nil {
+		return val, err
+	}
+	if len(val) == 0 {
+		return val, errors.New(key + " was an empty string")
+	}
+	return val, nil
+}
+
 func ParseFloat(ruleI interface{}, key string) (float64, error) {
 	rule := ruleI.(map[string]interface{})
 	var val float64
