@@ -12,7 +12,7 @@ Quick links from our wiki:
 * [how to compile](https://github.com/nytlabs/streamtools/wiki/how-to-compile)
 * [command line options](https://github.com/nytlabs/streamtools/wiki/command-line-options)
 
-Here's a [write up of streamtools on the NYT R&D Lab block post.](http://blog.nytlabs.com/2014/03/12/streamtools-a-graphical-tool-for-working-with-streams-of-data/)
+Here's a [write up of streamtools on the NYT R&D Lab blog.](http://blog.nytlabs.com/2014/03/12/streamtools-a-graphical-tool-for-working-with-streams-of-data/)
 
 
 ## Getting Started - the nuts and bolts
