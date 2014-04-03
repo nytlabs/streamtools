@@ -37,7 +37,7 @@ func ParseString(ruleI interface{}, key string) (string, error) {
 	return val, nil
 }
 
-func ParseNonEmptyString(ruleI interface{}, key string) (string, error) {
+func ParseRequiredString(ruleI interface{}, key string) (string, error) {
 	val, err := ParseString(ruleI, key)
 	if err != nil {
 		return val, err

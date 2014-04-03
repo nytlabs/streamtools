@@ -46,19 +46,19 @@ func (b *ToMongoDB) Run() {
 		select {
 		case msgI := <-b.inrule:
 			// set host string for MongoDB server
-			host, err = util.ParseNonEmptyString(msgI, "Host")
+			host, err = util.ParseRequiredString(msgI, "Host")
 			if err != nil {
 				b.Error(err.Error())
 				continue
 			}
 			// set database name
-			dbname, err = util.ParseNonEmptyString(msgI, "Database")
+			dbname, err = util.ParseRequiredString(msgI, "Database")
 			if err != nil {
 				b.Error(err.Error())
 				continue
 			}
 			// set collection name
-			collectionname, err = util.ParseNonEmptyString(msgI, "Collection")
+			collectionname, err = util.ParseRequiredString(msgI, "Collection")
 			if err != nil {
 				b.Error(err.Error())
 				continue
