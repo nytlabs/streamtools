@@ -28,6 +28,7 @@ func dialTimeout(network, addr string) (net.Conn, error) {
 }
 
 func (b *FromSQS) listener() {
+	log.Println("Starting new SQS listener")
 	b.lock.Lock()
 	lAuth := map[string]string{}
 	var err error
@@ -74,6 +75,8 @@ func (b *FromSQS) listener() {
 
 	queryurl := parsedUrl.String()
 
+	log.Println("Starting SQS read loop")
+
 	for {
 		select {
 		case <-b.stop:
@@ -81,7 +84,6 @@ func (b *FromSQS) listener() {
 			return
 		default:
 			var m sqsMessage
-			//var m1 map[string]interface{}
 
 			resp, err := sqsclient.Get(queryurl)
 
@@ -115,41 +117,13 @@ func (b *FromSQS) listener() {
 			}
 
 			for _, body := range m.Body {
-				/*
-					err = json.Unmarshal([]byte(body), &m1)
-					if err != nil {
-						b.Error("could not unmarshal JSON")
-						b.Error(err)
-						continue
-					}
-							message, ok := m1[unpackPath]
-							if !ok {
-								b.Error("could not find", unpackPath, "in JSON")
-								continue
-							}
-
-							msgString, ok := message.(string)
-							if !ok {
-								log.Println(message)
-								b.Error("could not assert Message to string")
-								b.Error(err)
-								continue
-							}
-							msgs := strings.Split(msgString, "\n")
-						for _, msg := range msgs {
-							if len(msg) == 0 {
-								continue
-							}
-				*/
-
-				go func(outmsg string) {
-					stop := time.NewTimer(1 * time.Second)
-					select {
-					case b.fromListener <- []byte(outmsg):
-					case <-stop.C:
-						return
-					}
-				}(body)
+				select {
+				case b.fromListener <- []byte(body):
+				default:
+					log.Println("discarding messages")
+					log.Println(len(b.fromListener))
+					return
+				}
 			}
 
 			parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
@@ -162,6 +136,7 @@ func (b *FromSQS) listener() {
 			delquery.Set("Action", "DeleteMessageBatch")
 			delquery.Set("Version", lAuth["APIVersion"])
 			delquery.Set("SignatureVersion", lAuth["SignatureVersion"])
+
 			for i, r := range m.ReceiptHandle {
 				id := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.Id", (i + 1))
 				receipt := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.ReceiptHandle", (i + 1))
@@ -210,7 +185,7 @@ func (b *FromSQS) Setup() {
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
-	b.fromListener = make(chan []byte)
+	b.fromListener = make(chan []byte, 1000)
 	b.stop = make(chan bool)
 	b.auth = map[string]interface{}{
 		"SQSEndpoint":         "",
