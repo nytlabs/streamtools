@@ -97,9 +97,8 @@ func (b *GetHTTP) Run() {
 
 			// if the json parsing fails, store data unparsed as "data"
 			if err != nil {
-				b.Error(err)
 				outMsg = map[string]interface{}{
-					"data": body,
+					"data": string(body),
 				}
 			}
 			b.out <- outMsg
