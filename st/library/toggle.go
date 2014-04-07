@@ -6,13 +6,9 @@ import (
 
 type Toggle struct {
 	blocks.Block
-	queryrule  chan chan interface{}
-	querystate chan chan interface{}
-	inrule     chan interface{}
-	inpoll     chan interface{}
-	in         chan interface{}
-	out        chan interface{}
-	quit       chan interface{}
+	in   chan interface{}
+	out  chan interface{}
+	quit chan interface{}
 }
 
 // a bit of boilerplate for streamtools
@@ -23,8 +19,6 @@ func NewToggle() blocks.BlockInterface {
 func (b *Toggle) Setup() {
 	b.Kind = "Toggle"
 	b.in = b.InRoute("in")
-	b.inpoll = b.InRoute("poll")
-	b.querystate = b.QueryRoute("count")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
@@ -39,12 +33,7 @@ func (b *Toggle) Run() {
 			return
 		case <-b.in:
 			state = !state
-		case <-b.inpoll:
 			b.out <- map[string]interface{}{
-				"state": state,
-			}
-		case c := <-b.querystate:
-			c <- map[string]interface{}{
 				"state": state,
 			}
 		}
