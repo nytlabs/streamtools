@@ -28,7 +28,7 @@ func (b *Queue) Setup() {
 	b.inPush = b.InRoute("in")
 	b.inPop = b.InRoute("pop")
 	b.queryPop = b.QueryRoute("pop")
-	b.queryPeek = b.QueryRoute("peep")
+	b.queryPeek = b.QueryRoute("peek")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
