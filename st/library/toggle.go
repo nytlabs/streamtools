@@ -4,7 +4,7 @@ import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
 
-type FlipFlop struct {
+type Toggle struct {
 	blocks.Block
 	queryrule  chan chan interface{}
 	querystate chan chan interface{}
@@ -16,12 +16,12 @@ type FlipFlop struct {
 }
 
 // a bit of boilerplate for streamtools
-func NewFlipFlop() blocks.BlockInterface {
-	return &FlipFlop{}
+func NewToggle() blocks.BlockInterface {
+	return &Toggle{}
 }
 
-func (b *FlipFlop) Setup() {
-	b.Kind = "FlipFlop"
+func (b *Toggle) Setup() {
+	b.Kind = "Toggle"
 	b.in = b.InRoute("in")
 	b.inpoll = b.InRoute("poll")
 	b.querystate = b.QueryRoute("count")
@@ -29,7 +29,7 @@ func (b *FlipFlop) Setup() {
 	b.out = b.Broadcast()
 }
 
-func (b *FlipFlop) Run() {
+func (b *Toggle) Run() {
 
 	state := false
 
