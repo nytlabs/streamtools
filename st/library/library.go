@@ -6,6 +6,7 @@ import (
 
 var Blocks = map[string]func() blocks.BlockInterface{
 	"count":           NewCount,
+	"flipflop":        NewFlipFlop,
 	"movingaverage":   NewMovingAverage,
 	"analogpin":       NewAnalogPin,
 	"ticker":          NewTicker,
