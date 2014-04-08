@@ -874,6 +874,26 @@ func (s *Server) topHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
+func (s *Server) statusHandler(w http.ResponseWriter, r *http.Request) {
+
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	export := struct {
+		Blocks []string
+	}{
+		s.manager.StatusBlocks(),
+	}
+
+	jex, err := json.Marshal(export)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	s.apiWrap(w, r, 200, jex)
+}
+
 func (s *Server) profStartHandler(w http.ResponseWriter, r *http.Request) {
 	f, err := os.Create("streamtools.prof")
 	if err != nil {
@@ -1001,6 +1021,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/ui", s.serveUIStream)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
+	r.HandleFunc("/status", s.statusHandler)
 	r.HandleFunc("/profstart", s.profStartHandler)
 	r.HandleFunc("/profstop", s.profStopHandler)
 	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
