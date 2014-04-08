@@ -63,11 +63,17 @@ func (b *ToNSQ) Run() {
 			b.nsqdTCPAddrs = nsqdTCPAddrs
 
 		case msg := <-b.in:
-			msgStr, err := json.Marshal(msg)
+			if writer == nil {
+				continue
+			}
+			msgBytes, err := json.Marshal(msg)
 			if err != nil {
 				b.Error(err)
 			}
-			_, _, err = writer.Publish(b.topic, []byte(msgStr))
+			if len(msgBytes) == 0 {
+				continue
+			}
+			_, _, err = writer.Publish(b.topic, msgBytes)
 			if err != nil {
 				b.Error(err)
 			}
