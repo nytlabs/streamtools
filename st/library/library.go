@@ -24,6 +24,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"mask":            NewMask,
 	"filter":          NewFilter,
 	"sync":            NewSync,
+	"queue":           NewQueue,
 	"unpack":          NewUnpack,
 	"pack":            NewPack,
 	"parsexml":        NewParseXML,
