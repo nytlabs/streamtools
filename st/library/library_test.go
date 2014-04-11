@@ -471,7 +471,15 @@ func (s *StreamSuite) TestGetHTTPXML(c *C) {
 			}
 		case messageI := <-outChan:
 			message := messageI.Msg.(map[string]interface{})
-			fmt.Printf("%s", message["data"])
+			messageData := message["data"].(string)
+			var xmldata = string(`<?xml version="1.0" encoding="utf-8"?>
+<OdfBody DocumentType="DT_GM" Date="20130131" Time="140807885" LogicalDate="20130131" Venue="ACV" Language="ENG" FeedFlag="P" DocumentCode="AS0ACV000" Version="3" Serial="1">
+	<Competition Code="OG2014">
+		<Config SDelay="60" />
+	</Competition>
+</OdfBody>
+`)
+			c.Assert(messageData, Equals, xmldata)
 		}
 	}
 }
@@ -1190,6 +1198,65 @@ func (s *StreamSuite) TestFromPostXML(c *C) {
 			message := messageI.Msg.(map[string]interface{})
 			messageXML := message["data"].(string)
 			c.Assert(messageXML, Equals, xmlstring)
+		}
+	}
+}
+
+func (s *StreamSuite) TestDeDupe(c *C) {
+	loghub.Start()
+	log.Println("testing dedupe")
+	b, ch := newBlock("testing dedupe", "dedupe")
+
+	emittedValues := make(map[string]bool)
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	ruleMsg := map[string]interface{}{"Path": ".a"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+
+	var sampleInput = map[string]interface{}{
+		"a": "foobar",
+	}
+
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		postData := &blocks.Msg{Msg: sampleInput, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		postData := &blocks.Msg{Msg: sampleInput, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		postData := &blocks.Msg{Msg: map[string]interface{}{"a": "baz"}, Route: "in"}
+		ch.InChan <- postData
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			value := message["a"].(string)
+			_, ok := emittedValues[value]
+			if ok {
+				c.Errorf("block emitted a dupe message", value)
+			} else {
+				emittedValues[value] = true
+			}
 		}
 	}
 }

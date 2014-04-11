@@ -68,11 +68,7 @@ func (b *MovingAverage) Run() {
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
-			rule, ok := ruleI.(map[string]interface{})
-			if !ok {
-				b.Error(errors.New("couldn't assert rule to map"))
-			}
-			path, err = util.ParseString(rule, "Path")
+			path, err = util.ParseString(ruleI, "Path")
 			if err != nil {
 				b.Error(err)
 			}

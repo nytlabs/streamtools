@@ -1,10 +1,10 @@
 package loghub
 
-import(
-	"time"
+import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 )
 
 const (
@@ -51,16 +51,16 @@ const (
 )
 
 var LogInfo = map[int]string{
-	0: "ERROR",
-	1: "WARN",
-	2: "INFO",
-	3: "DEBUG",
-	4: "CREATE",
-	5: "DELETE",
-	6: "UPDATE",
-	7: "QUERY ",
-	8: "RULE_UPDATED",
-	9: "UPDATE_RULE",
+	0:  "ERROR",
+	1:  "WARN",
+	2:  "INFO",
+	3:  "DEBUG",
+	4:  "CREATE",
+	5:  "DELETE",
+	6:  "UPDATE",
+	7:  "QUERY ",
+	8:  "RULE_UPDATED",
+	9:  "UPDATE_RULE",
 	10: "UPDATE_POSITION",
 	11: "UPDATE_RATE",
 }
@@ -88,7 +88,7 @@ var UI chan *LogMsg
 var AddLog chan chan []byte
 var AddUI chan chan []byte
 
-func Start(){
+func Start() {
 	Log = make(chan *LogMsg, 10)
 	UI = make(chan *LogMsg, 10)
 	AddLog = make(chan chan []byte)
@@ -110,9 +110,9 @@ func BroadcastStream() {
 
 	for {
 		select {
-		case newUI := <- AddUI:
+		case newUI := <-AddUI:
 			uiOut = append(uiOut, newUI)
-		case newLog := <- AddLog:
+		case newLog := <-AddLog:
 			logOut = append(logOut, newLog)
 		case <-dump.C:
 			if len(batch) == 0 {
@@ -146,7 +146,13 @@ func BroadcastStream() {
 				l.Id,
 			}
 
-			fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s", time.Now().Format(time.Stamp), l.Id, LogInfoColor[l.Type], l.Data))
+			jsonData, err := json.Marshal(l.Data)
+			if err != nil {
+				log.Println("failed marshaling data into json")
+				fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s", time.Now().Format(time.Stamp), l.Id, LogInfoColor[l.Type], l.Data))
+			} else {
+				fmt.Println(fmt.Sprintf("%s [ %s ][ %s ] %s", time.Now().Format(time.Stamp), l.Id, LogInfoColor[l.Type], jsonData))
+			}
 			batch = append(batch, bclog)
 		case l := <-UI:
 			bclog := struct {

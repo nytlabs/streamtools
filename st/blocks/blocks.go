@@ -251,6 +251,12 @@ func BlockRoutine(bi BlockInterface) {
 			}
 
 		case msg := <-b.QueryChan:
+
+			if msg.Route == "ping" {
+				msg.RespChan <- "OK"
+				continue
+			}
+
 			_, ok := b.queryRoutes[msg.Route]
 			if !ok {
 				break

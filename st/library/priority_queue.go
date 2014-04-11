@@ -47,6 +47,13 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
+func (pq *PriorityQueue) Peek() interface{} {
+	if pq.Len() == 0 {
+		return nil
+	}
+	return (*pq)[0]
+}
+
 func (pq *PriorityQueue) PeekAndShift(max time.Time, lag time.Duration) (interface{}, time.Duration) {
 	if pq.Len() == 0 {
 		return nil, 0

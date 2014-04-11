@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/library"
+	"log"
 	"net/url"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type BlockInfo struct {
@@ -178,9 +180,13 @@ func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) 
 		Route:    route,
 		RespChan: returnToSender,
 	}
-	q := <-returnToSender
-
-	return q, nil
+	timeout := time.NewTimer(1 * time.Second)
+	select {
+	case q := <-returnToSender:
+		return q, nil
+	case <-timeout.C:
+		return nil, errors.New(fmt.Sprintf("Cannot query block %s: timeout", id))
+	}
 }
 
 func (b *BlockManager) QueryConnection(id string, route string) (interface{}, error) {
@@ -383,6 +389,38 @@ func (b *BlockManager) DeleteConnection(id string) (string, error) {
 	delete(b.connMap, id)
 
 	return id, nil
+}
+
+func (b *BlockManager) StatusBlocks() []string {
+	var wg sync.WaitGroup
+	respChan := make(chan string, len(b.blockMap))
+	for k, _ := range b.blockMap {
+		wg.Add(1)
+		go func(queryChan chan *blocks.QueryMsg) {
+			defer wg.Done()
+			timeout := time.NewTimer(time.Second * 5)
+			returnToSender := make(chan interface{})
+			queryChan <- &blocks.QueryMsg{
+				Route:    "ping",
+				RespChan: returnToSender,
+			}
+			log.Println("msg sent")
+			select {
+			case q := <-returnToSender:
+				respChan <- q.(string)
+			case <-timeout.C:
+				log.Println("timed out")
+				respChan <- "TIMEOUT"
+			}
+		}(b.blockMap[k].chans.QueryChan)
+	}
+	log.Println("waiting")
+	wg.Wait()
+	responses := make([]string, len(b.blockMap))
+	for i := 0; i < len(b.blockMap); i++ {
+		responses[i] = <-respChan
+	}
+	return responses
 }
 
 func (b *BlockManager) ListBlocks() []*BlockInfo {

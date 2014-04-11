@@ -1,17 +1,14 @@
 package library
 
 import (
-	"encoding/json"
 	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
-	"io/ioutil"
-	"net/http"
+	"github.com/nytlabs/streamtools/st/util"   // util
 )
 
 // specify those channels we're going to use to communicate with streamtools
-type GetHTTP struct {
+type DeDupe struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
@@ -21,13 +18,14 @@ type GetHTTP struct {
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
-func NewGetHTTP() blocks.BlockInterface {
-	return &GetHTTP{}
+func NewDeDupe() blocks.BlockInterface {
+	return &DeDupe{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *GetHTTP) Setup() {
-	b.Kind = "GetHTTP"
+func (b *DeDupe) Setup() {
+	b.Kind = "DeDupe"
+
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -36,75 +34,49 @@ func (b *GetHTTP) Setup() {
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *GetHTTP) Run() {
-	client := &http.Client{}
-	var tree *jee.TokenTree
+func (b *DeDupe) Run() {
 	var path string
+	set := make(map[interface{}]bool)
+	var tree *jee.TokenTree
 	var err error
 	for {
 		select {
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
 			path, err = util.ParseString(ruleI, "Path")
+			tree, err = util.BuildTokenTree(path)
 			if err != nil {
 				b.Error(err)
-				continue
-			}
-			token, err := jee.Lexer(path)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			tree, err = jee.Parser(token)
-			if err != nil {
-				b.Error(err)
-				continue
+				break
 			}
 		case <-b.quit:
 			// quit the block
 			return
-		case msg := <-b.in:
 			// deal with inbound data
+		case msg := <-b.in:
 			if tree == nil {
 				continue
 			}
-			urlInterface, err := jee.Eval(tree, msg)
+			v, err := jee.Eval(tree, msg)
 			if err != nil {
 				b.Error(err)
+				break
+			}
+
+			if _, ok := v.(string); !ok {
+				b.Error(errors.New("can only dedupe sets of strings"))
 				continue
 			}
-			urlString, ok := urlInterface.(string)
+
+			_, ok := set[v]
+			// emit the incoming message if it isn't found in the set
 			if !ok {
-				b.Error(errors.New("couldn't assert url to a string"))
-				continue
+				b.out <- msg
+				set[v] = true // and add it to the set
 			}
-
-			resp, err := client.Get(urlString)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			var outMsg interface{}
-			// try treating the body as json first...
-			err = json.Unmarshal(body, &outMsg)
-
-			// if the json parsing fails, store data unparsed as "data"
-			if err != nil {
-				outMsg = map[string]interface{}{
-					"data": string(body),
-				}
-			}
-			b.out <- outMsg
-		case respChan := <-b.queryrule:
+		case c := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			c <- map[string]interface{}{
 				"Path": path,
 			}
 
