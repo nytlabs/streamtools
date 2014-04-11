@@ -25,7 +25,7 @@ func NewQueue() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Queue) Setup() {
 	b.Kind = "Queue"
-	b.inPush = b.InRoute("in")
+	b.inPush = b.InRoute("push")
 	b.inPop = b.InRoute("pop")
 	b.queryPop = b.QueryRoute("pop")
 	b.queryPeek = b.QueryRoute("peek")
