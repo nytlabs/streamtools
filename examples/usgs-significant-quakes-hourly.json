@@ -1,0 +1,138 @@
+{
+  "Connections": [
+    {
+      "ToRoute": "in",
+      "ToId": "3",
+      "FromId": "2",
+      "Id": "5"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "1",
+      "FromId": "3",
+      "Id": "6"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "10",
+      "FromId": "8",
+      "Id": "11"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "8",
+      "FromId": "1",
+      "Id": "9"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "10",
+      "Id": "12"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "13",
+      "FromId": "10",
+      "Id": "14"
+    },
+    {
+      "ToRoute": "poll",
+      "ToId": "13",
+      "FromId": "15",
+      "Id": "16"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 295,
+        "X": 321
+      },
+      "Rule": {
+        "Path": ".allHour"
+      },
+      "Type": "gethttp",
+      "Id": "1"
+    },
+    {
+      "Position": {
+        "Y": 83,
+        "X": 168
+      },
+      "Rule": {
+        "Interval": "1m0s"
+      },
+      "Type": "ticker",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 184,
+        "X": 232
+      },
+      "Rule": {
+        "Map": {
+          "sigHour": "'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_hour.geojson'",
+          "allHour": "'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson'"
+        },
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "3"
+    },
+    {
+      "Position": {
+        "Y": 711,
+        "X": 90
+      },
+      "Rule": null,
+      "Type": "tolog",
+      "Id": "4"
+    },
+    {
+      "Position": {
+        "Y": 381,
+        "X": 375
+      },
+      "Rule": {
+        "Path": ".features"
+      },
+      "Type": "unpack",
+      "Id": "8"
+    },
+    {
+      "Position": {
+        "Y": 471,
+        "X": 309
+      },
+      "Rule": {
+        "Filter": ".properties.type == 'earthquake'"
+      },
+      "Type": "filter",
+      "Id": "10"
+    },
+    {
+      "Position": {
+        "Y": 659,
+        "X": 356
+      },
+      "Rule": {
+        "Window": "1m0s"
+      },
+      "Type": "count",
+      "Id": "13"
+    },
+    {
+      "Position": {
+        "Y": 574,
+        "X": 415
+      },
+      "Rule": {
+        "Interval": "1m0s"
+      },
+      "Type": "ticker",
+      "Id": "15"
+    }
+  ]
+}
