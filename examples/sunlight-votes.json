@@ -1,0 +1,145 @@
+{
+  "Connections": [
+    {
+      "ToRoute": "in",
+      "ToId": "14",
+      "FromId": "1",
+      "Id": "18"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "6",
+      "FromId": "4",
+      "Id": "9"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "7",
+      "FromId": "4",
+      "Id": "10"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "8",
+      "FromId": "4",
+      "Id": "11"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "1",
+      "FromId": "3",
+      "Id": "17"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "3",
+      "FromId": "2",
+      "Id": "13"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "14",
+      "Id": "19"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 227,
+        "X": 191
+      },
+      "Rule": {
+        "Path": ".url"
+      },
+      "Type": "gethttp",
+      "Id": "1"
+    },
+    {
+      "Position": {
+        "Y": 68,
+        "X": 84
+      },
+      "Rule": {
+        "Interval": "1h0m0s"
+      },
+      "Type": "ticker",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 150,
+        "X": 137
+      },
+      "Rule": {
+        "Map": {
+          "url": "'http://congress.api.sunlightfoundation.com/votes?congress=113&apikey=YOUR-API-KEY-HERE'"
+        },
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "3"
+    },
+    {
+      "Position": {
+        "Y": 382,
+        "X": 272
+      },
+      "Rule": {
+        "Mask": {
+          "voted_at": {},
+          "url": {},
+          "result": {},
+          "question": {},
+          "chamber": {}
+        }
+      },
+      "Type": "mask",
+      "Id": "4"
+    },
+    {
+      "Position": {
+        "Y": 527,
+        "X": 203
+      },
+      "Rule": null,
+      "Type": "tolog",
+      "Id": "6"
+    },
+    {
+      "Position": {
+        "Y": 562,
+        "X": 322
+      },
+      "Rule": {
+        "Window": "1h0m0s",
+        "Path": ".chamber"
+      },
+      "Type": "histogram",
+      "Id": "7"
+    },
+    {
+      "Position": {
+        "Y": 446,
+        "X": 372
+      },
+      "Rule": {
+        "Window": "1h0m0s",
+        "Path": ".result"
+      },
+      "Type": "histogram",
+      "Id": "8"
+    },
+    {
+      "Position": {
+        "Y": 301,
+        "X": 224
+      },
+      "Rule": {
+        "Path": ".results"
+      },
+      "Type": "unpack",
+      "Id": "14"
+    }
+  ]
+}
