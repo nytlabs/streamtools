@@ -73,7 +73,7 @@
       },
       "Rule": {
         "Map": {
-          "url": "'http://congress.api.sunlightfoundation.com/votes?congress=113&apikey=20aacc9cbe81490f9bbd4f587b87aa7a'"
+          "url": "'http://congress.api.sunlightfoundation.com/votes?congress=113&apikey=YOUR-API-KEY-HERE'"
         },
         "Additive": true
       },
