@@ -9,7 +9,7 @@ cd st/library && go get .
 cd ../server && go get .
 cd ..
 echo "building"
-gox -output="../release/{{.Dir}}_{{.OS}}_{{.Arch}}" -osarch="linux/arm" #-os="linux darwin windows"
+gox -output="../release/{{.Dir}}_{{.OS}}_{{.Arch}}" -os="linux darwin windows" #-osarch="linux/arm" #
 cd ../release
 for i in `ls` ; do 
     mkdir tmp; 
