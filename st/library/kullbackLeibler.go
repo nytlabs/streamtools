@@ -3,6 +3,7 @@ package library
 import (
 	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"log"
 	"math"
 )
 
@@ -21,14 +22,18 @@ func NewKullbackLeibler() blocks.BlockInterface {
 
 func (b *KullbackLeibler) Setup() {
 	b.Kind = "KullbackLeibler"
-	b.inA = b.InRoute("inA")
-	b.inB = b.InRoute("inB")
+	b.inA = b.InRoute("p")
+	b.inB = b.InRoute("q")
 	b.clear = b.InRoute("clear")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
-func assertHistogram(hI interface{}) (map[string]float64, bool) {
+var eps = 0.0
+
+type histogram map[string]float64
+
+func newHistogram(hI interface{}) (histogram, bool) {
 	h, ok := hI.(map[string]interface{})
 	if !ok {
 		return nil, ok
@@ -41,7 +46,8 @@ func assertHistogram(hI interface{}) (map[string]float64, bool) {
 	if !ok {
 		return nil, ok
 	}
-	out := make(map[string]float64)
+	var out histogram
+	out = make(map[string]float64)
 	for _, valueI := range values {
 		value, ok := valueI.(map[string]interface{})
 		if !ok {
@@ -63,9 +69,36 @@ func assertHistogram(hI interface{}) (map[string]float64, bool) {
 		if !ok {
 			return nil, ok
 		}
-		out[k] = float64(v)
+		if v == 0 {
+			out[k] = eps
+		} else {
+			out[k] = float64(v)
+		}
+	}
+	z := 0.0
+	for _, v := range out {
+		z += float64(v)
+	}
+	for k, _ := range out {
+		out[k] /= z
 	}
 	return out, ok
+}
+
+func (h histogram) normalise(p histogram) {
+	for k, _ := range p {
+		if _, ok := h[k]; !ok {
+			h[k] = eps
+		}
+	}
+	z := 0.0
+	for _, v := range h {
+		z += v
+	}
+	for k, v := range h {
+		h[k] = v / z
+		log.Println(v, z, v/z)
+	}
 }
 
 func (b *KullbackLeibler) Run() {
@@ -101,42 +134,23 @@ func (b *KullbackLeibler) Run() {
 		for len(A) > 0 && len(B) > 0 {
 			pI := <-A
 			qI := <-B
-			p, ok := assertHistogram(pI)
+			p, ok := newHistogram(pI)
 			if !ok {
 				b.Error(errors.New("p is not a Histogram"))
 				continue
 			}
-			q, ok := assertHistogram(qI)
+			q, ok := newHistogram(qI)
 			if !ok {
 				b.Error(errors.New("q is not a Histogram"))
 				continue
 			}
-			outcomes := make([]string, 0, len(p)+len(q))
-			for k := range p {
-				outcomes = append(outcomes, k)
-			}
-			for k := range q {
-				outcomes = append(outcomes, k)
-			}
-			pfull := make([]float64, len(outcomes))
-			qfull := make([]float64, len(outcomes))
-			for i, k := range outcomes {
-				v, ok := p[k]
-				if !ok {
-					v = 0
-				}
-				pfull[i] = v
-			}
-			for i, k := range outcomes {
-				v, ok := q[k]
-				if !ok {
-					v = 0
-				}
-				qfull[i] = v
-			}
+			log.Println(p, q)
+			q.normalise(p)
+			p.normalise(q)
+			log.Println(p, q)
 			kl := 0.0
-			for i := range outcomes {
-				kl += math.Log(pfull[i]/qfull[i]) * pfull[i]
+			for k, pi := range p {
+				kl += math.Log(pi/q[k]) * pi
 			}
 			b.out <- map[string]interface{}{
 				"KL": kl,
