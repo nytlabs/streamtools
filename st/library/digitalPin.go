@@ -37,11 +37,6 @@ func (b *DigitalPin) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			rule, ok := ruleI.(map[string]interface{})
-			if !ok {
-				b.Error("couldn't conver rule to map")
-				continue
-			}
 			if pinStr != "" {
 				b.Log("closing pin " + pinStr)
 				err = hwio.ClosePin(pin)
@@ -49,7 +44,7 @@ func (b *DigitalPin) Run() {
 					b.Error(err)
 				}
 			}
-			pinStr, err = util.ParseString(rule, "Pin")
+			pinStr, err = util.ParseString(ruleI, "Pin")
 			if err != nil {
 				b.Error(err)
 				continue
