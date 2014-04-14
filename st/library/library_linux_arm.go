@@ -1,5 +1,3 @@
-// +build !arm
-
 package library
 
 import (
@@ -11,6 +9,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"toggle":          NewToggle,
 	"movingaverage":   NewMovingAverage,
 	"ticker":          NewTicker,
+	"analogPin":       NewAnalogPin,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
 	"fromsqs":         NewFromSQS,
@@ -22,7 +21,6 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"tolog":           NewToLog,
 	"tobeanstalkd":    NewToBeanstalkd,
 	"tomongodb":       NewToMongoDB,
-	"todigitalpin":    NewToDigitalPin,
 	"mask":            NewMask,
 	"filter":          NewFilter,
 	"sync":            NewSync,
@@ -33,7 +31,6 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"set":             NewSet,
 	"cache":           NewCache,
 	"join":            NewJoin,
-	"kullbackleibler": NewKullbackLeibler,
 	"gethttp":         NewGetHTTP,
 	"gaussian":        NewGaussian,
 	"zipf":            NewZipf,
