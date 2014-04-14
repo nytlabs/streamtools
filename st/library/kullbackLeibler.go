@@ -3,7 +3,6 @@ package library
 import (
 	"errors"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"log"
 	"math"
 )
 
@@ -29,7 +28,7 @@ func (b *KullbackLeibler) Setup() {
 	b.out = b.Broadcast()
 }
 
-var eps = 0.0
+var eps = 0.0001
 
 type histogram map[string]float64
 
@@ -97,7 +96,6 @@ func (h histogram) normalise(p histogram) {
 	}
 	for k, v := range h {
 		h[k] = v / z
-		log.Println(v, z, v/z)
 	}
 }
 
@@ -144,10 +142,8 @@ func (b *KullbackLeibler) Run() {
 				b.Error(errors.New("q is not a Histogram"))
 				continue
 			}
-			log.Println(p, q)
 			q.normalise(p)
 			p.normalise(q)
-			log.Println(p, q)
 			kl := 0.0
 			for k, pi := range p {
 				kl += math.Log(pi/q[k]) * pi
