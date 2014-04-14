@@ -1,5 +1,3 @@
-// +build !arm
-
 package library
 
 import (
@@ -11,6 +9,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"toggle":          NewToggle,
 	"movingaverage":   NewMovingAverage,
 	"ticker":          NewTicker,
+	"analogPin":       NewAnalogPin,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
 	"fromsqs":         NewFromSQS,
