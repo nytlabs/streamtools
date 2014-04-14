@@ -2,17 +2,20 @@ package library
 
 import (
 	"errors"
+	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"   // util
 	"math"
 )
 
 type KullbackLeibler struct {
 	blocks.Block
-	inA   chan interface{}
-	inB   chan interface{}
-	clear chan interface{}
-	out   chan interface{}
-	quit  chan interface{}
+	inrule    chan interface{}
+	queryrule chan chan interface{}
+	in        chan interface{}
+	clear     chan interface{}
+	out       chan interface{}
+	quit      chan interface{}
 }
 
 func NewKullbackLeibler() blocks.BlockInterface {
@@ -21,8 +24,8 @@ func NewKullbackLeibler() blocks.BlockInterface {
 
 func (b *KullbackLeibler) Setup() {
 	b.Kind = "KullbackLeibler"
-	b.inA = b.InRoute("p")
-	b.inB = b.InRoute("q")
+	b.inrule = b.InRoute("rule")
+	b.queryrule = b.QueryRoute("rule")
 	b.clear = b.InRoute("clear")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
@@ -100,38 +103,35 @@ func (h histogram) normalise(p histogram) {
 }
 
 func (b *KullbackLeibler) Run() {
-	A := make(chan interface{}, 1000)
-	B := make(chan interface{}, 1000)
+	var qtree, ptree *jee.TokenTree
+	var qpath, ppath string
+	var err error
 	for {
 		select {
+		case ruleI := <-b.inrule:
+			qpath, err = util.ParseString(ruleI, "QPath")
+			if err != nil {
+				b.Error(err)
+			}
+			qtree, err = util.BuildTokenTree(qpath)
+			ppath, err = util.ParseString(ruleI, "PPath")
+			if err != nil {
+				b.Error(err)
+			}
+			ptree, err = util.BuildTokenTree(ppath)
 		case <-b.quit:
 			return
-		case msg := <-b.inA:
-			select {
-			case A <- msg:
-			default:
-				b.Error("the A queue is overflowing")
+		case msg := <-b.in:
+			pI, err := jee.Eval(ptree, msg)
+			if err != nil {
+				b.Error(err)
+				break
 			}
-		case msg := <-b.inB:
-			select {
-			case B <- msg:
-			default:
-				b.Error("the B queue is overflowing")
+			qI, err := jee.Eval(qtree, msg)
+			if err != nil {
+				b.Error(err)
+				break
 			}
-		case <-b.clear:
-		Clear:
-			for {
-				select {
-				case <-A:
-				case <-B:
-				default:
-					break Clear
-				}
-			}
-		}
-		for len(A) > 0 && len(B) > 0 {
-			pI := <-A
-			qI := <-B
 			p, ok := newHistogram(pI)
 			if !ok {
 				b.Error(errors.New("p is not a Histogram"))
