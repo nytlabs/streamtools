@@ -51,17 +51,11 @@ func (b *AnalogPin) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			// set a parameter of the block
-			rule, ok := ruleI.(map[string]interface{})
-			if !ok {
-				b.Error("couldn't conver rule to map")
-				continue
-			}
 			if pinStr != "" {
 				err = hwio.ClosePin(pin)
 				b.Error(err)
 			}
-			pinStr, err = util.ParseString(rule, "Pin")
+			pinStr, err = util.ParseString(ruleI, "Pin")
 			if err != nil {
 				b.Error(err)
 				continue
