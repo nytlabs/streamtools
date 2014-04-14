@@ -1,10 +1,9 @@
-// +build !linux,arm
+// +build !arm
 
 package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks"
-	"runtime"
 )
 
 var Blocks = map[string]func() blocks.BlockInterface{
