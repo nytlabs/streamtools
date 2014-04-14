@@ -2,7 +2,6 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks"
-	"runtime"
 )
 
 var Blocks = map[string]func() blocks.BlockInterface{
@@ -11,6 +10,8 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"movingaverage":   NewMovingAverage,
 	"ticker":          NewTicker,
 	"analogPin":       NewAnalogPin,
+	"digitalpin":      NewDigitalPin,
+	"todigitalpin":    NewToDigitalPin,
 	"fromnsq":         NewFromNSQ,
 	"fromhttpstream":  NewFromHTTPStream,
 	"fromsqs":         NewFromSQS,

@@ -8,8 +8,7 @@ import (
 	"github.com/nytlabs/streamtools/st/util"
 )
 
-// specify those channels we're going to use to communicate with streamtools
-type AnalogPin struct {
+type DigitalPin struct {
 	blocks.Block
 	queryrule chan chan interface{}
 	inrule    chan interface{}
@@ -18,14 +17,13 @@ type AnalogPin struct {
 	quit      chan interface{}
 }
 
-// we need to build a simple factory so that streamtools can make new blocks of this kind
-func NewAnalogPin() blocks.BlockInterface {
-	return &AnalogPin{}
+func NewDigitalPin() blocks.BlockInterface {
+	return &DigitalPin{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *AnalogPin) Setup() {
-	b.Kind = "AnalogPin"
+func (b *DigitalPin) Setup() {
+	b.Kind = "DigitalPin"
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")
 	b.queryrule = b.QueryRoute("rule")
@@ -34,26 +32,19 @@ func (b *AnalogPin) Setup() {
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *AnalogPin) Run() {
+func (b *DigitalPin) Run() {
 	var pin hwio.Pin
 	var pinStr string
 	var err error
-	// Get the module
-	m, e := hwio.GetAnalogModule()
-	if e != nil {
-		b.Log(e)
-	}
-	// Enable it.
-	e = m.Enable()
-	if e != nil {
-		b.Log(e)
-	}
 	for {
 		select {
 		case ruleI := <-b.inrule:
 			if pinStr != "" {
+				b.Log("closing pin " + pinStr)
 				err = hwio.ClosePin(pin)
-				b.Error(err)
+				if err != nil {
+					b.Error(err)
+				}
 			}
 			pinStr, err = util.ParseString(ruleI, "Pin")
 			if err != nil {
@@ -62,6 +53,8 @@ func (b *AnalogPin) Run() {
 			}
 			pin, err = hwio.GetPin(pinStr)
 			if err != nil {
+				pinStr = ""
+				pin = 0
 				b.Error(err)
 				continue
 			}
@@ -85,13 +78,15 @@ func (b *AnalogPin) Run() {
 			if pin == 0 {
 				continue
 			}
-			v, err := hwio.AnalogRead(pin)
+			v, err := hwio.DigitalRead(pin)
 			if err != nil {
+				b.Log(v)
 				b.Error(err)
 				continue
 			}
+			outValue := float64(v)
 			out := map[string]interface{}{
-				"value": float64(v),
+				"value": outValue,
 				"pin":   pinStr,
 			}
 			b.out <- out
