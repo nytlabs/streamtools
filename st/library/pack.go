@@ -27,6 +27,7 @@ func NewPack() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Pack) Setup() {
 	b.Kind = "Pack"
+	b.Desc = "groups messages together based on a common value, similar to 'group-by' in other languages"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

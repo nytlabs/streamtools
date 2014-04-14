@@ -28,6 +28,7 @@ func NewFromWebsocket() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromWebsocket) Setup() {
 	b.Kind = "FromWebsocket"
+	b.Desc = "connects to an existing websocket, emitting each message heard from the websocket"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

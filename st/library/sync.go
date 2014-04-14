@@ -27,6 +27,7 @@ func NewSync() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Sync) Setup() {
 	b.Kind = "Sync"
+	b.Desc = "takes an disordered stream and creates a properly timed, ordered stream at the expense of introducing a lag"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

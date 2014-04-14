@@ -10,7 +10,23 @@
 <script src="static/lib/underscore-min.js"></script>
 <script src="static/lib/typeahead.bundle.min.js"></script>
 <script src="static/lib/resize.js"></script>
+<script src="static/lib/jquery.blockUI.js"></script>
 <script src="static/js/main.js"></script>
+
+<script type="text/template" id="ui-help-item-template">
+  <div id="helpOverlay">
+    <h3>Blocks</h3>
+    <ul>
+      <%
+      _.each(blocks, function(blockType, i){ 
+      %>
+      <li class="ui-help-li"><%= blockType %></li>
+      <%
+      }) 
+      %>
+    </ul>
+  </div>
+</script>
 
 <script type="text/template" id="log-item-template">
     <span class="date"><%= item.time %></span>

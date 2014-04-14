@@ -4,6 +4,39 @@
     overflow: hidden;
 }
 
+#helpOverlay {
+  display: none;
+}
+
+#helpOverlay h3 {
+  font-family: helvetica, sans-serif;
+  color: rgba(255,80,80,1);
+}
+
+#helpOverlay ul {
+  font-family: helvetica, sans-serif;
+  color: rgba(0,0,0,1);
+}
+
+#helpOverlay ul li.ui-help-li {
+  border-bottom: 1px solid #ccc;
+}
+
+#helpOverlay ul li.ui-help-li:last-child {
+  border-bottom: none;
+}
+
+div.blockMsg {
+  width:  50%;
+  top:    5%;
+  left:   5%;
+  text-align: left;
+  padding: 15px;
+  color: #fff;
+  cursor: default;
+  background-color: rgba(220,220,220,1);
+}
+
 #log {
     width: 100%;
     position: absolute;

@@ -26,6 +26,7 @@ func NewFromFile() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromFile) Setup() {
 	b.Kind = "FromFile"
+	b.Desc = "reads in a file specified by the block's rule, emitting a message for each line"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

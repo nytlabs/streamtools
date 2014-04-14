@@ -26,6 +26,7 @@ func NewParseXML() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ParseXML) Setup() {
 	b.Kind = "ParseXML"
+	b.Desc = "converts incoming XML messages to JSON for use in streamtools"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

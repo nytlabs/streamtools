@@ -24,6 +24,7 @@ func NewDigitalPin() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *DigitalPin) Setup() {
 	b.Kind = "DigitalPin"
+	b.Desc = "(embedded applications) returns current state of the digital pin"
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")
 	b.queryrule = b.QueryRoute("rule")

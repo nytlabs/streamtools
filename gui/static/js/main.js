@@ -16,6 +16,7 @@ $(function() {
     // constants
     var DELETE = 8,
         BACKSPACE = 46,
+        QUESTION_MARK = 191,
         ROUTE = 10,
         HALF_ROUTE = ROUTE * 0.5,
         ROUTE_SPACE = ROUTE * 1.5,
@@ -209,6 +210,14 @@ $(function() {
         // if so, don't allow multiselect
         if ($('input').is(':focus') || $('textarea').is(':focus')) {
             return;
+        }
+
+        // if key is question mark ?
+        if (e.keyCode == QUESTION_MARK) {
+            e.preventDefault();
+            $.blockUI.defaults.css = {}
+            $.blockUI({ overlayCSS: { cursor: 'default' }, message: $("#helpOverlay") }); 
+            $('.blockOverlay').click($.unblockUI); 
         }
 
         // if key is backspace or delete
@@ -439,6 +448,12 @@ $(function() {
                     "action": "export"
                 }));
             }, 1000);
+
+            var helpTemplate = $('#ui-help-item-template').html();
+            var helpTmpl = _.template(helpTemplate, {
+              blocks: d3.keys(library)
+            });
+            $("body").append(helpTmpl);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {

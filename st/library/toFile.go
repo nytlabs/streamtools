@@ -29,6 +29,7 @@ func NewToFile() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToFile) Setup() {
 	b.Kind = "ToFile"
+	b.Desc = "writes messages, separated by newlines, to a file on the local filesystem"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

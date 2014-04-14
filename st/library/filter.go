@@ -22,6 +22,7 @@ func NewFilter() blocks.BlockInterface {
 
 func (b *Filter) Setup() {
 	b.Kind = "Filter"
+	b.Desc = "selectively emits messages based on criteria defined in this block's rule"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
