@@ -20,7 +20,7 @@
     },
     {
       "ToRoute": "in",
-      "ToId": "10",
+      "ToId": "numBikes",
       "FromId": "6",
       "Id": "11"
     }
@@ -57,7 +57,7 @@
         "Filter": ".stationName == 'W 41 St & 8 Ave'"
       },
       "Type": "filter",
-      "Id": "10"
+      "Id": "numBikes"
     },
     {
       "Position": {
