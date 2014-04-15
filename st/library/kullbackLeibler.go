@@ -13,7 +13,6 @@ type KullbackLeibler struct {
 	inrule    chan interface{}
 	queryrule chan chan interface{}
 	in        chan interface{}
-	clear     chan interface{}
 	out       chan interface{}
 	quit      chan interface{}
 }
@@ -25,8 +24,8 @@ func NewKullbackLeibler() blocks.BlockInterface {
 func (b *KullbackLeibler) Setup() {
 	b.Kind = "KullbackLeibler"
 	b.inrule = b.InRoute("rule")
+	b.in = b.InRoute("in")
 	b.queryrule = b.QueryRoute("rule")
-	b.clear = b.InRoute("clear")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
@@ -119,9 +118,20 @@ func (b *KullbackLeibler) Run() {
 				b.Error(err)
 			}
 			ptree, err = util.BuildTokenTree(ppath)
+		case c := <-b.queryrule:
+			c <- map[string]interface{}{
+				"QPath": qpath,
+				"PPath": ppath,
+			}
 		case <-b.quit:
 			return
 		case msg := <-b.in:
+			if ptree == nil {
+				continue
+			}
+			if qtree == nil {
+				continue
+			}
 			pI, err := jee.Eval(ptree, msg)
 			if err != nil {
 				b.Error(err)
