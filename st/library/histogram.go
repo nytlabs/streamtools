@@ -35,7 +35,7 @@ func buildHistogram(histogram map[string]*PriorityQueue) interface{} {
 	for k, pq := range histogram {
 		var bucket interface{}
 		bucket = map[string]interface{}{
-			"Count": len(*pq),
+			"Count": float64(len(*pq)),
 			"Label": k,
 		}
 		buckets[i] = bucket
