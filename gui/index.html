@@ -10,21 +10,29 @@
 <script src="static/lib/underscore-min.js"></script>
 <script src="static/lib/typeahead.bundle.min.js"></script>
 <script src="static/lib/resize.js"></script>
-<script src="static/lib/jquery.blockUI.js"></script>
+<script src="static/lib/transition.js"></script>
 <script src="static/js/main.js"></script>
 
-<script type="text/template" id="ui-help-item-template">
-  <div id="helpOverlay">
+<script type="text/template" id="ui-ref-item-template">
+  <div id="ui-ref-blocks">
     <h3>Blocks</h3>
-    <ul>
+    <div id="ui-ref-blockdefs">
+    <dl>
       <%
-      _.each(blocks, function(blockType, i){ 
+        _.each(data, function(block, i){ 
       %>
-      <li class="ui-help-li"><%= blockType %></li>
+          <dt class="dt-show-hide" data-toggle="dd-<%= block.type %>"><%= block.type %></dt>
+          <dd id="dd-<%= block.type %>"><%= block.desc %></dd>
       <%
-      }) 
+      });
       %>
-    </ul>
+      </dl>
+    </div>
+    <div class="ui-ref-buttons">
+      <div id="button-export"><a href="/export" target="_new">export</a></div>
+      <div id="button-import"><a href="/import">import</a></div>
+      <div id="button-clear"><a href="/clear">clear</a></div>
+  </div>
   </div>
 </script>
 
@@ -77,6 +85,14 @@
 
 </head>
 <body>
+<div id="ui-ref">
+  <div class="ui-ref-control">
+    <button id="ui-ref-toggle">&#9776;</button>
+  </div>
+  <div class="ui-ref-contents">
+  </div>
+</div>
+
 <div id="log"></div>
 <div id="create">
     <input type="text" name="" id="create-input" placeholder="input type of block to create..."/>

@@ -59,6 +59,15 @@ $(function() {
         source: libraryHound.ttAdapter()
     });
 
+    $('#ui-ref-toggle').click(function() {
+      $('#ui-ref .ui-ref-contents').fadeToggle();
+    });
+
+    $("body").on("click", "#ui-ref-blockdefs dl dt", function() {
+      var showthis = $("#" + $(this).attr("data-toggle"));
+      $(showthis).fadeToggle();
+    });
+
     //
     // SVG elements
     //
@@ -215,9 +224,7 @@ $(function() {
         // if key is question mark ?
         if (e.keyCode == QUESTION_MARK) {
             e.preventDefault();
-            $.blockUI.defaults.css = {}
-            $.blockUI({ overlayCSS: { cursor: 'default' }, message: $("#helpOverlay") }); 
-            $('.blockOverlay').click($.unblockUI); 
+            $("#ui-ref .ui-ref-contents").fadeToggle();
         }
 
         // if key is backspace or delete
@@ -449,11 +456,15 @@ $(function() {
                 }));
             }, 1000);
 
-            var helpTemplate = $('#ui-help-item-template').html();
-            var helpTmpl = _.template(helpTemplate, {
-              blocks: d3.keys(library)
+            var blocks = [];
+            d3.entries(library).forEach(function(key, value) {
+              blocks.push({type: key.key, desc: key.value.Desc})
             });
-            $("body").append(helpTmpl);
+            var refTemplate = $('#ui-ref-item-template').html();
+            var refTmpl = _.template(refTemplate, {
+              data: blocks
+            });
+            $("#ui-ref .ui-ref-contents").prepend(refTmpl);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
