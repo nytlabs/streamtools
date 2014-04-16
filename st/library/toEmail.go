@@ -74,7 +74,7 @@ func (e *ToEmail) parseAuthRules(msgI interface{}) error {
 }
 
 // parseEmailInRules will expect a payload from the inrules channel and
-// attempt to pull and set the block's to, from and subject from it.
+// attempt to pull and set the block's to, from and subject paths from it.
 func (e *ToEmail) parseEmailRules(msgI interface{}) error {
 	var err error
 	e.toPath, err = util.ParseRequiredString(msgI, "ToPath")
@@ -106,6 +106,8 @@ Subject:%s
 
 %s`
 
+// buildEmail will attempt to pull the email's properties from the expected paths and
+// put the email body together.
 func (e *ToEmail) buildEmail(msg interface{}) (from, to string, email []byte, err error) {
 	from, err = util.ParseString(msg, e.fromPath)
 	if err != nil {
@@ -134,6 +136,7 @@ func (e *ToEmail) buildEmail(msg interface{}) (from, to string, email []byte, er
 	return
 }
 
+// Send will package and send the email.
 func (e *ToEmail) Send(msg interface{}) error {
 	// format the data for sending
 	from, to, email, err := e.buildEmail(msg)
