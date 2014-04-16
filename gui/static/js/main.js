@@ -280,6 +280,22 @@ $(function() {
         }
     });
 
+    $(".ui-ref-contents").on("click", ".quick-add", function() {
+        var blockType = $(this).attr('id').replace('quick-add-', ''); 
+        $.ajax({ 
+            url: '/blocks', 
+            type: 'POST', 
+            data:JSON.stringify({ 
+                'Type':blockType, 
+                'Position': 
+                { 
+                    'X':$(window).width()*.75, 
+                    'Y':$(window).height()/2 
+                } 
+        }), 
+        success: function(result) {} });
+    });
+
     $('#log').click(function() {
         if ($(this).hasClass('log-max')) {
             $(this).removeClass('log-max');
@@ -289,6 +305,7 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
+
 
     function createStaticPanel(titleTxt, data) {
         var info = d3.select('body').append('div')
@@ -1042,4 +1059,6 @@ $(function() {
         isConnecting = false;
         newConn = {};
     }
+
 });
+
