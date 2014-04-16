@@ -18,6 +18,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"fromfile":        NewFromFile,
 	"tonsq":           NewToNSQ,
 	"toelasticsearch": NewToElasticsearch,
+	"toemail":         NewToEmail,
 	"tofile":          NewToFile,
 	"tolog":           NewToLog,
 	"tobeanstalkd":    NewToBeanstalkd,
