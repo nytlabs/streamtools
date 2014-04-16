@@ -1,8 +1,8 @@
 package library
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"net/smtp"
 
 	"github.com/nytlabs/streamtools/st/blocks"
@@ -24,15 +24,16 @@ type ToEmail struct {
 	username string
 	password string
 
-	to      string
-	from    string
-	subject string
+	toPath      string
+	fromPath    string
+	subjectPath string
+	msgPath     string
 }
 
 // NewToEmail is a simple factory for streamtools to make new blocks of this kind.
 // By default, the block is configured for GMail.
 func NewToEmail() blocks.BlockInterface {
-	return &ToEmail{host: "smtp.gmail.com", port: 587}
+	return &ToEmail{host: "smtp.gmail.com", port: 587, toPath: "to", fromPath: "from", subjectPath: "subject", msgPath: "msg"}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
@@ -76,17 +77,22 @@ func (e *ToEmail) parseAuthRules(msgI interface{}) error {
 // attempt to pull and set the block's to, from and subject from it.
 func (e *ToEmail) parseEmailRules(msgI interface{}) error {
 	var err error
-	e.to, err = util.ParseRequiredString(msgI, "To")
+	e.toPath, err = util.ParseRequiredString(msgI, "ToPath")
 	if err != nil {
 		return err
 	}
 
-	e.from, err = util.ParseRequiredString(msgI, "From")
+	e.fromPath, err = util.ParseRequiredString(msgI, "FromPath")
 	if err != nil {
 		return err
 	}
 
-	e.subject, err = util.ParseString(msgI, "Subject")
+	e.subjectPath, err = util.ParseString(msgI, "SubjectPath")
+	if err != nil {
+		return err
+	}
+
+	e.msgPath, err = util.ParseString(msgI, "MessagePath")
 	if err != nil {
 		return err
 	}
@@ -100,26 +106,43 @@ Subject:%s
 
 %s`
 
-func (e *ToEmail) buildEmail(msg interface{}) ([]byte, error) {
-	// format the data for sending
-	msgStr, err := json.Marshal(msg)
+func (e *ToEmail) buildEmail(msg interface{}) (from, to string, email []byte, err error) {
+	from, err = util.ParseString(msg, e.fromPath)
 	if err != nil {
-		return []byte{}, err
+		log.Printf("missing from: %s", e.fromPath)
+		return
+	}
+	to, err = util.ParseString(msg, e.toPath)
+	if err != nil {
+		log.Printf("missing to: %s", e.toPath)
+		return
+	}
+	var subject string
+	subject, err = util.ParseString(msg, e.subjectPath)
+	if err != nil {
+		log.Printf("missing subject: %s", e.subjectPath)
+		return
+	}
+	var body string
+	body, err = util.ParseString(msg, e.msgPath)
+	if err != nil {
+		log.Printf("missing body: %s", e.msgPath)
+		return
 	}
 
-	email := fmt.Sprintf(emailTmpl, e.from, e.to, e.subject, msgStr)
-	return []byte(email), nil
+	email = []byte(fmt.Sprintf(emailTmpl, from, to, subject, body))
+	return
 }
 
 func (e *ToEmail) Send(msg interface{}) error {
 	// format the data for sending
-	email, err := e.buildEmail(msg)
+	from, to, email, err := e.buildEmail(msg)
 	if err != nil {
 		return err
 	}
 
 	auth := smtp.PlainAuth("", e.username, e.password, e.host)
-	return smtp.SendMail(fmt.Sprintf("%s:%d", e.host, e.port), auth, e.from, []string{e.to}, email)
+	return smtp.SendMail(fmt.Sprintf("%s:%d", e.host, e.port), auth, from, []string{to}, email)
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
@@ -158,9 +181,10 @@ func (e *ToEmail) Run() {
 				"Username": e.username,
 				"Password": e.password,
 
-				"To":      e.to,
-				"From":    e.from,
-				"Subject": e.subject,
+				"ToPath":      e.toPath,
+				"FromPath":    e.fromPath,
+				"SubjectPath": e.subjectPath,
+				"MessagePath": e.msgPath,
 			}
 		}
 	}
