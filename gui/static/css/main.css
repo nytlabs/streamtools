@@ -36,6 +36,7 @@
   border: 1px solid #999;
   padding: 10px;
   background-color: rgba(220,220,220,1);
+  max-width:30%;
 }
 
 #ui-ref-blocks dl {
@@ -47,6 +48,11 @@
 #ui-ref-blocks dt {
   font-weight: bold;
   margin-top: 2px;
+  cursor:pointer;
+}
+
+#ui-ref-blocks dt:hover {
+  color:#C32148;
 }
 
 #ui-ref-blocks dd {

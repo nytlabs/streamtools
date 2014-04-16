@@ -289,7 +289,7 @@ $(function() {
                 'Type':blockType, 
                 'Position': 
                 { 
-                    'X':$(window).width()*.75, 
+                    'X':$(window).width()/2, 
                     'Y':$(window).height()/2 
                 } 
         }), 

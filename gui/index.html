@@ -22,7 +22,7 @@
         _.each(data, function(block, i){ 
       %>
           <dt class="dt-show-hide" data-toggle="dd-<%= block.type %>"><%= block.type %></dt>
-          <dd id="dd-<%= block.type %>"><%= block.desc %> <a href="#" class="quick-add" id="quick-add-<%= block.type %>">quick add</a></dd>
+          <dd id="dd-<%= block.type %>"><%= block.desc %><br/> <a href="#" class="quick-add" id="quick-add-<%= block.type %>">quick add</a></dd>
       <%
       });
       %>
