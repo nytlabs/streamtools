@@ -1,8 +1,10 @@
 package library
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
+	"net/mail"
 	"time"
 
 	"code.google.com/p/go-imap/go1/imap"
@@ -29,18 +31,17 @@ type FromEmail struct {
 }
 
 type emailMessage struct {
-	Received time.Time `json:"timestamp"`
-	Body     string    `json:"email"`
+	InternalDate time.Time `json:"internal_date"`
+	Body         string    `json:"email"`
+	From         string    `json:"from"`
+	To           string    `json:"to"`
+	Subject      string    `json:"subject"`
 }
 
 // NewFromEmail is a simple factory for streamtools to make new blocks of this kind.
 // By default, the block is configured for GMail.
 func NewFromEmail() blocks.BlockInterface {
 	return &FromEmail{host: "imap.gmail.com", mailbox: "INBOX"}
-}
-
-func newIMAPClient(host, username, password, mailbox string) (*imap.Client, error) {
-	conn, err := imap.DialTLS(host, new(tls.Config))
 	if err != nil {
 		return conn, err
 	}
@@ -50,7 +51,7 @@ func newIMAPClient(host, username, password, mailbox string) (*imap.Client, erro
 		return conn, err
 	}
 
-	_, err = imap.Wait(conn.Select(mailbox, true))
+	_, err = imap.Wait(conn.Select(mailbox, false))
 	if err != nil {
 		return conn, err
 	}
@@ -74,7 +75,6 @@ func (e *FromEmail) idle() {
 	reset := time.NewTicker(20 * time.Minute)
 
 	for {
-		err = nil
 		select {
 		case <-poll:
 			// check pipe for new data
@@ -149,49 +149,81 @@ func (e *FromEmail) fetchUnread() error {
 	}
 
 	for _, email := range emails {
-		var emailStr []byte
-		emailStr, err = json.Marshal(email)
+		var eBytes []byte
+		eBytes, err = json.Marshal(email)
 		if err != nil {
-			e.Error(err.Error())
-			continue
+			return err
 		}
-		e.out <- emailStr
+		e.out <- string(eBytes)
 	}
 
 	return nil
 }
 
+// getEmails will fetch the full bodies of all emails listed in the given command.
 func getEmails(client *imap.Client, cmd *imap.Command) ([]emailMessage, error) {
 	var emails []emailMessage
-
-	seq, _ := imap.NewSeqSet("")
+	seq := new(imap.SeqSet)
 	for _, rsp := range cmd.Data {
-		uid := rsp.MessageInfo().UID
-		seq.AddNum(uid)
+		for _, uid := range rsp.SearchResults() {
+			seq.AddNum(uid)
+		}
 	}
-
+	if seq.Empty() {
+		return emails, nil
+	}
 	fCmd, err := imap.Wait(client.UIDFetch(seq, "INTERNALDATE", "BODY[]", "UID", "RFC822.HEADER"))
 	if err != nil {
 		return emails, err
 	}
 
+	var email emailMessage
 	for _, msgData := range fCmd.Data {
 		msgFields := msgData.MessageInfo().Attrs
-		email := emailMessage{Received: imap.AsDateTime(msgFields["INTERNALDATE"]), Body: imap.AsString(msgFields["BODY[]"])}
+		email, err = newEmailMessage(msgFields)
+		if err != nil {
+			return emails, err
+		}
 		emails = append(emails, email)
+
+		// mark message as read
+		fSeq := new(imap.SeqSet)
+		fSeq.AddNum(imap.AsNumber(msgFields["UID"]))
+		_, err = imap.Wait(client.UIDStore(fSeq, "+FLAGS", "\\SEEN"))
+		if err != nil {
+			return emails, err
+		}
 	}
 	return emails, nil
 }
 
+func newEmailMessage(msgFields imap.FieldMap) (emailMessage, error) {
+	var email emailMessage
+	// parse the header
+	rawHeader := imap.AsBytes(msgFields["RFC822.HEADER"])
+	msg, err := mail.ReadMessage(bytes.NewReader(rawHeader))
+	if err != nil {
+		return email, err
+	}
+
+	email = emailMessage{
+		InternalDate: imap.AsDateTime(msgFields["INTERNALDATE"]),
+		Body:         imap.AsString(msgFields["BODY[]"]),
+		From:         msg.Header.Get("From"),
+		To:           msg.Header.Get("To"),
+		Subject:      msg.Header.Get("Subject"),
+	}
+
+	return email, nil
+}
+
+// findUnreadEmails will run a find on all
 func findUnreadEmails(conn *imap.Client) (*imap.Command, error) {
 	// get headers and UID for UnSeen message in src inbox...
-	allMsgs, _ := imap.NewSeqSet("")
-	allMsgs.Add("1:*")
-	cmd, err := imap.Wait(conn.Fetch(allMsgs, "RFC822.HEADER", "UID"))
+	cmd, err := imap.Wait(conn.UIDSearch("UNSEEN"))
 	if err != nil {
 		return &imap.Command{}, err
 	}
-
 	return cmd, nil
 }
 
@@ -223,7 +255,18 @@ func (e *FromEmail) parseAuthRules(msgI interface{}) error {
 		return err
 	}
 
-	e.password, err = util.ParseRequiredString(msgI, "Mailbox")
+	e.mailbox, err = util.ParseRequiredString(msgI, "Mailbox")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *FromEmail) initClient() error {
+	// initiate IMAP client with new creds
+	var err error
+	e.client, err = newIMAPClient(e.host, e.username, e.password, e.mailbox)
 	if err != nil {
 		return err
 	}
@@ -246,7 +289,7 @@ func (e *FromEmail) Run() {
 			}
 
 			// initiate IMAP client with new creds
-			e.client, err = newIMAPClient(e.host, e.username, e.password, e.mailbox)
+			err = e.initClient()
 			if err != nil {
 				e.Error(err.Error())
 				continue
