@@ -14,26 +14,17 @@
 <script src="static/js/main.js"></script>
 
 <script type="text/template" id="ui-ref-item-template">
-  <div id="ui-ref-blocks">
-    <h3>Blocks</h3>
     <div id="ui-ref-blockdefs">
-    <dl>
-      <%
-        _.each(data, function(block, i){ 
-      %>
-          <dt class="dt-show-hide" data-toggle="dd-<%= block.type %>"><%= block.type %></dt>
-          <dd id="dd-<%= block.type %>"><%= block.desc %><br/> <a href="#" class="quick-add" id="quick-add-<%= block.type %>">quick add</a></dd>
-      <%
-      });
-      %>
-      </dl>
+      <ul>
+        <%
+          _.each(data, function(block, i){ 
+        %>
+            <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
+        <%
+        });
+        %>
+      </ul>
     </div>
-    <div class="ui-ref-buttons">
-      <div id="button-export"><a href="/export" target="_new">export</a></div>
-      <div id="button-import"><a href="/import">import</a></div>
-      <div id="button-clear"><a href="/clear">clear</a></div>
-  </div>
-  </div>
 </script>
 
 <script type="text/template" id="log-item-template">
@@ -86,10 +77,10 @@
 </head>
 <body>
 <div id="ui-ref">
-  <div class="ui-ref-control">
+  <div id="ui-ref-control">
     <button id="ui-ref-toggle">&#9776;</button>
   </div>
-  <div class="ui-ref-contents">
+  <div id="ui-ref-contents">
   </div>
 </div>
 

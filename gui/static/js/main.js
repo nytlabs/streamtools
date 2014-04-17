@@ -59,13 +59,76 @@ $(function() {
         source: libraryHound.ttAdapter()
     });
 
-    $('#ui-ref-toggle').click(function() {
-      $('#ui-ref .ui-ref-contents').fadeToggle();
+    // Shows and hides the reference panel
+    $('#ui-ref-control').click(function() {
+      $('#ui-ref-contents').fadeToggle();
     });
 
-    $("body").on("click", "#ui-ref-blockdefs dl dt", function() {
-      var showthis = $("#" + $(this).attr("data-toggle"));
-      $(showthis).fadeToggle();
+    // Click-to-add blocks from reference panel
+    $("body").on("click", "#ui-ref-blockdefs ul li", function() {
+        var blockType = $(this).attr('data-block-type');
+        $.ajax({ 
+            url: '/blocks', 
+            type: 'POST', 
+            data:JSON.stringify({ 
+                'Type':blockType, 
+                'Position': 
+                { 
+                    'X':$(window).width()/2, 
+                    'Y':$(window).height()/2 
+                } 
+        }), 
+        success: function(result) {} });
+    });
+
+    // Displays exported pattern in a copy-able window pane
+    $("body").on("click", "#ui-ref-export", function(e) {
+      e.preventDefault;
+      $.getJSON('/export', function(pattern) {
+        createStaticPanel('export', JSON.stringify(pattern));
+      });
+    });
+
+    // Displays a panel with textarea you can paste a pattern into
+    $("body").on("click", "#ui-ref-import", function(e) {
+      e.preventDefault;
+      createImportPanel('enter a pattern', '');
+    });
+
+    // Import the pattern into streamtools
+    $("body").on("click", ".import", function(e) {
+      e.preventDefault;
+      pattern = $(this).parent().find(".import-pattern").val();
+      $.ajax({
+          url: '/import',
+          type: 'POST',
+          data: pattern,
+          success: function(result) {
+            $(this).parent().parent().remove();
+          }
+      });
+    });
+
+    // "Are you sure?" you want to clear streamtools yes/no
+    $("body").on("click", "#ui-ref-clear", function(e) {
+      e.preventDefault;
+      $(this).parent().append("<div class='confirm'>Are you sure?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
+    });
+
+    // clears streamtools upon confirmation
+    $("body").on("click", ".confirm-yes", function(e) {
+      e.preventDefault;
+      $.ajax({
+          url: '/clear',
+          type: 'GET',
+          success: function(result) {
+            $("div.confirm").remove();
+          }
+      });
+    });
+    $("body").on("click", ".confirm-no", function(e) {
+      e.preventDefault;
+      $("div.confirm").remove();
     });
 
     //
@@ -224,7 +287,7 @@ $(function() {
         // if key is question mark ?
         if (e.keyCode == QUESTION_MARK) {
             e.preventDefault();
-            $("#ui-ref .ui-ref-contents").fadeToggle();
+            $("#ui-ref-contents").fadeToggle();
         }
 
         // if key is backspace or delete
@@ -280,20 +343,7 @@ $(function() {
         }
     });
 
-    $(".ui-ref-contents").on("click", ".quick-add", function() {
-        var blockType = $(this).attr('id').replace('quick-add-', ''); 
-        $.ajax({ 
-            url: '/blocks', 
-            type: 'POST', 
-            data:JSON.stringify({ 
-                'Type':blockType, 
-                'Position': 
-                { 
-                    'X':$(window).width()/2, 
-                    'Y':$(window).height()/2 
-                } 
-        }), 
-        success: function(result) {} });
+    $("#ui-ref-contents").on("click", ".quick-add", function() {
     });
 
     $('#log').click(function() {
@@ -305,7 +355,6 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
-
 
     function createStaticPanel(titleTxt, data) {
         var info = d3.select('body').append('div')
@@ -337,6 +386,41 @@ $(function() {
             .text(data);
     }
 
+
+    function createImportPanel(titleTxt, data) {
+        var info = d3.select('body').append('div')
+            .classed('info-panel', true)
+            .style('top', mouse.y + 'px')
+            .style('left', mouse.x + 'px')
+            .style('display', 'block')
+
+        var title = info.append('div')
+            .classed('title', true)
+            .call(dragTitle);
+
+        title.append('div')
+            .classed('name', true)
+            .text(titleTxt);
+
+        title.append('div')
+            .classed('close', true)
+            .html('&#215;')
+            .on('click', function(d) {
+                $(this).parent().parent().remove();
+            });
+
+        body = info.append('div')
+            .classed('body', true);
+
+        body.append('textarea')
+            .classed('info-text', true)
+            .classed('import-pattern', true)
+            .text(data);
+
+        body.append('div')
+            .classed('import', true)
+            .text('import');
+    }
 
     function pauseEvent(e) {
         if (e.stopPropagation) e.stopPropagation();
@@ -481,7 +565,7 @@ $(function() {
             var refTmpl = _.template(refTemplate, {
               data: blocks
             });
-            $("#ui-ref .ui-ref-contents").prepend(refTmpl);
+            $("#ui-ref-contents").prepend(refTmpl);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
