@@ -1035,6 +1035,7 @@ func (s *Server) Run() {
 	loghub.AddUI <- uiStream.Broadcast
 
 	r := mux.NewRouter()
+	r.StrictSlash(true)
 	r.HandleFunc("/", s.rootHandler)
 	r.HandleFunc("/library", s.libraryHandler)
 	r.HandleFunc("/static/{type}/{file}", s.staticHandler)
@@ -1042,7 +1043,7 @@ func (s *Server) Run() {
 	r.HandleFunc("/ui", s.serveUIStream)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
-	r.HandleFunc("/tutorials/", s.tutorialRootHandler)
+	r.HandleFunc("/tutorials", s.tutorialRootHandler)
 	r.HandleFunc("/tutorials/{file}", s.tutorialHandler)
 	r.HandleFunc("/examples/{file}", s.exampleHandler)
 	r.HandleFunc("/status", s.statusHandler)
