@@ -2,7 +2,6 @@ package library
 
 import (
 	"fmt"
-	"log"
 	"net/smtp"
 
 	"github.com/nytlabs/streamtools/st/blocks"
@@ -111,24 +110,20 @@ Subject:%s
 func (e *ToEmail) buildEmail(msg interface{}) (from, to string, email []byte, err error) {
 	from, err = util.ParseString(msg, e.fromPath)
 	if err != nil {
-		log.Printf("missing from: %s", e.fromPath)
 		return
 	}
 	to, err = util.ParseString(msg, e.toPath)
 	if err != nil {
-		log.Printf("missing to: %s", e.toPath)
 		return
 	}
 	var subject string
 	subject, err = util.ParseString(msg, e.subjectPath)
 	if err != nil {
-		log.Printf("missing subject: %s", e.subjectPath)
 		return
 	}
 	var body string
 	body, err = util.ParseString(msg, e.msgPath)
 	if err != nil {
-		log.Printf("missing body: %s", e.msgPath)
 		return
 	}
 

@@ -3,7 +3,7 @@ package library
 import (
 	"bytes"
 	"crypto/tls"
-	"encoding/json"
+	"log"
 	"net/mail"
 	"time"
 
@@ -28,38 +28,43 @@ type FromEmail struct {
 	mailbox  string
 
 	client *imap.Client
-}
-
-type emailMessage struct {
-	InternalDate time.Time `json:"internal_date"`
-	Body         string    `json:"email"`
-	From         string    `json:"from"`
-	To           string    `json:"to"`
-	Subject      string    `json:"subject"`
+	idling bool
 }
 
 // NewFromEmail is a simple factory for streamtools to make new blocks of this kind.
 // By default, the block is configured for GMail.
 func NewFromEmail() blocks.BlockInterface {
 	return &FromEmail{host: "imap.gmail.com", mailbox: "INBOX"}
-	if err != nil {
-		return conn, err
-	}
-
-	_, err = conn.Login(username, password)
-	if err != nil {
-		return conn, err
-	}
-
-	_, err = imap.Wait(conn.Select(mailbox, false))
-	if err != nil {
-		return conn, err
-	}
-
-	return conn, nil
 }
 
+// newIMAPClient will initiate a new IMAP connection with the given creds.
+func newIMAPClient(host, username, password, mailbox string) (*imap.Client, error) {
+	client, err := imap.DialTLS(host, new(tls.Config))
+	if err != nil {
+		return client, err
+	}
+
+	_, err = client.Login(username, password)
+	if err != nil {
+		return client, err
+	}
+
+	_, err = imap.Wait(client.Select(mailbox, false))
+	if err != nil {
+		return client, err
+	}
+
+	return client, nil
+}
+
+// idle will initiate an IMAP idle and wait for updates. Any time the connection finds a idle update,
+// it will terminate the idle, fetch any unread email messages and kick idle off again. Every 20
+// minutes, it will reset the idle to keep it alive.
 func (e *FromEmail) idle() {
+	// keep track of an ongoing idle
+	e.idling = true
+	defer func() { e.idling = false }()
+
 	var err error
 	_, err = e.client.Idle()
 	if err != nil {
@@ -77,7 +82,8 @@ func (e *FromEmail) idle() {
 	for {
 		select {
 		case <-poll:
-			// check pipe for new data
+			log.Print("idle poll")
+			// attempt to fill pipe with new data
 			err = e.client.Recv(0)
 			if err != nil {
 				e.Error(err.Error())
@@ -85,6 +91,7 @@ func (e *FromEmail) idle() {
 				return
 			}
 
+			// check the pipe for data
 			if len(e.client.Data) > 0 {
 				// term idle and fetch unread
 				_, err = e.client.IdleTerm()
@@ -93,6 +100,7 @@ func (e *FromEmail) idle() {
 					sleep(poll)
 					return
 				}
+				e.idling = false
 
 				// put any new unread messages on the channel
 				err = e.fetchUnread()
@@ -109,6 +117,9 @@ func (e *FromEmail) idle() {
 					sleep(poll)
 					return
 				}
+				e.idling = true
+			} else {
+				log.Print("no idle data")
 			}
 			// sleep a bit before checking the pipe again
 			sleep(poll)
@@ -136,33 +147,30 @@ func sleep(poll chan uint) {
 	}()
 }
 
+// fetchUnread emails will check the current mailbox for any unread messages. If it finds
+// some, it will grab the email bodies, parse them and pass them along the block's out channel.
 func (e *FromEmail) fetchUnread() error {
 	cmd, err := findUnreadEmails(e.client)
 	if err != nil {
 		return err
 	}
 
-	var emails []emailMessage
+	var emails []map[string]interface{}
 	emails, err = getEmails(e.client, cmd)
 	if err != nil {
 		return err
 	}
 
 	for _, email := range emails {
-		var eBytes []byte
-		eBytes, err = json.Marshal(email)
-		if err != nil {
-			return err
-		}
-		e.out <- string(eBytes)
+		e.out <- email
 	}
 
 	return nil
 }
 
 // getEmails will fetch the full bodies of all emails listed in the given command.
-func getEmails(client *imap.Client, cmd *imap.Command) ([]emailMessage, error) {
-	var emails []emailMessage
+func getEmails(client *imap.Client, cmd *imap.Command) ([]map[string]interface{}, error) {
+	var emails []map[string]interface{}
 	seq := new(imap.SeqSet)
 	for _, rsp := range cmd.Data {
 		for _, uid := range rsp.SearchResults() {
@@ -177,7 +185,7 @@ func getEmails(client *imap.Client, cmd *imap.Command) ([]emailMessage, error) {
 		return emails, err
 	}
 
-	var email emailMessage
+	var email map[string]interface{}
 	for _, msgData := range fCmd.Data {
 		msgFields := msgData.MessageInfo().Attrs
 		email, err = newEmailMessage(msgFields)
@@ -197,8 +205,11 @@ func getEmails(client *imap.Client, cmd *imap.Command) ([]emailMessage, error) {
 	return emails, nil
 }
 
-func newEmailMessage(msgFields imap.FieldMap) (emailMessage, error) {
-	var email emailMessage
+// newEmailMessage will parse an imap.FieldMap into an map[string]interface{}. This
+// will expect the message to container the internaldate and the body with
+// all headers included.
+func newEmailMessage(msgFields imap.FieldMap) (map[string]interface{}, error) {
+	var email map[string]interface{}
 	// parse the header
 	rawHeader := imap.AsBytes(msgFields["RFC822.HEADER"])
 	msg, err := mail.ReadMessage(bytes.NewReader(rawHeader))
@@ -206,18 +217,19 @@ func newEmailMessage(msgFields imap.FieldMap) (emailMessage, error) {
 		return email, err
 	}
 
-	email = emailMessage{
-		InternalDate: imap.AsDateTime(msgFields["INTERNALDATE"]),
-		Body:         imap.AsString(msgFields["BODY[]"]),
-		From:         msg.Header.Get("From"),
-		To:           msg.Header.Get("To"),
-		Subject:      msg.Header.Get("Subject"),
+	email = map[string]interface{}{
+		"internal_date": imap.AsDateTime(msgFields["INTERNALDATE"]),
+		"body":          imap.AsString(msgFields["BODY[]"]),
+		"from":          msg.Header.Get("From"),
+		"to":            msg.Header.Get("To"),
+		"subject":       msg.Header.Get("Subject"),
 	}
 
 	return email, nil
 }
 
-// findUnreadEmails will run a find on all
+// findUnreadEmails will run a find the UIDs of any unread emails in the
+// mailbox.
 func findUnreadEmails(conn *imap.Client) (*imap.Command, error) {
 	// get headers and UID for UnSeen message in src inbox...
 	cmd, err := imap.Wait(conn.UIDSearch("UNSEEN"))
@@ -288,13 +300,29 @@ func (e *FromEmail) Run() {
 				continue
 			}
 
+			// if we've already got a client, close it. We need to kill it and pick up new creds.
+			if e.client != nil {
+				// if we're idling, term it before closing
+				if e.idling {
+					_, err = e.client.IdleTerm()
+					if err != nil {
+						// dont continue. we want to init with new creds
+						e.Error(err.Error())
+					}
+				}
+				_, err = e.client.Close(true)
+				if err != nil {
+					// dont continue. we want to init with new creds
+					e.Error(err.Error())
+				}
+			}
+
 			// initiate IMAP client with new creds
 			err = e.initClient()
 			if err != nil {
 				e.Error(err.Error())
 				continue
 			}
-			defer e.client.Close(true)
 
 			// do initial initial fetch on all existing unread messages
 			err = e.fetchUnread()
@@ -307,7 +335,20 @@ func (e *FromEmail) Run() {
 			go e.idle()
 
 		case <-e.quit:
-			e.client.Close(true)
+			if e.client != nil {
+				// attempt to term the idle if its running
+				if e.idling {
+					_, err = e.client.IdleTerm()
+					if err != nil {
+						e.Error(err.Error())
+					}
+				}
+				// close the IMAP conn
+				_, err = e.client.Close(true)
+				if err != nil {
+					e.Error(err.Error())
+				}
+			}
 			return
 		case respChan := <-e.queryrule:
 			// deal with a query request
