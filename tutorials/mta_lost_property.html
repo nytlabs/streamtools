@@ -1,0 +1,205 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Streamtools Tutorials: Left on the Subway</title>
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted"><a href="/tutorials/">Streamtools Tutorials</a></h3>
+      </div>
+
+      <div class="jumbotron">
+        <h1>Left on the Subway</h1>
+        <p id="leadPara" class="lead">
+        The NYC transit system keeps <a href="http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx">a pretty detailed tally of items reported as lost by riders</a>, updated hourly. Unfortunately the data is provided in XML. This example shows how you can use streamtools to turn that into something you can work with: a pollable JSON endpoint.
+        </p>
+        <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" href="#" role="button">Get Started!</a></p>
+      </div>
+
+      <div id="reportContainer" style="display: none;">
+        <div>
+          <div class="panel panel-info">
+            <div class="panel-heading">
+              <h3 class="panel-title">Lost & Found</h3>
+            </div>
+            <div class="panel-body">
+              <p>
+                <span id="totalLost"></span> total items reported lost.<br>
+                <span id="diffLost" style="display: none;"></span>
+              </p>
+              <p>
+                <span id="totalClaimed"></span> total reunited with their owners<br>
+                <span id="diffClaimed" style="display: none;"></span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div id="lostDetails">
+          <h3>What was lost?</h3>
+        </div>
+        <div>
+          <div class="panel panel-warning">
+            <div class="panel-heading">
+              <h3 class="panel-title" id="subCategory"></h3>
+            </div>
+            <div class="panel-body">
+              <p id="subCategoryCount"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div> <!-- /container -->
+
+  
+  <script>
+    $(document).ready(function() {
+        function randomElement(arr) {
+          index = Math.floor(Math.random() * (arr.length - 0) + 0);
+          item = arr[index];
+          return item;
+        }
+
+        var lostProperty = {};
+        var counts = [];
+        var totalLost = 0;
+        var totalClaimed = 0;
+
+        var keys = [];
+
+        function grabKeys() {
+          $.getJSON("http://localhost:7070/blocks/20/keys", function(data) {
+            keys = data.keys;
+          });
+        };
+
+        function randomCategory() {
+          if (keys.length > 0) {
+            k = randomElement(keys);
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:7070/blocks/20/lookup", 
+                data: JSON.stringify({"SubCategory": k}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data) {
+                },
+                failure: function(errMsg) {
+                  console.log("error looking up key: " + errMsg);
+                }
+
+              });
+          } else {
+            console.log("No keys yet.")
+          }
+        }
+
+        function getTotalLost() {
+          $.getJSON("http://localhost:7070/blocks/7/timeseries", function(lostTs) {
+            prev = lostTs.timeseries.Values[0].Value;
+            totalLost = lostTs.timeseries.Values[1].Value;
+            $("#totalLost").text(totalLost);
+            $("#reportContainer").show();
+            if (prev != 0) {
+              $("#diffLost").text(totalLost - prev);
+              $("#diffLost").show();
+            }
+          });
+        }
+
+        function getTotalClaimed() {
+          $.getJSON("http://localhost:7070/blocks/8/timeseries", function(claimedTs) {
+            prev = claimedTs.timeseries.Values[0].Value;
+            totalClaimed = claimedTs.timeseries.Values[1].Value;
+            $("#totalClaimed").text(totalClaimed);
+            $("#reportContainer").show();
+            if (prev != 0) {
+              $("#diffClaimed").text(totalClaimed - prev);
+              $("#diffClaimed").show();
+            }
+          });
+        }
+
+        function kickOff() {
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:7070/blocks/2/in", 
+                data: JSON.stringify({}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data) {
+                  $("#leadPara").hide();
+                  $("#buttonPara").hide();
+                  $("#leadPara").html("Streamtools is now polling the MTA's lost property endpoint every 15 minutes. This page will update with new data as it comes in. ");
+                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='_new' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+
+                  $("#leadPara").fadeIn("slow");
+                  $("#buttonPara").fadeIn("slow");
+                  setTimeout(getTotalLost, 5000);
+                  setTimeout(getTotalClaimed, 5000);
+                  setTimeout(grabKeys, 5000);
+
+                  setInterval(getTotalLost, 30000);
+                  setInterval(getTotalClaimed, 30000);
+
+                  setInterval(grabKeys, 30000);
+                  setInterval(randomCategory, 10000);
+
+                },
+                failure: function(err) {
+                  console.log("failed changing the ticker's rule to poll every 15 minutes because: " + err);
+                }
+            });
+        }
+
+        $("#getStarted").click(function(e) {
+          e.preventDefault;
+          $.getJSON("http://localhost:7070/clear", function(data) {
+            if (data.daemon != "OK") {
+              alert("Sorry, I couldn't clear out your streamtools. The response I got is: " + JSON.stringify(data));
+            } else {
+              $.ajax({
+                  type: "POST",
+                  url: "http://localhost:7070/import", 
+                  data: JSON.stringify({"Blocks":[{"Id":"15","Type":"timeseries","Rule":{"NumSamples":24,"Path":"$num(.LostProperty.NumberOfItemsclaimed)"},"Position":{"X":663,"Y":386}},{"Id":"9","Type":"timeseries","Rule":{"NumSamples":24,"Path":"$num(.LostProperty.NumberOfLostArticles)"},"Position":{"X":550,"Y":382}},{"Id":"24","Type":"unpack","Rule":{"Path":".LostProperty.Category"},"Position":{"X":628,"Y":129}},{"Id":"2","Type":"map","Rule":{"Additive":true,"Map":{"url":"'http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx'"}},"Position":{"X":294,"Y":107}},{"Id":"1","Type":"ticker","Rule":{"Interval":"15m0s"},"Position":{"X":213,"Y":34}},{"Id":"5","Type":"tolog","Rule":null,"Position":{"X":808,"Y":436}},{"Id":"7","Type":"timeseries","Rule":{"NumSamples":2,"Path":"$num(.LostProperty.NumberOfLostArticles)"},"Position":{"X":338,"Y":307}},{"Id":"26","Type":"unpack","Rule":{"Path":".SubCategory"},"Position":{"X":730,"Y":168}},{"Id":"3","Type":"gethttp","Rule":{"Path":".url"},"Position":{"X":412,"Y":165}},{"Id":"4","Type":"parsexml","Rule":{"Path":".data"},"Position":{"X":537,"Y":230}},{"Id":"21","Type":"map","Rule":{"Additive":true,"Map":{}},"Position":{"X":745,"Y":299}},{"Id":"8","Type":"timeseries","Rule":{"NumSamples":2,"Path":"$num(.LostProperty.NumberOfItemsclaimed)"},"Position":{"X":447,"Y":364}},{"Id":"20","Type":"cache","Rule":{"KeyPath":".SubCategory","TimeToLive":"30m","ValuePath":".count"},"Position":{"X":838,"Y":229}}],"Connections":[{"Id":"10","FromId":"4","ToId":"7","ToRoute":"in"},{"Id":"11","FromId":"4","ToId":"9","ToRoute":"in"},{"Id":"12","FromId":"3","ToId":"4","ToRoute":"in"},{"Id":"14","FromId":"1","ToId":"2","ToRoute":"in"},{"Id":"13","FromId":"2","ToId":"3","ToRoute":"in"},{"Id":"16","FromId":"4","ToId":"15","ToRoute":"in"},{"Id":"17","FromId":"4","ToId":"8","ToRoute":"in"},{"Id":"25","FromId":"4","ToId":"24","ToRoute":"in"},{"Id":"27","FromId":"24","ToId":"26","ToRoute":"in"},{"Id":"33","FromId":"20","ToId":"5","ToRoute":"in"},{"Id":"23","FromId":"21","ToId":"5","ToRoute":"in"},{"Id":"22","FromId":"4","ToId":"21","ToRoute":"in"},{"Id":"28","FromId":"26","ToId":"20","ToRoute":"in"}]}),
+                  contentType: "application/json; charset=utf-8",
+                  dataType: "json",
+                  success: function(data) {
+                    kickOff();
+                    var socket = new WebSocket('ws://localhost:7070/ws/20');
+                    socket.onmessage = function(event) {
+                      kv = JSON.parse(event.data);
+                      if (kv && kv.key && kv.value) { 
+                        $("#lostDetails:hidden").fadeIn();
+                        $("#subCategory").text(kv.key);
+                        $("#subCategoryCount").text(kv.value);
+                      }
+                    };
+                  },
+                  failure: function(errMsg) {
+                    $("#leadPara").text("Uh oh. We just tried to import the pattern into streamtools, but something went wrong: " + errMsg);
+                  }
+                });
+              }
+          });
+
+        });
+
+
+    });
+  </script>
+
+  </body>
+</html>

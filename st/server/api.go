@@ -46,14 +46,35 @@ func NewServer() *Server {
 }
 
 var resourceType = map[string]string{
-	"lib": "application/javascript; charset=utf-8",
-	"js":  "application/javascript; charset=utf-8",
-	"css": "text/css; charset=utf-8",
+	"html": "text/html; charset=utf-8",
+	"lib":  "application/javascript; charset=utf-8",
+	"js":   "application/javascript; charset=utf-8",
+	"json": "application/javascript; charset=utf-8",
+	"css":  "text/css; charset=utf-8",
 }
 
 func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data, _ := Asset("gui/index.html")
+	w.Write(data)
+}
+
+func (s *Server) tutorialRootHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data, _ := Asset("tutorials/index.html")
+	w.Write(data)
+}
+
+func (s *Server) tutorialHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", resourceType[vars["type"]])
+	data, _ := Asset("tutorials/" + vars["file"])
+	w.Write(data)
+}
+func (s *Server) exampleHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", resourceType[vars["type"]])
+	data, _ := Asset("examples/" + vars["file"])
 	w.Write(data)
 }
 
@@ -1014,6 +1035,7 @@ func (s *Server) Run() {
 	loghub.AddUI <- uiStream.Broadcast
 
 	r := mux.NewRouter()
+	r.StrictSlash(true)
 	r.HandleFunc("/", s.rootHandler)
 	r.HandleFunc("/library", s.libraryHandler)
 	r.HandleFunc("/static/{type}/{file}", s.staticHandler)
@@ -1021,6 +1043,9 @@ func (s *Server) Run() {
 	r.HandleFunc("/ui", s.serveUIStream)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
+	r.HandleFunc("/tutorials", s.tutorialRootHandler)
+	r.HandleFunc("/tutorials/{file}", s.tutorialHandler)
+	r.HandleFunc("/examples/{file}", s.exampleHandler)
 	r.HandleFunc("/status", s.statusHandler)
 	r.HandleFunc("/profstart", s.profStartHandler)
 	r.HandleFunc("/profstop", s.profStopHandler)
