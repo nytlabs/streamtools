@@ -12,12 +12,12 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FromWebsocket struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -36,11 +36,11 @@ func (b *FromWebsocket) Setup() {
 }
 
 type recvHandler struct {
-	toOut   chan interface{}
+	toOut   blocks.MsgChan
 	toError chan error
 }
 
-func (self recvHandler) recv(ws *websocket.Conn, out chan interface{}) {
+func (self recvHandler) recv(ws *websocket.Conn, out blocks.MsgChan) {
 	for {
 		_, p, err := ws.ReadMessage()
 		if err != nil {
@@ -67,10 +67,10 @@ func (b *FromWebsocket) Run() {
 	var handshakeDialer = &websocket.Dialer{
 		Subprotocols: []string{"p1", "p2"},
 	}
-	listenWS := make(chan interface{})
+	listenWS := make(blocks.MsgChan)
 	wsHeader := http.Header{"Origin": {"http://localhost/"}}
 
-	toOut := make(chan interface{})
+	toOut := make(blocks.MsgChan)
 	toError := make(chan error)
 
 	for {

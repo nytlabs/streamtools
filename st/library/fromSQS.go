@@ -161,10 +161,10 @@ func (b *FromSQS) listener() {
 // specify those channels we're going to use to communicate with streamtools
 type FromSQS struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 
 	lock         sync.Mutex
 	listening    bool
@@ -234,9 +234,9 @@ func (b *FromSQS) Run() {
 				continue
 			}
 			b.out <- outMsg
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- b.auth
+			MsgChan <- b.auth
 		}
 	}
 }

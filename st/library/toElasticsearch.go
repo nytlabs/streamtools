@@ -10,11 +10,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToElasticsearch struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 	host      string
 	port      string
 	index     string
@@ -57,9 +57,9 @@ func (b *ToElasticsearch) Run() {
 			b.index = index
 			b.indextype = indextype
 
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Host":      b.host,
 				"Port":      b.port,
 				"Index":     b.index,

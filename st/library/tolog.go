@@ -7,8 +7,8 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToLog struct {
 	blocks.Block
-	in   chan interface{}
-	quit chan interface{}
+	in   blocks.MsgChan
+	quit blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind

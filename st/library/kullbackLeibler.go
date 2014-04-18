@@ -10,11 +10,11 @@ import (
 
 type KullbackLeibler struct {
 	blocks.Block
-	inrule    chan interface{}
-	queryrule chan chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	inrule    blocks.MsgChan
+	queryrule chan blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 func NewKullbackLeibler() blocks.BlockInterface {

@@ -12,13 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Histogram struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	historule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	historule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -129,16 +129,16 @@ func (b *Histogram) Run() {
 			// deal with a poll request
 			data := buildHistogram(histogram)
 			b.out <- data
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
 			out := map[string]interface{}{
 				"Window": window.String(),
 				"Path":   path,
 			}
-			respChan <- out
-		case respChan := <-b.historule:
+			MsgChan <- out
+		case MsgChan := <-b.historule:
 			data := buildHistogram(histogram)
-			respChan <- data
+			MsgChan <- data
 		}
 		for _, pq := range histogram {
 			for {

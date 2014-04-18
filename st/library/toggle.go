@@ -6,9 +6,9 @@ import (
 
 type Toggle struct {
 	blocks.Block
-	in   chan interface{}
-	out  chan interface{}
-	quit chan interface{}
+	in   blocks.MsgChan
+	out  blocks.MsgChan
+	quit blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools

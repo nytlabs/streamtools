@@ -10,10 +10,10 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToMongoDB struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -123,9 +123,9 @@ func (b *ToMongoDB) Run() {
 			} else {
 				b.Error(errors.New("MongoDB connection not initated or lost. Please check your MongoDB server or block settings."))
 			}
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Collection": collectionname,
 				"Database":   dbname,
 				"Host":       host,
