@@ -26,6 +26,7 @@ func NewPoisson() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Poisson) Setup() {
 	b.Kind = "Poisson"
+	b.Desc = "draws a random number from a Poisson distribution when polled"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")

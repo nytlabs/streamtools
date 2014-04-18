@@ -10,7 +10,22 @@
 <script src="static/lib/underscore-min.js"></script>
 <script src="static/lib/typeahead.bundle.min.js"></script>
 <script src="static/lib/resize.js"></script>
+<script src="static/lib/transition.js"></script>
 <script src="static/js/main.js"></script>
+
+<script type="text/template" id="ui-ref-item-template">
+    <div id="ui-ref-blockdefs">
+      <ul>
+        <%
+          _.each(data, function(block, i){ 
+        %>
+            <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
+        <%
+        });
+        %>
+      </ul>
+    </div>
+</script>
 
 <script type="text/template" id="log-item-template">
     <span class="date"><%= item.time %></span>
@@ -61,6 +76,14 @@
 
 </head>
 <body>
+<div id="ui-ref">
+  <div id="ui-ref-control">
+    <button id="ui-ref-toggle">&#9776;</button>
+  </div>
+  <div id="ui-ref-contents">
+  </div>
+</div>
+
 <div id="log"></div>
 <div id="create">
     <input type="text" name="" id="create-input" placeholder="input type of block to create..."/>

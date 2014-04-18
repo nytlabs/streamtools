@@ -19,6 +19,7 @@ func NewJoin() blocks.BlockInterface {
 
 func (b *Join) Setup() {
 	b.Kind = "Join"
+	b.Desc = "joins two streams together, emitting the joined message once it's been seen on both inputs"
 	b.inA = b.InRoute("inA")
 	b.inB = b.InRoute("inB")
 	b.clear = b.InRoute("clear")

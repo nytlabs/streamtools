@@ -24,6 +24,7 @@ func NewToMongoDB() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToMongoDB) Setup() {
 	b.Kind = "ToMongoDB"
+	b.Desc = "sends messages to MongoDB, optionally in batches"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

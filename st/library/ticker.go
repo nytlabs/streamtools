@@ -23,6 +23,7 @@ func NewTicker() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Ticker) Setup() {
 	b.Kind = "Ticker"
+	b.Desc = "emits the time at an interval specified by the block's rule"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

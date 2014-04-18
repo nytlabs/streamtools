@@ -33,6 +33,7 @@ type item struct {
 // Cacheup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Cache) Setup() {
 	b.Kind = "Cache"
+	b.Desc = "stores a set of dictionary values queryable on key"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

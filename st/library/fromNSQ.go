@@ -23,6 +23,7 @@ func NewFromNSQ() blocks.BlockInterface {
 
 func (b *FromNSQ) Setup() {
 	b.Kind = "FromNSQ"
+	b.Desc = "reads from a topic in NSQ as specified in this block's rule"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

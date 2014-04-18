@@ -51,6 +51,7 @@ func buildHistogram(histogram map[string]*PriorityQueue) interface{} {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Histogram) Setup() {
 	b.Kind = "Histogram"
+	b.Desc = "builds a non-stationary histogram of inbound messages for a specified path"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
