@@ -25,6 +25,7 @@ func NewLearn() blocks.BlockInterface {
 
 func (b *Learn) Setup() {
 	b.Kind = "Learn"
+	b.Desc = "applies stochastic gradient descent to learn the relationship between features and response"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")

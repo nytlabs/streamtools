@@ -27,6 +27,7 @@ func NewLogisticModel() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *LogisticModel) Setup() {
 	b.Kind = "LogisticModel"
+	b.Desc = "returns 1 or 0 depending on the model parameters and feature values"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.in = b.InRoute("in")
