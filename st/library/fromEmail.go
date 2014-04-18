@@ -122,6 +122,8 @@ func (e *FromEmail) idle() {
 				}
 				e.idling = true
 			}
+			// clean the pipe
+			e.client.Data = nil
 			// sleep a bit before checking the pipe again
 			sleep(poll)
 
