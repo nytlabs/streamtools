@@ -3,7 +3,6 @@ package library
 import (
 	"bytes"
 	"crypto/tls"
-	"log"
 	"net/mail"
 	"time"
 
@@ -72,8 +71,8 @@ func (e *FromEmail) idle() {
 		return
 	}
 
-	// kicks off occasional Data check during Idle
-	poll := make(chan uint)
+	// kicks off occasional data check during Idle
+	poll := make(chan uint, 1)
 	poll <- 0
 
 	// setup ticker to reset the idle every 20 minutes (RFC-2177 recommends every <=29 mins)
@@ -82,13 +81,17 @@ func (e *FromEmail) idle() {
 	for {
 		select {
 		case <-poll:
-			log.Print("idle poll")
 			// attempt to fill pipe with new data
 			err = e.client.Recv(0)
 			if err != nil {
-				e.Error(err.Error())
-				sleep(poll)
-				return
+				// imap.ErrTimeout here means 'no data available'
+				if err == imap.ErrTimeout {
+					sleep(poll)
+					continue
+				} else {
+					e.Error(err.Error())
+					return
+				}
 			}
 
 			// check the pipe for data
@@ -118,8 +121,6 @@ func (e *FromEmail) idle() {
 					return
 				}
 				e.idling = true
-			} else {
-				log.Print("no idle data")
 			}
 			// sleep a bit before checking the pipe again
 			sleep(poll)
