@@ -32,6 +32,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"set":             NewSet,
 	"cache":           NewCache,
 	"join":            NewJoin,
+	"kullbackleibler": NewKullbackLeibler,
 	"gethttp":         NewGetHTTP,
 	"gaussian":        NewGaussian,
 	"zipf":            NewZipf,
