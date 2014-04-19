@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/smtp"
+	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/util"
@@ -56,6 +57,17 @@ func (e *ToEmail) initClient() error {
 	}
 
 	return nil
+}
+
+// closeClient will attempt to quit or close the block's client.
+func (e *ToEmail) closeClient() error {
+	// quit, close and return
+	var err error
+	if err = e.client.Quit(); err != nil {
+		// quit failed. try a simple close
+		err = e.client.Close()
+	}
+	return err
 }
 
 // newSMTPClient will connect, auth, say helo to the SMTP server and return the client.
@@ -227,6 +239,16 @@ func (e *ToEmail) Run() {
 				continue
 			}
 
+			// if we already have a connection,  close it.
+			if e.client != nil {
+				if err = e.closeClient(); err != nil {
+					e.Error(err.Error())
+				} else {
+					// give the connection a moment before reconnect
+					time.Sleep(5 * time.Second)
+				}
+			}
+
 			// initiate the SMTP connection and client
 			if err = e.initClient(); err != nil {
 				e.Error(err.Error())
@@ -235,12 +257,8 @@ func (e *ToEmail) Run() {
 
 		case <-e.quit:
 			// quit, close and return
-			if err = e.client.Quit(); err != nil {
+			if err = e.closeClient(); err != nil {
 				e.Error(err.Error())
-				// quit failed. try a simple close
-				if err = e.client.Close(); err != nil {
-					e.Error(err.Error())
-				}
 			}
 			return
 		case msg := <-e.in:
