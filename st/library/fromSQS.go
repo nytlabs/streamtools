@@ -181,6 +181,7 @@ func NewFromSQS() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromSQS) Setup() {
 	b.Kind = "fromSQS"
+	b.Desc = "reads from Amazon's SQS, emitting each line of JSON as a separate message"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

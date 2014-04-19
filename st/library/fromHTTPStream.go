@@ -27,6 +27,7 @@ func NewFromHTTPStream() blocks.BlockInterface {
 
 func (b *FromHTTPStream) Setup() {
 	b.Kind = "FromHTTPStream"
+	b.Desc = "emits new data appearing on a long-lived http stream as new messages in streamtools"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

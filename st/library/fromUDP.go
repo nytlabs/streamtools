@@ -102,6 +102,7 @@ func NewFromUDP() blocks.BlockInterface {
 // specify what kind of block this is.
 func (u *FromUDP) Setup() {
 	u.Kind = "fromUDP"
+	u.Desc = "listens for messages sent over UDP, emitting each into streamtools"
 	u.inrule = u.InRoute("rule")
 	u.queryrule = u.QueryRoute("rule")
 	u.quit = u.Quit()

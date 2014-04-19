@@ -136,6 +136,12 @@ func BroadcastStream() {
 
 			batch = nil
 		case l := <-Log:
+			if l.Type == 0 {
+				e, ok := l.Data.(error)
+				if ok {
+					l.Data = interface{}(e.Error())
+				}
+			}
 			bclog := struct {
 				Type string
 				Data interface{}

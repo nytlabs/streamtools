@@ -22,6 +22,7 @@ func NewFromPost() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromPost) Setup() {
 	b.Kind = "FromPost"
+	b.Desc = "emits any message that is POSTed to its IN route"
 	b.in = b.InRoute("in")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()

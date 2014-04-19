@@ -25,6 +25,7 @@ func NewQueue() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Queue) Setup() {
 	b.Kind = "Queue"
+	b.Desc = "FIFO queue allowing push & pop on streams plus popping from a query"
 	b.inPush = b.InRoute("push")
 	b.inPop = b.InRoute("pop")
 	b.queryPop = b.QueryRoute("pop")

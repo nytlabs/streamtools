@@ -27,6 +27,7 @@ func NewToNSQMulti() blocks.BlockInterface {
 
 func (b *ToNSQMulti) Setup() {
 	b.Kind = "ToNSQMulti"
+	b.Desc = "sends messages to an NSQ topic in batches"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -132,8 +133,8 @@ func (b *ToNSQMulti) Run() {
 			c <- map[string]interface{}{
 				"Topic":        b.topic,
 				"NsqdTCPAddrs": b.nsqdTCPAddrs,
-				"MaxBatch":	    maxBatch,
-				"Interval":		interval.String(),
+				"MaxBatch":     maxBatch,
+				"Interval":     interval.String(),
 			}
 		}
 	}

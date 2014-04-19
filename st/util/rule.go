@@ -81,6 +81,52 @@ func ParseInt(ruleI interface{}, key string) (int, error) {
 	return val, nil
 }
 
+func ParseArrayString(ruleI interface{}, key string) ([]string, error) {
+	rule := ruleI.(map[string]interface{})
+	var ok bool
+	var val []string
+	foundRule, ok := rule[key]
+	if !ok {
+		return val, errors.New("Path was not in rule")
+	}
+	valI, ok := foundRule.([]interface{})
+	if !ok {
+		return val, errors.New("Supplied value was not an array")
+	}
+	val = make([]string, len(valI))
+	for i, vi := range valI {
+		v, ok := vi.(string)
+		if !ok {
+			return val, errors.New("Supplied value was not an array of strings")
+		}
+		val[i] = v
+	}
+	return val, nil
+}
+
+func ParseArrayFloat(ruleI interface{}, key string) ([]float64, error) {
+	rule := ruleI.(map[string]interface{})
+	var ok bool
+	var val []float64
+	foundRule, ok := rule[key]
+	if !ok {
+		return val, errors.New("Path was not in rule")
+	}
+	valI, ok := foundRule.([]interface{})
+	if !ok {
+		return val, errors.New("Supplied value was not an array")
+	}
+	val = make([]float64, len(valI))
+	for i, vi := range valI {
+		v, ok := vi.(float64)
+		if !ok {
+			return val, errors.New("Supplied value was not an array of numbers")
+		}
+		val[i] = v
+	}
+	return val, nil
+}
+
 func BuildTokenTree(path string) (tree *jee.TokenTree, err error) {
 	token, err := jee.Lexer(path)
 	if err != nil {

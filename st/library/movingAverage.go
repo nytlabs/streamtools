@@ -29,6 +29,7 @@ func NewMovingAverage() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *MovingAverage) Setup() {
 	b.Kind = "MovingAverage"
+	b.Desc = "performs a moving average of the values specified by the Path over the duration of the Window"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

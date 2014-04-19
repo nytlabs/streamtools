@@ -25,6 +25,7 @@ func NewGaussian() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Gaussian) Setup() {
 	b.Kind = "Gaussian"
+	b.Desc = "draws a random number from the Gaussian distribution when polled"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")

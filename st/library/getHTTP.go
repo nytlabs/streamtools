@@ -28,6 +28,7 @@ func NewGetHTTP() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *GetHTTP) Setup() {
 	b.Kind = "GetHTTP"
+	b.Desc = "makes an HTTP GET request to a URL you specify in the inbound message"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
