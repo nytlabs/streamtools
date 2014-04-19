@@ -12,12 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Cache struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	lookup    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule   chan chan interface{}
+	querylookup chan blocks.Query
+	inrule      chan interface{}
+	in          chan interface{}
+	lookup      chan interface{}
+	out         chan interface{}
+	quit        chan interface{}
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -36,11 +37,33 @@ func (b *Cache) Setup() {
 	b.Desc = "stores a set of dictionary values queryable on key"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
+	b.querylookup = b.QueryParamRoute("lookup")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 
 	b.in = b.InRoute("in")
 	b.lookup = b.InRoute("lookup")
+}
+
+func extractAndUpdate(k string, values map[string]item, ttlQueue *PriorityQueue) (map[string]interface{}, error) {
+	i, ok := values[k]
+	var v interface{}
+	if ok {
+		v = i.value
+		now := time.Now()
+		i.lastSeen = now
+		queueMessage := &PQMessage{
+			val: k,
+			t:   now,
+		}
+		heap.Push(ttlQueue, queueMessage)
+	}
+	out := map[string]interface{}{
+		"key":   k,
+		"value": v,
+	}
+	return out, nil
+
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
@@ -82,6 +105,7 @@ func (b *Cache) Run() {
 			}
 		case <-b.quit:
 			return
+
 		case msg := <-b.lookup:
 			if keyTree == nil {
 				continue
@@ -89,29 +113,33 @@ func (b *Cache) Run() {
 			kI, err := jee.Eval(keyTree, msg)
 			if err != nil {
 				b.Error(err)
-				break
+				continue
 			}
 			k, ok := kI.(string)
 			if !ok {
-				b.Error(errors.New("key must be a string"))
+				b.Error(err)
 				continue
 			}
-			i, ok := values[k]
-			var v interface{}
-			if ok {
-				v = i.value
-				now := time.Now()
-				i.lastSeen = now
-				queueMessage := &PQMessage{
-					val: k,
-					t:   now,
+			out, err := extractAndUpdate(k, values, ttlQueue)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			b.out <- out
+		case q := <-b.querylookup:
+			k, ok := q.Params["key"]
+			if !ok {
+				b.Error(errors.New("Must specify a key to lookup"))
+			}
+			for _, ki := range k {
+				out, err := extractAndUpdate(ki, values, ttlQueue)
+				if err != nil {
+					b.Error(err)
+					continue
 				}
-				heap.Push(ttlQueue, queueMessage)
+				q.RespChan <- out
 			}
-			b.out <- map[string]interface{}{
-				"key":   k,
-				"value": v,
-			}
+
 		case msg := <-b.in:
 			if keyTree == nil {
 				continue

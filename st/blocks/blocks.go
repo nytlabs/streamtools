@@ -3,6 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/loghub"
+	"net/url"
 	"time"
 )
 
@@ -21,13 +22,25 @@ type QueryMsg struct {
 	RespChan chan interface{}
 }
 
+type QueryParamMsg struct {
+	Route    string
+	RespChan chan interface{}
+	Params   url.Values
+}
+
+type Query struct {
+	RespChan chan interface{}
+	Params   url.Values
+}
+
 type BlockChans struct {
-	InChan    chan *Msg
-	QueryChan chan *QueryMsg
-	AddChan   chan *AddChanMsg
-	DelChan   chan *Msg
-	ErrChan   chan error
-	QuitChan  chan bool
+	InChan         chan *Msg
+	QueryChan      chan *QueryMsg
+	QueryParamChan chan *QueryParamMsg
+	AddChan        chan *AddChanMsg
+	DelChan        chan *Msg
+	ErrChan        chan error
+	QuitChan       chan bool
 }
 
 type LogStreams struct {
@@ -36,24 +49,26 @@ type LogStreams struct {
 }
 
 type Block struct {
-	Id            string // the name of the block specifed by the user (like MyBlock)
-	Kind          string // the kind of block this is (like count, toFile, fromSQS)
-	Desc          string // the description of block ('counts the number of messages it has seen')
-	inRoutes      map[string]chan interface{}
-	queryRoutes   map[string]chan chan interface{}
-	broadcast     chan interface{}
-	quit          chan interface{}
-	doesBroadcast bool
+	Id               string // the name of the block specifed by the user (like MyBlock)
+	Kind             string // the kind of block this is (like count, toFile, fromSQS)
+	Desc             string // the description of block ('counts the number of messages it has seen')
+	inRoutes         map[string]chan interface{}
+	queryRoutes      map[string]chan chan interface{}
+	queryParamRoutes map[string]chan Query
+	broadcast        chan interface{}
+	quit             chan interface{}
+	doesBroadcast    bool
 	BlockChans
 	LogStreams
 }
 
 type BlockDef struct {
-	Type        string
-	Desc        string
-	InRoutes    []string
-	QueryRoutes []string
-	OutRoutes   []string
+	Type             string
+	Desc             string
+	InRoutes         []string
+	QueryRoutes      []string
+	QueryParamRoutes []string
+	OutRoutes        []string
 }
 
 type BlockInterface interface {
@@ -65,6 +80,7 @@ type BlockInterface interface {
 	Broadcast() chan interface{}
 	InRoute(string) chan interface{}
 	QueryRoute(string) chan chan interface{}
+	QueryParamRoute(string) chan Query
 	GetBlock() *Block
 	GetDef() *BlockDef
 	Log(interface{})
@@ -76,6 +92,7 @@ func (b *Block) Build(c BlockChans) {
 	// fuck can I do this all in one?
 	b.InChan = c.InChan
 	b.QueryChan = c.QueryChan
+	b.QueryParamChan = c.QueryParamChan
 	b.AddChan = c.AddChan
 	b.DelChan = c.DelChan
 	b.ErrChan = c.ErrChan
@@ -84,6 +101,7 @@ func (b *Block) Build(c BlockChans) {
 	// route maps
 	b.inRoutes = make(map[string]chan interface{}) // necessary to stop locking...
 	b.queryRoutes = make(map[string]chan chan interface{})
+	b.queryParamRoutes = make(map[string]chan Query)
 
 	// broadcast channel
 	b.broadcast = make(chan interface{}, 10) // necessary to stop locking...
@@ -111,6 +129,11 @@ func (b *Block) QueryRoute(routeName string) chan chan interface{} {
 	return route
 }
 
+func (b *Block) QueryParamRoute(routeName string) chan Query {
+	route := make(chan Query, 1000)
+	b.queryParamRoutes[routeName] = route
+	return route
+}
 func (b *Block) Broadcast() chan interface{} {
 	b.doesBroadcast = true
 	return b.broadcast
@@ -127,6 +150,7 @@ func (b *Block) GetBlock() *Block {
 func (b *Block) GetDef() *BlockDef {
 	inRoutes := []string{}
 	queryRoutes := []string{}
+	queryParamRoutes := []string{}
 	outRoutes := []string{}
 
 	for k, _ := range b.inRoutes {
@@ -137,16 +161,21 @@ func (b *Block) GetDef() *BlockDef {
 		queryRoutes = append(queryRoutes, k)
 	}
 
+	for k, _ := range b.queryParamRoutes {
+		queryParamRoutes = append(queryParamRoutes, k)
+	}
+
 	if b.doesBroadcast {
 		outRoutes = []string{"out"}
 	}
 
 	return &BlockDef{
-		Type:        b.Kind,
-		Desc:        b.Desc,
-		InRoutes:    inRoutes,
-		QueryRoutes: queryRoutes,
-		OutRoutes:   outRoutes,
+		Type:             b.Kind,
+		Desc:             b.Desc,
+		InRoutes:         inRoutes,
+		QueryRoutes:      queryRoutes,
+		QueryParamRoutes: queryParamRoutes,
+		OutRoutes:        outRoutes,
 	}
 }
 
@@ -159,6 +188,7 @@ func (b *Block) CleanUp() {
 	}
 	defer close(b.InChan)
 	defer close(b.QueryChan)
+	defer close(b.QueryParamChan)
 	defer close(b.AddChan)
 	defer close(b.DelChan)
 	defer close(b.ErrChan)
@@ -270,6 +300,29 @@ func BlockRoutine(bi BlockInterface) {
 			default:
 				go func() {
 					b.queryRoutes[msg.Route] <- msg.RespChan
+				}()
+			}
+		case msg := <-b.QueryParamChan:
+
+			if msg.Route == "ping" {
+				msg.RespChan <- "OK"
+				continue
+			}
+
+			_, ok := b.queryParamRoutes[msg.Route]
+			if !ok {
+				break
+			}
+			q := Query{
+				RespChan: msg.RespChan,
+				Params:   msg.Params,
+			}
+
+			select {
+			case b.queryParamRoutes[msg.Route] <- q:
+			default:
+				go func() {
+					b.queryParamRoutes[msg.Route] <- q
 				}()
 			}
 

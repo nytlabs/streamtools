@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/library"
-	"log"
 	"net/url"
 	"strconv"
 	"sync"
@@ -117,12 +116,13 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	newBlock := library.Blocks[blockInfo.Type]()
 
 	newBlockChans := blocks.BlockChans{
-		InChan:    make(chan *blocks.Msg),
-		QueryChan: make(chan *blocks.QueryMsg),
-		AddChan:   make(chan *blocks.AddChanMsg),
-		DelChan:   make(chan *blocks.Msg),
-		ErrChan:   make(chan error),
-		QuitChan:  make(chan bool),
+		InChan:         make(chan *blocks.Msg),
+		QueryChan:      make(chan *blocks.QueryMsg),
+		QueryParamChan: make(chan *blocks.QueryParamMsg),
+		AddChan:        make(chan *blocks.AddChanMsg),
+		DelChan:        make(chan *blocks.Msg),
+		ErrChan:        make(chan error),
+		QuitChan:       make(chan bool),
 	}
 
 	newBlock.SetId(blockInfo.Id)
@@ -179,6 +179,26 @@ func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) 
 	b.blockMap[id].chans.QueryChan <- &blocks.QueryMsg{
 		Route:    route,
 		RespChan: returnToSender,
+	}
+	timeout := time.NewTimer(1 * time.Second)
+	select {
+	case q := <-returnToSender:
+		return q, nil
+	case <-timeout.C:
+		return nil, errors.New(fmt.Sprintf("Cannot query block %s: timeout", id))
+	}
+}
+
+func (b *BlockManager) QueryParamBlock(id string, route string, params url.Values) (interface{}, error) {
+	_, ok := b.blockMap[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
+	}
+	returnToSender := make(chan interface{})
+	b.blockMap[id].chans.QueryParamChan <- &blocks.QueryParamMsg{
+		Route:    route,
+		RespChan: returnToSender,
+		Params:   params,
 	}
 	timeout := time.NewTimer(1 * time.Second)
 	select {
@@ -404,17 +424,14 @@ func (b *BlockManager) StatusBlocks() []string {
 				Route:    "ping",
 				RespChan: returnToSender,
 			}
-			log.Println("msg sent")
 			select {
 			case q := <-returnToSender:
 				respChan <- q.(string)
 			case <-timeout.C:
-				log.Println("timed out")
 				respChan <- "TIMEOUT"
 			}
 		}(b.blockMap[k].chans.QueryChan)
 	}
-	log.Println("waiting")
 	wg.Wait()
 	responses := make([]string, len(b.blockMap))
 	for i := 0; i < len(b.blockMap); i++ {

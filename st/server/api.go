@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"runtime"
 	"runtime/pprof"
@@ -754,11 +755,27 @@ func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
 	defer s.manager.Mu.Unlock()
 
 	vars := mux.Vars(r)
-
-	msg, err := s.manager.QueryBlock(vars["id"], vars["route"])
+	u, err := url.Parse(r.RequestURI)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
+	}
+	params := u.Query()
+	var msg interface{}
+	if len(params) > 0 {
+		msg, err = s.manager.QueryParamBlock(vars["id"], vars["route"], params)
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
+
+	} else {
+
+		msg, err = s.manager.QueryBlock(vars["id"], vars["route"])
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
 	}
 
 	jmsg, err := json.Marshal(msg)
@@ -786,7 +803,6 @@ func (s *Server) queryBlockHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, jmsg)
 }
 
-// queryRouteHandler queries a connection and returns a msg. (bidirectional)
 func (s *Server) queryConnectionHandler(w http.ResponseWriter, r *http.Request) {
 	s.manager.Mu.Lock()
 	defer s.manager.Mu.Unlock()
