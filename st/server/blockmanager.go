@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/library"
+	"log"
 	"net/url"
 	"strconv"
 	"sync"
@@ -80,6 +81,7 @@ func (b *BlockManager) IdSafe(id string) bool {
 }
 
 func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
+	log.Println("CREATE")
 	if blockInfo == nil {
 		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", blockInfo.Id))
 	}
@@ -115,6 +117,7 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	// create the block
 	newBlock := library.Blocks[blockInfo.Type]()
 
+	log.Println("making blockChans")
 	newBlockChans := blocks.BlockChans{
 		InChan:         make(chan *blocks.Msg),
 		QueryChan:      make(chan *blocks.QueryMsg),

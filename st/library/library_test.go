@@ -18,12 +18,13 @@ import (
 func newBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 
 	chans := blocks.BlockChans{
-		InChan:    make(chan *blocks.Msg),
-		QueryChan: make(chan *blocks.QueryMsg),
-		AddChan:   make(chan *blocks.AddChanMsg),
-		DelChan:   make(chan *blocks.Msg),
-		ErrChan:   make(chan error),
-		QuitChan:  make(chan bool),
+		InChan:         make(chan *blocks.Msg),
+		QueryChan:      make(chan *blocks.QueryMsg),
+		QueryParamChan: make(chan *blocks.QueryParamMsg),
+		AddChan:        make(chan *blocks.AddChanMsg),
+		DelChan:        make(chan *blocks.Msg),
+		ErrChan:        make(chan error),
+		QuitChan:       make(chan bool),
 	}
 
 	// actual block

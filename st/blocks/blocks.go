@@ -3,6 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/loghub"
+	"log"
 	"net/url"
 	"time"
 )
@@ -89,7 +90,7 @@ type BlockInterface interface {
 }
 
 func (b *Block) Build(c BlockChans) {
-	// fuck can I do this all in one?
+	// block channels
 	b.InChan = c.InChan
 	b.QueryChan = c.QueryChan
 	b.QueryParamChan = c.QueryParamChan
@@ -202,6 +203,7 @@ func (b *Block) CleanUp() {
 			Id:   id,
 		}
 	}(b.Id)
+	log.Println("about to close channels on", b.Kind)
 }
 
 func (b *Block) Error(msg interface{}) {
@@ -359,6 +361,7 @@ func (c *Connection) SetId(Id string) {
 func (c *Connection) Build(chans BlockChans) {
 	c.InChan = chans.InChan
 	c.QueryChan = chans.QueryChan
+	c.QueryParamChan = chans.QueryParamChan
 	c.AddChan = chans.AddChan
 	c.DelChan = chans.DelChan
 	c.QuitChan = chans.QuitChan
@@ -367,6 +370,7 @@ func (c *Connection) Build(chans BlockChans) {
 func (c *Connection) CleanUp() {
 	defer close(c.InChan)
 	defer close(c.QueryChan)
+	defer close(c.QueryParamChan)
 	defer close(c.AddChan)
 	defer close(c.DelChan)
 	defer close(c.QuitChan)
