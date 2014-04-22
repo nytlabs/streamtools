@@ -3,9 +3,7 @@ package blocks
 import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/loghub"
-	"log"
 	"net/url"
-	"reflect"
 	"strconv"
 	"time"
 )
@@ -379,7 +377,6 @@ func (c *Connection) Build(chans BlockChans) {
 func (c *Connection) CleanUp() {
 	defer close(c.InChan)
 	defer close(c.QueryChan)
-	defer close(c.QueryParamChan)
 	defer close(c.AddChan)
 	defer close(c.DelChan)
 	defer close(c.QuitChan)
@@ -389,6 +386,7 @@ func (c *Connection) CleanUp() {
 		Data: fmt.Sprintf("Connection %s Quitting...", c.Id),
 		Id:   c.Id,
 	}
+	close(c.QueryParamChan)
 }
 
 func ConnectionRoutine(c *Connection) {

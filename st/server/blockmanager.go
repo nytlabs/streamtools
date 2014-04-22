@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/library"
-	"log"
 	"net/url"
-	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -82,7 +80,6 @@ func (b *BlockManager) IdSafe(id string) bool {
 }
 
 func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
-	log.Println("CREATE")
 	if blockInfo == nil {
 		return nil, errors.New(fmt.Sprintf("Cannot create block %s: no block data.", blockInfo.Id))
 	}
@@ -118,7 +115,6 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	// create the block
 	newBlock := library.Blocks[blockInfo.Type]()
 
-	log.Println("making blockChans")
 	newBlockChans := blocks.BlockChans{
 		InChan:         make(chan *blocks.Msg),
 		QueryChan:      make(chan *blocks.QueryMsg),
@@ -181,7 +177,6 @@ func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) 
 	}
 	var returnToSender blocks.MsgChan
 	returnToSender = make(chan interface{})
-	log.Println(reflect.TypeOf(returnToSender))
 	b.blockMap[id].chans.QueryChan <- &blocks.QueryMsg{
 		Route:   route,
 		MsgChan: returnToSender,
@@ -200,7 +195,8 @@ func (b *BlockManager) QueryParamBlock(id string, route string, params url.Value
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
 	}
-	returnToSender := make(chan interface{})
+	var returnToSender blocks.MsgChan
+	returnToSender = make(chan interface{})
 	b.blockMap[id].chans.QueryParamChan <- &blocks.QueryParamMsg{
 		Route:    route,
 		RespChan: returnToSender,
@@ -271,12 +267,13 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 	}
 
 	newConnChans := blocks.BlockChans{
-		InChan:    make(chan *blocks.Msg),
-		QueryChan: make(chan *blocks.QueryMsg),
-		AddChan:   make(chan *blocks.AddChanMsg),
-		DelChan:   make(chan *blocks.Msg),
-		ErrChan:   make(chan error),
-		QuitChan:  make(chan bool),
+		InChan:         make(chan *blocks.Msg),
+		QueryChan:      make(chan *blocks.QueryMsg),
+		QueryParamChan: make(chan *blocks.QueryParamMsg),
+		AddChan:        make(chan *blocks.AddChanMsg),
+		DelChan:        make(chan *blocks.Msg),
+		ErrChan:        make(chan error),
+		QuitChan:       make(chan bool),
 	}
 
 	newConn.SetId(connInfo.Id)
