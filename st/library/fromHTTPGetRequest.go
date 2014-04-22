@@ -2,7 +2,6 @@ package library
 
 import (
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"reflect"
 )
 
 // specify those channels we're going to use to communicate with streamtools
