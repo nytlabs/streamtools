@@ -213,7 +213,6 @@ func (b *Block) CleanUp() {
 			Id:   id,
 		}
 	}(b.Id)
-	log.Println("about to close channels on", b.Kind)
 }
 
 func (b *Block) Error(msg interface{}) {
@@ -306,8 +305,6 @@ func BlockRoutine(bi BlockInterface) {
 			if !ok {
 				break
 			}
-
-			log.Println(reflect.TypeOf(msg.MsgChan))
 
 			select {
 			case b.queryRoutes[msg.Route] <- msg.MsgChan:
