@@ -6,11 +6,11 @@ import (
 
 type Join struct {
 	blocks.Block
-	inA   chan interface{}
-	inB   chan interface{}
-	clear chan interface{}
-	out   chan interface{}
-	quit  chan interface{}
+	inA   blocks.MsgChan
+	inB   blocks.MsgChan
+	clear blocks.MsgChan
+	out   blocks.MsgChan
+	quit  blocks.MsgChan
 }
 
 func NewJoin() blocks.BlockInterface {
@@ -28,8 +28,8 @@ func (b *Join) Setup() {
 }
 
 func (b *Join) Run() {
-	A := make(chan interface{}, 1000)
-	B := make(chan interface{}, 1000)
+	A := make(blocks.MsgChan, 1000)
+	B := make(blocks.MsgChan, 1000)
 	for {
 		select {
 		case <-b.quit:

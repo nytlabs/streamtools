@@ -9,14 +9,14 @@ import (
 
 type Count struct {
 	blocks.Block
-	queryrule  chan chan interface{}
-	querycount chan chan interface{}
-	inrule     chan interface{}
-	inpoll     chan interface{}
-	clear      chan interface{}
-	in         chan interface{}
-	out        chan interface{}
-	quit       chan interface{}
+	queryrule  chan blocks.MsgChan
+	querycount chan blocks.MsgChan
+	inrule     blocks.MsgChan
+	inpoll     blocks.MsgChan
+	clear      blocks.MsgChan
+	in         blocks.MsgChan
+	out        blocks.MsgChan
+	quit       blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools

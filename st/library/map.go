@@ -9,11 +9,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Map struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 func setVal(m interface{}, key string, val interface{}) error {
@@ -162,13 +162,13 @@ func (b *Map) Run() {
 			}
 			b.out <- result
 
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
 			rule := map[string]interface{}{
 				"Map":      mapRule,
 				"Additive": additive,
 			}
-			respChan <- rule
+			MsgChan <- rule
 		}
 	}
 }

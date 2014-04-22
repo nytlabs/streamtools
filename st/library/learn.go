@@ -10,12 +10,12 @@ import (
 
 type Learn struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -172,9 +172,9 @@ func (b *Learn) Run() {
 			var params []interface{}
 			var model []float64
 			if kernelStarted {
-				kernelRespChan := make(chan []float64)
-				stateChan <- kernelRespChan
-				model = <-kernelRespChan
+				kernelMsgChan := make(chan []float64)
+				stateChan <- kernelMsgChan
+				model = <-kernelMsgChan
 				params = make([]interface{}, len(model))
 				for i, p := range model {
 					params[i] = p

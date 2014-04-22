@@ -10,13 +10,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Set struct {
 	blocks.Block
-	queryrule   chan chan interface{}
-	inrule      chan interface{}
-	add         chan interface{}
-	isMember    chan interface{}
-	cardinality chan chan interface{}
-	out         chan interface{}
-	quit        chan interface{}
+	queryrule   chan blocks.MsgChan
+	inrule      blocks.MsgChan
+	add         blocks.MsgChan
+	isMember    blocks.MsgChan
+	cardinality chan blocks.MsgChan
+	out         blocks.MsgChan
+	quit        blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind

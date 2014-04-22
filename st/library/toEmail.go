@@ -15,10 +15,10 @@ import (
 // for the email message.
 type ToEmail struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	quit      blocks.MsgChan
 
 	host     string
 	port     int
@@ -266,9 +266,9 @@ func (e *ToEmail) Run() {
 				e.Error(err.Error())
 				continue
 			}
-		case respChan := <-e.queryrule:
+		case MsgChan := <-e.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Host":     e.host,
 				"Port":     e.port,
 				"Username": e.username,

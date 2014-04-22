@@ -12,11 +12,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type LogisticModel struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -109,13 +109,13 @@ func (b *LogisticModel) Run() {
 				"Response": y,
 			}
 
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
 			out := map[string]interface{}{
 				"Weights":      β,
 				"FeaturePaths": featurePaths,
 			}
-			respChan <- out
+			MsgChan <- out
 		}
 	}
 }

@@ -13,10 +13,10 @@ import (
 
 type ToDigitalPin struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 func NewToDigitalPin() blocks.BlockInterface {
