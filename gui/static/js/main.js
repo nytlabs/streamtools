@@ -62,6 +62,7 @@ $(function() {
     // Shows and hides the reference panel
     $('#ui-ref-control').click(function() {
       $('#ui-ref-contents').fadeToggle();
+        resizeReference();
     });
 
     // Click-to-add blocks from reference panel
@@ -325,6 +326,8 @@ $(function() {
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
     });
+
+    $(window).resize(resizeReference);
 
     $('#create-input').focusout(function() {
         $('#create-input').typeahead('val', '');
@@ -668,6 +671,11 @@ $(function() {
                     break;
             }
         };
+    }
+
+    function resizeReference() {
+        // Account for 1) height of log, 2) padding of ref contents, and 3) height of toggle
+        $('#ui-ref-contents').css('max-height', window.innerHeight - $("#log").height() - parseInt($("#ui-ref-contents").css('padding'), 10) - $("#ui-ref-toggle").height());
     }
 
     function update() {

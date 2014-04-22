@@ -12,13 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Cache struct {
 	blocks.Block
-	queryrule   chan chan interface{}
 	querylookup chan blocks.Query
-	inrule      chan interface{}
-	in          chan interface{}
-	lookup      chan interface{}
-	out         chan interface{}
-	quit        chan interface{}
+	queryrule   chan blocks.MsgChan
+	inrule      blocks.MsgChan
+	in          blocks.MsgChan
+	lookup      blocks.MsgChan
+	out         blocks.MsgChan
+	quit        blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind

@@ -7,6 +7,7 @@ import (
 	"github.com/nytlabs/streamtools/st/library"
 	"log"
 	"net/url"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -178,10 +179,12 @@ func (b *BlockManager) QueryBlock(id string, route string) (interface{}, error) 
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
 	}
-	returnToSender := make(chan interface{})
+	var returnToSender blocks.MsgChan
+	returnToSender = make(chan interface{})
+	log.Println(reflect.TypeOf(returnToSender))
 	b.blockMap[id].chans.QueryChan <- &blocks.QueryMsg{
-		Route:    route,
-		RespChan: returnToSender,
+		Route:   route,
+		MsgChan: returnToSender,
 	}
 	timeout := time.NewTimer(1 * time.Second)
 	select {
@@ -218,11 +221,13 @@ func (b *BlockManager) QueryConnection(id string, route string) (interface{}, er
 		return nil, errors.New(fmt.Sprintf("Cannot query block %s: does not exist", id))
 	}
 
-	returnToSender := make(chan interface{})
-	b.connMap[id].chans.QueryChan <- &blocks.QueryMsg{
-		Route:    route,
-		RespChan: returnToSender,
+	var returnToSender blocks.MsgChan
+	returnToSender = make(chan interface{})
+	msg := &blocks.QueryMsg{
+		Route:   route,
+		MsgChan: returnToSender,
 	}
+	b.connMap[id].chans.QueryChan <- msg
 	q := <-returnToSender
 
 	return q, nil
@@ -416,29 +421,30 @@ func (b *BlockManager) DeleteConnection(id string) (string, error) {
 
 func (b *BlockManager) StatusBlocks() []string {
 	var wg sync.WaitGroup
-	respChan := make(chan string, len(b.blockMap))
+	MsgChan := make(chan string, len(b.blockMap))
 	for k, _ := range b.blockMap {
 		wg.Add(1)
 		go func(queryChan chan *blocks.QueryMsg) {
 			defer wg.Done()
 			timeout := time.NewTimer(time.Second * 5)
-			returnToSender := make(chan interface{})
+			var returnToSender blocks.MsgChan
+			returnToSender = make(chan interface{})
 			queryChan <- &blocks.QueryMsg{
-				Route:    "ping",
-				RespChan: returnToSender,
+				Route:   "ping",
+				MsgChan: returnToSender,
 			}
 			select {
 			case q := <-returnToSender:
-				respChan <- q.(string)
+				MsgChan <- q.(string)
 			case <-timeout.C:
-				respChan <- "TIMEOUT"
+				MsgChan <- "TIMEOUT"
 			}
 		}(b.blockMap[k].chans.QueryChan)
 	}
 	wg.Wait()
 	responses := make([]string, len(b.blockMap))
 	for i := 0; i < len(b.blockMap); i++ {
-		responses[i] = <-respChan
+		responses[i] = <-MsgChan
 	}
 	return responses
 }

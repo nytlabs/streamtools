@@ -16,10 +16,10 @@ import (
 // credentials for authenticating with an IMAP server and the IMAP client.
 type FromEmail struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 
 	host     string
 	username string
@@ -353,9 +353,9 @@ func (e *FromEmail) Run() {
 				}
 			}
 			return
-		case respChan := <-e.queryrule:
+		case MsgChan := <-e.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Host":     e.host,
 				"Username": e.username,
 				"Password": e.password,
