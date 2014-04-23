@@ -1,0 +1,156 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Streamtools Tutorials: Earthquake Tracker</title>
+        <script src="/static/lib/jquery-2.1.0.min.js"></script>
+        <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+        <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+        <script src="/static/lib/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="/static/css/tutorials.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h3 class="text-muted"><a href="/tutorials/">Streamtools Tutorials</a></h3>
+      </div>
+
+      <div class="jumbotron">
+        <h1>Earthquake Tracker</h1>
+        <p id="leadPara" class="lead">
+        The USGS offers <a href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of significant earthquakes from the past week, updated every minute, to build a simple earthquake tracker.
+        </p>
+        <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" href="#" role="button">Get Started!</a></p>
+      </div>
+
+      <div id="reportContainer" style="display: none;">
+        <div class="header">
+          <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+        </div>
+      </div>
+
+    </div> <!-- /container -->
+
+    <div class="panel panel-info panel-template" style="display: none;">
+      <div class="panel-heading">
+        <h3 class="panel-title"></h3>
+      </div>
+      <div class="panel-body">
+        <div class="pull-left col-md-5 quake-map"></div>
+        <div class="col-md-5">
+          <b>When:</b> <span class="quake-time"></span><br>
+          <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
+          <b>Significance:</b> <span class="quake-significance"></span><br>
+          <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
+          <b>Alert level:</b> <span class="quake-alert-level"></span><br>
+          <b>Status:</b> <span class="quake-status"></span><br>
+        </div>
+      </div>
+    </div>
+  
+  <script>
+    $(document).ready(function() {
+        var total = 0;
+        var events = [];
+
+        function getTotal() {
+          $.getJSON("http://localhost:7070/blocks/13/count", function(countData) {
+            total = countData.Count;
+            $("#totalCount").text(total);
+          });
+        }
+
+        function kickOff() {
+            $.ajax({
+                type: "POST",
+                url: "http://localhost:7070/blocks/3/in", 
+                data: JSON.stringify({}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function(data) {
+                  $("#leadPara").hide();
+                  $("#buttonPara").hide();
+                  $("#leadPara").html("Streamtools is now polling the USGS endpoint every minute. This page will update with new data as it comes in. ");
+                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='_new' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+
+                  $("#leadPara").fadeIn("slow");
+                  $("#buttonPara").fadeIn("slow");
+                },
+                failure: function(err) {
+                  console.log("failed kicking off the demo because: " + err);
+                }
+            });
+        }
+
+        $("#getStarted").click(function(e) {
+          e.preventDefault;
+          $.getJSON("http://localhost:7070/clear", function(data) {
+            if (data.daemon != "OK") {
+              alert("Sorry, I couldn't clear out your streamtools. The response I got is: " + JSON.stringify(data));
+            } else {
+              $.ajax({
+                  type: "POST",
+                  url: "http://localhost:7070/import", 
+                  data: JSON.stringify({"Blocks":[{"Id":"3","Type":"map","Rule":{"Additive":true,"Map":{"url":"'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson'"}},"Position":{"X":162,"Y":94}},{"Id":"8","Type":"unpack","Rule":{"Path":".features"},"Position":{"X":215,"Y":252}},{"Id":"2","Type":"ticker","Rule":{"Interval":"1m0s"},"Position":{"X":135,"Y":11}},{"Id":"15","Type":"ticker","Rule":{"Interval":"10s"},"Position":{"X":527,"Y":429}},{"Id":"10","Type":"gethttp","Rule":{"Path":".properties.detail"},"Position":{"X":302,"Y":387}},{"Id":"13","Type":"count","Rule":{"Window":"1m0s"},"Position":{"X":325,"Y":594}},{"Id":"7","Type":"map","Rule":{"Additive":true,"Map":{}},"Position":{"X":59.976715087890625,"Y":404.9962158203125}},{"Id":"1","Type":"gethttp","Rule":{"Path":".url"},"Position":{"X":188,"Y":169}},{"Id":"12","Type":"map","Rule":{"Additive":false,"Map":{"id":".id","map":".properties.products.shakemap[0].contents['download/tvmap.jpg']"}},"Position":{"X":356,"Y":459}},{"Id":"20","Type":"dedupe","Rule":{"Path":".id"},"Position":{"X":125,"Y":318}}],"Connections":[{"Id":"17","FromId":"10","ToId":"12","ToRoute":"in"},{"Id":"5","FromId":"2","ToId":"3","ToRoute":"in"},{"Id":"6","FromId":"3","ToId":"1","ToRoute":"in"},{"Id":"21","FromId":"8","ToId":"20","ToRoute":"in"},{"Id":"9","FromId":"1","ToId":"8","ToRoute":"in"},{"Id":"22","FromId":"20","ToId":"7","ToRoute":"in"},{"Id":"16","FromId":"15","ToId":"13","ToRoute":"poll"},{"Id":"23","FromId":"20","ToId":"13","ToRoute":"in"},{"Id":"24","FromId":"20","ToId":"10","ToRoute":"in"}]}),
+                  contentType: "application/json; charset=utf-8",
+                  dataType: "json",
+                  success: function(data) {
+                    kickOff();
+                    polledTotal = false;
+                    var socket = new WebSocket('ws://localhost:7070/ws/7');
+
+                    var dateOptions = {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", timeZone: "America/New_York"};
+                    socket.onmessage = function(event) {
+                      if (!polledTotal) {
+                        setTimeout(getTotal, 1000);
+                        setInterval(getTotal, 5000);
+                        polledTotal = true;
+                      }
+                      quake = JSON.parse(event.data);
+                      var quakePanel = $("#" + quake.id);
+
+                      if ( $("body").has("#" + quake.id).length <= 0 ) {
+                        quakePanel = $(".panel-template").clone();
+                        $(quakePanel).attr("id", quake.id);
+                        $(quakePanel).removeClass("panel-template");
+                      }
+
+                      $(quakePanel).find(".panel-title").text(quake.properties.title);
+
+                      quakeTime = new Date(quake.properties.time);
+                      $(quakePanel).find(".quake-time").text(quakeTime.toLocaleDateString("en-US", dateOptions));
+
+                      $(quakePanel).find(".quake-alert-level").text(quake.properties.alert);
+                      $(quakePanel).find(".quake-status").text(quake.properties.status);
+
+                      $(quakePanel).find(".quake-location").text(quake.properties.place);
+                      $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
+
+                      $(quakePanel).find(".quake-magnitude").text(quake.properties.mag);
+                      $(quakePanel).find(".quake-significance").text(quake.properties.sig);
+
+                      $(quakePanel).appendTo("#reportContainer");
+                      $(quakePanel).show();
+                      $("#reportContainer").show();
+                    }
+                    var detailSocket = new WebSocket('ws://localhost:7070/ws/12');
+                    detailSocket.onmessage = function(event) {
+                      detail = JSON.parse(event.data);
+                      mapUrl = detail.map.url;
+                      $("#" + detail.id).find(".quake-map").html("<img class='quake-map-image' src='" + mapUrl + "'>");
+                    }
+                  },
+                  failure: function(errMsg) {
+                    console.log("Uh oh. We just tried to import the pattern into streamtools, but something went wrong: " + errMsg);
+                  }
+                });
+              }
+          });
+
+        });
+
+    });
+  </script>
+
+  </body>
+</html>
