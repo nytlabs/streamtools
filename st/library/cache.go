@@ -2,6 +2,7 @@ package library
 
 import (
 	"container/heap"
+	"encoding/json"
 	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
@@ -33,6 +34,10 @@ type item struct {
 	lastSeen time.Time
 }
 
+func (i *item) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
 // Cacheup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Cache) Setup() {
 	b.Kind = "Cache"
@@ -55,9 +60,6 @@ func (b *Cache) Run() {
 	var ttl time.Duration
 	cache := make(map[string]item)
 	ttlQueue := &PriorityQueue{}
-	var keys []string
-	var values []interface{}
-	cacheDump := make(map[string]interface{})
 
 	var keyTree, valueTree *jee.TokenTree
 	var err error
@@ -123,18 +125,31 @@ func (b *Cache) Run() {
 			}
 
 		case responseChan := <-b.keys:
+			keys := make([]string, len(cache))
+			i := 0
+			for key := range cache {
+				keys[i] = key
+				i++
+			}
+
 			responseChan <- map[string]interface{}{
 				"keys": keys,
 			}
 
 		case responseChan := <-b.values:
+			values := make([]interface{}, len(cache))
+			i := 0
+			for _, item := range cache {
+				values[i] = item.value
+				i++
+			}
 			responseChan <- map[string]interface{}{
 				"values": values,
 			}
 
 		case responseChan := <-b.dump:
 			responseChan <- map[string]interface{}{
-				"dump": cacheDump,
+				"dump": cache,
 			}
 
 		case msg := <-b.in:
@@ -164,10 +179,6 @@ func (b *Cache) Run() {
 				value:    v,
 				lastSeen: now,
 			}
-
-			keys = append(keys, k)
-			values = append(values, v)
-			cacheDump[k] = v
 
 			queueMessage := &PQMessage{
 				val: k,
