@@ -34,7 +34,7 @@ type item struct {
 	lastSeen time.Time
 }
 
-func (i *item) MarshalJSON() ([]byte, error) {
+func (i item) MarshalJSON() ([]byte, error) {
 	return json.Marshal(i.value)
 }
 
@@ -140,7 +140,7 @@ func (b *Cache) Run() {
 			values := make([]interface{}, len(cache))
 			i := 0
 			for _, item := range cache {
-				values[i] = item.value
+				values[i] = item
 				i++
 			}
 			responseChan <- map[string]interface{}{

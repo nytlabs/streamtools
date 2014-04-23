@@ -1272,16 +1272,14 @@ func (s *StreamSuite) TestCache(c *C) {
 		Route:   "out",
 		Channel: outChan,
 	}
-	ruleMsg := map[string]interface{}{"KeyPath": ".category", "ValuePath": ".name", "TimeToLive": "1m"}
+	ruleMsg := map[string]interface{}{"KeyPath": ".name", "ValuePath": ".count", "TimeToLive": "1m"}
 	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- rule
 
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		data1 := &blocks.Msg{Msg: map[string]interface{}{"category": "newspaper", "name": "The New York Times"}, Route: "in"}
-		ch.InChan <- data1
-
-		data2 := &blocks.Msg{Msg: map[string]interface{}{"category": "meetup", "name": "Hacks/Hackers"}, Route: "in"}
-		ch.InChan <- data2
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "100", "name": "The New York Times"}, Route: "in"}
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "4", "name": "The New York Times"}, Route: "in"}
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "50", "name": "Hacks/Hackers"}, Route: "in"}
 	})
 
 	keysChan := make(blocks.MsgChan)
@@ -1314,7 +1312,7 @@ func (s *StreamSuite) TestCache(c *C) {
 		case messageI := <-keysChan:
 			message := messageI.(map[string]interface{})
 			keys := message["keys"].([]string)
-			c.Assert(keys, DeepEquals, []string{"newspaper", "meetup"})
+			c.Assert(keys, DeepEquals, []string{"The New York Times", "Hacks/Hackers"})
 
 		case messageI := <-valuesChan:
 			message := messageI.(map[string]interface{})
@@ -1323,7 +1321,7 @@ func (s *StreamSuite) TestCache(c *C) {
 
 		case messageI := <-dumpChan:
 			message := messageI.(map[string]interface{})
-			log.Println(message["dump"])
+			c.Assert(message["dump"], HasLen, 2)
 
 		case messageI := <-outChan:
 			message := messageI.Msg.(map[string]interface{})
