@@ -568,7 +568,7 @@ $(function() {
             var refTmpl = _.template(refTemplate, {
               data: blocks
             });
-            $("#ui-ref-contents").prepend(refTmpl);
+            $("#ui-ref-contents").html(refTmpl);
         };
         this.ws.onclose = uiReconnect;
         this.ws.onmessage = function(d) {
