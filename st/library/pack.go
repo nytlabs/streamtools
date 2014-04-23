@@ -49,6 +49,7 @@ func (b *Pack) Run() {
 
 	for {
 		select {
+		case <-waitTimer.C:
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
