@@ -1276,22 +1276,26 @@ func (s *StreamSuite) TestCache(c *C) {
 	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- rule
 
+	// Add some data to the cache
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
 		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "100", "name": "The New York Times"}, Route: "in"}
 		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "4", "name": "The New York Times"}, Route: "in"}
 		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "50", "name": "Hacks/Hackers"}, Route: "in"}
 	})
 
+	// Query for keys
 	keysChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
 		ch.QueryChan <- &blocks.QueryMsg{MsgChan: keysChan, Route: "keys"}
 	})
 
+	// And values
 	valuesChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
 		ch.QueryChan <- &blocks.QueryMsg{MsgChan: valuesChan, Route: "values"}
 	})
 
+	// And the entire cache contents
 	dumpChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
 		ch.QueryChan <- &blocks.QueryMsg{MsgChan: dumpChan, Route: "dump"}
