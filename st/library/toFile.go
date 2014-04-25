@@ -14,11 +14,11 @@ type ToFile struct {
 	blocks.Block
 	file      *os.File
 	filename  string
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -29,6 +29,7 @@ func NewToFile() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToFile) Setup() {
 	b.Kind = "ToFile"
+	b.Desc = "writes messages, separated by newlines, to a file on the local filesystem"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -68,9 +69,9 @@ func (b *ToFile) Run() {
 			}
 			fmt.Fprintln(w, string(msgStr))
 			w.Flush()
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Filename": b.filename,
 			}
 		}

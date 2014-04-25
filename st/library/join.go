@@ -6,11 +6,11 @@ import (
 
 type Join struct {
 	blocks.Block
-	inA   chan interface{}
-	inB   chan interface{}
-	clear chan interface{}
-	out   chan interface{}
-	quit  chan interface{}
+	inA   blocks.MsgChan
+	inB   blocks.MsgChan
+	clear blocks.MsgChan
+	out   blocks.MsgChan
+	quit  blocks.MsgChan
 }
 
 func NewJoin() blocks.BlockInterface {
@@ -19,6 +19,7 @@ func NewJoin() blocks.BlockInterface {
 
 func (b *Join) Setup() {
 	b.Kind = "Join"
+	b.Desc = "joins two streams together, emitting the joined message once it's been seen on both inputs"
 	b.inA = b.InRoute("inA")
 	b.inB = b.InRoute("inB")
 	b.clear = b.InRoute("clear")
@@ -27,8 +28,8 @@ func (b *Join) Setup() {
 }
 
 func (b *Join) Run() {
-	A := make(chan interface{}, 1000)
-	B := make(chan interface{}, 1000)
+	A := make(blocks.MsgChan, 1000)
+	B := make(blocks.MsgChan, 1000)
 	for {
 		select {
 		case <-b.quit:

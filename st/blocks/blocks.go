@@ -3,12 +3,22 @@ package blocks
 import (
 	"fmt"
 	"github.com/nytlabs/streamtools/st/loghub"
+	"log"
+	"reflect"
+	"strconv"
 	"time"
 )
 
 type Msg struct {
 	Msg   interface{}
 	Route string
+}
+
+type MsgChan chan interface{}
+
+func (c MsgChan) MarshalJSON() ([]byte, error) {
+	outBytes := []byte("{\"channel\":" + strconv.Itoa(len(c)) + "}")
+	return outBytes, nil
 }
 
 type AddChanMsg struct {
@@ -18,7 +28,7 @@ type AddChanMsg struct {
 
 type QueryMsg struct {
 	Route    string
-	RespChan chan interface{}
+	MsgChan MsgChan
 }
 
 type BlockChans struct {
@@ -31,17 +41,18 @@ type BlockChans struct {
 }
 
 type LogStreams struct {
-	log chan interface{}
-	ui  chan interface{}
+	log MsgChan
+	ui  MsgChan
 }
 
 type Block struct {
 	Id            string // the name of the block specifed by the user (like MyBlock)
 	Kind          string // the kind of block this is (like count, toFile, fromSQS)
-	inRoutes      map[string]chan interface{}
-	queryRoutes   map[string]chan chan interface{}
-	broadcast     chan interface{}
-	quit          chan interface{}
+	Desc          string // the description of block ('counts the number of messages it has seen')
+	inRoutes      map[string]MsgChan
+	queryRoutes   map[string]chan MsgChan
+	broadcast     MsgChan
+	quit          MsgChan
 	doesBroadcast bool
 	BlockChans
 	LogStreams
@@ -49,6 +60,7 @@ type Block struct {
 
 type BlockDef struct {
 	Type        string
+	Desc        string
 	InRoutes    []string
 	QueryRoutes []string
 	OutRoutes   []string
@@ -59,10 +71,10 @@ type BlockInterface interface {
 	Run()
 	CleanUp()
 	Build(BlockChans)
-	Quit() chan interface{}
-	Broadcast() chan interface{}
-	InRoute(string) chan interface{}
-	QueryRoute(string) chan chan interface{}
+	Quit() MsgChan
+	Broadcast() MsgChan
+	InRoute(string) MsgChan
+	QueryRoute(string) chan MsgChan
 	GetBlock() *Block
 	GetDef() *BlockDef
 	Log(interface{})
@@ -80,41 +92,41 @@ func (b *Block) Build(c BlockChans) {
 	b.QuitChan = c.QuitChan
 
 	// route maps
-	b.inRoutes = make(map[string]chan interface{}) // necessary to stop locking...
-	b.queryRoutes = make(map[string]chan chan interface{})
+	b.inRoutes = make(map[string]MsgChan) // necessary to stop locking...
+	b.queryRoutes = make(map[string]chan MsgChan)
 
 	// broadcast channel
-	b.broadcast = make(chan interface{}, 10) // necessary to stop locking...
+	b.broadcast = make(MsgChan, 10) // necessary to stop locking...
 
 	// quit chan
-	b.quit = make(chan interface{})
+	b.quit = make(MsgChan)
 
-	b.ui = make(chan interface{})
-	b.log = make(chan interface{})
+	b.ui = make(MsgChan)
+	b.log = make(MsgChan)
 }
 
 func (b *Block) SetId(Id string) {
 	b.Id = Id
 }
 
-func (b *Block) InRoute(routeName string) chan interface{} {
-	route := make(chan interface{}, 1000)
+func (b *Block) InRoute(routeName string) MsgChan {
+	route := make(MsgChan, 1000)
 	b.inRoutes[routeName] = route
 	return route
 }
 
-func (b *Block) QueryRoute(routeName string) chan chan interface{} {
-	route := make(chan chan interface{}, 1000)
+func (b *Block) QueryRoute(routeName string) chan MsgChan {
+	route := make(chan MsgChan, 1000)
 	b.queryRoutes[routeName] = route
 	return route
 }
 
-func (b *Block) Broadcast() chan interface{} {
+func (b *Block) Broadcast() MsgChan {
 	b.doesBroadcast = true
 	return b.broadcast
 }
 
-func (b *Block) Quit() chan interface{} {
+func (b *Block) Quit() MsgChan {
 	return b.quit
 }
 
@@ -141,6 +153,7 @@ func (b *Block) GetDef() *BlockDef {
 
 	return &BlockDef{
 		Type:        b.Kind,
+		Desc:        b.Desc,
 		InRoutes:    inRoutes,
 		QueryRoutes: queryRoutes,
 		OutRoutes:   outRoutes,
@@ -253,7 +266,7 @@ func BlockRoutine(bi BlockInterface) {
 		case msg := <-b.QueryChan:
 
 			if msg.Route == "ping" {
-				msg.RespChan <- "OK"
+				msg.MsgChan <- "OK"
 				continue
 			}
 
@@ -262,11 +275,13 @@ func BlockRoutine(bi BlockInterface) {
 				break
 			}
 
+			log.Println(reflect.TypeOf(msg.MsgChan))
+
 			select {
-			case b.queryRoutes[msg.Route] <- msg.RespChan:
+			case b.queryRoutes[msg.Route] <- msg.MsgChan:
 			default:
 				go func() {
-					b.queryRoutes[msg.Route] <- msg.RespChan
+					b.queryRoutes[msg.Route] <- msg.MsgChan
 				}()
 			}
 
@@ -369,11 +384,11 @@ func ConnectionRoutine(c *Connection) {
 		case msg := <-c.QueryChan:
 			switch msg.Route {
 			case "rate":
-				msg.RespChan <- map[string]interface{}{
+				msg.MsgChan <- map[string]interface{}{
 					"Rate": rate,
 				}
 			case "last":
-				msg.RespChan <- map[string]interface{}{
+				msg.MsgChan <- map[string]interface{}{
 					"Last": last,
 				}
 			}

@@ -46,14 +46,35 @@ func NewServer() *Server {
 }
 
 var resourceType = map[string]string{
-	"lib": "application/javascript; charset=utf-8",
-	"js":  "application/javascript; charset=utf-8",
-	"css": "text/css; charset=utf-8",
+	"html": "text/html; charset=utf-8",
+	"lib":  "application/javascript; charset=utf-8",
+	"js":   "application/javascript; charset=utf-8",
+	"json": "application/javascript; charset=utf-8",
+	"css":  "text/css; charset=utf-8",
 }
 
 func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	data, _ := Asset("gui/index.html")
+	w.Write(data)
+}
+
+func (s *Server) tutorialRootHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	data, _ := Asset("tutorials/index.html")
+	w.Write(data)
+}
+
+func (s *Server) tutorialHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", resourceType[vars["type"]])
+	data, _ := Asset("tutorials/" + vars["file"])
+	w.Write(data)
+}
+func (s *Server) exampleHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	w.Header().Set("Content-Type", resourceType[vars["type"]])
+	data, _ := Asset("examples/" + vars["file"])
 	w.Write(data)
 }
 
@@ -389,6 +410,11 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 		}
 	}(recv)
 	c.readPump(recv)
+}
+
+// Handles OPTIONS requests for cross-domain pattern importing (see streamtools-tutorials)
+func (s *Server) optionsHandler(w http.ResponseWriter, r *http.Request) {
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // importHandler accepts a JSON through POST that updats the state of ST
@@ -947,6 +973,8 @@ func (s *Server) response(statusTxt string) []byte {
 func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 	w.WriteHeader(statusCode)
 	w.Write(data)
 
@@ -1014,6 +1042,7 @@ func (s *Server) Run() {
 	loghub.AddUI <- uiStream.Broadcast
 
 	r := mux.NewRouter()
+	r.StrictSlash(true)
 	r.HandleFunc("/", s.rootHandler)
 	r.HandleFunc("/library", s.libraryHandler)
 	r.HandleFunc("/static/{type}/{file}", s.staticHandler)
@@ -1021,22 +1050,29 @@ func (s *Server) Run() {
 	r.HandleFunc("/ui", s.serveUIStream)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
+	r.HandleFunc("/tutorials", s.tutorialRootHandler)
+	r.HandleFunc("/tutorials/{file}", s.tutorialHandler)
+	r.HandleFunc("/examples/{file}", s.exampleHandler)
 	r.HandleFunc("/status", s.statusHandler)
 	r.HandleFunc("/profstart", s.profStartHandler)
 	r.HandleFunc("/profstop", s.profStopHandler)
 	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
+	r.HandleFunc("/import", s.optionsHandler).Methods("OPTIONS")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")
 	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                         // list all blocks
 	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                      // create block w/o id
+	r.HandleFunc("/blocks", s.optionsHandler).Methods("OPTIONS")                       // allow cross-domain
 	r.HandleFunc("/blocks/{id}", s.blockInfoHandler).Methods("GET")                    // get block info
 	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")                  // update block
 	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")               // delete block
 	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")           // send to block route
 	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")           // get from block route
+	r.HandleFunc("/blocks/{id}/{route}", s.optionsHandler).Methods("OPTIONS")          // allow cross-domain
 	r.HandleFunc("/ws/{id}", s.websocketHandler).Methods("GET")                        // websocket handler
 	r.HandleFunc("/stream/{id}", s.streamHandler).Methods("GET")                       // http stream handler
 	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")            // create connection
+	r.HandleFunc("/connections", s.optionsHandler).Methods("OPTIONS")                  // allow cross-domain
 	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")               // list connections
 	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")          // get info for connection
 	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE")     // delete connection

@@ -11,11 +11,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToNSQMulti struct {
 	blocks.Block
-	queryrule    chan chan interface{}
-	inrule       chan interface{}
-	in           chan interface{}
-	out          chan interface{}
-	quit         chan interface{}
+	queryrule    chan blocks.MsgChan
+	inrule       blocks.MsgChan
+	in           blocks.MsgChan
+	out          blocks.MsgChan
+	quit         blocks.MsgChan
 	nsqdTCPAddrs string
 	topic        string
 }
@@ -27,6 +27,7 @@ func NewToNSQMulti() blocks.BlockInterface {
 
 func (b *ToNSQMulti) Setup() {
 	b.Kind = "ToNSQMulti"
+	b.Desc = "sends messages to an NSQ topic in batches"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -132,8 +133,8 @@ func (b *ToNSQMulti) Run() {
 			c <- map[string]interface{}{
 				"Topic":        b.topic,
 				"NsqdTCPAddrs": b.nsqdTCPAddrs,
-				"MaxBatch":	    maxBatch,
-				"Interval":		interval.String(),
+				"MaxBatch":     maxBatch,
+				"Interval":     interval.String(),
 			}
 		}
 	}

@@ -12,11 +12,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Pack struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -27,6 +27,7 @@ func NewPack() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Pack) Setup() {
 	b.Kind = "Pack"
+	b.Desc = "groups messages together based on a common value, similar to 'group-by' in other languages"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -48,6 +49,7 @@ func (b *Pack) Run() {
 
 	for {
 		select {
+		case <-waitTimer.C:
 		case ruleI := <-b.inrule:
 			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})

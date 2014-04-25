@@ -10,11 +10,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Zipf struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -25,6 +25,7 @@ func NewZipf() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Zipf) Setup() {
 	b.Kind = "Zipf"
+	b.Desc = "draws a random number from a Zipf-Mandelbrot distribution when polled"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.inpoll = b.InRoute("poll")

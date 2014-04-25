@@ -10,11 +10,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToNSQ struct {
 	blocks.Block
-	queryrule    chan chan interface{}
-	inrule       chan interface{}
-	in           chan interface{}
-	out          chan interface{}
-	quit         chan interface{}
+	queryrule    chan blocks.MsgChan
+	inrule       blocks.MsgChan
+	in           blocks.MsgChan
+	out          blocks.MsgChan
+	quit         blocks.MsgChan
 	nsqdTCPAddrs string
 	topic        string
 }
@@ -26,6 +26,7 @@ func NewToNSQ() blocks.BlockInterface {
 
 func (b *ToNSQ) Setup() {
 	b.Kind = "ToNSQ"
+	b.Desc = "send messages to an NSQ topic"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

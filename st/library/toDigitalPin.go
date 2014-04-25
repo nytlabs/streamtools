@@ -13,10 +13,10 @@ import (
 
 type ToDigitalPin struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 func NewToDigitalPin() blocks.BlockInterface {
@@ -26,6 +26,7 @@ func NewToDigitalPin() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToDigitalPin) Setup() {
 	b.Kind = "ToDigitalPin"
+	b.Desc = "(embedded applications) sets the state of a digital pin"
 	b.inrule = b.InRoute("rule")
 	b.in = b.InRoute("in")
 	b.queryrule = b.QueryRoute("rule")

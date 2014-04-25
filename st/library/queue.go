@@ -9,12 +9,12 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Queue struct {
 	blocks.Block
-	queryPop  chan chan interface{}
-	queryPeek chan chan interface{}
-	inPush    chan interface{}
-	inPop     chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryPop  chan blocks.MsgChan
+	queryPeek chan blocks.MsgChan
+	inPush    blocks.MsgChan
+	inPop     blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -25,6 +25,7 @@ func NewQueue() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Queue) Setup() {
 	b.Kind = "Queue"
+	b.Desc = "FIFO queue allowing push & pop on streams plus popping from a query"
 	b.inPush = b.InRoute("push")
 	b.inPop = b.InRoute("pop")
 	b.queryPop = b.QueryRoute("pop")
@@ -54,18 +55,18 @@ func (b *Queue) Run() {
 			}
 			msg := heap.Pop(pq).(*PQMessage).val
 			b.out <- msg
-		case respChan := <-b.queryPop:
+		case MsgChan := <-b.queryPop:
 			var msg interface{}
 			if len(*pq) > 0 {
 				msg = heap.Pop(pq).(*PQMessage).val
 			}
-			respChan <- msg
-		case respChan := <-b.queryPeek:
+			MsgChan <- msg
+		case MsgChan := <-b.queryPeek:
 			var msg interface{}
 			if len(*pq) > 0 {
 				msg = pq.Peek().(*PQMessage).val
 			}
-			respChan <- msg
+			MsgChan <- msg
 		}
 	}
 }

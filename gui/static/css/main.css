@@ -4,6 +4,113 @@
     overflow: hidden;
 }
 
+@font-face {
+    font-family: 'entypo';
+    src: url('entypo.eot');
+    src: url('entypo.eot?#iefix') format('embedded-opentype'),
+         url('entypo.ttf') format('truetype'),
+         url('entypo.svg#entypo') format('svg');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+#ui-ref {
+  top: 0;
+  left: 0;
+  bottom: 0;
+  outline: 0;
+  position: absolute;
+  font-family: Monaco, "Courier New", Courier, monospace;
+  font-size: 12px;
+  color: rgba(0, 0, 0);
+}
+
+#ui-ref a {
+  text-decoration: none;
+}
+
+#ui-ref-control {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 120px;
+}
+
+#ui-ref-contents {
+  display: none;
+  top: 36px;
+  left: 0;
+  position: fixed;
+  border: 1px solid #999;
+  padding: 10px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 140px;
+}
+
+#ui-ref hr {
+  height: 0;
+  -webkit-box-sizing: content-box;
+     -moz-box-sizing: content-box;
+          box-sizing: content-box;
+
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 0;
+  border-top: 1px solid #eee;
+}
+
+#ui-ref ul li {
+  font-weight: bold;
+  margin-top: 2px;
+  cursor:pointer;
+}
+
+#ui-ref li:hover {
+  color:#C32148;
+}
+
+#ui-ref-blockdefs {
+  overflow: hidden;
+}
+
+#ui-ref-toggle {
+  width: 28px;
+  border-right: 1px solid #999;
+  border-bottom: 1px solid #999;
+  border-left: none;
+  border-top: none;
+  font-family: 'entypo';
+  font-size: 3em;
+  line-height: 1;
+  color: #000;
+  background-color: transparent;
+}
+
+#ui-ref .ui-ref-action {
+  cursor: pointer;
+}
+
+#ui-ref .ui-ref-action:hover {
+  font-weight: bold;
+}
+
+#ui-ref .confirm-yes, #ui-ref .confirm-no, #ui-ref .confirm-yes:hover, #ui-ref .confirm-no:hover {
+  cursor: pointer;
+}
+
+div.blockMsg {
+  width:  50%;
+  top:    5%;
+  left:   5%;
+  text-align: left;
+  padding: 15px;
+  color: #fff;
+  cursor: default;
+  background-color: rgba(220,220,220,1);
+}
+
 #log {
     width: 100%;
     position: absolute;
@@ -12,10 +119,12 @@
     border-top: 1px solid rgba(180,180,180,1);
     height: 18px;
     overflow-y hidden;
+    background: rgba(50,50,50,1);
+    color: rgba(255,255,255,1);
 }
 
 #log:hover{
-    background: rgba(200,200,200,.5);
+    background: rgba(50,50,50,1);
     cursor:pointer;
 }
 
@@ -170,6 +279,18 @@
     display: none; 
 }
 
+
+.info-panel .import {
+    color: black;
+    width: 50px;
+    float: right;
+    padding: 5px;
+    box-shadow:  0 0px 0px #fff, 0 0px 1px rgba(100,100,100,.5), inset 0 0px 0px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,.25);
+    margin-right: 5px;
+    border: 1px solid rgba(90,90,90,.5);
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
 /*.controller .bottom {
     background-color: rgba(158,158,158,1);
     height: 5px;

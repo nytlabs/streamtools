@@ -12,11 +12,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Sync struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -27,6 +27,7 @@ func NewSync() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Sync) Setup() {
 	b.Kind = "Sync"
+	b.Desc = "takes an disordered stream and creates a properly timed, ordered stream at the expense of introducing a lag"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -97,9 +98,9 @@ func (b *Sync) Run() {
 			}
 			heap.Push(pq, queueMessage)
 
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Lag":  lagString,
 				"Path": path,
 			}

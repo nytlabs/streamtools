@@ -12,14 +12,14 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Timeseries struct {
 	blocks.Block
-	queryrule  chan chan interface{}
-	querystate chan chan interface{}
-	queryfft   chan chan interface{}
-	inrule     chan interface{}
-	inpoll     chan interface{}
-	in         chan interface{}
-	out        chan interface{}
-	quit       chan interface{}
+	queryrule  chan blocks.MsgChan
+	querystate chan blocks.MsgChan
+	queryfft   chan blocks.MsgChan
+	inrule     blocks.MsgChan
+	inpoll     blocks.MsgChan
+	in         blocks.MsgChan
+	out        blocks.MsgChan
+	quit       blocks.MsgChan
 }
 
 type tsDataPoint struct {
@@ -39,6 +39,7 @@ func NewTimeseries() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Timeseries) Setup() {
 	b.Kind = "Timeseries"
+	b.Desc = "stores an array of values for a specified Path along with timestamps"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -136,19 +137,19 @@ func (b *Timeseries) Run() {
 				Value:     val,
 			}
 			data.Values = append(data.Values[1:], d)
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				//"Window":     lagStr,
 				"Path":       path,
 				"NumSamples": numSamples,
 			}
-		case respChan := <-b.querystate:
+		case MsgChan := <-b.querystate:
 			out := map[string]interface{}{
 				"timeseries": data,
 			}
-			respChan <- out
-		case respChan := <-b.queryfft:
+			MsgChan <- out
+		case MsgChan := <-b.queryfft:
 			x := make([]float64, len(data.Values))
 			for i, d := range data.Values {
 				x[i] = d.Value
@@ -164,7 +165,7 @@ func (b *Timeseries) Run() {
 			out := map[string]interface{}{
 				"fft": Xout,
 			}
-			respChan <- out
+			MsgChan <- out
 		case <-b.inpoll:
 			outArray := make([]interface{}, len(data.Values))
 			for i, d := range data.Values {

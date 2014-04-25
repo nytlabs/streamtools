@@ -11,11 +11,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ParseXML struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -26,6 +26,7 @@ func NewParseXML() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ParseXML) Setup() {
 	b.Kind = "ParseXML"
+	b.Desc = "converts incoming XML messages to JSON for use in streamtools"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -109,9 +110,9 @@ func (b *ParseXML) Run() {
 
 			b.out <- newMsg
 
-		case respChan := <-b.queryrule:
+		case MsgChan := <-b.queryrule:
 			// deal with a query request
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"Path": path,
 			}
 

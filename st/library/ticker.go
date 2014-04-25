@@ -9,10 +9,10 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type Ticker struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -23,6 +23,7 @@ func NewTicker() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Ticker) Setup() {
 	b.Kind = "Ticker"
+	b.Desc = "emits the time at an interval specified by the block's rule"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()

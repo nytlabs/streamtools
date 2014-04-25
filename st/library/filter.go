@@ -8,11 +8,11 @@ import (
 
 type Filter struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -22,6 +22,7 @@ func NewFilter() blocks.BlockInterface {
 
 func (b *Filter) Setup() {
 	b.Kind = "Filter"
+	b.Desc = "selectively emits messages based on criteria defined in this block's rule"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

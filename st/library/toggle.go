@@ -6,9 +6,9 @@ import (
 
 type Toggle struct {
 	blocks.Block
-	in   chan interface{}
-	out  chan interface{}
-	quit chan interface{}
+	in   blocks.MsgChan
+	out  blocks.MsgChan
+	quit blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -18,6 +18,7 @@ func NewToggle() blocks.BlockInterface {
 
 func (b *Toggle) Setup() {
 	b.Kind = "Toggle"
+	b.Desc = "emits a 'state' boolean value, toggling true/false on each hit"
 	b.in = b.InRoute("in")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()

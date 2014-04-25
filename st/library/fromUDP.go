@@ -81,12 +81,12 @@ func (l *listenerUDP) listen() {
 // specify those channels we're going to use to communicate with streamtools
 type FromUDP struct {
 	blocks.Block
-	queryrule        chan chan interface{}
-	inrule           chan interface{}
-	inpoll           chan interface{}
-	in               chan interface{}
-	out              chan interface{}
-	quit             chan interface{}
+	queryrule        chan blocks.MsgChan
+	inrule           blocks.MsgChan
+	inpoll           blocks.MsgChan
+	in               blocks.MsgChan
+	out              blocks.MsgChan
+	quit             blocks.MsgChan
 	connectionString string
 	listener         *listenerUDP
 	listenerLock     sync.RWMutex
@@ -102,6 +102,7 @@ func NewFromUDP() blocks.BlockInterface {
 // specify what kind of block this is.
 func (u *FromUDP) Setup() {
 	u.Kind = "fromUDP"
+	u.Desc = "listens for messages sent over UDP, emitting each into streamtools"
 	u.inrule = u.InRoute("rule")
 	u.queryrule = u.QueryRoute("rule")
 	u.quit = u.Quit()
@@ -165,12 +166,12 @@ func (u *FromUDP) Run() {
 			}
 
 		// Respond to a rule query.
-		case respChan := <-u.queryrule:
+		case MsgChan := <-u.queryrule:
 
 			// Get the listener lock for reading.
 			u.listenerLock.RLock()
 
-			respChan <- map[string]interface{}{
+			MsgChan <- map[string]interface{}{
 				"ConnectionString": u.connectionString,
 			}
 

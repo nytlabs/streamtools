@@ -12,13 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type MovingAverage struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	queryavg  chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	queryavg  chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -29,6 +29,7 @@ func NewMovingAverage() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *MovingAverage) Setup() {
 	b.Kind = "MovingAverage"
+	b.Desc = "performs a moving average of the values specified by the Path over the duration of the Window"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

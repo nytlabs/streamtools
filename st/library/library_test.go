@@ -65,9 +65,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	toC.InChan <- toRule
 
-	toQueryChan := make(chan interface{})
+	toQueryChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		toC.QueryChan <- &blocks.QueryMsg{RespChan: toQueryChan, Route: "rule"}
+		toC.QueryChan <- &blocks.QueryMsg{MsgChan: toQueryChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
@@ -93,9 +93,9 @@ func (s *StreamSuite) TestToFromNSQ(c *C) {
 	fromRule := &blocks.Msg{Msg: nsqSetup, Route: "rule"}
 	fromC.InChan <- fromRule
 
-	fromQueryChan := make(chan interface{})
+	fromQueryChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
-		fromC.QueryChan <- &blocks.QueryMsg{RespChan: fromQueryChan, Route: "rule"}
+		fromC.QueryChan <- &blocks.QueryMsg{MsgChan: fromQueryChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -145,11 +145,11 @@ func (s *StreamSuite) TestCount(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
-	countChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: countChan, Route: "count"}
+	countChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: countChan, Route: "count"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -204,8 +204,8 @@ func (s *StreamSuite) TestToFile(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -264,8 +264,8 @@ func (s *StreamSuite) TestFromSQS(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -317,8 +317,8 @@ func (s *StreamSuite) TestTicker(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	ruleMsg := map[string]interface{}{"Interval": "1s"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
@@ -357,8 +357,8 @@ func (s *StreamSuite) TestFilter(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -400,8 +400,8 @@ func (s *StreamSuite) TestMask(c *C) {
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
 
-	queryOutChan := make(chan interface{})
-	ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+	queryOutChan := make(blocks.MsgChan)
+	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
@@ -442,9 +442,9 @@ func (s *StreamSuite) TestGetHTTPXML(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
@@ -497,9 +497,9 @@ func (s *StreamSuite) TestGetHTTP(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
@@ -544,9 +544,9 @@ func (s *StreamSuite) TestFromHTTPStreamXML(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -590,9 +590,9 @@ func (s *StreamSuite) TestFromHTTPStream(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -713,9 +713,9 @@ func (s *StreamSuite) TestMap(c *C) {
 	ch.InChan <- toRule
 
 	// send rule query in a sec
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	// quit after 5
@@ -768,9 +768,9 @@ func (s *StreamSuite) TestHistogram(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -909,9 +909,9 @@ func (s *StreamSuite) TestToElasticsearch(c *C) {
 	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- rule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
@@ -1109,9 +1109,9 @@ func (s *StreamSuite) TestParseXML(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	queryOutChan := make(chan interface{})
+	queryOutChan := make(blocks.MsgChan)
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
-		ch.QueryChan <- &blocks.QueryMsg{RespChan: queryOutChan, Route: "rule"}
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 	})
 
 	var xmldata = string(`
@@ -1257,6 +1257,79 @@ func (s *StreamSuite) TestDeDupe(c *C) {
 			} else {
 				emittedValues[value] = true
 			}
+		}
+	}
+}
+
+func (s *StreamSuite) TestCache(c *C) {
+	loghub.Start()
+	log.Println("testing cache")
+	b, ch := newBlock("testing cache", "cache")
+
+	go blocks.BlockRoutine(b)
+	outChan := make(chan *blocks.Msg)
+	ch.AddChan <- &blocks.AddChanMsg{
+		Route:   "out",
+		Channel: outChan,
+	}
+	ruleMsg := map[string]interface{}{"KeyPath": ".name", "ValuePath": ".count", "TimeToLive": "1m"}
+	rule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
+	ch.InChan <- rule
+
+	// Add some data to the cache
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "100", "name": "The New York Times"}, Route: "in"}
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "4", "name": "The New York Times"}, Route: "in"}
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{"count": "50", "name": "Hacks/Hackers"}, Route: "in"}
+	})
+
+	// Query for keys
+	keysChan := make(blocks.MsgChan)
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: keysChan, Route: "keys"}
+	})
+
+	// And values
+	valuesChan := make(blocks.MsgChan)
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: valuesChan, Route: "values"}
+	})
+
+	// And the entire cache contents
+	dumpChan := make(blocks.MsgChan)
+	time.AfterFunc(time.Duration(2)*time.Second, func() {
+		ch.QueryChan <- &blocks.QueryMsg{MsgChan: dumpChan, Route: "dump"}
+	})
+
+	time.AfterFunc(time.Duration(5)*time.Second, func() {
+		ch.QuitChan <- true
+	})
+	for {
+		select {
+		case err := <-ch.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+
+		case messageI := <-keysChan:
+			message := messageI.(map[string]interface{})
+			keys := message["keys"].([]string)
+			c.Assert(keys, DeepEquals, []string{"The New York Times", "Hacks/Hackers"})
+
+		case messageI := <-valuesChan:
+			message := messageI.(map[string]interface{})
+			values := message["values"].([]interface{})
+			c.Assert(values, HasLen, 2)
+
+		case messageI := <-dumpChan:
+			message := messageI.(map[string]interface{})
+			c.Assert(message["dump"], HasLen, 2)
+
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+			log.Println(message)
 		}
 	}
 }

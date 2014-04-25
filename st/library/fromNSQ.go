@@ -10,10 +10,10 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FromNSQ struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -23,6 +23,7 @@ func NewFromNSQ() blocks.BlockInterface {
 
 func (b *FromNSQ) Setup() {
 	b.Kind = "FromNSQ"
+	b.Desc = "reads from a topic in NSQ as specified in this block's rule"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
@@ -30,7 +31,7 @@ func (b *FromNSQ) Setup() {
 }
 
 type readWriteHandler struct {
-	toOut   chan interface{}
+	toOut   blocks.MsgChan
 	toError chan error
 }
 
@@ -52,7 +53,7 @@ func (b *FromNSQ) Run() {
 	var topic, channel, lookupdAddr string
 	var maxInFlight float64
 	var err error
-	toOut := make(chan interface{})
+	toOut := make(blocks.MsgChan)
 	toError := make(chan error)
 
 	for {

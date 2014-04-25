@@ -13,11 +13,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FromHTTPStream struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	inrule    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -27,6 +27,7 @@ func NewFromHTTPStream() blocks.BlockInterface {
 
 func (b *FromHTTPStream) Setup() {
 	b.Kind = "FromHTTPStream"
+	b.Desc = "emits new data appearing on a long-lived http stream as new messages in streamtools"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
