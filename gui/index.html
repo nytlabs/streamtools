@@ -45,9 +45,15 @@
     <%
             switch (typeof(v)){
                 case 'string':
+                if(k == 'Script'){
     %>
-         <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="string" value="<%= v %>">
+        <textarea class="rule" name="Text1" cols="25" rows="10" id="<%= 'c_' + data.Id + '_' + k %>" data-type="script" ><%= v %></textarea>
+    <%
+                } else {
+    %>
+         <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="script" value="<%= v %>">
     <%             
+                }
                 break;
                 case 'number':
     %>
