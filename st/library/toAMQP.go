@@ -127,10 +127,22 @@ func (b *ToAMQP) Run() {
 			}
 
 			msgBytes, err := json.Marshal(msg)
+
+			// Make the output JSON if msg wasn't JSON already
 			if err != nil {
-				b.Error(err)
+				json_msg := map[string]interface{}{
+					"data": msg,
+				}
+				msgBytes, err = json.Marshal(json_msg)
+
+				if err != nil {
+					b.Error(err)
+					continue
+				}
 			}
+
 			if len(msgBytes) == 0 {
+				b.Error("Zero byte length message")
 				continue
 			}
 

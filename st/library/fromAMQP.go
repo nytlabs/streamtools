@@ -51,8 +51,6 @@ func (self readWriteAMQPHandler) handle(deliveries <-chan amqp.Delivery) {
 		s := string(d.Body[:])
 		err := json.Unmarshal(d.Body, &msg)
 		if err != nil {
-			self.toError <- err
-
 			msg = map[string]interface{}{
 				"data": s,
 			}
