@@ -14,21 +14,11 @@ type ToAMQP struct {
 	in        blocks.MsgChan
 	inrule    blocks.MsgChan
 	quit      blocks.MsgChan
-
-	host          string
-	port          string
-	username      string
-	password      string
-	exchange      string
-	exchange_type string
-	routingkey    string
 }
 
 // a bit of boilerplate for streamtools
 func NewToAMQP() blocks.BlockInterface {
-	return &ToAMQP{host: "localhost", username: "guest",
-		password: "guest", exchange: "amq.topic", routingkey: "streamtools",
-		port: "5672", exchange_type: "topic"}
+	return &ToAMQP{}
 }
 
 func (b *ToAMQP) Setup() {
@@ -46,14 +36,13 @@ func (b *ToAMQP) Run() {
 	var conn *amqp.Connection
 	var amqp_chan *amqp.Channel
 
-	// Pickup defaults from construction
-	host := b.host
-	port := b.port
-	username := b.username
-	password := b.password
-	routingkey := b.routingkey
-	exchange := b.exchange
-	exchange_type := b.exchange_type
+	host := "localhost"
+	port := "5672"
+	username := "guest"
+	password := "guest"
+	routingkey := "streamtools"
+	exchange := "amq.topic"
+	exchange_type := "topic"
 
 	for {
 		select {
