@@ -51,6 +51,8 @@ func (self readWriteAMQPHandler) handle(deliveries <-chan amqp.Delivery) {
 		s := string(d.Body[:])
 		err := json.Unmarshal(d.Body, &msg)
 		if err != nil {
+			self.toError <- err
+
 			msg = map[string]interface{}{
 				"data": s,
 			}
@@ -61,13 +63,20 @@ func (self readWriteAMQPHandler) handle(deliveries <-chan amqp.Delivery) {
 
 // connects to an AMQP topic and emits each message into streamtools.
 func (b *FromAMQP) Run() {
-	var host, port, username, password string
-	var routingkey, exchange, exchange_type string
 	var err error
 	var conn *amqp.Connection
 	var amqp_chan *amqp.Channel
 	toOut := make(blocks.MsgChan)
 	toError := make(chan error)
+
+	// Pickup defaults from construction
+	host := b.host
+	port := b.port
+	username := b.username
+	password := b.password
+	routingkey := b.routingkey
+	exchange := b.exchange
+	exchange_type := b.exchange_type
 
 	for {
 		select {
@@ -114,13 +123,13 @@ func (b *FromAMQP) Run() {
 				continue
 			}
 
-			conn, err := amqp.Dial("amqp://" + username + ":" + password + "@" + host + ":" + port + "/")
+			conn, err = amqp.Dial("amqp://" + username + ":" + password + "@" + host + ":" + port + "/")
 			if err != nil {
 				b.Error(err)
 				continue
 			}
 
-			amqp_chan, err := conn.Channel()
+			amqp_chan, err = conn.Channel()
 			if err != nil {
 				b.Error(err)
 				continue

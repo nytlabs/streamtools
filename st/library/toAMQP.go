@@ -42,11 +42,18 @@ func (b *ToAMQP) Setup() {
 
 // connects to an AMQP topic and emits each message into streamtools.
 func (b *ToAMQP) Run() {
-	var host, port, username, password string
-	var routingkey, exchange, exchange_type string
 	var err error
 	var conn *amqp.Connection
 	var amqp_chan *amqp.Channel
+
+	// Pickup defaults from construction
+	host := b.host
+	port := b.port
+	username := b.username
+	password := b.password
+	routingkey := b.routingkey
+	exchange := b.exchange
+	exchange_type := b.exchange_type
 
 	for {
 		select {
@@ -141,6 +148,10 @@ func (b *ToAMQP) Run() {
 					Priority:        0,
 				},
 			)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
 		case <-b.quit:
 			if amqp_chan != nil {
 				amqp_chan.Close()
