@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=0.2.3
+VERSION=0.2.5
 rm -r release
 mkdir release
 echo "getting go code"
