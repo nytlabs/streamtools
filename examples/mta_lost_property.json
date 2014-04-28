@@ -1,1 +1,235 @@
-{"Blocks":[{"Id":"15","Type":"timeseries","Rule":{"NumSamples":24,"Path":"$num(.LostProperty.NumberOfItemsclaimed)"},"Position":{"X":663,"Y":386}},{"Id":"9","Type":"timeseries","Rule":{"NumSamples":24,"Path":"$num(.LostProperty.NumberOfLostArticles)"},"Position":{"X":550,"Y":382}},{"Id":"24","Type":"unpack","Rule":{"Path":".LostProperty.Category"},"Position":{"X":628,"Y":129}},{"Id":"2","Type":"map","Rule":{"Additive":true,"Map":{"url":"'http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx'"}},"Position":{"X":294,"Y":107}},{"Id":"1","Type":"ticker","Rule":{"Interval":"5s"},"Position":{"X":213,"Y":34}},{"Id":"5","Type":"tolog","Rule":null,"Position":{"X":808,"Y":436}},{"Id":"7","Type":"timeseries","Rule":{"NumSamples":2,"Path":"$num(.LostProperty.NumberOfLostArticles)"},"Position":{"X":338,"Y":307}},{"Id":"26","Type":"unpack","Rule":{"Path":".SubCategory"},"Position":{"X":730,"Y":168}},{"Id":"3","Type":"gethttp","Rule":{"Path":".url"},"Position":{"X":412,"Y":165}},{"Id":"4","Type":"parsexml","Rule":{"Path":".data"},"Position":{"X":537,"Y":230}},{"Id":"21","Type":"map","Rule":{"Additive":true,"Map":{}},"Position":{"X":745,"Y":299}},{"Id":"8","Type":"timeseries","Rule":{"NumSamples":2,"Path":"$num(.LostProperty.NumberOfItemsclaimed)"},"Position":{"X":447,"Y":364}},{"Id":"20","Type":"cache","Rule":{"KeyPath":".SubCategory","TimeToLive":"30m","ValuePath":".count"},"Position":{"X":838,"Y":229}}],"Connections":[{"Id":"10","FromId":"4","ToId":"7","ToRoute":"in"},{"Id":"11","FromId":"4","ToId":"9","ToRoute":"in"},{"Id":"12","FromId":"3","ToId":"4","ToRoute":"in"},{"Id":"14","FromId":"1","ToId":"2","ToRoute":"in"},{"Id":"13","FromId":"2","ToId":"3","ToRoute":"in"},{"Id":"16","FromId":"4","ToId":"15","ToRoute":"in"},{"Id":"17","FromId":"4","ToId":"8","ToRoute":"in"},{"Id":"25","FromId":"4","ToId":"24","ToRoute":"in"},{"Id":"27","FromId":"24","ToId":"26","ToRoute":"in"},{"Id":"33","FromId":"20","ToId":"5","ToRoute":"in"},{"Id":"23","FromId":"21","ToId":"5","ToRoute":"in"},{"Id":"22","FromId":"4","ToId":"21","ToRoute":"in"},{"Id":"28","FromId":"26","ToId":"20","ToRoute":"in"}]}
+{
+  "Connections": [
+    {
+      "ToRoute": "in",
+      "ToId": "7",
+      "FromId": "4",
+      "Id": "10"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "9",
+      "FromId": "4",
+      "Id": "11"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "3",
+      "Id": "12"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "2",
+      "FromId": "1",
+      "Id": "14"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "3",
+      "FromId": "2",
+      "Id": "13"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "15",
+      "FromId": "4",
+      "Id": "16"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "8",
+      "FromId": "4",
+      "Id": "17"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "24",
+      "FromId": "4",
+      "Id": "25"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "26",
+      "FromId": "24",
+      "Id": "27"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "5",
+      "FromId": "20",
+      "Id": "33"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "5",
+      "FromId": "21",
+      "Id": "23"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "21",
+      "FromId": "4",
+      "Id": "22"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "20",
+      "FromId": "26",
+      "Id": "28"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 386,
+        "X": 663
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
+        "NumSamples": 24
+      },
+      "Type": "timeseries",
+      "Id": "15"
+    },
+    {
+      "Position": {
+        "Y": 382,
+        "X": 550
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfLostArticles)",
+        "NumSamples": 24
+      },
+      "Type": "timeseries",
+      "Id": "9"
+    },
+    {
+      "Position": {
+        "Y": 129,
+        "X": 628
+      },
+      "Rule": {
+        "Path": ".LostProperty.Category"
+      },
+      "Type": "unpack",
+      "Id": "24"
+    },
+    {
+      "Position": {
+        "Y": 107,
+        "X": 294
+      },
+      "Rule": {
+        "Map": {
+          "url": "'http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx'"
+        },
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 34,
+        "X": 213
+      },
+      "Rule": {
+        "Interval": "15m0s"
+      },
+      "Type": "ticker",
+      "Id": "1"
+    },
+    {
+      "Position": {
+        "Y": 436,
+        "X": 808
+      },
+      "Rule": null,
+      "Type": "tolog",
+      "Id": "5"
+    },
+    {
+      "Position": {
+        "Y": 307,
+        "X": 338
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfLostArticles)",
+        "NumSamples": 2
+      },
+      "Type": "timeseries",
+      "Id": "7"
+    },
+    {
+      "Position": {
+        "Y": 168,
+        "X": 730
+      },
+      "Rule": {
+        "Path": ".SubCategory"
+      },
+      "Type": "unpack",
+      "Id": "26"
+    },
+    {
+      "Position": {
+        "Y": 165,
+        "X": 412
+      },
+      "Rule": {
+        "Path": ".url"
+      },
+      "Type": "gethttp",
+      "Id": "3"
+    },
+    {
+      "Position": {
+        "Y": 230,
+        "X": 537
+      },
+      "Rule": {
+        "Path": ".data"
+      },
+      "Type": "parsexml",
+      "Id": "4"
+    },
+    {
+      "Position": {
+        "Y": 299,
+        "X": 745
+      },
+      "Rule": {
+        "Map": {},
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "21"
+    },
+    {
+      "Position": {
+        "Y": 364,
+        "X": 447
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
+        "NumSamples": 2
+      },
+      "Type": "timeseries",
+      "Id": "8"
+    },
+    {
+      "Position": {
+        "Y": 229,
+        "X": 838
+      },
+      "Rule": {
+        "ValuePath": ".count",
+        "TimeToLive": "30m",
+        "KeyPath": ".SubCategory"
+      },
+      "Type": "cache",
+      "Id": "20"
+    }
+  ]
+}

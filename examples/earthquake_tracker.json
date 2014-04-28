@@ -1,0 +1,178 @@
+{
+  "Connections": [
+    {
+      "ToRoute": "in",
+      "ToId": "12",
+      "FromId": "10",
+      "Id": "17"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "3",
+      "FromId": "2",
+      "Id": "5"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "1",
+      "FromId": "3",
+      "Id": "6"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "20",
+      "FromId": "8",
+      "Id": "21"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "8",
+      "FromId": "1",
+      "Id": "9"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "7",
+      "FromId": "20",
+      "Id": "22"
+    },
+    {
+      "ToRoute": "poll",
+      "ToId": "13",
+      "FromId": "15",
+      "Id": "16"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "13",
+      "FromId": "20",
+      "Id": "23"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "10",
+      "FromId": "20",
+      "Id": "24"
+    }
+  ],
+  "Blocks": [
+    {
+      "Position": {
+        "Y": 94,
+        "X": 162
+      },
+      "Rule": {
+        "Map": {
+          "url": "'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson'"
+        },
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "3"
+    },
+    {
+      "Position": {
+        "Y": 252,
+        "X": 215
+      },
+      "Rule": {
+        "Path": ".features"
+      },
+      "Type": "unpack",
+      "Id": "8"
+    },
+    {
+      "Position": {
+        "Y": 11,
+        "X": 135
+      },
+      "Rule": {
+        "Interval": "1m0s"
+      },
+      "Type": "ticker",
+      "Id": "2"
+    },
+    {
+      "Position": {
+        "Y": 429,
+        "X": 527
+      },
+      "Rule": {
+        "Interval": "10s"
+      },
+      "Type": "ticker",
+      "Id": "15"
+    },
+    {
+      "Position": {
+        "Y": 387,
+        "X": 302
+      },
+      "Rule": {
+        "Path": ".properties.detail"
+      },
+      "Type": "gethttp",
+      "Id": "10"
+    },
+    {
+      "Position": {
+        "Y": 594,
+        "X": 325
+      },
+      "Rule": {
+        "Window": "1m0s"
+      },
+      "Type": "count",
+      "Id": "13"
+    },
+    {
+      "Position": {
+        "Y": 404.9962158203125,
+        "X": 59.976715087890625
+      },
+      "Rule": {
+        "Map": {},
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "7"
+    },
+    {
+      "Position": {
+        "Y": 169,
+        "X": 188
+      },
+      "Rule": {
+        "Path": ".url"
+      },
+      "Type": "gethttp",
+      "Id": "1"
+    },
+    {
+      "Position": {
+        "Y": 459,
+        "X": 356
+      },
+      "Rule": {
+        "Map": {
+          "map": ".properties.products.shakemap[0].contents['download/tvmap.jpg']",
+          "id": ".id"
+        },
+        "Additive": false
+      },
+      "Type": "map",
+      "Id": "12"
+    },
+    {
+      "Position": {
+        "Y": 318,
+        "X": 125
+      },
+      "Rule": {
+        "Path": ".id"
+      },
+      "Type": "dedupe",
+      "Id": "20"
+    }
+  ]
+}
