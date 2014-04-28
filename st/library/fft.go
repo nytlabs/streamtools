@@ -8,7 +8,6 @@ import (
 	"github.com/nytlabs/streamtools/st/util"   // util
 )
 
-// specify those channels we're going to use to communicate with streamtools
 type FFT struct {
 	blocks.Block
 	queryrule chan blocks.MsgChan
@@ -35,12 +34,10 @@ func buildFFT(data tsData) [][]float64 {
 	return Xout
 }
 
-// we need to build a simple factory so that streamtools can make new blocks of this kind
 func NewFFT() blocks.BlockInterface {
 	return &FFT{}
 }
 
-// Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FFT) Setup() {
 	b.Kind = "FFT"
 	b.in = b.InRoute("in")
@@ -50,19 +47,15 @@ func (b *FFT) Setup() {
 	b.out = b.Broadcast()
 }
 
-// Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *FFT) Run() {
 
 	var err error
-	//var path, lagStr string
 	var path string
 	var tree *jee.TokenTree
-	//var lag time.Duration
 
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
 			if !ok {
 				b.Error(errors.New("could not assert rule to map"))
@@ -78,7 +71,6 @@ func (b *FFT) Run() {
 				continue
 			}
 		case <-b.quit:
-			// quit * time.Second the block
 			return
 		case msg := <-b.in:
 			if tree == nil {
@@ -130,9 +122,7 @@ func (b *FFT) Run() {
 			}
 			b.out <- out
 		case respChan := <-b.queryrule:
-			// deal with a query request
 			respChan <- map[string]interface{}{
-				//"Window":     lagStr,
 				"Path": path,
 			}
 		}
