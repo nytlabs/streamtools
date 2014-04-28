@@ -12,13 +12,13 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type FFT struct {
 	blocks.Block
-	queryrule chan chan interface{}
-	queryfft  chan chan interface{}
-	inrule    chan interface{}
-	inpoll    chan interface{}
-	in        chan interface{}
-	out       chan interface{}
-	quit      chan interface{}
+	queryrule chan blocks.MsgChan
+	queryfft  chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	inpoll    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 func buildFFT(data tsData) [][]float64 {
