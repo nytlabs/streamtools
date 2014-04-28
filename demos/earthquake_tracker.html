@@ -23,7 +23,7 @@
         <p id="leadPara" class="lead">
         The USGS offers <a href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of significant earthquakes from the past week, updated every minute, to build a simple earthquake tracker.
         </p>
-        <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" href="#" role="button">Get Started!</a></p>
+        <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
       <div id="reportContainer" style="display: none;">
@@ -55,6 +55,7 @@
     $(document).ready(function() {
         checkForStreamtools();
 
+        var pattern = '';
         var total = 0;
         var events = [];
 
@@ -94,11 +95,13 @@
             if (data.daemon != "OK") {
               alert("Sorry, I couldn't clear out your streamtools. The response I got is: " + JSON.stringify(data));
             } else {
-              $.ajax({
+              $.getJSON("http://localhost:7070/examples/earthquake_tracker.json", function(data) {
+                pattern = JSON.stringify(data);
+                $.ajax({
                   type: "POST",
                   crossDomain: true,
                   url: "http://localhost:7070/import", 
-                  data: JSON.stringify({"Blocks":[{"Id":"3","Type":"map","Rule":{"Additive":true,"Map":{"url":"'http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson'"}},"Position":{"X":162,"Y":94}},{"Id":"8","Type":"unpack","Rule":{"Path":".features"},"Position":{"X":215,"Y":252}},{"Id":"2","Type":"ticker","Rule":{"Interval":"1m0s"},"Position":{"X":135,"Y":11}},{"Id":"15","Type":"ticker","Rule":{"Interval":"10s"},"Position":{"X":527,"Y":429}},{"Id":"10","Type":"gethttp","Rule":{"Path":".properties.detail"},"Position":{"X":302,"Y":387}},{"Id":"13","Type":"count","Rule":{"Window":"1m0s"},"Position":{"X":325,"Y":594}},{"Id":"7","Type":"map","Rule":{"Additive":true,"Map":{}},"Position":{"X":59.976715087890625,"Y":404.9962158203125}},{"Id":"1","Type":"gethttp","Rule":{"Path":".url"},"Position":{"X":188,"Y":169}},{"Id":"12","Type":"map","Rule":{"Additive":false,"Map":{"id":".id","map":".properties.products.shakemap[0].contents['download/tvmap.jpg']"}},"Position":{"X":356,"Y":459}},{"Id":"20","Type":"dedupe","Rule":{"Path":".id"},"Position":{"X":125,"Y":318}}],"Connections":[{"Id":"17","FromId":"10","ToId":"12","ToRoute":"in"},{"Id":"5","FromId":"2","ToId":"3","ToRoute":"in"},{"Id":"6","FromId":"3","ToId":"1","ToRoute":"in"},{"Id":"21","FromId":"8","ToId":"20","ToRoute":"in"},{"Id":"9","FromId":"1","ToId":"8","ToRoute":"in"},{"Id":"22","FromId":"20","ToId":"7","ToRoute":"in"},{"Id":"16","FromId":"15","ToId":"13","ToRoute":"poll"},{"Id":"23","FromId":"20","ToId":"13","ToRoute":"in"},{"Id":"24","FromId":"20","ToId":"10","ToRoute":"in"}]}),
+                  data: pattern,
                   contentType: "application/json; charset=utf-8",
                   dataType: "json",
                   success: function(data) {
@@ -123,19 +126,14 @@
                       }
 
                       $(quakePanel).find(".panel-title").text(quake.properties.title);
-
                       quakeTime = new Date(quake.properties.time);
                       $(quakePanel).find(".quake-time").text(quakeTime.toLocaleDateString("en-US", dateOptions));
-
                       $(quakePanel).find(".quake-alert-level").text(quake.properties.alert);
                       $(quakePanel).find(".quake-status").text(quake.properties.status);
-
                       $(quakePanel).find(".quake-location").text(quake.properties.place);
                       $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
-
                       $(quakePanel).find(".quake-magnitude").text(quake.properties.mag);
                       $(quakePanel).find(".quake-significance").text(quake.properties.sig);
-
                       $(quakePanel).appendTo("#reportContainer");
                       $(quakePanel).show();
                       $("#reportContainer").show();
@@ -151,12 +149,11 @@
                     console.log("Uh oh. We just tried to import the pattern into streamtools, but something went wrong: " + errMsg);
                   }
                 });
-              }
+              });
+            }
           });
-
         });
-
-    });
+      });
   </script>
 
   </body>
