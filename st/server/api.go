@@ -65,7 +65,7 @@ func (s *Server) exampleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", resourceType[vars["type"]])
 	data, _ := Asset("examples/" + vars["file"])
-	w.Write(data)
+	s.apiWrap(w, r, 200, data)
 }
 
 func (s *Server) staticHandler(w http.ResponseWriter, r *http.Request) {
