@@ -3,7 +3,7 @@ var checkForStreamtools = function() {
     dataType: "json",
     url: "http://localhost:7070/status",
     success: function(data) {},
-    error: function() { $(".jumbotron h1").after("<div class='alert alert-danger'>streamtools doesn't seem to be running! make sure it's accessible at <a href='http://localhost:7070'>http://localhost:7070</a></div>"); }
+    error: function() { $("#buttonPara").html("<div class='alert alert-warning'><p>Oops! It doesn't look like streamtools is running on your machine.</p><p><a href='https://github.com/nytlabs/streamtools/releases/tag/0.2.5'>Download the latest</a>, start it up and <a href='" + window.location.href + "'>reload this page</a> to see this demo in action.</div>"); }
   });
 };
 
