@@ -262,6 +262,10 @@ func (e *ToEmail) Run() {
 			}
 			return
 		case msg := <-e.in:
+			if e.client == nil {
+				e.Error(fmt.Errorf("no smtp client available for toEmail block. please check the credentials."))
+				continue
+			}
 			if err = e.Send(msg); err != nil {
 				e.Error(err.Error())
 				continue
