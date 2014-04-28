@@ -52,7 +52,7 @@ button {
 }
 
 .btn-download:hover{
-	/*background-color:rgba(52, 152, 219, .5);*/
+	background-color:rgba(52, 152, 219, .5);
 }
 
 h2 {
@@ -60,17 +60,20 @@ h2 {
 }
 
 .btn-demos {
-		border:3px solid #49afcd;
-	/*background-color:#49afcd;*/
+	border:3px solid #49afcd;
 	color:white;
 }
 
 .btn-demos:hover {
-	
+	background-color:rgba(73, 175, 205, .5);
 }
 
 .btn-learn {
-	border:3px solid lightgray;
+	border:3px solid darkgray;
+}
+
+.btn-learn:hover {
+	background-color:rgba(128, 128, 128, .5);
 }
 
 .terminal-style {
@@ -81,7 +84,7 @@ h2 {
 }
 
 .terminal-style > * {
-	/*background-color:transparent;*/
+	background-color:transparent;
 	color:inherit;
 	display:block;
 }
