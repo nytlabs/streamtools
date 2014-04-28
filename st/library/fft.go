@@ -6,10 +6,8 @@ import (
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"time"
 )
 
-// specify those channels we're going to use to communicate with streamtools
 type FFT struct {
 	blocks.Block
 	queryrule chan blocks.MsgChan
@@ -36,41 +34,28 @@ func buildFFT(data tsData) [][]float64 {
 	return Xout
 }
 
-// we need to build a simple factory so that streamtools can make new blocks of this kind
 func NewFFT() blocks.BlockInterface {
 	return &FFT{}
 }
 
-// Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FFT) Setup() {
 	b.Kind = "FFT"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
-	b.queryfft = b.QueryRoute("fft")
-	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
 }
 
-// Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *FFT) Run() {
 
 	var err error
-	//var path, lagStr string
 	var path string
 	var tree *jee.TokenTree
-	//var lag time.Duration
-	var data tsData
-	var numSamples float64
-
-	// defaults
-	numSamples = 512
 
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
 			if !ok {
 				b.Error(errors.New("could not assert rule to map"))
@@ -85,66 +70,61 @@ func (b *FFT) Run() {
 				b.Error(err)
 				continue
 			}
-			numSamples, err = util.ParseFloat(rule, "NumSamples")
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			data = tsData{
-				Values: make([]tsDataPoint, int(numSamples)),
-			}
-
 		case <-b.quit:
-			// quit * time.Second the block
 			return
 		case msg := <-b.in:
 			if tree == nil {
 				continue
 			}
-			if data.Values == nil {
-				continue
-			}
-			// deal with inbound data
-			v, err := jee.Eval(tree, msg)
+			vI, err := jee.Eval(tree, msg)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			var val float64
-			switch v := v.(type) {
-			case float32:
-				val = float64(v)
-			case int:
-				val = float64(v)
-			case float64:
-				val = v
+			v, ok := vI.([]interface{})
+			if !ok {
+				b.Error(errors.New("could not assert timeseries to an array"))
+				continue
 			}
-
-			//t := float64(time.Now().Add(-lag).Unix())
-			t := float64(time.Now().Unix())
-
-			d := tsDataPoint{
-				Timestamp: t,
-				Value:     val,
+			values := make([]tsDataPoint, len(v))
+			for i, vi := range v {
+				value, ok := vi.(map[string]interface{})
+				if !ok {
+					b.Error(errors.New("could not assert value to map"))
+					continue
+				}
+				tI, ok := value["timestamp"]
+				if !ok {
+					b.Error(errors.New("could not find timestamp in value"))
+					continue
+				}
+				t, ok := tI.(float64)
+				if !ok {
+					b.Error(errors.New("could not assert timestamp to float"))
+					continue
+				}
+				yI, ok := value["value"]
+				if !ok {
+					b.Error(errors.New("could not assert timeseries value to float"))
+					continue
+				}
+				y, ok := yI.(float64)
+				values[i] = tsDataPoint{
+					Timestamp: t,
+					Value:     y,
+				}
 			}
-			data.Values = append(data.Values[1:], d)
-		case respChan := <-b.queryrule:
-			// deal with a query request
-			respChan <- map[string]interface{}{
-				//"Window":     lagStr,
-				"Path":       path,
-				"NumSamples": numSamples,
+			data := tsData{
+				Values: values,
 			}
-		case respChan := <-b.queryfft:
-			out := map[string]interface{}{
-				"fft": buildFFT(data),
-			}
-			respChan <- out
-		case <-b.inpoll:
 			out := map[string]interface{}{
 				"fft": buildFFT(data),
 			}
 			b.out <- out
+		case respChan := <-b.queryrule:
+			respChan <- map[string]interface{}{
+				"Path": path,
+			}
 		}
 	}
 }
