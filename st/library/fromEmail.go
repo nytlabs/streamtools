@@ -6,7 +6,7 @@ import (
 	"net/mail"
 	"time"
 
-	"code.google.com/p/go-imap/go1/imap"
+	"github.com/mxk/go-imap/imap"
 
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/util"

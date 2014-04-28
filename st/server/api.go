@@ -413,6 +413,11 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 	c.readPump(recv)
 }
 
+// Handles OPTIONS requests for cross-domain pattern importing (see streamtools-tutorials)
+func (s *Server) optionsHandler(w http.ResponseWriter, r *http.Request) {
+	s.apiWrap(w, r, 200, s.response("OK"))
+}
+
 // importHandler accepts a JSON through POST that updats the state of ST
 // It handles naming collisions by modifying the incoming block pattern.
 func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
@@ -984,6 +989,8 @@ func (s *Server) response(statusTxt string) []byte {
 func (s *Server) apiWrap(w http.ResponseWriter, r *http.Request, statusCode int, data []byte) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE, OPTIONS")
 	w.WriteHeader(statusCode)
 	w.Write(data)
 
@@ -1067,17 +1074,21 @@ func (s *Server) Run() {
 	r.HandleFunc("/profstop", s.profStopHandler)
 	r.HandleFunc("/clear", s.clearHandler).Methods("GET")
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
+	r.HandleFunc("/import", s.optionsHandler).Methods("OPTIONS")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")
 	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                         // list all blocks
 	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                      // create block w/o id
+	r.HandleFunc("/blocks", s.optionsHandler).Methods("OPTIONS")                       // allow cross-domain
 	r.HandleFunc("/blocks/{id}", s.blockInfoHandler).Methods("GET")                    // get block info
 	r.HandleFunc("/blocks/{id}", s.updateBlockHandler).Methods("PUT")                  // update block
 	r.HandleFunc("/blocks/{id}", s.deleteBlockHandler).Methods("DELETE")               // delete block
 	r.HandleFunc("/blocks/{id}/{route}", s.sendRouteHandler).Methods("POST")           // send to block route
 	r.HandleFunc("/blocks/{id}/{route}", s.queryBlockHandler).Methods("GET")           // get from block route
+	r.HandleFunc("/blocks/{id}/{route}", s.optionsHandler).Methods("OPTIONS")          // allow cross-domain
 	r.HandleFunc("/ws/{id}", s.websocketHandler).Methods("GET")                        // websocket handler
 	r.HandleFunc("/stream/{id}", s.streamHandler).Methods("GET")                       // http stream handler
 	r.HandleFunc("/connections", s.createConnectionHandler).Methods("POST")            // create connection
+	r.HandleFunc("/connections", s.optionsHandler).Methods("OPTIONS")                  // allow cross-domain
 	r.HandleFunc("/connections", s.listConnectionHandler).Methods("GET")               // list connections
 	r.HandleFunc("/connections/{id}", s.connectionInfoHandler).Methods("GET")          // get info for connection
 	r.HandleFunc("/connections/{id}", s.deleteConnectionHandler).Methods("DELETE")     // delete connection

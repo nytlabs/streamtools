@@ -2,6 +2,7 @@ package library
 
 import (
 	"container/heap"
+	"encoding/json"
 	"errors"
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
@@ -17,6 +18,9 @@ type Cache struct {
 	inrule      blocks.MsgChan
 	in          blocks.MsgChan
 	lookup      blocks.MsgChan
+	keys        chan blocks.MsgChan
+	values      chan blocks.MsgChan
+	dump        chan blocks.MsgChan
 	out         blocks.MsgChan
 	quit        blocks.MsgChan
 }
@@ -31,6 +35,10 @@ type item struct {
 	lastSeen time.Time
 }
 
+func (i item) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.value)
+}
+
 // Cacheup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Cache) Setup() {
 	b.Kind = "Cache"
@@ -43,6 +51,9 @@ func (b *Cache) Setup() {
 
 	b.in = b.InRoute("in")
 	b.lookup = b.InRoute("lookup")
+	b.keys = b.QueryRoute("keys")
+	b.values = b.QueryRoute("values")
+	b.dump = b.QueryRoute("dump")
 }
 
 func extractAndUpdate(k string, values map[string]item, ttlQueue *PriorityQueue) (map[string]interface{}, error) {
@@ -70,7 +81,7 @@ func extractAndUpdate(k string, values map[string]item, ttlQueue *PriorityQueue)
 func (b *Cache) Run() {
 	var keyPath, valuePath, ttlString string
 	var ttl time.Duration
-	values := make(map[string]item)
+	cache := make(map[string]item)
 	ttlQueue := &PriorityQueue{}
 
 	var keyTree, valueTree *jee.TokenTree
@@ -120,7 +131,7 @@ func (b *Cache) Run() {
 				b.Error(err)
 				continue
 			}
-			out, err := extractAndUpdate(k, values, ttlQueue)
+			out, err := extractAndUpdate(k, cache, ttlQueue)
 			if err != nil {
 				b.Error(err)
 				continue
@@ -132,12 +143,40 @@ func (b *Cache) Run() {
 				b.Error(errors.New("Must specify a key to lookup"))
 			}
 			for _, ki := range k {
-				out, err := extractAndUpdate(ki, values, ttlQueue)
+				out, err := extractAndUpdate(ki, cache, ttlQueue)
 				if err != nil {
 					b.Error(err)
 					continue
 				}
 				q.RespChan <- out
+			}
+
+		case responseChan := <-b.keys:
+			keys := make([]string, len(cache))
+			i := 0
+			for key := range cache {
+				keys[i] = key
+				i++
+			}
+
+			responseChan <- map[string]interface{}{
+				"keys": keys,
+			}
+
+		case responseChan := <-b.values:
+			values := make([]interface{}, len(cache))
+			i := 0
+			for _, item := range cache {
+				values[i] = item
+				i++
+			}
+			responseChan <- map[string]interface{}{
+				"values": values,
+			}
+
+		case responseChan := <-b.dump:
+			responseChan <- map[string]interface{}{
+				"dump": cache,
 			}
 
 		case msg := <-b.in:
@@ -163,10 +202,11 @@ func (b *Cache) Run() {
 				break
 			}
 			now := time.Now()
-			values[k] = item{
+			cache[k] = item{
 				value:    v,
 				lastSeen: now,
 			}
+
 			queueMessage := &PQMessage{
 				val: k,
 				t:   now,
@@ -193,8 +233,8 @@ func (b *Cache) Run() {
 			}
 			i := itemI.(*PQMessage)
 			k := i.val.(string)
-			if i.t.Equal(values[k].lastSeen) {
-				delete(values, k)
+			if i.t.Equal(cache[k].lastSeen) {
+				delete(cache, k)
 			}
 		}
 	}
