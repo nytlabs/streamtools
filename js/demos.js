@@ -7,3 +7,8 @@ var checkForStreamtools = function() {
   });
 };
 
+var randomElement = function(arr) {
+  index = Math.floor(Math.random() * (arr.length - 0) + 0);
+  item = arr[index];
+  return item;
+}
