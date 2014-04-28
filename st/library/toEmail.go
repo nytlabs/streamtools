@@ -196,6 +196,10 @@ func (e *ToEmail) Send(msg interface{}) error {
 		return err
 	}
 
+	if e.client == nil {
+		return fmt.Errorf("no SMTP client available for sending. check credentials")
+	}
+
 	// set the 'from'
 	if err = e.client.Mail(from); err != nil {
 		return err
