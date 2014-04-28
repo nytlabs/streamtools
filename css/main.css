@@ -1,0 +1,83 @@
+html > * {
+	font:Helvetica;
+}
+
+p {
+	color:gray;
+	font-size:1.25em;
+}
+
+.jumbotron {
+	position:relative;
+}
+
+.jumbotron .black-1 {
+	width:40px;
+	height:40px;
+	position:absolute;
+	top:0;
+	left:0;
+	background-color:black;
+}
+
+.jumbotron .red {
+	width:40px;
+	height:40px;
+	position:absolute;
+	top:0;
+	right:0;
+	background-color:red;
+}
+
+.jumbotron .black-2 {
+	width:40px;
+	height:40px;
+	position:absolute;
+	bottom:0;
+	left:0;
+	background-color:black;
+}
+
+.jumbotron button {
+	margin-top:20px;
+}
+
+button {
+	border:0px;
+	box-shadow:none;
+}
+
+.container {
+	margin-bottom:25px;
+}
+
+.btn-learn, .btn-download, .btn-demos {
+	padding:20px 30px 20px 30px;
+}
+
+.btn-download {
+	background-color:#3498DB;
+	color:white;
+}
+
+h2 {
+	margin-left:12px;
+}
+
+.btn-demos {
+	background-color:#49afcd;
+	color:white;
+}
+
+.terminal-style {
+	text-align:left;
+	background-color:black;
+	border-radius:5px;
+	color:white;
+}
+
+.terminal-style > * {
+	background-color:transparent;
+	color:inherit;
+	display:block;
+}
