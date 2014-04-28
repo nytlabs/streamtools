@@ -68,68 +68,68 @@ $(function() {
     // Click-to-add blocks from reference panel
     $("body").on("click", "#ui-ref-blockdefs ul li", function() {
         var blockType = $(this).attr('data-block-type');
-        $.ajax({ 
-            url: '/blocks', 
-            type: 'POST', 
-            data:JSON.stringify({ 
-                'Type':blockType, 
-                'Position': 
-                { 
-                    'X':$(window).width()/2, 
-                    'Y':$(window).height()/2 
-                } 
-        }), 
-        success: function(result) {} });
+        $.ajax({
+            url: '/blocks',
+            type: 'POST',
+            data: JSON.stringify({
+                'Type': blockType,
+                'Position': {
+                    'X': $(window).width() / 2,
+                    'Y': $(window).height() / 2
+                }
+            }),
+            success: function(result) {}
+        });
     });
 
     // Displays exported pattern in a copy-able window pane
     $("body").on("click", "#ui-ref-export", function(e) {
-      e.preventDefault;
-      $.getJSON('/export', function(pattern) {
-        createStaticPanel('export', JSON.stringify(pattern));
-      });
+        e.preventDefault;
+        $.getJSON('/export', function(pattern) {
+            createStaticPanel('export', JSON.stringify(pattern));
+        });
     });
 
     // Displays a panel with textarea you can paste a pattern into
     $("body").on("click", "#ui-ref-import", function(e) {
-      e.preventDefault;
-      createImportPanel('enter a pattern', '');
+        e.preventDefault;
+        createImportPanel('enter a pattern', '');
     });
 
     // Import the pattern into streamtools
     $("body").on("click", ".import", function(e) {
-      e.preventDefault;
-      pattern = $(this).parent().find(".import-pattern").val();
-      $.ajax({
-          url: '/import',
-          type: 'POST',
-          data: pattern,
-          success: function(result) {
-            $(this).parent().parent().remove();
-          }
-      });
+        e.preventDefault;
+        pattern = $(this).parent().find(".import-pattern").val();
+        $.ajax({
+            url: '/import',
+            type: 'POST',
+            data: pattern,
+            success: function(result) {
+                $(this).parent().parent().remove();
+            }
+        });
     });
 
     // "Are you sure?" you want to clear streamtools yes/no
     $("body").on("click", "#ui-ref-clear", function(e) {
-      e.preventDefault;
-      $(this).parent().append("<div class='confirm'>Are you sure?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
+        e.preventDefault;
+        $(this).parent().append("<div class='confirm'>Are you sure?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
     });
 
     // clears streamtools upon confirmation
     $("body").on("click", ".confirm-yes", function(e) {
-      e.preventDefault;
-      $.ajax({
-          url: '/clear',
-          type: 'GET',
-          success: function(result) {
-            $("div.confirm").remove();
-          }
-      });
+        e.preventDefault;
+        $.ajax({
+            url: '/clear',
+            type: 'GET',
+            success: function(result) {
+                $("div.confirm").remove();
+            }
+        });
     });
     $("body").on("click", ".confirm-no", function(e) {
-      e.preventDefault;
-      $("div.confirm").remove();
+        e.preventDefault;
+        $("div.confirm").remove();
     });
 
     //
@@ -346,8 +346,7 @@ $(function() {
         }
     });
 
-    $("#ui-ref-contents").on("click", ".quick-add", function() {
-    });
+    $("#ui-ref-contents").on("click", ".quick-add", function() {});
 
     $('#log').click(function() {
         if ($(this).hasClass('log-max')) {
@@ -562,11 +561,14 @@ $(function() {
 
             var blocks = [];
             d3.entries(library).forEach(function(key, value) {
-              blocks.push({type: key.key, desc: key.value.Desc})
+                blocks.push({
+                    type: key.key,
+                    desc: key.value.Desc
+                })
             });
             var refTemplate = $('#ui-ref-item-template').html();
             var refTmpl = _.template(refTemplate, {
-              data: blocks
+                data: blocks
             });
             $("#ui-ref-contents").html(refTmpl);
         };
@@ -736,6 +738,9 @@ $(function() {
                     var val = ruleInput.val();
                     var type = ruleInput.attr("data-type");
                     switch (type) {
+                        case 'script':
+                            rule[key] = val;
+                            break;
                         case 'boolean':
                             rule[key] = val === 'true' ? true : false;
                             break;
@@ -1153,4 +1158,3 @@ $(function() {
     }
 
 });
-
