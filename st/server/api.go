@@ -3,12 +3,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
-	"github.com/nytlabs/streamtools/st/blocks"
-	"github.com/nytlabs/streamtools/st/library"
-	"github.com/nytlabs/streamtools/st/loghub"
-	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,6 +11,13 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/loghub"
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 var logStream = hub{
@@ -60,18 +61,6 @@ func (s *Server) rootHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (s *Server) tutorialRootHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	data, _ := Asset("tutorials/index.html")
-	w.Write(data)
-}
-
-func (s *Server) tutorialHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	w.Header().Set("Content-Type", resourceType[vars["type"]])
-	data, _ := Asset("tutorials/" + vars["file"])
-	w.Write(data)
-}
 func (s *Server) exampleHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", resourceType[vars["type"]])
@@ -1066,8 +1055,6 @@ func (s *Server) Run() {
 	r.HandleFunc("/ui", s.serveUIStream)
 	r.HandleFunc("/version", s.versionHandler)
 	r.HandleFunc("/top", s.topHandler)
-	r.HandleFunc("/tutorials", s.tutorialRootHandler)
-	r.HandleFunc("/tutorials/{file}", s.tutorialHandler)
 	r.HandleFunc("/examples/{file}", s.exampleHandler)
 	r.HandleFunc("/status", s.statusHandler)
 	r.HandleFunc("/profstart", s.profStartHandler)
