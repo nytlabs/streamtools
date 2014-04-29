@@ -63,7 +63,11 @@ func (e *ToEmail) initClient() error {
 func (e *ToEmail) closeClient() error {
 	// quit, close and return
 	var err error
-	if err = e.client.Quit(); err != nil {
+	if e.client == nil {
+		return nil
+	}
+	err = e.client.Quit()
+	if err != nil {
 		// quit failed. try a simple close
 		err = e.client.Close()
 	}
@@ -257,7 +261,8 @@ func (e *ToEmail) Run() {
 
 		case <-e.quit:
 			// quit, close and return
-			if err = e.closeClient(); err != nil {
+			err := e.closeClient()
+			if err != nil {
 				e.Error(err.Error())
 			}
 			return
