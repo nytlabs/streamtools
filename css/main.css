@@ -78,7 +78,7 @@ h3 {
 	color:white;
 }
 
-.download img:hover, .btn-download:hover{
+.btn-download:hover{
 	background-color:rgba(52, 152, 219, .5);
 }
 
@@ -127,10 +127,15 @@ h3 {
 	text-align:center;
 	padding:10px;
 	border-radius:10px;
-  border: 3px solid #3498DB;
-	transition: background .25s ease-in-out;
-	-moz-transition: background .25s ease-in-out;
-	-webkit-transition: background .25s ease-in-out;
+  	border: 3px solid #3498DB;
+	transition: all .25s ease-in-out;
+	-moz-transition: all .25s ease-in-out;
+	-webkit-transition: all .25s ease-in-out;
+}
+
+.download img:hover {
+	border:3px solid #0071bc;
+	background-color: #0071bc;
 }
 
 @media(max-width:992px) {
