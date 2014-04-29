@@ -11,6 +11,10 @@ p {
 	text-align:center;
 }
 
+.footer {
+	font-size:1em;
+}
+
 a {
 	color:#5EB5EC;
 }
@@ -131,4 +135,10 @@ h3 {
 .easy-install {
 	border-right:1px solid lightgray;
 }	
+}
+
+.intro-gif {
+	display:block;
+	margin-left:auto;
+	margin-right:auto;
 }

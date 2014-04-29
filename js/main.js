@@ -10,6 +10,7 @@ $(document).ready(function(){
     if (OSName == "Windows")    $(".download-windows").addClass('selected-OS');
     if (OSName == "MacOS")      $(".download-mac").addClass('selected-OS');
     if (OSName == "Linux")      $(".download-linux").addClass('selected-OS');
+    if (OSName == "")           $(".download-none").addClass('selected-OS')
 
     $(".download").not(".selected-OS").css('display', 'none');
 
