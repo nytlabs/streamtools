@@ -10,13 +10,40 @@
         <link rel="stylesheet" href="/css/tutorials.css">
         <script src="/js/demos.js"></script>
   </head>
-  <body>
+  <body id="demosIndex">
+  <nav class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
     <div class="container">
-      <ol class="breadcrumb">
-        <li><a href="/">streamtools</a></li>
-        <li><a href="/demos">demos</a></li>
-        <li class="active">mta</li>
-      </ol>
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/">streamtools </a>
+      </div>
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/demos">demos</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools/releases">download</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools/wiki">wiki</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools">source</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><p class="navbar-text">a graphical toolkit for working with streams of data</p></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+  
       <p class="small">
       Our demos interact with your local instance of streamtools (at <a href='http://localhost:7070'>http://localhost:7070</a>). This allows you to tinker with it live, getting immediate results. 
       </p>
