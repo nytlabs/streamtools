@@ -4,7 +4,16 @@
 }
 
 .logo-header-small {
-	max-width:50px;
-	max-height:50px;
+	max-width:45px;
+	max-height:45px;
 }
+
+#demosIndex .navbar-brand {
+    color: rgba(255,80,80,1);
+}
+
+.navbar-logo {
+  padding: 0;
+}
+body { padding-top: 70px; }
 
