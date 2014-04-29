@@ -76,7 +76,11 @@ func (e *ToEmail) reconnect(wait time.Duration) error {
 func (e *ToEmail) closeClient() error {
 	// quit, close and return
 	var err error
-	if err = e.client.Quit(); err != nil {
+	if e.client == nil {
+		return nil
+	}
+	err = e.client.Quit()
+	if err != nil {
 		// quit failed. try a simple close
 		err = e.client.Close()
 	}
