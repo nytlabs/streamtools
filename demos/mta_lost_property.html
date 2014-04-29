@@ -7,7 +7,7 @@
         <link rel="stylesheet" href="/css/bootstrap.min.css">
         <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
         <script src="/js/bootstrap.min.js"></script>
-        <link rel="stylesheet" href="/css/tutorials.css">
+        <link rel="stylesheet" href="/css/demos.css">
         <script src="/js/demos.js"></script>
   </head>
   <body id="demosIndex">
@@ -15,6 +15,7 @@
     <div class="container">
       <!-- Brand and toggle get grouped for better mobile display -->
       <div class="navbar-header">
+        <img src="../img/logo.png" class="navbar-logo">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
           <span class="sr-only">Toggle navigation</span>
           <span class="icon-bar"></span>
@@ -44,46 +45,58 @@
     </div><!-- /.container-fluid -->
   </nav>
   
-      <p class="small">
-      Our demos interact with your local instance of streamtools (at <a href='http://localhost:7070'>http://localhost:7070</a>). This allows you to tinker with it live, getting immediate results. 
-      </p>
       <div class="jumbotron">
         <h1>NYC Transit Lost &amp; Found</h1>
         <p id="leadPara" class="lead">
-        The NYC transit system keeps <a href="http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx">a pretty detailed tally of items reported as lost by riders</a>, updated hourly. Unfortunately the data is provided in XML. This example shows how you can use streamtools to turn that into something you can work with: a pollable JSON endpoint.
+        The NYC transit system keeps <a target="_new" href="http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx">a pretty detailed tally of items reported as lost by riders</a>, updated hourly. Unfortunately the data is provided in XML. This example shows how you can use streamtools to turn that into something you can work with: a pollable JSON endpoint.
         </p>
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
-      <div id="reportContainer" style="display: none;">
-        <div>
-          <div class="panel panel-info">
-            <div class="panel-heading">
-              <h3 class="panel-title">Lost & Found</h3>
-            </div>
-            <div class="panel-body">
-              <p>
-                <span id="totalLost"></span> total items reported lost.<br>
-                <span id="diffLost" style="display: none;"></span>
-              </p>
-              <p>
-                <span id="totalClaimed"></span> total reunited with their owners<br>
-                <span id="diffClaimed" style="display: none;"></span>
-              </p>
-            </div>
+      <div id="reportContainer" class="container" style="display: none;">
+        <div class="row">
+          <div class="col-md-4">
+            <h3>Lost</h3>
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Your_Icon" x="0px" y="0px" width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
+            <g>
+              <path d="M50.592,38.385c4.061,0,7.354-3.292,7.354-7.353c0-4.06-3.293-7.352-7.354-7.352c-4.059,0-7.352,3.292-7.352,7.352   C43.241,35.092,46.534,38.385,50.592,38.385z"/>
+              <path d="M77.511,43.692c-1.33-1.291-3.461-1.264-4.758,0.072l-4.924,5.074l-8.815-6.222C58.445,42.215,57.767,42,57.072,42H44.055   c-0.565,0-1.121,0.143-1.616,0.414L32.36,47.937l-5.098-5.307c-1.286-1.338-3.416-1.382-4.757-0.096   c-1.34,1.289-1.383,3.418-0.095,4.758l6.883,7.165c1.054,1.095,2.704,1.353,4.036,0.618L42,50.32v40.762   c0,1.857,1.142,3.364,3,3.364c1.858,0,3-1.507,3-3.364V66h4v25.082c0,1.857,1.141,3.364,2.999,3.364S58,92.939,58,91.082V50.095   l8.33,5.901c0.586,0.412,1.25,0.614,1.926,0.614c0.883,0,1.752-0.348,2.406-1.021l6.926-7.139   C78.881,47.117,78.846,44.987,77.511,43.692z"/>
+            </g>
+            <g>
+              <path d="M48.576,12.183c0-2.169,2.702-2.426,2.702-3.694c0-0.57-0.441-1.048-1.451-1.048c-0.919,0-1.691,0.441-2.261,1.14   l-1.488-1.672c0.974-1.158,2.444-1.782,4.024-1.782c2.372,0,3.823,1.194,3.823,2.903c0,2.683-3.069,2.885-3.069,4.429   c0,0.293,0.147,0.606,0.349,0.771l-2.021,0.588C48.796,13.396,48.576,12.826,48.576,12.183z M48.576,16.281   c0-0.809,0.68-1.488,1.488-1.488c0.81,0,1.489,0.68,1.489,1.488s-0.679,1.488-1.489,1.488   C49.255,17.769,48.576,17.089,48.576,16.281z"/>
+            </g>
+            </svg>
+          </div>
+          <div class="col-md-4">
+              <h3 id="subCategory"></h3>
+              <p id="subCategoryCount"></p>
+          </div>
+          <div class="col-md-4">
+            <h3 style="padding-bottom: 10px;">Claimed</h3>
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" width="90px" height="75px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
+            <g id="Captions">
+              <text transform="matrix(1 0 0 1 87.2129 -19.5)" font-family="'Helvetica'" font-size="2.4">S&#233;vag+Tina</text>
+            </g>
+            <line fill="none" stroke="#000000" stroke-width="0.25" stroke-miterlimit="10" x1="100" y1="-18.346" x2="87.213" y2="-18.346"/>
+            <g>
+              <g>
+                <path fill="#000000" d="M60.176,10.543c0,5.623-4.551,10.178-10.175,10.178c-5.625,0-10.176-4.555-10.176-10.178    c0-5.615,4.55-10.168,10.176-10.168C55.625,0.375,60.176,4.928,60.176,10.543z"/>
+                <g>
+                  <path fill="#000000" d="M85.679,8.688L61.875,32.498v62.417c0,2.812-2.285,5.085-5.093,5.085s-5.088-2.273-5.088-5.085V61.004     c0-0.935-0.757-1.696-1.694-1.696c-0.938,0-1.694,0.762-1.694,1.696v33.911c0,2.812-2.28,5.085-5.083,5.085     c-2.812,0-5.098-2.273-5.098-5.085V32.498L14.322,8.688c-1.987-1.987-1.987-5.21,0-7.197s5.21-1.987,7.192,0     c0,0,12.343,12.59,16.611,16.621c2.427,2.276,6.768,5.997,11.875,5.997c5.107,0,9.453-3.721,11.875-5.997     C66.143,14.081,78.486,1.49,78.486,1.49c1.982-1.987,5.205-1.987,7.192,0S87.666,6.7,85.679,8.688z"/>
+                </g>
+              </g>
+            </g>
+            </svg>
           </div>
         </div>
-        <div id="lostDetails">
-          <h3>What was lost?</h3>
-        </div>
-        <div>
-          <div class="panel panel-warning">
-            <div class="panel-heading">
-              <h3 class="panel-title" id="subCategory"></h3>
-            </div>
-            <div class="panel-body">
-              <p id="subCategoryCount"></p>
-            </div>
+        <div class="row">
+          <div class="col-md-4">
+            <h3><span id="totalLost"></span></h3>
+          </div>
+          <div class="col-md-4">
+          </div>
+          <div class="col-md-4">
+            <h3><span id="totalClaimed"></span></h3>
           </div>
         </div>
       </div>
@@ -132,28 +145,22 @@
 
         function getTotalLost() {
           $.getJSON("http://localhost:7070/blocks/7/timeseries", function(lostTs) {
-            prev = lostTs.timeseries.Values[0].Value;
             totalLost = lostTs.timeseries.Values[1].Value;
             $("#totalLost").text(totalLost);
             $("#reportContainer").show();
-            if (prev != 0) {
-              $("#diffLost").text(totalLost - prev);
-              $("#diffLost").show();
-            }
           });
         }
 
         function getTotalClaimed() {
           $.getJSON("http://localhost:7070/blocks/8/timeseries", function(claimedTs) {
-            prev = claimedTs.timeseries.Values[0].Value;
             totalClaimed = claimedTs.timeseries.Values[1].Value;
             $("#totalClaimed").text(totalClaimed);
             $("#reportContainer").show();
-            if (prev != 0) {
-              $("#diffClaimed").text(totalClaimed - prev);
-              $("#diffClaimed").show();
-            }
           });
+        }
+
+        function showCredits() {
+          $("#credits").fadeIn(1000);
         }
 
         function kickOff() {
@@ -167,13 +174,14 @@
                   $("#leadPara").hide();
                   $("#buttonPara").hide();
                   $("#leadPara").html("Streamtools is now polling the MTA's lost property endpoint every 15 minutes. This page will update with new data as it comes in. ");
-                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='_new' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
 
                   $("#leadPara").fadeIn("slow");
                   $("#buttonPara").fadeIn("slow");
                   setTimeout(getTotalLost, 5000);
                   setTimeout(getTotalClaimed, 5000);
                   setTimeout(grabKeys, 5000);
+                  setTimeout(showCredits, 6000);
 
                   setInterval(getTotalLost, 30000);
                   setInterval(getTotalClaimed, 30000);
@@ -226,5 +234,9 @@
     });
   </script>
 
+  <div class="container" id="credits">
+    <div class="attribution">Question designed by <a href="http://www.thenounproject.com/awanderlustaffair">Jessica Lock</a> from the <a href="http://www.thenounproject.com">Noun Project</a></div>
+    <div class="attribution">Happy designed by <a href="http://www.thenounproject.com/tina.abihachem">Tina Abi Hachem</a> from the <a href="http://www.thenounproject.com">Noun Project</a></div>
+  </div>
   </body>
 </html>

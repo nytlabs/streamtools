@@ -7,53 +7,78 @@
         <link rel="stylesheet" href="/css/bootstrap.min.css">
         <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
         <script src="/js/bootstrap.min.js"></script>
-        <link rel="stylesheet" href="/css/tutorials.css">
+        <link rel="stylesheet" href="/css/demos.css">
         <script src="/js/demos.js"></script>
   </head>
   <body>
+  <nav class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
     <div class="container">
-      <ol class="breadcrumb">
-        <li><a href="/">streamtools</a></li>
-        <li><a href="/demos">demos</a></li>
-        <li class="active">quakes</li>
-      </ol>
-
-      <p class="small">
-      Our demos interact with your local instance of streamtools (at <a href='http://localhost:7070'>http://localhost:7070</a>). This allows you to tinker with it live, getting immediate results. 
-      </p>
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <img src="../img/logo.png" class="navbar-logo">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/">streamtools </a>
+      </div>
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/demos">demos</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools/releases">download</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools/wiki">wiki</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools">source</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><p class="navbar-text">a graphical toolkit for working with streams of data</p></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
 
       <div class="jumbotron">
         <h1>Earthquake Tracker</h1>
         <p id="leadPara" class="lead">
-        The USGS offers <a href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of significant earthquakes from the past week, updated every minute, to build a simple earthquake tracker.
+        The USGS offers <a target="_new" href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of significant earthquakes from the past week, updated every minute, to build a simple earthquake tracker.
         </p>
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
-      <div id="reportContainer" style="display: none;">
-        <div class="header">
-          <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+      <div id="reportContainer" class="container" style="display: none;">
+        <div class="row">
+          <div class="header">
+            <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="panel panel-info panel-template" style="display: none;">
+            <div class="panel-heading">
+              <h3 class="panel-title"></h3>
+            </div>
+            <div class="panel-body">
+              <div class="pull-left col-md-5 quake-map"></div>
+              <div class="col-md-5">
+                <b>When:</b> <span class="quake-time"></span><br>
+                <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
+                <b>Significance:</b> <span class="quake-significance"></span><br>
+                <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
+                <b>Alert level:</b> <span class="quake-alert-level"></span><br>
+                <b>Status:</b> <span class="quake-status"></span><br>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-    </div> <!-- /container -->
-
-    <div class="panel panel-info panel-template" style="display: none;">
-      <div class="panel-heading">
-        <h3 class="panel-title"></h3>
-      </div>
-      <div class="panel-body">
-        <div class="pull-left col-md-5 quake-map"></div>
-        <div class="col-md-5">
-          <b>When:</b> <span class="quake-time"></span><br>
-          <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
-          <b>Significance:</b> <span class="quake-significance"></span><br>
-          <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
-          <b>Alert level:</b> <span class="quake-alert-level"></span><br>
-          <b>Status:</b> <span class="quake-status"></span><br>
-        </div>
-      </div>
-    </div>
   
   <script>
     $(document).ready(function() {
@@ -82,7 +107,7 @@
                   $("#leadPara").hide();
                   $("#buttonPara").hide();
                   $("#leadPara").html("Streamtools is now polling the USGS endpoint every minute. This page will update with new data as it comes in. ");
-                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='_new' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+                  $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
 
                   $("#leadPara").fadeIn("slow");
                   $("#buttonPara").fadeIn("slow");
