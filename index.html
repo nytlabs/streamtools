@@ -40,10 +40,20 @@
   <div class="container-fluid install">
     <div class="container">
       <div class="row">
-        <h3>Easy to install.</h3>
-        <div class="col-md-12">
-          <p>Make sure you have <code>go</code>, <code>git</code>, <code>hg</code>, and <code>bzr</code> installed.</p>
-          <p>On a fresh *nix system:</p>
+        <h2>Get streamtools now.</h2>
+        <div class="col-md-6 easy-install">
+          <h3 class="centered">Option 1: Easy install.</h3>
+          <p class="centered">Download the binary and be set up in seconds.</p>
+          <div class="download download-windows"><a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_windows_amd64.exe-0.2.5.tar.gz" target="_new"><img class="img-download" src="img/download.png"><p class="centered">(Windows 64-bit)</p></a></div>
+          <div class="download download-mac"><a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_darwin_amd64-0.2.5.tar.gz" target="_new"><img class="img-download" src="img/download.png"><p class="centered">(Mac 64-bit)</p></a></div>
+          <div class="download download-linux"><img class="img-download" src="img/download.png"><p class="centered">(Linux 64-bit)</p></div>
+          <p class="centered">Embedded? Try our <a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_linux_arm-0.2.5.tar.gz" target="_new">BeagleBone build</a>.</p><p class="centered">For all others, <a href="https://github.com/nytlabs/streamtools/releases/tag/0.2.5" target="_new">click here</a>.</p>
+        </div>
+
+        <div class="col-md-6">
+          <h3 class="centered compile">Option 2: Compile it.</h3>
+          <p class="centered">Make sure you have <code>go</code>, <code>git</code>, <code>hg</code>, and <code>bzr</code> installed.</p>
+          <p class="centered">On a fresh *nix system:</p>
           <div class="terminal-style">
             <code>mkdir -p ~/go/src/github.com/nytlabs</code>
             <code>cd ~/go/src/github.com/nytlabs</code>
@@ -51,7 +61,7 @@
             <code>cd streamtools</code>
             <code>make</code>
           </div>
-          <p>To run it, just type <code class="terminal-style">./build/st</code> and visit port 7070.</p>
+          <p class="centered">To run it, just type <code class="terminal-style">./build/st</code> and visit port 7070.</p>
         </div>
       </div>
     </div>
@@ -60,7 +70,7 @@
   <div class="container-fluid learn">
     <div class="container">
       <div class="row">
-        <h3>Learn more.</h3>
+        <h2>Learn more.</h2>
         <div class="col-md-12">
           <p>Check our our <a href="/demos">Demos</a> page to see how use streamtools to poll the MTA's records of list and found items, monitor USGS realtime data for significant earthquakes, and more.</p>
           <p>See how to use the GUI on our <a href="https://github.com/nytlabs/streamtools/wiki/interface">Interface</a> page.</a>

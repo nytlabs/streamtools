@@ -7,6 +7,10 @@ p {
 	font-size:1.25em;
 }
 
+.centered {
+	text-align:center;
+}
+
 a {
 	color:#5EB5EC;
 }
@@ -18,7 +22,7 @@ h2 {
 }
 
 h3 {
-	margin-left:14px;
+	/*margin-left:14px;*/
 	margin-bottom:10px;
 }
 
@@ -95,10 +99,36 @@ h3 {
 	background-color:black;
 	border-radius:5px;
 	color:white;
+	max-width:400px;
+		margin-left:auto;
+	margin-right:auto;
 }
 
 .terminal-style > * {
 	background-color:transparent;
 	color:inherit;
 	display:block;
+
+}
+
+.img-download {
+	max-width:100px;
+	display:block;
+	margin-left:auto;
+	margin-right:auto;
+	/*border-radius:50%;*/
+}
+
+.download img{
+	text-align:center;
+	background-color:green;
+	padding:10px;
+	border-radius:10px;
+}
+
+@media(min-width:992px) {
+
+.easy-install {
+	border-right:1px solid lightgray;
+}	
 }
