@@ -1,3 +1,5 @@
+body { padding-top: 70px; }
+
 .quake-map-image {
   width: 50%;
   height: 50%;
@@ -15,5 +17,8 @@
 .navbar-logo {
   padding: 0;
 }
-body { padding-top: 70px; }
 
+#credits {
+  display: none;
+  margin-top: 50px;
+}
