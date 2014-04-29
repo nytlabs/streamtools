@@ -3,8 +3,12 @@ html > * {
 }
 
 p {
-	color:gray;
+	color:#4f4f4f;
 	font-size:1.25em;
+}
+
+a {
+	color:#5EB5EC;
 }
 
 .jumbotron {
@@ -44,6 +48,9 @@ button {
 	margin:0px 10px 0px 10px;
 	background-color:transparent;
 	color:white;
+	transition: background .25s ease-in-out;
+	-moz-transition: background .25s ease-in-out;
+	-webkit-transition: background .25s ease-in-out;
 }
 
 .btn-download {
