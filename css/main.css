@@ -78,7 +78,7 @@ h3 {
 	color:white;
 }
 
-.btn-download:hover{
+.download img:hover, .btn-download:hover{
 	background-color:rgba(52, 152, 219, .5);
 }
 
@@ -125,9 +125,12 @@ h3 {
 
 .download img{
 	text-align:center;
-	background-color:green;
 	padding:10px;
 	border-radius:10px;
+  border: 3px solid #3498DB;
+	transition: background .25s ease-in-out;
+	-moz-transition: background .25s ease-in-out;
+	-webkit-transition: background .25s ease-in-out;
 }
 
 @media(max-width:992px) {
