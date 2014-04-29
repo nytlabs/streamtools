@@ -25,7 +25,7 @@ Is it in the wiki?:
 - [x] histogram
 - [ ] javascript
 - [x] join
-- [ ] kullbackleibler
+- [x] kullbackleibler
 - [ ] learn
 - [ ] linearModel
 - [ ] logisticModel
