@@ -5,7 +5,7 @@ LIBRARY
 Is it in the wiki?:
 
 - [x] cache
-- [ ] categorical
+- [x] categorical
 - [x] count
 - [ ] dedupe
 - [ ] fft
@@ -47,9 +47,9 @@ Is it in the wiki?:
 - [x] toemail
 - [x] tofile
 - [ ] toggle
-- [ ] tolog
-- [ ] tomongodb
-- [ ] tonsq
+- [x] tolog
+- [x] tomongodb
+- [x] tonsq
 - [ ] tonsqmulti
 - [x] unpack
 - [x] zipf
