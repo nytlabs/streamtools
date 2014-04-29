@@ -75,6 +75,9 @@ func (b *Categorical) Run() {
 			for _, θi := range θ {
 				Z += θi
 			}
+			if Z == 0 {
+				b.Error(errors.New("Weights must not sum to zero"))
+			}
 			for i := range θ {
 				θ[i] /= Z
 			}
