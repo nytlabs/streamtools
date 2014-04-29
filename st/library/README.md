@@ -4,52 +4,52 @@ LIBRARY
 
 Is it in the wiki?:
 
-- [ ] cache
+- [X] cache
 - [ ] categorical
-- [ ] count
+- [X] count
 - [ ] dedupe
 - [ ] fft
-- [ ] filter
-- [ ] fromHTTPGetRequest
+- [X] filter
+- [X] fromHTTPGetRequest
 - [ ] fromamqp
-- [ ] fromemail
+- [X] fromemail
 - [ ] fromfile
 - [ ] fromhttpstream
-- [ ] fromnsq
+- [X] fromnsq
 - [ ] frompost
-- [ ] fromsqs
-- [ ] fromudp
-- [ ] fromwebsocket
-- [ ] gaussian
-- [ ] gethttp
-- [ ] histogram
+- [X] fromsqs
+- [X] fromudp
+- [X] fromwebsocket
+- [X] gaussian
+- [X] gethttp
+- [X] histogram
 - [ ] javascript
-- [ ] join
+- [X] join
 - [ ] kullbackleibler
 - [ ] learn
 - [ ] linearModel
 - [ ] logisticModel
-- [ ] map
-- [ ] mask
-- [ ] movingaverage
-- [ ] pack
+- [X] map
+- [X] mask
+- [X] movingaverage
+- [X] pack
 - [ ] parsexml
-- [ ] poisson
+- [X] poisson
 - [ ] queue
-- [ ] set
-- [ ] sync
-- [ ] ticker
-- [ ] timeseries
+- [X] set
+- [X] sync
+- [X] ticker
+- [X] timeseries
 - [ ] toHTTPGetRequest
 - [ ] toamqp
 - [ ] tobeanstalkd
-- [ ] toelasticsearch
-- [ ] toemail
-- [ ] tofile
+- [X] toelasticsearch
+- [X] toemail
+- [X] tofile
 - [ ] toggle
 - [ ] tolog
 - [ ] tomongodb
 - [ ] tonsq
 - [ ] tonsqmulti
-- [ ] unpack
-- [ ] zipf
+- [X] unpack
+- [X] zipf
