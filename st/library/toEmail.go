@@ -31,6 +31,7 @@ type ToEmail struct {
 	msgPath     string
 
 	client *smtp.Client
+	sent   uint
 }
 
 // NewToEmail is a simple factory for streamtools to make new blocks of this kind.
@@ -57,6 +58,18 @@ func (e *ToEmail) initClient() error {
 	}
 
 	return nil
+}
+
+// reconnect will close the client, sleep 5s and start a new connection.
+func (e *ToEmail) reconnect(wait time.Duration) error {
+	err := e.closeClient()
+	if err != nil {
+		return err
+	}
+	// wait a moment before reconnecting
+	time.Sleep(wait)
+
+	return e.initClient()
 }
 
 // closeClient will attempt to quit or close the block's client.
@@ -116,12 +129,12 @@ func (e *ToEmail) parseAuthRules(msgI interface{}) error {
 		return err
 	}
 
-	e.username, err = util.ParseRequiredString(msgI, "Username")
+	e.username, err = util.ParseString(msgI, "Username")
 	if err != nil {
 		return err
 	}
 
-	e.password, err = util.ParseRequiredString(msgI, "Password")
+	e.password, err = util.ParseString(msgI, "Password")
 	if err != nil {
 		return err
 	}
@@ -189,13 +202,8 @@ func (e *ToEmail) buildEmail(msg interface{}) (from, to string, email []byte, er
 }
 
 // Send will package and send the email.
-func (e *ToEmail) Send(msg interface{}) error {
-	// extract the 'to' and 'from' and build the email body
-	from, to, email, err := e.buildEmail(msg)
-	if err != nil {
-		return err
-	}
-
+func (e *ToEmail) send(from, to string, email []byte) error {
+	var err error
 	// set the 'from'
 	if err = e.client.Mail(from); err != nil {
 		return err
@@ -217,58 +225,93 @@ func (e *ToEmail) Send(msg interface{}) error {
 		return err
 	}
 
+	e.sent++
 	return nil
 }
+
+var errWait = int64(60)
+var normWait = 5 * time.Second
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (e *ToEmail) Run() {
 	var err error
+	// reconnect retries
+	var rretries int64
+	// send retries
+	var sretries int64
 	for {
-		err = nil
 		select {
 		case msgI := <-e.inrule:
 			// get id/pw/host/port for SMTP
 			if err = e.parseAuthRules(msgI); err != nil {
-				e.Error(err.Error())
+				e.Error(err)
 				continue
 			}
 
 			// get the to,from,subject for email
 			if err = e.parseEmailRules(msgI); err != nil {
-				e.Error(err.Error())
+				e.Error(err)
 				continue
 			}
 
-			// if we already have a connection,  close it.
+			// if we don't have a client yet, initiate one.
+			if e.client == nil {
+				if err = e.initClient(); err != nil {
+					e.Error(err)
+				}
+				continue
+			}
+
+			// if we do, start a new connection with new creds
+			if err = e.reconnect(normWait); err != nil {
+				e.Error(err)
+			}
+		case <-e.quit:
 			if e.client != nil {
 				if err = e.closeClient(); err != nil {
-					e.Error(err.Error())
-				} else {
-					// give the connection a moment before reconnect
-					time.Sleep(5 * time.Second)
+					e.Error(fmt.Sprintf("Unable to close smtp connection: %s", err.Error()))
 				}
-			}
-
-			// initiate the SMTP connection and client
-			if err = e.initClient(); err != nil {
-				e.Error(err.Error())
-				continue
-			}
-
-		case <-e.quit:
-			// quit, close and return
-			if err = e.closeClient(); err != nil {
-				e.Error(err.Error())
 			}
 			return
 		case msg := <-e.in:
 			if e.client == nil {
-				e.Error(fmt.Errorf("no smtp client available for toEmail block. please check the credentials."))
+				e.Error("The smtp client does not exist yet. Please check the credentials.")
 				continue
 			}
-			if err = e.Send(msg); err != nil {
-				e.Error(err.Error())
+			// extract the 'to' and 'from' and build the email body
+			from, to, email, err = e.buildEmail(msg)
+			if err != nil {
+				e.Error(fmt.Sprintf("Unable to parse message for emailing: %s", err.Error()))
 				continue
+			}
+
+			// give five attempts to sending. reconnect if fail.
+			for err = e.send(to, from, email); err != nil && sretries < 5; sretries++ {
+				e.Error(fmt.Sprintf("Unable to send email: %s. Resetting connection...", err.Error()))
+				wait := errWait * (sretries + int64(1))
+				wait = wait * time.Second
+				if err = e.reconnect(wait); err != nil {
+					break
+				}
+			}
+
+			for err = e.reconnect(wait); err != nil && rretries < 3; rretries++ {
+				e.Error(fmt.Sprintf("Unable to maintain smtp connection: %s", err.Error()))
+				wait = errWait * time.Second
+			}
+
+			// reset the connection and the counter every 50 msgs or if theres been a send error
+			if e.sent >= 50 || err != nil {
+				e.sent = 0
+				// short wait if reconnect. long wait on err.
+				wait := normWait
+				if err != nil {
+					wait = errWait
+				}
+				for err = e.reconnect(wait); err != nil && rretries < 3; rretries++ {
+					e.Error(fmt.Sprintf("Unable to maintain smtp connection: %s", err.Error()))
+					wait = errWait
+				}
 			}
 		case MsgChan := <-e.queryrule:
 			// deal with a query request
@@ -284,5 +327,9 @@ func (e *ToEmail) Run() {
 				"MessagePath": e.msgPath,
 			}
 		}
+		// reset
+		err = nil
+		rretries = 0
+		sretries = 0
 	}
 }
