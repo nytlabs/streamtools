@@ -6,50 +6,50 @@ Is it in the wiki?:
 
 - [x] cache
 - [ ] categorical
-- [X] count
+- [x] count
 - [ ] dedupe
 - [ ] fft
-- [X] filter
-- [X] fromHTTPGetRequest
+- [x] filter
+- [x] fromHTTPGetRequest
 - [ ] fromamqp
-- [X] fromemail
+- [x] fromemail
 - [ ] fromfile
 - [ ] fromhttpstream
-- [X] fromnsq
+- [x] fromnsq
 - [ ] frompost
-- [X] fromsqs
-- [X] fromudp
-- [X] fromwebsocket
-- [X] gaussian
-- [X] gethttp
-- [X] histogram
+- [x] fromsqs
+- [x] fromudp
+- [x] fromwebsocket
+- [x] gaussian
+- [x] gethttp
+- [x] histogram
 - [ ] javascript
-- [X] join
+- [x] join
 - [ ] kullbackleibler
 - [ ] learn
 - [ ] linearModel
 - [ ] logisticModel
-- [X] map
-- [X] mask
-- [X] movingaverage
-- [X] pack
+- [x] map
+- [x] mask
+- [x] movingaverage
+- [x] pack
 - [ ] parsexml
-- [X] poisson
+- [x] poisson
 - [ ] queue
-- [X] set
-- [X] sync
-- [X] ticker
-- [X] timeseries
+- [x] set
+- [x] sync
+- [x] ticker
+- [x] timeseries
 - [ ] toHTTPGetRequest
 - [ ] toamqp
 - [ ] tobeanstalkd
-- [X] toelasticsearch
-- [X] toemail
-- [X] tofile
+- [x] toelasticsearch
+- [x] toemail
+- [x] tofile
 - [ ] toggle
 - [ ] tolog
 - [ ] tomongodb
 - [ ] tonsq
 - [ ] tonsqmulti
-- [X] unpack
-- [X] zipf
+- [x] unpack
+- [x] zipf
