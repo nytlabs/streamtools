@@ -70,6 +70,15 @@ func (b *Categorical) Run() {
 			if err != nil {
 				b.Error(err)
 			}
+			// normalise!
+			Z := 0.0
+			for _, θi := range θ {
+				Z += θi
+			}
+			for i := range θ {
+				θ[i] /= Z
+			}
+
 			sampler = NewCategoricalSampler(θ)
 		case <-b.quit:
 			// quit the block
