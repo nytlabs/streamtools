@@ -58,6 +58,7 @@ h3 {
 }
 
 .btn-learn, .btn-download, .btn-demos {
+	min-width:142px;
 	padding:20px 30px 20px 30px;
 	margin:0px 10px 0px 10px;
 	background-color:transparent;
@@ -120,7 +121,6 @@ h3 {
 	display:block;
 	margin-left:auto;
 	margin-right:auto;
-	/*border-radius:50%;*/
 }
 
 .download img{
@@ -130,11 +130,16 @@ h3 {
 	border-radius:10px;
 }
 
-@media(min-width:992px) {
+@media(max-width:992px) {
+	.btn-learn, .btn-download, .btn-demos {
+		margin-bottom:20px;
+	}
+}
 
-.easy-install {
-	border-right:1px solid lightgray;
-}	
+@media(min-width:992px) {
+	.easy-install {
+		border-right:1px solid lightgray;
+	}	
 }
 
 .intro-gif {
