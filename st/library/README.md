@@ -4,7 +4,7 @@ LIBRARY
 
 Is it in the wiki?:
 
-- [X] cache
+- [x] cache
 - [ ] categorical
 - [X] count
 - [ ] dedupe
