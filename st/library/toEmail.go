@@ -239,10 +239,6 @@ var normWait = 5 * time.Second
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (e *ToEmail) Run() {
 	var err error
-	// reconnect retries
-	var rretries int64
-	// send retries
-	var sretries int64
 	for {
 		select {
 		case msgI := <-e.inrule:
@@ -283,25 +279,24 @@ func (e *ToEmail) Run() {
 				continue
 			}
 			// extract the 'to' and 'from' and build the email body
+			var from, to string
+			var email []byte
 			from, to, email, err = e.buildEmail(msg)
 			if err != nil {
 				e.Error(fmt.Sprintf("Unable to parse message for emailing: %s", err.Error()))
 				continue
 			}
 
+			// send retries
+			sretries := int64(1)
 			// give five attempts to sending. reconnect if fail.
 			for err = e.send(to, from, email); err != nil && sretries < 5; sretries++ {
 				e.Error(fmt.Sprintf("Unable to send email: %s. Resetting connection...", err.Error()))
-				wait := errWait * (sretries + int64(1))
-				wait = wait * time.Second
+				// incremental backoff
+				wait := time.Duration(errWait*sretries) * time.Second
 				if err = e.reconnect(wait); err != nil {
 					break
 				}
-			}
-
-			for err = e.reconnect(wait); err != nil && rretries < 3; rretries++ {
-				e.Error(fmt.Sprintf("Unable to maintain smtp connection: %s", err.Error()))
-				wait = errWait * time.Second
 			}
 
 			// reset the connection and the counter every 50 msgs or if theres been a send error
@@ -310,12 +305,16 @@ func (e *ToEmail) Run() {
 				// short wait if reconnect. long wait on err.
 				wait := normWait
 				if err != nil {
-					wait = errWait
+					wait = time.Duration(errWait) * time.Second
 				}
+				// reconnect retries
+				rretries := int64(1)
 				for err = e.reconnect(wait); err != nil && rretries < 3; rretries++ {
 					e.Error(fmt.Sprintf("Unable to maintain smtp connection: %s", err.Error()))
-					wait = errWait
+					// incremental backoff
+					wait = time.Duration(errWait*rretries) * time.Second
 				}
+
 			}
 		case MsgChan := <-e.queryrule:
 			// deal with a query request
@@ -333,7 +332,5 @@ func (e *ToEmail) Run() {
 		}
 		// reset
 		err = nil
-		rretries = 0
-		sretries = 0
 	}
 }
