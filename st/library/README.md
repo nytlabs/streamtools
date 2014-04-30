@@ -16,7 +16,7 @@ Is it in the wiki?:
 - [ ] fromfile
 - [ ] fromhttpstream
 - [x] fromnsq
-- [ ] frompost
+- [x] frompost
 - [x] fromsqs
 - [x] fromudp
 - [x] fromwebsocket
