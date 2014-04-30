@@ -54,31 +54,30 @@
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
-      <div id="reportContainer" class="container" style="display: none;">
+      <div id="reportContainer" class="container">
         <div class="row">
-          <div class="header">
-            <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+          <div class="col-md-6" id="streamtools" style="display: none;">
+            <iframe src="http://localhost:7070" height="500px" width="100%"></iframe>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="panel panel-info panel-template" style="display: none;">
-            <div class="panel-heading">
-              <h3 class="panel-title"></h3>
-            </div>
-            <div class="panel-body">
-              <div class="pull-left col-md-5 quake-map"></div>
-              <div class="col-md-5">
-                <b>When:</b> <span class="quake-time"></span><br>
-                <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
-                <b>Significance:</b> <span class="quake-significance"></span><br>
-                <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
-                <b>Alert level:</b> <span class="quake-alert-level"></span><br>
-                <b>Status:</b> <span class="quake-status"></span><br>
+          <div id="results" class="col-md-6" style="display: none;">
+            <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+            <div class="panel panel-info panel-template" style="display: none;">
+              <div class="panel-heading">
+                <h3 class="panel-title"></h3>
+              </div>
+              <div class="panel-body">
+                <div class="pull-left col-md-5 quake-map"></div>
+                <div class="col-md-5">
+                  <b>When:</b> <span class="quake-time"></span><br>
+                  <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
+                  <b>Significance:</b> <span class="quake-significance"></span><br>
+                  <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
+                  <b>Alert level:</b> <span class="quake-alert-level"></span><br>
+                  <b>Status:</b> <span class="quake-status"></span><br>
+                </div>
               </div>
             </div>
           </div>
-        </div>
       </div>
   
   <script>
@@ -105,6 +104,7 @@
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function(data) {
+                  $("#streamtools").show();
                   $("#leadPara").hide();
                   $("#buttonPara").hide();
                   $("#leadPara").html("Streamtools is now polling the USGS endpoint every minute. This page will update with new data as it comes in. ");
@@ -164,9 +164,9 @@
                       $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
                       $(quakePanel).find(".quake-magnitude").text(quake.properties.mag);
                       $(quakePanel).find(".quake-significance").text(quake.properties.sig);
-                      $(quakePanel).appendTo("#reportContainer");
+                      $(quakePanel).appendTo("#results");
                       $(quakePanel).show();
-                      $("#reportContainer").show();
+                      $("#results").show();
                     }
                     var detailSocket = new WebSocket('ws://localhost:7070/ws/12');
                     detailSocket.onmessage = function(event) {
