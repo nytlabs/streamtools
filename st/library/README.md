@@ -50,6 +50,6 @@ Is it in the wiki?:
 - [x] tolog
 - [x] tomongodb
 - [x] tonsq
-- [ ] tonsqmulti
+- [x] tonsqmulti
 - [x] unpack
 - [x] zipf
