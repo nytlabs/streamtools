@@ -54,6 +54,20 @@
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
+      <div id="staticDemo" class="container" style="display: none;">
+        <div class='alert alert-warning'>
+          <p>
+            Oops! Failed accessing <a target='_new' href='http://localhost:7070'>streamtools</a>. Need to download it? 
+            <a href='../#download'>Get the binary</a>, be setup in seconds.
+          </p>
+          <p>
+            What you see below is a screenshot of what the demo looks like. Once you install streamtools you can play with the live version. <a href='earthquake_tracker.html'>Reload</a> to see this demo in action once you're ready.</p>
+        </div>
+        <div class="row">
+          <img src="../img/staticQuake.png"/>
+        </div>
+      </div>
+
       <div id="reportContainer" class="container">
         <div class="row">
           <div class="col-md-6" id="streamtools" style="display: none;">
@@ -121,6 +135,8 @@
 
         $("#getStarted").click(function(e) {
           e.preventDefault;
+          $("#staticDemo").fadeOut();
+
           $.getJSON("http://localhost:7070/clear", function(data) {
             if (data.daemon != "OK") {
               alert("Sorry, I couldn't clear out your streamtools. The response I got is: " + JSON.stringify(data));
