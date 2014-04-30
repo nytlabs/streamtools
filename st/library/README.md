@@ -14,7 +14,7 @@ Is it in the wiki?:
 - [ ] fromamqp
 - [x] fromemail
 - [ ] fromfile
-- [ ] fromhttpstream
+- [x] fromhttpstream
 - [x] fromnsq
 - [x] frompost
 - [x] fromsqs
@@ -40,7 +40,7 @@ Is it in the wiki?:
 - [x] sync
 - [x] ticker
 - [x] timeseries
-- [ ] toHTTPGetRequest
+- [x] toHTTPGetRequest
 - [ ] toamqp
 - [x] tobeanstalkd
 - [x] toelasticsearch
