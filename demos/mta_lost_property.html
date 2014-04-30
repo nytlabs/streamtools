@@ -53,10 +53,13 @@
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
 
-      <div id="reportContainer" class="container" style="display: none;">
-        <div class="row">
-          <div class="col-md-4">
-            <h3>Lost</h3>
+      <div id="reportContainer" class="col-md-12 container">
+        <div class="col-md-6" id="streamtools" style="display: none;">
+          <iframe src="http://localhost:7070" height="500px" width="100%"></iframe>
+        </div>
+        <div id="results" class="col-md-6" style="display: none;">
+          <div class="col-md-3">
+            <h3><span id="totalLost"></span></h3>
             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Your_Icon" x="0px" y="0px" width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
             <g>
               <path d="M50.592,38.385c4.061,0,7.354-3.292,7.354-7.353c0-4.06-3.293-7.352-7.354-7.352c-4.059,0-7.352,3.292-7.352,7.352   C43.241,35.092,46.534,38.385,50.592,38.385z"/>
@@ -66,13 +69,10 @@
               <path d="M48.576,12.183c0-2.169,2.702-2.426,2.702-3.694c0-0.57-0.441-1.048-1.451-1.048c-0.919,0-1.691,0.441-2.261,1.14   l-1.488-1.672c0.974-1.158,2.444-1.782,4.024-1.782c2.372,0,3.823,1.194,3.823,2.903c0,2.683-3.069,2.885-3.069,4.429   c0,0.293,0.147,0.606,0.349,0.771l-2.021,0.588C48.796,13.396,48.576,12.826,48.576,12.183z M48.576,16.281   c0-0.809,0.68-1.488,1.488-1.488c0.81,0,1.489,0.68,1.489,1.488s-0.679,1.488-1.489,1.488   C49.255,17.769,48.576,17.089,48.576,16.281z"/>
             </g>
             </svg>
+            <h4>Lost</h4>
           </div>
-          <div class="col-md-4">
-              <h3 id="subCategory"></h3>
-              <p id="subCategoryCount"></p>
-          </div>
-          <div class="col-md-4">
-            <h3 style="padding-bottom: 10px;">Claimed</h3>
+          <div class="col-md-3">
+            <h3><span id="totalClaimed"></span></h3>
             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" id="Layer_1" x="0px" y="0px" width="90px" height="75px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
             <g id="Captions">
               <text transform="matrix(1 0 0 1 87.2129 -19.5)" font-family="'Helvetica'" font-size="2.4">S&#233;vag+Tina</text>
@@ -87,19 +87,15 @@
               </g>
             </g>
             </svg>
+            <h4>Claimed</h4>
           </div>
-        </div>
-        <div class="row">
-          <div class="col-md-4">
-            <h3><span id="totalLost"></span></h3>
-          </div>
-          <div class="col-md-4">
-          </div>
-          <div class="col-md-4">
-            <h3><span id="totalClaimed"></span></h3>
+          <div class="col-md-6">
+            <h3 id="subCategory"></h3>
+            <p id="subCategoryCount"></p>
           </div>
         </div>
       </div>
+
 
     </div> <!-- /container -->
 
@@ -147,7 +143,7 @@
           $.getJSON("http://localhost:7070/blocks/7/timeseries", function(lostTs) {
             totalLost = lostTs.timeseries.Values[1].Value;
             $("#totalLost").text(totalLost);
-            $("#reportContainer").show();
+            $("#results").show();
           });
         }
 
@@ -155,7 +151,7 @@
           $.getJSON("http://localhost:7070/blocks/8/timeseries", function(claimedTs) {
             totalClaimed = claimedTs.timeseries.Values[1].Value;
             $("#totalClaimed").text(totalClaimed);
-            $("#reportContainer").show();
+            $("#results").show();
           });
         }
 
@@ -171,6 +167,7 @@
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: function(data) {
+                  $("#streamtools").show();
                   $("#leadPara").hide();
                   $("#buttonPara").hide();
                   $("#leadPara").html("Streamtools is now polling the MTA's lost property endpoint every 15 minutes. This page will update with new data as it comes in. ");
