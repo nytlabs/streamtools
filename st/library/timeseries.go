@@ -2,7 +2,6 @@ package library
 
 import (
 	"errors"
-	"github.com/mjibson/go-dsp/fft"            // fft
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -14,7 +13,6 @@ type Timeseries struct {
 	blocks.Block
 	queryrule  chan blocks.MsgChan
 	querystate chan blocks.MsgChan
-	queryfft   chan blocks.MsgChan
 	inrule     blocks.MsgChan
 	inpoll     blocks.MsgChan
 	in         blocks.MsgChan
@@ -44,7 +42,6 @@ func (b *Timeseries) Setup() {
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
 	b.querystate = b.QueryRoute("timeseries")
-	b.queryfft = b.QueryRoute("fft")
 	b.inpoll = b.InRoute("poll")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
@@ -147,23 +144,6 @@ func (b *Timeseries) Run() {
 		case MsgChan := <-b.querystate:
 			out := map[string]interface{}{
 				"timeseries": data,
-			}
-			MsgChan <- out
-		case MsgChan := <-b.queryfft:
-			x := make([]float64, len(data.Values))
-			for i, d := range data.Values {
-				x[i] = d.Value
-			}
-			X := fft.FFTReal(x)
-
-			Xout := make([][]float64, len(X))
-			for i, Xi := range X {
-				Xout[i] = make([]float64, 2)
-				Xout[i][0] = real(Xi)
-				Xout[i][1] = imag(Xi)
-			}
-			out := map[string]interface{}{
-				"fft": Xout,
 			}
 			MsgChan <- out
 		case <-b.inpoll:
