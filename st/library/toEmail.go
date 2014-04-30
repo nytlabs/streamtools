@@ -31,7 +31,6 @@ type ToEmail struct {
 	msgPath     string
 
 	client *smtp.Client
-	sent   uint
 }
 
 // NewToEmail is a simple factory for streamtools to make new blocks of this kind.
@@ -229,16 +228,19 @@ func (e *ToEmail) send(from, to string, email []byte) error {
 		return err
 	}
 
-	e.sent++
 	return nil
 }
 
-var errWait = int64(60)
+// errWait is the increment time in seconds for waiting 
+// before reconnecting after encountering an error.
+var errWait = 60
+// normWait is the time duration to wait before performing a routine reconnect.
 var normWait = 5 * time.Second
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (e *ToEmail) Run() {
 	var err error
+	var sent uint
 	for {
 		select {
 		case msgI := <-e.inrule:
@@ -288,7 +290,7 @@ func (e *ToEmail) Run() {
 			}
 
 			// send retries
-			sretries := int64(1)
+			sretries := 1
 			// give five attempts to sending. reconnect if fail.
 			for err = e.send(to, from, email); err != nil && sretries < 5; sretries++ {
 				e.Error(fmt.Sprintf("Unable to send email: %s. Resetting connection...", err.Error()))
@@ -300,15 +302,15 @@ func (e *ToEmail) Run() {
 			}
 
 			// reset the connection and the counter every 50 msgs or if theres been a send error
-			if e.sent >= 50 || err != nil {
-				e.sent = 0
+			if sent >= 50 || err != nil {
+				sent = 0
 				// short wait if reconnect. long wait on err.
 				wait := normWait
 				if err != nil {
 					wait = time.Duration(errWait) * time.Second
 				}
 				// reconnect retries
-				rretries := int64(1)
+				rretries := 1
 				for err = e.reconnect(wait); err != nil && rretries < 3; rretries++ {
 					e.Error(fmt.Sprintf("Unable to maintain smtp connection: %s", err.Error()))
 					// incremental backoff
