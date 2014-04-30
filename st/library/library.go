@@ -55,6 +55,8 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"dedupe":             NewDeDupe,
 	"javascript":         NewJavascript,
 	"fft":                NewFFT,
+	"postHTTP":           NewPostHTTP,
+	"putHTTP":            NewPutHTTP,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
