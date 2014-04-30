@@ -35,7 +35,7 @@ Is it in the wiki?:
 - [x] pack
 - [ ] parsexml
 - [x] poisson
-- [ ] queue
+- [x] queue
 - [x] set
 - [x] sync
 - [x] ticker
