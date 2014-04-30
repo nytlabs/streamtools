@@ -2,24 +2,6 @@
   "Connections": [
     {
       "ToRoute": "in",
-      "ToId": "7",
-      "FromId": "4",
-      "Id": "10"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "9",
-      "FromId": "4",
-      "Id": "11"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "4",
-      "FromId": "3",
-      "Id": "12"
-    },
-    {
-      "ToRoute": "in",
       "ToId": "2",
       "FromId": "1",
       "Id": "14"
@@ -32,9 +14,21 @@
     },
     {
       "ToRoute": "in",
-      "ToId": "15",
+      "ToId": "26",
+      "FromId": "24",
+      "Id": "27"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "7",
       "FromId": "4",
-      "Id": "16"
+      "Id": "10"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "3",
+      "Id": "12"
     },
     {
       "ToRoute": "in",
@@ -47,24 +41,6 @@
       "ToId": "24",
       "FromId": "4",
       "Id": "25"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "26",
-      "FromId": "24",
-      "Id": "27"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "5",
-      "FromId": "20",
-      "Id": "33"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "5",
-      "FromId": "21",
-      "Id": "23"
     },
     {
       "ToRoute": "in",
@@ -82,43 +58,8 @@
   "Blocks": [
     {
       "Position": {
-        "Y": 386,
-        "X": 663
-      },
-      "Rule": {
-        "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
-        "NumSamples": 24
-      },
-      "Type": "timeseries",
-      "Id": "15"
-    },
-    {
-      "Position": {
-        "Y": 382,
-        "X": 550
-      },
-      "Rule": {
-        "Path": "$num(.LostProperty.NumberOfLostArticles)",
-        "NumSamples": 24
-      },
-      "Type": "timeseries",
-      "Id": "9"
-    },
-    {
-      "Position": {
-        "Y": 129,
-        "X": 628
-      },
-      "Rule": {
-        "Path": ".LostProperty.Category"
-      },
-      "Type": "unpack",
-      "Id": "24"
-    },
-    {
-      "Position": {
-        "Y": 107,
-        "X": 294
+        "Y": 73,
+        "X": 57
       },
       "Rule": {
         "Map": {
@@ -131,51 +72,8 @@
     },
     {
       "Position": {
-        "Y": 34,
-        "X": 213
-      },
-      "Rule": {
-        "Interval": "15m0s"
-      },
-      "Type": "ticker",
-      "Id": "1"
-    },
-    {
-      "Position": {
-        "Y": 436,
-        "X": 808
-      },
-      "Rule": null,
-      "Type": "tolog",
-      "Id": "5"
-    },
-    {
-      "Position": {
-        "Y": 307,
-        "X": 338
-      },
-      "Rule": {
-        "Path": "$num(.LostProperty.NumberOfLostArticles)",
-        "NumSamples": 2
-      },
-      "Type": "timeseries",
-      "Id": "7"
-    },
-    {
-      "Position": {
-        "Y": 168,
-        "X": 730
-      },
-      "Rule": {
-        "Path": ".SubCategory"
-      },
-      "Type": "unpack",
-      "Id": "26"
-    },
-    {
-      "Position": {
-        "Y": 165,
-        "X": 412
+        "Y": 139,
+        "X": 94
       },
       "Rule": {
         "Path": ".url"
@@ -185,31 +83,8 @@
     },
     {
       "Position": {
-        "Y": 230,
-        "X": 537
-      },
-      "Rule": {
-        "Path": ".data"
-      },
-      "Type": "parsexml",
-      "Id": "4"
-    },
-    {
-      "Position": {
-        "Y": 299,
-        "X": 745
-      },
-      "Rule": {
-        "Map": {},
-        "Additive": true
-      },
-      "Type": "map",
-      "Id": "21"
-    },
-    {
-      "Position": {
-        "Y": 364,
-        "X": 447
+        "Y": 307,
+        "X": 34
       },
       "Rule": {
         "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
@@ -220,8 +95,76 @@
     },
     {
       "Position": {
-        "Y": 229,
-        "X": 838
+        "Y": 259,
+        "X": 322
+      },
+      "Rule": {
+        "Path": ".LostProperty.Category"
+      },
+      "Type": "unpack",
+      "Id": "24"
+    },
+    {
+      "Position": {
+        "Y": 5,
+        "X": 38
+      },
+      "Rule": {
+        "Interval": "15m0s"
+      },
+      "Type": "ticker",
+      "Id": "1"
+    },
+    {
+      "Position": {
+        "Y": 401,
+        "X": 126
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfLostArticles)",
+        "NumSamples": 2
+      },
+      "Type": "timeseries",
+      "Id": "7"
+    },
+    {
+      "Position": {
+        "Y": 330,
+        "X": 372
+      },
+      "Rule": {
+        "Path": ".SubCategory"
+      },
+      "Type": "unpack",
+      "Id": "26"
+    },
+    {
+      "Position": {
+        "Y": 207,
+        "X": 129
+      },
+      "Rule": {
+        "Path": ".data"
+      },
+      "Type": "parsexml",
+      "Id": "4"
+    },
+    {
+      "Position": {
+        "Y": 379,
+        "X": 247
+      },
+      "Rule": {
+        "Map": {},
+        "Additive": true
+      },
+      "Type": "map",
+      "Id": "21"
+    },
+    {
+      "Position": {
+        "Y": 403,
+        "X": 371
       },
       "Rule": {
         "ValuePath": ".count",
