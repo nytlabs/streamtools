@@ -42,7 +42,7 @@ Is it in the wiki?:
 - [x] timeseries
 - [ ] toHTTPGetRequest
 - [ ] toamqp
-- [ ] tobeanstalkd
+- [x] tobeanstalkd
 - [x] toelasticsearch
 - [x] toemail
 - [x] tofile
