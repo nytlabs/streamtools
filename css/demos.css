@@ -44,3 +44,12 @@ body { padding-top: 70px; }
   margin-top: 50px;
 }
 
+.centered {
+	text-align:center;
+}
+
+#Your_Icon, #Layer_1 {
+	display:block;
+	margin-left:auto;
+	margin-right:auto;
+}
