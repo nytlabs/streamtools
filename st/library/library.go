@@ -46,6 +46,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"gaussian":           NewGaussian,
 	"zipf":               NewZipf,
 	"poisson":            NewPoisson,
+	"categorical":        NewCategorical,
 	"map":                NewMap,
 	"histogram":          NewHistogram,
 	"timeseries":         NewTimeseries,
