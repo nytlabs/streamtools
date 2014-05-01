@@ -325,6 +325,7 @@ func (e *ToEmail) Run() {
 				// attempt to reset client after each failure.
 				connected = e.resetClient()
 				if !connected {
+					// if we cannot reconnect, dont retry sending.
 					break
 				}
 				time.Sleep(time.Duration(retries*errWait) * time.Second)
@@ -334,8 +335,7 @@ func (e *ToEmail) Run() {
 			}
 
 			// reset the connection and the counter every 50 msgs or if theres been a send error.
-			// why 50?
-			if sent >= 50 || (err != nil && !connected) {
+			if (sent >= 50) || (err != nil) {
 				sent = 0
 				e.resetClient()
 			}
