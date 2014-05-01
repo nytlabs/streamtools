@@ -84,19 +84,7 @@
                 </li>
               
                 <li>
-                  <a href="#reference/streamtools">streamtools</a>
-                </li>
-              
-                <li>
-                  <a href="#reference/data">data</a>
-                </li>
-              
-                <li>
                   <a href="#reference/blocks">blocks</a>
-                </li>
-              
-                <li>
-                  <a href="#reference/connections">connections</a>
                 </li>
               
                 <li>
@@ -558,7 +546,7 @@ make</code></pre>
 <p>The POST endpoints are expecting you to send data. To use these you&#39;ll need to use the command line and a program called <code>curl</code>. For example, to create a new <code>tofile</code> block you need to send along the JSON definition of the block, like this:</p>
 <pre><code><span class="title">curl</span> <span class="url">http://localhost:7070/blocks</span> -d<span class="string">'{"Type":"tofile","Rule":{"Filename":"test.json"}}'</span></code></pre>
 <p>This POSTs the JSON <code>{&quot;Type&quot;:&quot;tofile&quot;,&quot;Rule&quot;:{&quot;Filename&quot;:&quot;test.json&quot;}}</code> to the <code>/blocks</code> endpoint.</p>
-<h3 id='reference/streamtools'>streamtools</h3 id='reference/streamtools'>
+<h4>streamtools</h4>
 <p>GET <code>/library</code></p>
 <p>The library endpoint returns a description of all the blocks available in the version of streamtools that is runnning.</p>
 <p>GET <code>/version</code></p>
@@ -567,7 +555,7 @@ make</code></pre>
 <p>Export returns a JSON representation of the current streamtools pattern.</p>
 <p>POST <code>/import</code></p>
 <p>Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it&#39;s useful.</p>
-<h3 id='reference/data'>data</h3 id='reference/data'>
+<h4>data</h4>
 <p>Every block that as an <code>OUT</code> route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.</p>
 <p>WEBSOCKET <code>/ws/{id}</code></p>
 <p>a websocket emitting every message sent on the block&#39;s <code>OUT</code> route.</p>
@@ -595,7 +583,7 @@ make</code></pre>
 <p>Send data to a block. Each block has a set of default routes (&quot;in&quot;,&quot;rule&quot;) and optional routes (&quot;poll&quot;), as well as custom rotues that defined by the block designer as they see fit. This will POST your JSON to the block specified by <code>{id}</code> via route <code>{route}</code>.</p>
 <p>GET <code>/blocks/{id}/{route}</code></p>
 <p>Recieve data from a block. Use this endpoint to query block routes that return data. The only default route is <code>rule</code> which, in response to a GET query, will return the block&#39;s current rule.</p>
-<h3 id='reference/connections'>connections</h3 id='reference/connections'>
+<h4>connections</h4>
 <p>A connection&#39;s JSON representation uses the following schema:</p>
 <pre><code><span class="rules">{
   <span class="rule"><span class="attribute">Id</span>:<span class="value">
