@@ -3,12 +3,14 @@ package server
 import (
 	"errors"
 	"fmt"
-	"github.com/nytlabs/streamtools/st/blocks"
-	"github.com/nytlabs/streamtools/st/library"
 	"net/url"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/macros"
 )
 
 type BlockInfo struct {
@@ -27,14 +29,29 @@ type ConnectionInfo struct {
 	chans   blocks.BlockChans
 }
 
+type MacroInfo struct {
+	Id         string
+	Type       string
+	Dimensions *Dims
+	Content    string
+}
+
 type Coords struct {
 	X float64
 	Y float64
 }
 
+type Dims struct {
+	X float64
+	Y float64
+	W float64
+	H float64
+}
+
 type BlockManager struct {
 	blockMap map[string]*BlockInfo
 	connMap  map[string]*ConnectionInfo
+	macroMap map[string]*MacroInfo
 	genId    chan string
 	Mu       *sync.Mutex
 }
@@ -54,6 +71,7 @@ func NewBlockManager() *BlockManager {
 	return &BlockManager{
 		blockMap: make(map[string]*BlockInfo),
 		connMap:  make(map[string]*ConnectionInfo),
+		macroMap: make(map[string]*MacroInfo),
 		genId:    idChan,
 		Mu:       &sync.Mutex{},
 	}
@@ -72,7 +90,8 @@ func (b *BlockManager) GetId() string {
 func (b *BlockManager) IdExists(id string) bool {
 	_, okB := b.blockMap[id]
 	_, okC := b.connMap[id]
-	return okB || okC
+	_, okD := b.macroMap[id]
+	return okB || okC || okD
 }
 
 func (b *BlockManager) IdSafe(id string) bool {
@@ -154,6 +173,15 @@ func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error)
 	block.Position = coord
 
 	return block, nil
+}
+
+func (b *BlockManager) UpdateMacro(macroInfo *MacroInfo) (*MacroInfo, error) {
+	_, ok := b.macroMap[macroInfo.Id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot update macro %s: does not exist", macroInfo.Id))
+	}
+	b.macroMap[macroInfo.Id] = macroInfo
+	return macroInfo, nil
 }
 
 func (b *BlockManager) Send(id string, route string, msg interface{}) error {
@@ -297,6 +325,37 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 	return connInfo, nil
 }
 
+func (b *BlockManager) CreateMacro(macroInfo *MacroInfo) (*MacroInfo, error) {
+	if macroInfo == nil {
+		return nil, errors.New("Cannot create: no macro data.")
+	}
+
+	// check to see if the ID is OK
+	if !b.IdSafe(macroInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create macro %s: invalid id", macroInfo.Id))
+	}
+
+	// create ID if there is none
+	if macroInfo.Id == "" {
+		macroInfo.Id = b.GetId()
+	}
+
+	// make sure ID doesn't already exist
+	if b.IdExists(macroInfo.Id) {
+		return nil, errors.New(fmt.Sprintf("Cannot create macro %s: id already exists", macroInfo.Id))
+	}
+
+	content, ok := macros.MacroDefs[macroInfo.Type]
+	if !ok {
+		return nil, errors.New("requested macro does not exist in macros library")
+	}
+	macroInfo.Content = string(content)
+
+	b.macroMap[macroInfo.Id] = macroInfo
+
+	return macroInfo, nil
+}
+
 func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string, error) {
 	_, ok := b.blockMap[fromId]
 	if !ok {
@@ -350,6 +409,15 @@ func (b *BlockManager) GetBlock(id string) (*BlockInfo, error) {
 	b.updateRule(id)
 
 	return block, nil
+}
+
+func (b *BlockManager) GetMacro(id string) (*MacroInfo, error) {
+	macro, ok := b.macroMap[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("Cannot get macro %s: does not exist", id))
+	}
+
+	return macro, nil
 }
 
 func (b *BlockManager) GetConnection(id string) (*ConnectionInfo, error) {
@@ -416,6 +484,17 @@ func (b *BlockManager) DeleteConnection(id string) (string, error) {
 	return id, nil
 }
 
+func (b *BlockManager) DeleteMacro(id string) (string, error) {
+	_, ok := b.macroMap[id]
+	if !ok {
+		return "", errors.New(fmt.Sprintf("Cannot delete macro %s: does not exist", id))
+	}
+
+	delete(b.macroMap, id)
+
+	return id, nil
+}
+
 func (b *BlockManager) StatusBlocks() []string {
 	var wg sync.WaitGroup
 	MsgChan := make(chan string, len(b.blockMap))
@@ -469,4 +548,14 @@ func (b *BlockManager) ListConnections() []*ConnectionInfo {
 		i++
 	}
 	return conns
+}
+
+func (b *BlockManager) ListMacros() []*MacroInfo {
+	i := 0
+	macros := make([]*MacroInfo, len(b.macroMap), len(b.macroMap))
+	for _, v := range b.macroMap {
+		macros[i] = v
+		i++
+	}
+	return macros
 }

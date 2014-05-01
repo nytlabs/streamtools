@@ -533,6 +533,66 @@ func (s *Server) listBlockHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, blocks)
 }
 
+// listMacroHandler retuns a slice of the current macros operating in the sytem.
+func (s *Server) listMacroHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	macros, err := json.Marshal(s.manager.ListMacros())
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+	s.apiWrap(w, r, 200, macros)
+}
+
+// createMacrosHandler asks the manager to create a macro and then return that
+// macro if the macro has been creates.
+func (s *Server) createMacroHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	var macro *MacroInfo
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(body, &macro)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	mmacro, err := s.manager.CreateMacro(macro)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.CREATE,
+		Data: mmacro,
+		Id:   s.Id,
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.CREATE,
+		Data: fmt.Sprintf("Macro %s", mmacro.Id),
+		Id:   s.Id,
+	}
+
+	jblock, err := json.Marshal(mmacro)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	s.apiWrap(w, r, 200, jblock)
+}
+
 // createBlockHandler asks the manager to create a block and then return that block
 // if the block has been creates.
 func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
@@ -582,6 +642,53 @@ func (s *Server) createBlockHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
+	}
+
+	s.apiWrap(w, r, 200, jblock)
+}
+
+// updateMacroHandler updates the coordinates of a macro.
+func (s *Server) updateMacroHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	var macro *MacroInfo
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	err = json.Unmarshal(body, &macro)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	mmacro, err := s.manager.UpdateMacro(macro)
+
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	jblock, err := json.Marshal(mmacro)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	loghub.Log <- &loghub.LogMsg{
+		Type: loghub.UPDATE,
+		Data: fmt.Sprintf("Block %s", mmacro.Id),
+		Id:   s.Id,
+	}
+
+	loghub.UI <- &loghub.LogMsg{
+		Type: loghub.UPDATE_POSITION,
+		Data: mmacro,
+		Id:   s.Id,
 	}
 
 	s.apiWrap(w, r, 200, jblock)
@@ -655,6 +762,41 @@ func (s *Server) blockInfoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.apiWrap(w, r, 200, jconn)
+}
+
+// MacroInfoHandler returns a macro given an id
+func (s *Server) MacroInfoHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	vars := mux.Vars(r)
+
+	conn, err := s.manager.GetMacro(vars["id"])
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	jconn, err := json.Marshal(conn)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+	s.apiWrap(w, r, 200, jconn)
+}
+
+// deleteMacroHandler asks the block manager to delete a macro.
+func (s *Server) deleteMacroHandler(w http.ResponseWriter, r *http.Request) {
+	s.manager.Mu.Lock()
+	defer s.manager.Mu.Unlock()
+
+	vars := mux.Vars(r)
+	_, err := s.manager.DeleteMacro(vars["id"])
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
 // deleteBlockHandler asks the block manager to delete a block.
@@ -1063,6 +1205,13 @@ func (s *Server) Run() {
 	r.HandleFunc("/import", s.importHandler).Methods("POST")
 	r.HandleFunc("/import", s.optionsHandler).Methods("OPTIONS")
 	r.HandleFunc("/export", s.exportHandler).Methods("GET")
+
+	r.HandleFunc("/macros", s.listMacroHandler).Methods("GET")           // list all blocks
+	r.HandleFunc("/macros", s.createMacroHandler).Methods("POST")        // create block w/o id
+	r.HandleFunc("/macros/{id}", s.MacroInfoHandler).Methods("GET")      // get block info
+	r.HandleFunc("/macros/{id}", s.updateMacroHandler).Methods("PUT")    // update block
+	r.HandleFunc("/macros/{id}", s.deleteMacroHandler).Methods("DELETE") // delete block
+
 	r.HandleFunc("/blocks", s.listBlockHandler).Methods("GET")                         // list all blocks
 	r.HandleFunc("/blocks", s.createBlockHandler).Methods("POST")                      // create block w/o id
 	r.HandleFunc("/blocks", s.optionsHandler).Methods("OPTIONS")                       // allow cross-domain

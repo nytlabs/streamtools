@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
-	"github.com/nytlabs/streamtools/st/library"
-	"github.com/nytlabs/streamtools/st/loghub"
-	"github.com/nytlabs/streamtools/st/server"
-	"github.com/nytlabs/streamtools/st/util"
 	"log"
 	"os"
+
+	"github.com/nytlabs/streamtools/st/library"
+	"github.com/nytlabs/streamtools/st/loghub"
+	"github.com/nytlabs/streamtools/st/macros"
+	"github.com/nytlabs/streamtools/st/server"
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 var (
@@ -28,6 +30,7 @@ func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	library.Start()
+	macros.Start()
 	loghub.Start()
 
 	s := server.NewServer()
