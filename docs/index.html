@@ -171,10 +171,12 @@ make</code></pre>
             <span class="string">"id"</span>: <span class="number">1234</span>
         }</span>
     }</span></code></pre>
-<p>and you&#39;d like to refer to the username then the gojee path would be <code>.user.username</code>.
-<em> <em>gojee expression</em>: <a href="https://github.com/nytlabs/gojee">gojee</a> also allows for expressions. So we can write expressions like <code>.user.id &gt; 1230</code>, which are especially useful in the filter and map blocks.  
-</em> <em>duration string</em>: We use Go&#39;s duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So <code>10ms</code> is 10 milliseconds; <code>5h</code> is 5 hours and so on.
-* <em>route</em>: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.</p>
+<p>and you&#39;d like to refer to the username then the gojee path would be <code>.user.username</code>.</p>
+<ul>
+<li><em>gojee expression</em>: <a href="https://github.com/nytlabs/gojee">gojee</a> also allows for expressions. So we can write expressions like <code>.user.id &gt; 1230</code>, which are especially useful in the filter and map blocks.  </li>
+<li><em>duration string</em>: We use Go&#39;s duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So <code>10ms</code> is 10 milliseconds; <code>5h</code> is 5 hours and so on.</li>
+<li><em>route</em>: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.</li>
+</ul>
 <h4>generator blocks</h4>
 <p>These blocks emit messages on their own.</p>
 <ul>
