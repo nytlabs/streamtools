@@ -35,21 +35,42 @@
     <ul id="sections">
       
         <li>
-          <a href="#intro">intro</a>
+          <a href="#binary">binary</a>
           
         </li>
       
         <li>
-          <a href="#install">install</a>
+          <a href="#source">source</a>
+          
+        </li>
+      
+        <li>
+          <a href="#blocks">blocks</a>
           
             <ul>
               
                 <li>
-                  <a href="#install/binary">binary</a>
+                  <a href="#blocks/generator-blocks">generator blocks</a>
                 </li>
               
                 <li>
-                  <a href="#install/source">source</a>
+                  <a href="#blocks/flow-blocks">flow blocks</a>
+                </li>
+              
+                <li>
+                  <a href="#blocks/source-blocks">source blocks</a>
+                </li>
+              
+                <li>
+                  <a href="#blocks/sink-blocks">sink blocks</a>
+                </li>
+              
+                <li>
+                  <a href="#blocks/state-blocks">state blocks</a>
+                </li>
+              
+                <li>
+                  <a href="#blocks/random-number-blocks">random number blocks</a>
                 </li>
               
             </ul>
@@ -57,41 +78,69 @@
         </li>
       
         <li>
-          <a href="#getting-started">getting started</a>
-          
-        </li>
-      
-        <li>
-          <a href="#how-it-works">how it works</a>
-          
-        </li>
-      
-        <li>
-          <a href="#reference">reference</a>
+          <a href="#interface">interface</a>
           
             <ul>
               
                 <li>
-                  <a href="#reference/blocks">blocks</a>
+                  <a href="#interface/make-a-block">make a block</a>
                 </li>
               
                 <li>
-                  <a href="#reference/interface">interface</a>
+                  <a href="#interface/connect-two-blocks">connect two blocks</a>
                 </li>
               
                 <li>
-                  <a href="#reference/api">api</a>
+                  <a href="#interface/set-the-rule-of-a-block">set the rule of a block</a>
                 </li>
               
                 <li>
-                  <a href="#reference/blocks">blocks</a>
+                  <a href="#interface/query-a-block">query a block</a>
                 </li>
               
                 <li>
-                  <a href="#reference/command-line">command line</a>
+                  <a href="#interface/delete-a-block">delete a block</a>
+                </li>
+              
+                <li>
+                  <a href="#interface/move-a-block">move a block</a>
+                </li>
+              
+                <li>
+                  <a href="#interface/see-the-last-message-that-passed-through-a-connection">see the last message that passed through a connection</a>
                 </li>
               
             </ul>
+          
+        </li>
+      
+        <li>
+          <a href="#api">API</a>
+          
+            <ul>
+              
+                <li>
+                  <a href="#api/streamtools">streamtools</a>
+                </li>
+              
+                <li>
+                  <a href="#api/data">data</a>
+                </li>
+              
+                <li>
+                  <a href="#api/blocks">blocks</a>
+                </li>
+              
+                <li>
+                  <a href="#api/connections">connections</a>
+                </li>
+              
+            </ul>
+          
+        </li>
+      
+        <li>
+          <a href="#command-line">command line</a>
           
         </li>
       
@@ -106,11 +155,11 @@
   </div>
   <div id="content">
     
-    <h2 id='intro'>intro</h2 id='intro'>
+    <h1>intro</h1>
 <p>Streamtools is a graphical toolkit for dealing with streams of data. Streamtools makes it easy to explore, analyse, modify and learn from streams of data.</p>
 <p>You&#39;ll primarily interact with streamtools in the browser. However, since all functionality is exposed over HTTP, you can use tools like curl to send commands and even treat any part of streamtools as an API endpoint. More about that later.</p>
-<h2 id='install'>install</h2 id='install'>
-<h3 id='install/binary'>binary</h3 id='install/binary'>
+<h1>install</h1>
+<h2 id='binary'>binary</h2 id='binary'>
 <p>Download the appropriate version of the latest streamtools for your operating system from our <a href="https://github.com/nytlabs/streamtools/releases/tag/">releases on github</a>.</p>
 <p>Extract the archive (it&#39;ll either be a .tar.gz or .zip)</p>
 <p>Navigate to the extracted folder and run the <code>st</code> executable.</p>
@@ -120,7 +169,7 @@
 </ul>
 <p>You should see streamtools start up, telling you it&#39;s running on port 7070.</p>
 <p>Now, open a browser window and point it at <a href="http://localhost:7070/">localhost:7070</a>. You should see a (nearly) blank page. At the bottom you should see a status bar that says <code>client: connected to Streamtools</code> followed by a version number. Congratulations! You&#39;re in.</p>
-<h3 id='install/source'>source</h3 id='install/source'>
+<h2 id='source'>source</h2 id='source'>
 <p>Make sure you have go, git, hg, and bzr installed. You can download go for <a href="http://golang.org/doc/install#osx">Mac OS X</a>, <a href="http://golang.org/doc/install#tarball">Linux and FreeBSD</a> and <a href="http://golang.org/doc/install#windows">Windows</a> from the <a href="http://golang.org/">golang.org</a> website. Git, hg and bzr are simple enough to install using homebrew, apt or your OS package manager of choice.</p>
 <p>Once you have these dependencies, compile streamtools with these commands:</p>
 <pre><code>mkdir -p ~<span class="regexp">/go/src</span><span class="regexp">/github.com/nytlabs</span>
@@ -132,13 +181,13 @@ make</code></pre>
 <pre><code><span class="variable">$ </span>.<span class="regexp">/build/st</span>
 <span class="constant">Apr</span> <span class="number">30</span> <span class="number">19</span><span class="symbol">:</span><span class="number">44</span><span class="symbol">:</span><span class="number">36</span> [ <span class="constant">SERVER</span> ][ <span class="constant">INFO</span> ] <span class="string">"Starting Streamtools 0.2.5 on port 7070"</span></code></pre>
 <p>You should see a message similar to the one above letting you know streamtools is running at port 7070.</p>
-<h2 id='getting-started'>getting started</h2 id='getting-started'>
+<h1>getting started</h1>
 <p>Streamtools is a binary that can run on your local machine or a remote server. We usually run it using upstart on an ubuntu ec2 server in Amazon&#39;s cloud. To begin with, though, we&#39;ll assume that you&#39;re running streamtools locally, on a machine you can touch. We&#39;re also going to assume you&#39;re running OSX or Linux - if you&#39;re a Windows user we do provide binaries but don&#39;t know much about how to interact with a Windows machine - you will need to translate these instructions to Windows yourself.</p>
 <p>Before we go any further, you should make sure you&#39;ve installed streamtools. Check out the directions on starting the server, either from a binary release or from source, if you haven&#39;t already done so.</p>
 <p>You should see streamtools start up, telling you it&#39;s running on port 7070.</p>
 <p>Now, open a browser window and point it at <a href="http://localhost:7070/">localhost:7070</a>. You should see a (nearly) blank page. At the bottom you should see a status bar that says <code>client: connected to Streamtools</code> followed by a version number. Congratulations! You&#39;re in.</p>
 <p>As a &quot;Hello World&quot;, try double-clicking anywhere on the page above the status bar, type <code>fromhttpstream</code> and hit enter. This will bring up your first block. Double-click on the block and enter <code>http://developer.usa.gov/1usagov</code> in the <code>Endpoint</code> text-box. Hit the update button. Now double-click on the page and make a <code>tolog</code> block. Finally, connect the two blocks together by first clicking on the <code>fromhttpstream</code> block&#39;s OUT route (a litle black square on the bottom of the block) to the <code>tolog</code> block&#39;s IN route (which is the little black square on the top of the block). Click on the status bar and, after a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again.</p>
-<h2 id='how-it-works'>how it works</h2 id='how-it-works'>
+<h1>how it works</h1>
 <p>Streamtools&#39; basic paradigm is straightforward: data flows from <em>blocks</em> through <em>connections</em> to other blocks.</p>
 <ul>
 <li>A block perfoms some operation on each message it recieves, and that operation is defined by the block&#39;s <em>type</em>.</li>
@@ -148,8 +197,8 @@ make</code></pre>
 <li>We call a collection of connected blocks a <em>pattern</em>, and it is possible to export and import whole patterns from a running instance of streamtools.</li>
 </ul>
 <p>Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools, and about streaming data systems.</p>
-<h2 id='reference'>reference</h2 id='reference'>
-<h3 id='reference/blocks'>blocks</h3 id='reference/blocks'>
+<h1>reference</h1>
+<h2 id='blocks'>blocks</h2 id='blocks'>
 <p>Each block is briefly detailed below, along with the rules that define each block. To make a block in streamtools, double click anywhere on the page and type the name of the block as they appear below. For programmatic access, see the [[API]] docs.</p>
 <p>Blocks rely on some general concepts:
 * <em>gojee path</em>: The path rules all use <a href="https://github.com/nytlabs/gojee">gojee</a> syntax to specify which value you&#39;d like to use in the block. Paths always start with the period, which indicates the top-level of the message. So if you want to refer to the whole message use <code>.</code>. If you want to refer to a specific value then they follow the first period. So if you have a message that looks like</p>
@@ -165,7 +214,7 @@ make</code></pre>
 <li><em>duration string</em>: We use Go&#39;s duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So <code>10ms</code> is 10 milliseconds; <code>5h</code> is 5 hours and so on.</li>
 <li><em>route</em>: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.</li>
 </ul>
-<h4>generator blocks</h4>
+<h3 id='blocks/generator-blocks'>generator blocks</h3 id='blocks/generator-blocks'>
 <p>These blocks emit messages on their own.</p>
 <ul>
 <li><strong>ticker</strong>. This block emits the time regularly. The time between emissions is specified by the <code>Interval</code>.<ul>
@@ -176,7 +225,7 @@ make</code></pre>
 </ul>
 </li>
 </ul>
-<h4>flow blocks</h4>
+<h3 id='blocks/flow-blocks'>flow blocks</h3 id='blocks/flow-blocks'>
 <p>These blocks are useful for shaping (transforming or manipulating) the stream in one way or another.</p>
 <ul>
 <li><p><strong>javascript</strong> This block creates a Javascript VM and runs a bit of Javascript once per message. In order to get data in and out of Javascript, the block creates a global variable specified by <code>MessageIn</code> that contains the incoming message. Once the script is finished executing, the block takes the value from the global variable specified by <code>MessageOut</code>.</p>
@@ -283,7 +332,7 @@ make</code></pre>
 </ul>
 </li>
 </ul>
-<h4>source blocks</h4>
+<h3 id='blocks/source-blocks'>source blocks</h3 id='blocks/source-blocks'>
 <p>These blocks hook into another system and collect messages to be emitted into streamtools.</p>
 <ul>
 <li><strong>fromhttpstream</strong>. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at <code>http://developer.usa.gov/1usagov</code>.<ul>
@@ -345,7 +394,7 @@ make</code></pre>
 <li><strong>fromHTTPGetRequest</strong>. This block, when a GET request is made to the block&#39;s QUERY endpoint, emits that request into streamtools. The request can be handled by the <strong>toHTTPGetRequest</strong> block.</li>
 <li><strong>toHTTPGetRequest</strong>. This block, while deceptively simple, allows the creation of an API that can use streamtools as a backend. The request, should it ever be marshalled into JSON, is represented as <code>{&quot;channel&quot;:&quot;1&quot;}</code> which indicates that the request is a channel with capacity 1.</li>
 </ul>
-<h4>sink blocks</h4>
+<h3 id='blocks/sink-blocks'>sink blocks</h3 id='blocks/sink-blocks'>
 <p>These blocks send data to external systems.</p>
 <ul>
 <li><strong>toelasticsearch</strong>. Send JSON to an <a href="http://www.elasticsearch.org/">elasticsearch</a> instance.<ul>
@@ -426,7 +475,7 @@ make</code></pre>
 </ul>
 </li>
 </ul>
-<h4>state blocks</h4>
+<h3 id='blocks/state-blocks'>state blocks</h3 id='blocks/state-blocks'>
 <p>These blocks maintain a state, storing something about the stream of data.</p>
 <ul>
 <li><strong>histogram</strong>. Build a non-staionary histogram of the inbound messages. Currently this only works with discrete values.<ul>
@@ -477,7 +526,7 @@ make</code></pre>
 </li>
 <li><strong>queue</strong>. This block represents a FIFO queue. You can push new messages onto the queue via the PUSH in route. You can pop messages off the queue either by hitting the POP inbound route, causing the block to emit the next message on its OUT route, or you can make a GET request to the POP query route and the block will respond with the next message. You can also peek at the next message using the PEEK query route.</li>
 </ul>
-<h4>random number blocks</h4>
+<h3 id='blocks/random-number-blocks'>random number blocks</h3 id='blocks/random-number-blocks'>
 <p>These blocks emit random numbers when polled. So to generate a stream of random numbers, connect a generator block (like a ticker) to a random number block&#39;s POLL endpoint. Each of these blocks emits JSON of the form:</p>
 <pre><code>{
     "<span class="attribute">sample</span>": <span class="value"><span class="number">1234</span>
@@ -515,30 +564,30 @@ make</code></pre>
 </ul>
 </li>
 </ul>
-<h3 id='reference/interface'>interface</h3 id='reference/interface'>
+<h2 id='interface'>interface</h2 id='interface'>
 <p>Streamtool&#39;s GUI aims to be responsive and informative, meaning that you can both create and interrogate a live streaming system. At the same time, it aims to be as minimal as possible - the GUI posses a very tight relationship with the underlying streamtools architecture enabling users of streamtools to see and understand the execution of the system.</p>
-<h4>make a block</h4>
+<h3 id='interface/make-a-block'>make a block</h3 id='interface/make-a-block'>
 <p>To make a block, double click anywhere on the background. Type the name of the block you&#39;d like and press enter.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2443728/161a3708-ae3e-11e3-9ac7-7e3062720bd7.gif" alt="create"></p>
-<h4>connect two blocks</h4>
+<h3 id='interface/connect-two-blocks'>connect two blocks</h3 id='interface/connect-two-blocks'>
 <p>To connect two blocks together, first click on an outbound route on the <em>bottom</em> of the block you want to connect from. Almost always this route will be labelled <code>OUT</code> when you mouse over it. Then click on an inbound route on the <em>top</em> of another block. There can be a few inbound routes; common ones are <code>IN</code>, <code>RULE</code>, and <code>POLL</code>. This will create a connection between the blocks.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2443787/8070125c-ae3f-11e3-92ba-8a69f3ef24dc.gif" alt="connect_2"></p>
-<h4>set the rule of a block</h4>
+<h3 id='interface/set-the-rule-of-a-block'>set the rule of a block</h3 id='interface/set-the-rule-of-a-block'>
 <p>To set a block&#39;s rules, double click it. This will open a window where you can enter rules. When you&#39;re done entering rules, hit the update button.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2443884/f2fa3e62-ae42-11e3-8b25-486e8f034677.gif" alt="update_rule"></p>
-<h4>query a block</h4>
+<h3 id='interface/query-a-block'>query a block</h3 id='interface/query-a-block'>
 <p>You can query a block&#39;s rules, or any other queryable route a block has, by clicking on the red squares on the right of the block. These will open a window that shows a JSON representation of that information. An example of a queryable route is <code>COUNT</code> for the count block. If you click on the little red square associated with the <code>COUNT</code> route, then you&#39;ll get a JSON representation of that block&#39;s current count.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2444136/d4178984-ae4a-11e3-8861-869e6dd472b3.gif" alt="query"></p>
-<h4>delete a block</h4>
+<h3 id='interface/delete-a-block'>delete a block</h3 id='interface/delete-a-block'>
 <p>To delete a block you don&#39;t like anymore, click on it and press the delete (backspace) button on your keyboard.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2444176/d2a457ca-ae4b-11e3-81a0-beb016f58bb6.gif" alt="delete"></p>
-<h4>move a block</h4>
+<h3 id='interface/move-a-block'>move a block</h3 id='interface/move-a-block'>
 <p>To move a block around, simply drag it about the place.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2443683/7d8d0cbe-ae3c-11e3-91ad-852e830dbeb8.gif" alt="drag_2"></p>
-<h4>see the last message that passed through a connection</h4>
+<h3 id='interface/see-the-last-message-that-passed-through-a-connection'>see the last message that passed through a connection</h3 id='interface/see-the-last-message-that-passed-through-a-connection'>
 <p>To see the last message that passed through a connection, click and drag the connection&#39;s rate estiamte. This creates a window containing the JSON representation of the last message to pass through that connection.</p>
 <p><img src="https://f.cloud.github.com/assets/597897/2443597/b1c2411e-ae39-11e3-9fb4-429e39548620.gif" alt="last_message"></p>
-<h3 id='reference/api'>api</h3 id='reference/api'>
+<h2 id='api'>API</h2 id='api'>
 <p>Streamtools provides a full RESTful HTTP API allowing the developer to programatically control all aspects of streamtools. The API can be broken up into three parts: those endpoints that general aspects of streamtools, those that control blocks and those that control connections.</p>
 <p>If you are running streamtools locally, using the default port, all of the GET endpoints can be queried either by visiting in a browser:</p>
 <pre><code><span class="method">http:</span>//<span class="method">localhost:</span><span class="number">7070</span>/{endpoint}</code></pre>
@@ -546,7 +595,7 @@ make</code></pre>
 <p>The POST endpoints are expecting you to send data. To use these you&#39;ll need to use the command line and a program called <code>curl</code>. For example, to create a new <code>tofile</code> block you need to send along the JSON definition of the block, like this:</p>
 <pre><code><span class="title">curl</span> <span class="url">http://localhost:7070/blocks</span> -d<span class="string">'{"Type":"tofile","Rule":{"Filename":"test.json"}}'</span></code></pre>
 <p>This POSTs the JSON <code>{&quot;Type&quot;:&quot;tofile&quot;,&quot;Rule&quot;:{&quot;Filename&quot;:&quot;test.json&quot;}}</code> to the <code>/blocks</code> endpoint.</p>
-<h4>streamtools</h4>
+<h3 id='api/streamtools'>streamtools</h3 id='api/streamtools'>
 <p>GET <code>/library</code></p>
 <p>The library endpoint returns a description of all the blocks available in the version of streamtools that is runnning.</p>
 <p>GET <code>/version</code></p>
@@ -555,13 +604,13 @@ make</code></pre>
 <p>Export returns a JSON representation of the current streamtools pattern.</p>
 <p>POST <code>/import</code></p>
 <p>Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it&#39;s useful.</p>
-<h4>data</h4>
+<h3 id='api/data'>data</h3 id='api/data'>
 <p>Every block that as an <code>OUT</code> route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.</p>
 <p>WEBSOCKET <code>/ws/{id}</code></p>
 <p>a websocket emitting every message sent on the block&#39;s <code>OUT</code> route.</p>
 <p>GET <code>/stream/{id}</code></p>
 <p>a long-lived HTTP stream of every message sent on the block&#39;s <code>OUT</code> route.</p>
-<h3 id='reference/blocks'>blocks</h3 id='reference/blocks'>
+<h3 id='api/blocks'>blocks</h3 id='api/blocks'>
 <p>A block&#39;s JSON representation uses the following schema:</p>
 <pre><code>{
   <span class="string">"Id"</span>:
@@ -583,7 +632,7 @@ make</code></pre>
 <p>Send data to a block. Each block has a set of default routes (&quot;in&quot;,&quot;rule&quot;) and optional routes (&quot;poll&quot;), as well as custom rotues that defined by the block designer as they see fit. This will POST your JSON to the block specified by <code>{id}</code> via route <code>{route}</code>.</p>
 <p>GET <code>/blocks/{id}/{route}</code></p>
 <p>Recieve data from a block. Use this endpoint to query block routes that return data. The only default route is <code>rule</code> which, in response to a GET query, will return the block&#39;s current rule.</p>
-<h4>connections</h4>
+<h3 id='api/connections'>connections</h3 id='api/connections'>
 <p>A connection&#39;s JSON representation uses the following schema:</p>
 <pre><code><span class="rules">{
   <span class="rule"><span class="attribute">Id</span>:<span class="value">
@@ -602,7 +651,7 @@ make</code></pre>
 <p>Deletes the connection specified by <code>{id}</code>.</p>
 <p>GET <code>/connections/{id}/{route}</code></p>
 <p>Query a connection via its routes. Each connection has a <code>rate</code> route which will return an estimate of the rate of messages coming through it and a <code>last</code> route which will return the last message it saw.</p>
-<h3 id='reference/command-line'>command line</h3 id='reference/command-line'>
+<h2 id='command-line'>command line</h2 id='command-line'>
 <p>The streamtools server is completely contained in a single binary called <code>st</code>. It has a number of options:</p>
 <ul>
 <li><code>--port=7070</code> - specify a port number to run on. Default is 7070.</li>
