@@ -146,18 +146,18 @@ make</code></pre>
 <p>You should see a message similar to the one above letting you know streamtools is running at port 7070.</p>
 <h2 id='getting-started'>getting started</h2 id='getting-started'>
 <p>Streamtools is a binary that can run on your local machine or a remote server. We usually run it using upstart on an ubuntu ec2 server in Amazon&#39;s cloud. To begin with, though, we&#39;ll assume that you&#39;re running streamtools locally, on a machine you can touch. We&#39;re also going to assume you&#39;re running OSX or Linux - if you&#39;re a Windows user we do provide binaries but don&#39;t know much about how to interact with a Windows machine - you will need to translate these instructions to Windows yourself.</p>
-<p>Before we go any further, you should make sure you&#39;ve installed streamtools. Check out the directions on starting the server, either from a binary release or from source, if you haven&#39;t already done so. </p>
+<p>Before we go any further, you should make sure you&#39;ve installed streamtools. Check out the directions on starting the server, either from a binary release or from source, if you haven&#39;t already done so.</p>
 <p>You should see streamtools start up, telling you it&#39;s running on port 7070.</p>
 <p>Now, open a browser window and point it at <a href="http://localhost:7070/">localhost:7070</a>. You should see a (nearly) blank page. At the bottom you should see a status bar that says <code>client: connected to Streamtools</code> followed by a version number. Congratulations! You&#39;re in.</p>
-<p>As a &quot;Hello World&quot;, try double-clicking anywhere on the page above the status bar, type <code>fromhttpstream</code> and hit enter. This will bring up your first block. Double-click on the block and enter <code>http://developer.usa.gov/1usagov</code> in the <code>Endpoint</code> text-box. Hit the update button. Now double-click on the page and make a <code>tolog</code> block. Finally, connect the two blocks together by first clicking on the <code>fromhttpstream</code> block&#39;s OUT route (a litle black square on the bottom of the block) to the <code>tolog</code> block&#39;s IN route (which is the little black square on the top of the block). Click on the status bar and, after a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again. </p>
+<p>As a &quot;Hello World&quot;, try double-clicking anywhere on the page above the status bar, type <code>fromhttpstream</code> and hit enter. This will bring up your first block. Double-click on the block and enter <code>http://developer.usa.gov/1usagov</code> in the <code>Endpoint</code> text-box. Hit the update button. Now double-click on the page and make a <code>tolog</code> block. Finally, connect the two blocks together by first clicking on the <code>fromhttpstream</code> block&#39;s OUT route (a litle black square on the bottom of the block) to the <code>tolog</code> block&#39;s IN route (which is the little black square on the top of the block). Click on the status bar and, after a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again.</p>
 <h2 id='how-it-works'>how it works</h2 id='how-it-works'>
-<p>Streamtools&#39; basic paradigm is straightforward: data flows from <em>blocks</em> through <em>connections</em> to other blocks. </p>
+<p>Streamtools&#39; basic paradigm is straightforward: data flows from <em>blocks</em> through <em>connections</em> to other blocks.</p>
 <ul>
-<li>A block perfoms some operation on each message it recieves, and that operation is defined by the block&#39;s <em>type</em>. </li>
-<li>Each block has zero or more <em>rules</em> which define that block&#39;s behaviour. </li>
+<li>A block perfoms some operation on each message it recieves, and that operation is defined by the block&#39;s <em>type</em>.</li>
+<li>Each block has zero or more <em>rules</em> which define that block&#39;s behaviour.</li>
 <li>Each block has a set of named <em>routes</em> that can recieve data, emit data, or respond to queries.</li>
 <li>You can connect blocks together, via their routes, using connections. You can connect to any inbound route, and so data flowing through streamtools can be used to set the rules of the blocks in the running pattern.</li>
-<li>We call a collection of connected blocks a <em>pattern</em>, and it is possible to export and import whole patterns from a running instance of streamtools. </li>
+<li>We call a collection of connected blocks a <em>pattern</em>, and it is possible to export and import whole patterns from a running instance of streamtools.</li>
 </ul>
 <p>Together, these 5 concepts: blocks, rules, connections, routes and patterns form the basic vocabulary we use to talk about streamtools, and about streaming data systems.</p>
 <h2 id='reference'>reference</h2 id='reference'>
@@ -166,19 +166,17 @@ make</code></pre>
 <p>Blocks rely on some general concepts:
 * <em>gojee path</em>: The path rules all use <a href="https://github.com/nytlabs/gojee">gojee</a> syntax to specify which value you&#39;d like to use in the block. Paths always start with the period, which indicates the top-level of the message. So if you want to refer to the whole message use <code>.</code>. If you want to refer to a specific value then they follow the first period. So if you have a message that looks like</p>
 <pre><code>    {
-        <span class="string">"user"</span>:{
-            <span class="string">"username"</span>:<span class="string">"bob_the_user"</span>
+        "<span class="attribute">user</span>":<span class="value">{
+            "<span class="attribute">username</span>":<span class="value"><span class="string">"bob_the_user"</span>
             <span class="string">"id"</span>: <span class="number">1234</span>
-        }
-    }
-<span class="keyword">and</span> yo<span class="string">u'd like to refer to the username then the gojee path would be `.user.username`.</code></pre>
-<ul>
-<li><em>gojee expression</em>: <a href="https://github.com/nytlabs/gojee">gojee</a> also allows for expressions. So we can write expressions like <code>.user.id &gt; 1230</code>, which are especially useful in the filter and map blocks.  </li>
-<li><em>duration string</em>: We use Go&#39;s duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So <code>10ms</code> is 10 milliseconds; <code>5h</code> is 5 hours and so on. </li>
-<li><em>route</em>: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.</li>
-</ul>
+        }</span>
+    }</span></code></pre>
+<p>and you&#39;d like to refer to the username then the gojee path would be <code>.user.username</code>.
+<em> <em>gojee expression</em>: <a href="https://github.com/nytlabs/gojee">gojee</a> also allows for expressions. So we can write expressions like <code>.user.id &gt; 1230</code>, which are especially useful in the filter and map blocks.  
+</em> <em>duration string</em>: We use Go&#39;s duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So <code>10ms</code> is 10 milliseconds; <code>5h</code> is 5 hours and so on.
+* <em>route</em>: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.</p>
 <h4>generator blocks</h4>
-<p>These blocks emit messages on their own. </p>
+<p>These blocks emit messages on their own.</p>
 <ul>
 <li><strong>ticker</strong>. This block emits the time regularly. The time between emissions is specified by the <code>Interval</code>.<ul>
 <li>Rules:<ul>
@@ -201,7 +199,7 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><p><strong>join</strong>. This block joins two streams together. It waits until it has seen a message on both its inputs, then emits the joined message. </p>
+<li><p><strong>join</strong>. This block joins two streams together. It waits until it has seen a message on both its inputs, then emits the joined message.</p>
 </li>
 <li><p><strong>map</strong>. This block maps inbound data onto outbound data. The <code>Map</code> rule needs to be valid JSON, where each key is a string and each value is a valid <a href="https://github.com/nytlabs/gojee">gojee</a> expression.</p>
 <ul>
@@ -245,12 +243,12 @@ make</code></pre>
 <li><p><strong>pack</strong>. The pack block groups blocks together based on a common value. This is almost like an online &quot;group-by&quot; operation, but care needs to be taken in the stream setting as we have to decide when to emit the &quot;packed&quot; message. Imagine you have messages like</p>
 <pre><code>  {
        "<span class="attribute">option</span>": <span class="value"><span class="string">"a"</span>
-  }</span> </code></pre>
+  }</span></code></pre>
 <p>  where <code>option</code> can be <code>a</code>, <code>b</code> or <code>c</code>. We would like to make a stream that packs together all the <code>a</code>s together into a single message, and similarly for the <code>b</code>s and <code>c</code>s. We only emit the packed message for a particular value of <code>option</code> when we haven&#39;t seen any messages with that value for 20 seconds, at which point we emit the bunch all at once. Here we would specify <code>20s</code> for the <code>EmitAfter</code> rule  and <code>.option</code> as the <code>Path</code> rule. If we saw three <code>a</code> messages in that 20s the output of the pack block looks like</p>
 <pre><code>  {
        "<span class="attribute">pack</span>":<span class="value">[{"<span class="attribute">option</span>": <span class="value"><span class="string">"a"</span>}</span>,{"<span class="attribute">option</span>": <span class="value"><span class="string">"a"</span>}</span>,{"<span class="attribute">option</span>": <span class="value"><span class="string">"a"</span>}</span>]
   }</span></code></pre>
-<p>   Our main use case for this at the NYT is to create per-reader reading sessions. So we set the <code>Path</code> to our user-id and we emit after 20 minutes of not hearing anything from that reader&#39;s user-id. Every page-view our readers generate get packed into a per-reader message, generating a stream of reading sessions. </p>
+<p>   Our main use case for this at the NYT is to create per-reader reading sessions. So we set the <code>Path</code> to our user-id and we emit after 20 minutes of not hearing anything from that reader&#39;s user-id. Every page-view our readers generate get packed into a per-reader message, generating a stream of reading sessions.</p>
 <ul>
 <li>Rules:<ul>
 <li><code>EmitAfter</code>: duration string</li>
@@ -268,9 +266,9 @@ make</code></pre>
 </li>
 <li><p><strong>sync</strong>. The sync block takes an disordered stream and creates a properly timed, ordered stream at the expense of introducing a lag. To explain this block imagine you have a stream that looks like</p>
 <pre><code>  {<span class="string">"val"</span>:<span class="string">"a"</span>, <span class="string">"time"</span>:<span class="number">23</span> } <span class="keyword">...</span> {<span class="string">"val"</span>:<span class="string">"b"</span>, <span class="string">"time"</span>:<span class="number">14</span>} <span class="keyword">...</span> {<span class="string">"val"</span>:<span class="string">"c"</span>, <span class="string">"time"</span>:<span class="number">10</span>}</code></pre>
-<p>  Ideally you&#39;d like the stream to be ordered by the timestamp in the message, so the <code>c</code> message comes first, the <code>b</code> message comes second and the <code>a</code> message comes third. In addition, you&#39;d like the time between the messages to respect the timestamp inside the message. </p>
-<p>  The sync block achieves this by storing the stream for a fixed amount time (the <code>Lag</code>) and then emitting at the time inside the inbound messages plus the lag. This means we have to wait for a while to get our messages but when we do get them, they&#39;re in a stream whose dynamics reflect the timestamp inside the message. </p>
-<p>  This can be very helpful if the plumbing between your sensor and streamtools introduces dynamics that would confuse your analysis. For example, it&#39;s quite common for a system to wait until it has a collection of messages from its sensor before it makes an HTTP request to post those messages to the next stage. This means that by the time those messages make it to a streamtools pattern, they&#39;re artifcially grouped together into little pulses. You can use the sync block to recover the original stream generated by the sensor. </p>
+<p>  Ideally you&#39;d like the stream to be ordered by the timestamp in the message, so the <code>c</code> message comes first, the <code>b</code> message comes second and the <code>a</code> message comes third. In addition, you&#39;d like the time between the messages to respect the timestamp inside the message.</p>
+<p>  The sync block achieves this by storing the stream for a fixed amount time (the <code>Lag</code>) and then emitting at the time inside the inbound messages plus the lag. This means we have to wait for a while to get our messages but when we do get them, they&#39;re in a stream whose dynamics reflect the timestamp inside the message.</p>
+<p>  This can be very helpful if the plumbing between your sensor and streamtools introduces dynamics that would confuse your analysis. For example, it&#39;s quite common for a system to wait until it has a collection of messages from its sensor before it makes an HTTP request to post those messages to the next stage. This means that by the time those messages make it to a streamtools pattern, they&#39;re artifcially grouped together into little pulses. You can use the sync block to recover the original stream generated by the sensor.</p>
 <ul>
 <li>Rules:<ul>
 <li><code>Path</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path. This must point at a UNIX epoch time in milliseconds,</li>
@@ -281,15 +279,15 @@ make</code></pre>
 </li>
 <li><strong>gethttp</strong>. The getHTTP block makes an HTTP GET request to a URL you specify in the inbound message. It is necessary for the HTTP endpoint to serve JSON. This block forms the backbone for any sort of polling pattern.<ul>
 <li>Rules:<ul>
-<li><code>Path</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to a fully formed URL. </li>
+<li><code>Path</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to a fully formed URL.</li>
 </ul>
 </li>
 </ul>
 </li>
 <li><strong>kullbackleibler</strong>. Calculates the <a href="http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence">Kullback Leibler divergence</a> between two distributions p and q. The two distributions must mimic the output from the <strong>histogram</strong> block.<ul>
 <li>Rules:<ul>
-<li><code>QPath</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to the q distribution. </li>
-<li><code>PPath</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to the p distribution. </li>
+<li><code>QPath</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to the q distribution.</li>
+<li><code>PPath</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path to the p distribution.</li>
 </ul>
 </li>
 </ul>
@@ -298,7 +296,7 @@ make</code></pre>
 <h4>source blocks</h4>
 <p>These blocks hook into another system and collect messages to be emitted into streamtools.</p>
 <ul>
-<li><strong>fromhttpstream</strong>. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at <code>http://developer.usa.gov/1usagov</code>. <ul>
+<li><strong>fromhttpstream</strong>. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at <code>http://developer.usa.gov/1usagov</code>.<ul>
 <li>Rules:<ul>
 <li><code>Endpoint</code>: endpoint string</li>
 <li><code>Auth</code>: authorisation string</li>
@@ -306,11 +304,11 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><strong>fromnsq</strong>. This block implements an NSQ reader. For more details on how to specify the rule for this block check out the <a href="http://bitly.github.io/nsq/">NSQ docs</a>. <ul>
+<li><strong>fromnsq</strong>. This block implements an NSQ reader. For more details on how to specify the rule for this block check out the <a href="http://bitly.github.io/nsq/">NSQ docs</a>.<ul>
 <li>Rules:<ul>
 <li><code>ReadTopic</code>: topic to read from.</li>
 <li><code>LookupdAddr</code>: nsqlookupd addresss</li>
-<li><code>ReadChannel</code>: name of the channel </li>
+<li><code>ReadChannel</code>: name of the channel</li>
 <li><code>MaxInFlight</code>: how many messages to take from the queue at a time. (<code>0</code>)</li>
 </ul>
 </li>
@@ -332,12 +330,12 @@ make</code></pre>
 </li>
 <li><strong>fromudp</strong>. Listens for messages sent over UDP. Each message is emitted into streamtools.<ul>
 <li>Rules:<ul>
-<li><code>ConnectionString</code>: </li>
+<li><code>ConnectionString</code>:</li>
 </ul>
 </li>
 </ul>
 </li>
-<li><strong>fromwebsocket</strong>. Connects to an existing websocket. Each message it hears from the websocket is emitted into streamtools. <ul>
+<li><strong>fromwebsocket</strong>. Connects to an existing websocket. Each message it hears from the websocket is emitted into streamtools.<ul>
 <li>Rules:<ul>
 <li><code>url</code>: address of the websocket.</li>
 </ul>
@@ -354,7 +352,7 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><strong>fromHTTPGetRequest</strong>. This block, when a GET request is made to the block&#39;s QUERY endpoint, emits that request into streamtools. The request can be handled by the <strong>toHTTPGetRequest</strong> block. </li>
+<li><strong>fromHTTPGetRequest</strong>. This block, when a GET request is made to the block&#39;s QUERY endpoint, emits that request into streamtools. The request can be handled by the <strong>toHTTPGetRequest</strong> block.</li>
 <li><strong>toHTTPGetRequest</strong>. This block, while deceptively simple, allows the creation of an API that can use streamtools as a backend. The request, should it ever be marshalled into JSON, is represented as <code>{&quot;channel&quot;:&quot;1&quot;}</code> which indicates that the request is a channel with capacity 1.</li>
 </ul>
 <h4>sink blocks</h4>
@@ -362,15 +360,15 @@ make</code></pre>
 <ul>
 <li><strong>toelasticsearch</strong>. Send JSON to an <a href="http://www.elasticsearch.org/">elasticsearch</a> instance.<ul>
 <li>Rules:<ul>
-<li><code>Index</code>: </li>
-<li><code>Host</code>: </li>
-<li><code>IndexType</code>: </li>
-<li><code>Port</code>: </li>
+<li><code>Index</code>:</li>
+<li><code>Host</code>:</li>
+<li><code>IndexType</code>:</li>
+<li><code>Port</code>:</li>
 </ul>
 </li>
 </ul>
 </li>
-<li><strong>tofile</strong>. Writes a message as JSON to a file. Each message becomes a new line of JSON. <ul>
+<li><strong>tofile</strong>. Writes a message as JSON to a file. Each message becomes a new line of JSON.<ul>
 <li>Rules:<ul>
 <li><code>Filename</code>: file to write to</li>
 </ul>
@@ -400,7 +398,7 @@ make</code></pre>
 <li><code>Host</code>: The host string for the an instance e.g. <code>localhost:27107</code> or a replicaset or a cluster e.g. <code>mongohost1.example.com:27017,mongohost2.example.com:27017,mongoarbiter1.example.com</code></li>
 <li><code>Database</code>: Database to which the documents should be written to.</li>
 <li><code>Collection</code> : Collection to which the documents should be written to under the specified database.</li>
-<li><code>BatchSize</code>: the number of documents to be written together at any time in bulk. if value is set to &lt;= 1, the documents will be written one at a time. </li>
+<li><code>BatchSize</code>: the number of documents to be written together at any time in bulk. if value is set to &lt;= 1, the documents will be written one at a time.</li>
 </ul>
 </li>
 </ul>
@@ -449,7 +447,7 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><strong>count</strong>. This block counts the number of messages it has seen over the specified <code>Window</code>. <ul>
+<li><strong>count</strong>. This block counts the number of messages it has seen over the specified <code>Window</code>.<ul>
 <li>Rules:<ul>
 <li><code>Window</code>: duration string (<code>0</code>)</li>
 </ul>
@@ -464,9 +462,9 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><strong>set</strong>. This stores a <a href="http://en.wikipedia.org/wiki/Set_(mathematics">set</a>) of values as specified by the block&#39;s <code>Path</code>. Add new members through the (idempotent) ADD route. If you send a message through the ISMEMBER route, the block will emit true or false. You can also query the cardinality of the set. <ul>
+<li><strong>set</strong>. This stores a <a href="http://en.wikipedia.org/wiki/Set_(mathematics">set</a>) of values as specified by the block&#39;s <code>Path</code>. Add new members through the (idempotent) ADD route. If you send a message through the ISMEMBER route, the block will emit true or false. You can also query the cardinality of the set.<ul>
 <li>Rules:<ul>
-<li><code>Path</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path </li>
+<li><code>Path</code>: <a href="https://github.com/nytlabs/gojee">gojee</a> path</li>
 </ul>
 </li>
 </ul>
@@ -487,7 +485,7 @@ make</code></pre>
 </li>
 </ul>
 </li>
-<li><strong>queue</strong>. This block represents a FIFO queue. You can push new messages onto the queue via the PUSH in route. You can pop messages off the queue either by hitting the POP inbound route, causing the block to emit the next message on its OUT route, or you can make a GET request to the POP query route and the block will respond with the next message. You can also peek at the next message using the PEEK query route. </li>
+<li><strong>queue</strong>. This block represents a FIFO queue. You can push new messages onto the queue via the PUSH in route. You can pop messages off the queue either by hitting the POP inbound route, causing the block to emit the next message on its OUT route, or you can make a GET request to the POP query route and the block will respond with the next message. You can also peek at the next message using the PEEK query route.</li>
 </ul>
 <h4>random number blocks</h4>
 <p>These blocks emit random numbers when polled. So to generate a stream of random numbers, connect a generator block (like a ticker) to a random number block&#39;s POLL endpoint. Each of these blocks emits JSON of the form:</p>
@@ -521,7 +519,7 @@ make</code></pre>
 </li>
 <li><strong>categorical</strong>. This block draws a random number from a <a href="http://en.wikipedia.org/wiki/Categorical_distribution">Categorical</a> distribution when polled.<ul>
 <li>Rules:<ul>
-<li><code>Weights</code>: (<code>[1]</code>) - a list of weighting parameters. The number drawn from this distribution corresponds to the index of this list. These weights are automatically normalised to sum to one. </li>
+<li><code>Weights</code>: (<code>[1]</code>) - a list of weighting parameters. The number drawn from this distribution corresponds to the index of this list. These weights are automatically normalised to sum to one.</li>
 </ul>
 </li>
 </ul>
@@ -622,8 +620,8 @@ make</code></pre>
 </ul>
 <h2 id='more-info'>More Info</h2 id='more-info'>
 <p>For more info see <a href="http://blog.nytlabs.com/2014/03/12/streamtools-a-graphical-tool-for-working-with-streams-of-data/">Introducing Streamtools</a> on The New York Times R&amp;D Labs blog.</p>
-<p>For background on responsive programming tools see Bret Victor&#39;s <a href="http://worrydream.com/#!/LearnableProgramming">learnable programming</a>. </p>
-<p>If you&#39;re interested in learning more about visual programming languages, check out Interface Vision&#39;s <a href="http://blog.interfacevision.com/design/design-visual-progarmming-languages-snapshots/">fantastic roundup dating back to 1963</a>. </p>
+<p>For background on responsive programming tools see Bret Victor&#39;s <a href="http://worrydream.com/#!/LearnableProgramming">learnable programming</a>.</p>
+<p>If you&#39;re interested in learning more about visual programming languages, check out Interface Vision&#39;s <a href="http://blog.interfacevision.com/design/design-visual-progarmming-languages-snapshots/">fantastic roundup dating back to 1963</a>.</p>
 
   </div>
 </div>
