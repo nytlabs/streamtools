@@ -88,6 +88,10 @@ func (b *PutHTTP) Run() {
 			}
 
 			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				b.Error(err)
+				break
+			}
 
 			b.out <- map[string]interface{}{
 				"Response": string(body),
