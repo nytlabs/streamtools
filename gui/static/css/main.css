@@ -413,3 +413,20 @@ div.blockMsg {
 .twitter-typeahead {
     height: 500px;
 }
+
+.intro-text, .intro-text.clicked {
+  font-family: 'helvetica', 'arial';
+  text-anchor:middle;
+  fill:#a3a3a3;
+  font-size:1.25em;
+  transition: all .75s ease;
+  -webkit-user-select: none; /* Chrome/Safari */        
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+  -o-user-select: none;
+  user-select: none;
+}
+
+.intro-text.clicked {
+  opacity:0;
+}

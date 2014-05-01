@@ -132,6 +132,13 @@ $(function() {
         $("div.confirm").remove();
     });
 
+    $(window).on("click", function() {
+        if ($('.intro-text').length > 0) {
+            d3.selectAll('.intro-text')
+                .attr('class', 'intro-text clicked');
+        }
+    });
+
     //
     // SVG elements
     //
@@ -325,6 +332,8 @@ $(function() {
             .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
+        introText.attr('x', window.innerWidth/2)
+            .attr('y', window.innerHeight/2);
     });
 
     $(window).resize(resizeReference);
@@ -357,6 +366,28 @@ $(function() {
             $(this).addClass('log-max');
         }
     });
+
+    setIntroText();
+
+    function setIntroText() {
+        var numBlocks = (JSON.parse($.ajax({
+            url: '/status',
+            type: 'GET',
+            async: false // required before UI stream starts
+        }).responseText)); 
+        
+        if (numBlocks["Blocks"].length == 0) {
+            var introText = svg.append('text')
+                .attr('x', width/2)
+                .attr('y', height/2)
+                .text('Double-click to create a block, or click the ☰ icon to see all blocks.')
+                .attr('class', 'intro-text');
+        }   
+
+        $(".intro-text").on('transitionend webkitTransitionEnd oTransitionEnd otransitionend MSTransitionEnd', function() {
+            $(".intro-text").remove();
+        }); 
+    }
 
     function createStaticPanel(titleTxt, data) {
         var info = d3.select('body').append('div')
