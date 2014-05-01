@@ -488,7 +488,7 @@ The streamtools server is completely contained in a single binary called `st`. I
 * `--domain=localhost` - if you're accessing streamtools through a URL that's not `localhost`, you need to specify it using this option.
 
 
-## References
+## More Info
 
 For more info see [Introducing Streamtools](http://blog.nytlabs.com/2014/03/12/streamtools-a-graphical-tool-for-working-with-streams-of-data/) on The New York Times R&D Labs blog.
 
