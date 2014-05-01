@@ -14,9 +14,9 @@ Is it in the wiki?:
 - [ ] fromamqp
 - [x] fromemail
 - [ ] fromfile
-- [ ] fromhttpstream
+- [x] fromhttpstream
 - [x] fromnsq
-- [ ] frompost
+- [x] frompost
 - [x] fromsqs
 - [x] fromudp
 - [x] fromwebsocket
@@ -35,14 +35,14 @@ Is it in the wiki?:
 - [x] pack
 - [ ] parsexml
 - [x] poisson
-- [ ] queue
+- [x] queue
 - [x] set
 - [x] sync
 - [x] ticker
 - [x] timeseries
-- [ ] toHTTPGetRequest
+- [x] toHTTPGetRequest
 - [ ] toamqp
-- [ ] tobeanstalkd
+- [x] tobeanstalkd
 - [x] toelasticsearch
 - [x] toemail
 - [x] tofile
@@ -50,6 +50,6 @@ Is it in the wiki?:
 - [x] tolog
 - [x] tomongodb
 - [x] tonsq
-- [ ] tonsqmulti
+- [x] tonsqmulti
 - [x] unpack
 - [x] zipf
