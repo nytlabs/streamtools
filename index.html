@@ -1,1 +1,115 @@
-My GitHub Page
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>streamtools</title>
+  <script src="js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
+</head>
+<body>
+  <div class="jumbotron">
+    <div class="container">
+      <img class="logo-header" src="img/logo.png">
+      <h1>streamtools</h1>
+      <p>a graphical toolkit for working with streams of data</p>
+      <a href="https://github.com/nytlabs/streamtools/releases" target="_blank" class="btn btn-download">download</a>
+      <a href="demos" target="_blank" class="btn btn-demos">view demos</a>
+      <a href="https://github.com/nytlabs/streamtools" target="_blank" class="btn btn-learn">learn more</a>
+    </div>
+  </div> <!--/jumbotron-->
+
+  <div class="container-fluid intro">
+    <div class="container">
+      <div class="row">
+        <h2>Explore, analyse, modify, and learn from streams of data.</h2>
+        <div class="col-md-8">
+          <p>Streamtools is a new, open source project by The New York Times R&D Lab which provides a general purpose, graphical tool for dealing with streams of data.</p> <p>It provides a vocabulary of operations that can be connected together to create live data processing systems without the need for programming or complicated infrastructure.</p><p> These systems are assembled using a visual interface that affords both immediate understanding and live manipulation of the system.</p>
+          <p>Learn more about streamtools on the <a href="http://blog.nytlabs.com/2014/03/12/streamtools-a-graphical-tool-for-working-with-streams-of-data/" target="_new">NYT R&D blog</a>.</p>
+        </div>
+        <div class="col-md-4">
+          <img class="intro-gif" src="https://camo.githubusercontent.com/7d5be9642de37daa92efd6d87235c5b9a599f610/68747470733a2f2f662e636c6f75642e6769746875622e636f6d2f6173736574732f3539373839372f323434333539372f62316332343131652d616533392d313165332d396662342d3432396533393534383632302e676966">
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <a name="download"></a>
+  <div class="container-fluid install">
+    <div class="container">
+      <div class="row">
+        <h2>Get streamtools now.</h2>
+        <div class="col-md-6 easy-install">
+          <h3 class="centered">Option 1: Easy install.</h3>
+          <p class="centered">Download the binary and be set up in seconds.</p>
+          <div class="download download-windows">
+            <a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_windows_amd64.exe-0.2.5.tar.gz" target="_new">
+              <img class="img-download" src="img/download.png">
+              <p class="centered">(Windows 64-bit)</p>
+            </a>
+          </div>
+
+          <div class="download download-mac">
+            <a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_darwin_amd64-0.2.5.tar.gz" target="_new">
+              <img class="img-download" src="img/download.png">
+              <p class="centered">(Mac 64-bit)</p>
+            </a>
+          </div>
+
+          <div class="download download-linux">
+            <a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_linux_amd64-0.2.5.tar.gz" target="_new">
+            <img class="img-download" src="img/download.png">
+            <p class="centered">(Linux 64-bit)</p>
+          </a>
+          </div>
+
+          <div class="download download-none">
+            <a href="https://github.com/nytlabs/streamtools/releases/tag/0.2.5" target="_new">
+              <img class="img-download" src="img/download.png">
+              <p class="centered">(All OSes)</p>
+            </a>
+          </div>
+
+          <p class="centered">Embedded? Try our <a href="https://github.com/nytlabs/streamtools/releases/download/0.2.5/st_linux_arm-0.2.5.tar.gz" target="_new">BeagleBone build</a>.</p><p class="centered">For all builds, <a href="https://github.com/nytlabs/streamtools/releases/tag/0.2.5" target="_new">click here</a>.</p>
+        </div>
+
+        <div class="col-md-6">
+          <h3 class="centered compile">Option 2: Compile it.</h3>
+          <p class="centered">Make sure you have <code>go</code>, <code>git</code>, <code>hg</code>, and <code>bzr</code> installed.</p>
+          <p class="centered">On a fresh *nix system:</p>
+          <div class="terminal-style">
+            <code>mkdir -p ~/go/src/github.com/nytlabs</code>
+            <code>cd ~/go/src/github.com/nytlabs</code>
+            <code>git clone git@github.com:nytlabs/streamtools.git</code>
+            <code>cd streamtools</code>
+            <code>make</code>
+          </div>
+          <p class="centered">To run it, just type <code class="terminal-style">./build/st</code> and visit port 7070.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <br>
+  <div class="container-fluid learn">
+    <div class="container">
+      <div class="row">
+        <h2>Learn more.</h2>
+        <div class="col-md-12">
+          <p>Check our our <a href="demos">Demos</a> page to see how use streamtools to poll the MTA's records of lost and found items, monitor USGS realtime data for significant earthquakes, and more.</p>
+          <p>See how to use the GUI on our <a href="https://github.com/nytlabs/streamtools/wiki/interface">Interface</a> page.</a>
+            <p>Read up on individual blocks in our <a href="https://github.com/nytlabs/streamtools/wiki/blocks">Documentation</a> section.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <hr>
+  <div class="container-fluid">
+    <p class="centered footer">Download icon by Michael Zenaty from The Noun Project. Streamtools is a product of the <a href="http://nytlabs.com/">New York Times R&D Lab</a>.</p>
+  </div>
+</body>
+</html>

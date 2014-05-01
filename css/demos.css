@@ -1,0 +1,55 @@
+body { padding-top: 70px; }
+
+.navbar-logo {
+	display:block;
+	float:left;
+	margin-top:10px;
+	margin-right:10px;
+	max-height:30px;
+}
+
+/* Media queries for screen width so streamtools' tagline doesn't spill over*/
+@media (max-width: 768px) {
+	.tagline-text {
+		display:none;
+	}
+}
+
+@media (max-width: 992px) {
+	.tagline-text {
+		display:none;
+	}
+}
+
+.quake-map-image {
+  width: 50%;
+  height: 50%;
+}
+
+.logo-header-small {
+	max-width:45px;
+	max-height:45px;
+}
+
+#demos .navbar-brand {
+    color: rgba(255,80,80,1);
+}
+
+.navbar-logo {
+  padding: 0;
+}
+
+#credits {
+  display: none;
+  margin-top: 50px;
+}
+
+.centered {
+	text-align:center;
+}
+
+#Your_Icon, #Layer_1 {
+	display:block;
+	margin-left:auto;
+	margin-right:auto;
+}
