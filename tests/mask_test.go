@@ -2,27 +2,28 @@ package tests
 
 import (
 	"log"
-	"os"
 	"reflect"
 	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks"
-	"github.com/nytlabs/streamtools/st/loghub"
 	"github.com/nytlabs/streamtools/test_utils"
 	. "launchpad.net/gocheck"
 )
 
-type ToFileSuite struct{}
+type MaskSuite struct{}
 
-var toFileSuite = Suite(&ToFileSuite{})
+var maskSuite = Suite(&MaskSuite{})
 
-func (s *ToFileSuite) TestToFile(c *C) {
-	loghub.Start()
-	log.Println("testing toFile")
-	b, ch := test_utils.NewBlock("testingToFile", "tofile")
+func (s *MaskSuite) TestMask(c *C) {
+	log.Println("testing Mask")
+	b, ch := test_utils.NewBlock("testingMask", "mask")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"Filename": "foobar.log"}
+	ruleMsg := map[string]interface{}{
+		"Mask": map[string]interface{}{
+			".foo": "{}",
+		},
+	}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
@@ -33,10 +34,6 @@ func (s *ToFileSuite) TestToFile(c *C) {
 	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		err := os.Remove("foobar.log")
-		if err != nil {
-			c.Errorf(err.Error())
-		}
 		ch.QuitChan <- true
 	})
 
@@ -44,6 +41,7 @@ func (s *ToFileSuite) TestToFile(c *C) {
 		select {
 		case messageI := <-queryOutChan:
 			if !reflect.DeepEqual(messageI, ruleMsg) {
+				log.Println("Rule mismatch:", messageI, ruleMsg)
 				c.Fail()
 			}
 

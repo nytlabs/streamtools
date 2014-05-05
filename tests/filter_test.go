@@ -2,27 +2,24 @@ package tests
 
 import (
 	"log"
-	"os"
 	"reflect"
 	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks"
-	"github.com/nytlabs/streamtools/st/loghub"
 	"github.com/nytlabs/streamtools/test_utils"
 	. "launchpad.net/gocheck"
 )
 
-type ToFileSuite struct{}
+type FilterSuite struct{}
 
-var toFileSuite = Suite(&ToFileSuite{})
+var filterSuite = Suite(&FilterSuite{})
 
-func (s *ToFileSuite) TestToFile(c *C) {
-	loghub.Start()
-	log.Println("testing toFile")
-	b, ch := test_utils.NewBlock("testingToFile", "tofile")
+func (s *FilterSuite) TestFilter(c *C) {
+	log.Println("testing Filter")
+	b, ch := test_utils.NewBlock("testingFilter", "filter")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"Filename": "foobar.log"}
+	ruleMsg := map[string]interface{}{"Filter": ".device == 'iPhone'"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
@@ -33,10 +30,6 @@ func (s *ToFileSuite) TestToFile(c *C) {
 	ch.QueryChan <- &blocks.QueryMsg{MsgChan: queryOutChan, Route: "rule"}
 
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
-		err := os.Remove("foobar.log")
-		if err != nil {
-			c.Errorf(err.Error())
-		}
 		ch.QuitChan <- true
 	})
 
