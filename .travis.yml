@@ -4,7 +4,7 @@ go:
   - 1.2
   - release
   
-script: "cd st/library && go test"
+script: "cd tests && go test"
 
 before_install:
   - export GOPATH=/home/travis/gopath
