@@ -10,7 +10,7 @@ import (
 )
 
 // specify those channels we're going to use to communicate with streamtools
-type Pack struct {
+type PackByValue struct {
 	blocks.Block
 	queryrule chan blocks.MsgChan
 	inrule    blocks.MsgChan
@@ -20,13 +20,13 @@ type Pack struct {
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
-func NewPack() blocks.BlockInterface {
-	return &Pack{}
+func NewPackByValue() blocks.BlockInterface {
+	return &PackByValue{}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
-func (b *Pack) Setup() {
-	b.Kind = "Pack"
+func (b *PackByValue) Setup() {
+	b.Kind = "PackByValue"
 	b.Desc = "groups messages together based on a common value, similar to 'group-by' in other languages"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
@@ -36,7 +36,7 @@ func (b *Pack) Setup() {
 }
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
-func (b *Pack) Run() {
+func (b *PackByValue) Run() {
 	var tree *jee.TokenTree
 	var emitAfter, path string
 	var err error
@@ -150,7 +150,7 @@ func (b *Pack) Run() {
 				// we've not seen anything since putting this message in the queue
 
 				msg := map[string]interface{}{
-					"pack": bunches[idStr],
+					"Pack": bunches[idStr],
 				}
 
 				b.out <- msg

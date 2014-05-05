@@ -1005,10 +1005,10 @@ func (s *StreamSuite) TestMovingAverage(c *C) {
 	}
 }
 
-func (s *StreamSuite) TestPack(c *C) {
+func (s *StreamSuite) TestPackByValue(c *C) {
 	loghub.Start()
-	log.Println("testing pack")
-	b, ch := newBlock("testing pack", "pack")
+	log.Println("testing packbyvalue")
+	b, ch := newBlock("testing packbyvalue", "packbyvalue")
 	go blocks.BlockRoutine(b)
 	outChan := make(chan *blocks.Msg)
 	ch.AddChan <- &blocks.AddChanMsg{
