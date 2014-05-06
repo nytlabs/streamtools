@@ -2,6 +2,7 @@ package util
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"
 )
 
@@ -81,25 +82,41 @@ func ParseInt(ruleI interface{}, key string) (int, error) {
 	return val, nil
 }
 
+func KeyExists(ruleI interface{}, key string) bool {
+	rule := ruleI.(map[string]interface{})
+	_, ok := rule[key]
+	return ok
+}
+
 func ParseArrayString(ruleI interface{}, key string) ([]string, error) {
+	var val []string
+
 	rule := ruleI.(map[string]interface{})
 	var ok bool
-	var val []string
 	foundRule, ok := rule[key]
 	if !ok {
 		return val, errors.New("Path was not in rule")
 	}
-	valI, ok := foundRule.([]interface{})
-	if !ok {
-		return val, errors.New("Supplied value was not an array")
-	}
-	val = make([]string, len(valI))
-	for i, vi := range valI {
-		v, ok := vi.(string)
+
+	switch foundRule.(type) {
+	case []interface{}:
+		valI, ok := foundRule.([]interface{})
+		if !ok {
+			return val, errors.New("Supplied value was not an array of interfaces")
+		}
+		//val = make([]string, len(valI))
+		for i, vi := range valI {
+			v, ok := vi.(string)
+			if !ok {
+				return val, errors.New("Failed asserting to []string")
+			}
+			val[i] = v
+		}
+	case []string:
+		val, ok = foundRule.([]string)
 		if !ok {
 			return val, errors.New("Supplied value was not an array of strings")
 		}
-		val[i] = v
 	}
 	return val, nil
 }

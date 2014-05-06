@@ -8,6 +8,7 @@ import (
 
 var Blocks = map[string]func() blocks.BlockInterface{
 	"count":              NewCount,
+	"redis":              NewRedis,
 	"toggle":             NewToggle,
 	"movingaverage":      NewMovingAverage,
 	"ticker":             NewTicker,
