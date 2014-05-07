@@ -8,30 +8,42 @@ $(window).load(function() {
 		}
 	});
 
-	tour.addStep('welcome', {
+	var welcome = tour.addStep('welcome', {
 		text: 'Welcome to Streamtools!',
 		buttons: [
 			{
 				text: 'Next',
-				action: tour.next
 			}
 		]
 	});
 
-	tour.addStep('goal', {
+	var goal = tour.addStep('goal', {
 		text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
 		buttons: [
 			{
 				text: 'Next',
-				action: tour.next
 			}
 		]
 	});
 
 	var clickRef = tour.addStep('intro-to-ref', {
-		text: 'First, we need a fromhttpstream block.' + ' Click the hamburger button to see the reference.',
+		text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
 		attachTo: '#ui-ref-toggle',
 		buttons: false
+	});
+
+
+	console.log(welcome);
+	console.log(clickRef);
+
+	var addFromHTTP = tour.addStep('add-fromhttp', {
+		text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
+		attachTo: 'li[data-block-type="fromhttpstream"]',
+		buttons: [
+			{
+				text: 'Next'
+			}
+		],
 	});
 
 	$("#ui-ref-toggle").one('click', function() {
@@ -40,30 +52,36 @@ $(window).load(function() {
 		}
 	});
 
-
-	var addFromHTTP = tour.addStep('add-fromhttp', {
-		text: 'Click fromhttpstream to add that block, then click Next.',
-		attachTo: '#ui-ref-toggle',
-		buttons: [
-			{
-				text: 'Next'
-			}
-		]
-	});
-
 	var editFromHTTP = tour.addStep('edit-fromhttp', {
-		text: 'Double-click the block to edit its rules. Paste http://developer.usa.gov/1usagov into the endpoint, then click Next.',
-		attachTo: '#ui-ref-toggle',
+		text: [
+			'Double-click the block to edit its rules.', 
+			'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'
+			],
+		tetherOptions:
+		{
+			targetAttachment: 'top right',
+			attachment: 'top right',
+		},
+		attachTo: 'body',
 		buttons: [
 			{
 				text: 'Next'
 			}
-		]
+		],
 	});
 
 	var addTolog = tour.addStep('add-tolog', {
-		text: 'Now let\'s add a block to log our data. Double-click anywhere on screen, then type in tolog.',
-		attachTo: '#ui-ref-toggle',
+		text: [
+			'Now let\'s add a block to log our data.', 
+			'Double-click anywhere on screen to add a block.',
+			'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.'
+			],
+		tetherOptions:
+		{
+			targetAttachment: 'top right',
+			attachment: 'top right',
+		},
+		attachTo: 'svg',
 		buttons: [
 			{
 				text: 'Next'
@@ -72,8 +90,16 @@ $(window).load(function() {
 	});
 
 	var makeConnection1 = tour.addStep('make-connection1', {
-		text: 'Click the OUT box on your fromhttpstream box (the bottom black box), and connect it to the IN on your tolog (the top black box).',
-		attachTo: '#ui-ref-toggle',
+		text: [
+			'Let\'s connect the two, so we have data streaming into our log.', 
+			'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).'
+			],
+		tetherOptions:
+		{
+			targetAttachment: 'top right',
+			attachment: 'top right',
+		},
+		attachTo: 'svg',
 		buttons: [
 			{
 				text: 'Next'
@@ -82,13 +108,18 @@ $(window).load(function() {
 	});
 
 	var viewLog = tour.addStep('view-log', {
-		text: 'Now click the log to view your data!',
-		attachTo: '#log top',
+		text: 'Now click the log (this black bar) to view your data!',
+		tetherOptions:
+		{
+			targetAttachment: 'bottom right',
+			attachment: 'bottom right',
+		},
+		attachTo: "svg",
 		buttons: [
 			{
 				text: 'Next'
 			}
-		]
+		],
 	});
 
 	function checkBlockBeforeProgress(req, cat) {
@@ -160,7 +191,13 @@ $(window).load(function() {
 	}
 
 	$(document).on("click", ".shepherd-button", function() {
-		if (addFromHTTP.isOpen()) {
+		if (welcome.isOpen()) {
+			Shepherd.activeTour.next();
+		}
+		else if (goal.isOpen()) {
+			Shepherd.activeTour.next();
+		}
+		else if (addFromHTTP.isOpen()) {
 			checkBlockBeforeProgress("fromhttpstream", "type");
 		} 
 		else if (editFromHTTP.isOpen()) {
