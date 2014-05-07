@@ -15,10 +15,6 @@ type ToElasticsearch struct {
 	in        blocks.MsgChan
 	out       blocks.MsgChan
 	quit      blocks.MsgChan
-	host      string
-	port      string
-	index     string
-	indextype string
 }
 
 // we need to build a simple factory so that streamtools can make new blocks of this kind
@@ -40,37 +36,55 @@ func (b *ToElasticsearch) Setup() {
 // Run is the block's main loop. Here we listen on the different channels we set up.
 // This block posts a message to a specified Elasticsearch index with the given type.
 func (b *ToElasticsearch) Run() {
+	var err error
+	var index string
+	var indextype string
+
+	host := "localhost"
+	port := "9200"
+
 	for {
 		select {
 		case msgI := <-b.inrule:
-			host, _ := util.ParseString(msgI, "Host")
-			port, _ := util.ParseString(msgI, "Port")
-			index, _ := util.ParseString(msgI, "Index")
-			indextype, _ := util.ParseString(msgI, "IndexType")
+			host, err = util.ParseString(msgI, "Host")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			port, err = util.ParseString(msgI, "Port")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			index, err = util.ParseString(msgI, "Index")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			indextype, err = util.ParseString(msgI, "IndexType")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
 
 			// Set the Elasticsearch Host/Port to Connect to
 			api.Domain = host
 			api.Port = port
 
-			b.host = host
-			b.port = port
-			b.index = index
-			b.indextype = indextype
-
 		case MsgChan := <-b.queryrule:
 			// deal with a query request
 			MsgChan <- map[string]interface{}{
-				"Host":      b.host,
-				"Port":      b.port,
-				"Index":     b.index,
-				"IndexType": b.indextype,
+				"Host":      host,
+				"Port":      port,
+				"Index":     index,
+				"IndexType": indextype,
 			}
 		case <-b.quit:
 			// quit the block
 			return
 		case msg := <-b.in:
 			var args map[string]interface{}
-			_, err := core.Index(b.index, b.indextype, "", args, msg)
+			_, err := core.Index(index, indextype, "", args, msg)
 			if err != nil {
 				b.Error(err)
 			}
