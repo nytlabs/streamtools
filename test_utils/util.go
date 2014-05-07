@@ -35,3 +35,16 @@ func NewBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 	return b, chans
 
 }
+
+func StringInSlice(stringSlice []string, term string) bool {
+	termIndex := -1
+	for i, value := range stringSlice {
+		if term == value {
+			termIndex = i
+		}
+	}
+	if termIndex == -1 {
+		return false
+	}
+	return true
+}
