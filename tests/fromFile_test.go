@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"syscall"
+	//	"syscall"
 	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks"
@@ -29,20 +30,33 @@ func (s *FromFileSuite) TestFromFile(c *C) {
 	if err != nil {
 		c.Errorf(err.Error())
 	}
+
 	defer syscall.Unlink(f.Name())
-	var fromfilestring = string(`{"Name": "Jacqui Maher", "Location": "Brooklyn, NY", "Dog": "Conor S. Dogberst" }
-{"Name": "Nik Hanselmann", "Location": "New York, NY", "Dog": "None:(" }
-{"Name": "Mike Dewar", "Location": "Brooklyn, NY", "Dog": "Percy ? Dewar" }`)
+
+	var fromfilestring = string(`{"Name": "Jacqui Maher", "Location": "Brooklyn", "Dog": "Conor S. Dogberst" }
+{"Name": "Nik Hanselmann", "Location": "New York", "Dog": "None:(" }
+{"Name": "Mike Dewar", "Location": "The Moon", "Dog": "Percy ? Dewar" }`)
+
 	ioutil.WriteFile(f.Name(), []byte(fromfilestring), 0644)
 
 	ruleMsg := map[string]interface{}{"Filename": f.Name()}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
+	ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	})
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	})
+
 	time.AfterFunc(time.Duration(5)*time.Second, func() {
 		ch.QuitChan <- true
 	})
 
+	var expectedNames = []string{"Jacqui Maher", "Nik Hanselmann", "Mike Dewar"}
+	var expectedLocations = []string{"Brooklyn", "New York", "The Moon"}
 	for {
 		select {
 		case err := <-ch.ErrChan:
@@ -51,7 +65,28 @@ func (s *FromFileSuite) TestFromFile(c *C) {
 			} else {
 				return
 			}
-		case <-outChan:
+		case messageI := <-outChan:
+			message := messageI.Msg.(map[string]interface{})
+
+			nameReceived, ok := message["Name"].(string)
+			if !ok {
+				log.Println("failed asserting message['Name'] to a string")
+			}
+
+			locationReceived, ok := message["Location"].(string)
+			if !ok {
+				log.Println("failed asserting message['Location'] to a string")
+			}
+
+			if !test_utils.StringInSlice(expectedNames, nameReceived) {
+				log.Println("failed finding", nameReceived, "in expected names list")
+				c.Fail()
+			}
+
+			if !test_utils.StringInSlice(expectedLocations, locationReceived) {
+				log.Println("failed finding", locationReceived, "in expected locations list")
+				c.Fail()
+			}
 		}
 	}
 }
