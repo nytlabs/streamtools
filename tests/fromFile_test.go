@@ -43,7 +43,9 @@ func (s *FromFileSuite) TestFromFile(c *C) {
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
-	ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	})
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
 		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
 	})

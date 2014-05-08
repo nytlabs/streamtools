@@ -69,6 +69,11 @@ func (b *FromFile) Run() {
 			}
 
 		case <-b.inpoll:
+			if reader == nil && filename == "" {
+				b.Error("you must configure a filename before polling this block.")
+				break
+			}
+
 			var outMsg interface{}
 
 			line, err := reader.ReadBytes('\n')
