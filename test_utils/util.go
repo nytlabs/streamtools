@@ -41,6 +41,7 @@ func StringInSlice(stringSlice []string, term string) bool {
 	for i, value := range stringSlice {
 		if term == value {
 			termIndex = i
+			break
 		}
 	}
 	if termIndex == -1 {
