@@ -1,0 +1,17 @@
+.shepherd-step {
+  font-family:'helvetica', 'arial';
+  max-width:300px!important;
+}
+
+.tutorial-blockname {
+  font-family: Monaco, "Courier New", Courier, monospace;
+  font-size:12px!important;
+  padding:2px;
+  background-color:lightgray;
+}
+
+.tutorial-url {
+  font-family: Monaco, "Courier New", Courier, monospace;
+  font-size:12px!important;
+  color:darkgray;
+}

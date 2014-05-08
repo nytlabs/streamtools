@@ -20,52 +20,58 @@ $(window).load(function() {
   // does the url have params that include 'tutorial'? if so, load up the... tutorial.
   // otherwise just skip all this, streamtools as usual.
   if (params && params["tutorial"]) {
-
     var tour;
+    var httpBlock;
 
     tour = new Shepherd.Tour({
       defaults: {
         classes: 'shepherd-theme-arrows',
-        scrollTo: true
+         scrollTo: true
       }
     });
 
     var welcome = tour.addStep('welcome', {
       text: 'Welcome to Streamtools!',
-      buttons: [
-        {
-          text: 'Next',
-        }
-      ]
+        attachTo: 'svg',
+        tetherOptions: {
+          targetAttachment: 'middle center',
+        attachment: 'middle center',
+        },
+        buttons: [
+    {
+      text: 'Next',
+    }
+    ]
     });
 
     var goal = tour.addStep('goal', {
       text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
-      buttons: [
-        {
-          text: 'Next',
-        }
-      ]
+        attachTo: 'svg',
+        tetherOptions: {
+          targetAttachment: 'middle center',
+        attachment: 'middle center',
+        },
+        buttons: [
+    {
+      text: 'Next',
+    }
+    ]
     });
 
     var clickRef = tour.addStep('intro-to-ref', {
       text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
-      attachTo: '#ui-ref-toggle',
-      buttons: false
+        attachTo: '#ui-ref-toggle',
+        buttons: false
     });
-
-
-    console.log(welcome);
-    console.log(clickRef);
 
     var addFromHTTP = tour.addStep('add-fromhttp', {
       text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
-      attachTo: 'li[data-block-type="fromhttpstream"]',
-      buttons: [
-        {
-          text: 'Next'
-        }
-      ],
+        attachTo: 'li[data-block-type="fromhttpstream"]',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ],
     });
 
     $("#ui-ref-toggle").one('click', function() {
@@ -76,72 +82,72 @@ $(window).load(function() {
 
     var editFromHTTP = tour.addStep('edit-fromhttp', {
       text: [
-        'Double-click the block to edit its rules.', 
+      'Double-click the block to edit its rules.', 
         'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'
-        ],
-      tetherOptions:
-      {
-        targetAttachment: 'top right',
-        attachment: 'top right',
-      },
-      attachTo: 'body',
-      buttons: [
-        {
-          text: 'Next'
-        }
       ],
+        tetherOptions:
+    {
+      targetAttachment: 'top left',
+        attachment: 'top right',
+    },
+        attachTo: httpBlock,
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ],
     });
 
     var addTolog = tour.addStep('add-tolog', {
       text: [
-        'Now let\'s add a block to log our data.', 
+      'Now let\'s add a block to log our data.', 
         'Double-click anywhere on screen to add a block.',
         'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.'
-        ],
-      tetherOptions:
-      {
-        targetAttachment: 'top right',
-        attachment: 'top right',
-      },
-      attachTo: 'svg',
-      buttons: [
-        {
-          text: 'Next'
-        }
-      ]
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
     });
 
     var makeConnection1 = tour.addStep('make-connection1', {
       text: [
-        'Let\'s connect the two, so we have data streaming into our log.', 
+      'Let\'s connect the two, so we have data streaming into our log.', 
         'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).'
-        ],
-      tetherOptions:
-      {
-        targetAttachment: 'top right',
-        attachment: 'top right',
-      },
-      attachTo: 'svg',
-      buttons: [
-        {
-          text: 'Next'
-        }
-      ]
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
     });
 
     var viewLog = tour.addStep('view-log', {
       text: 'Now click the log (this black bar) to view your data!',
-      tetherOptions:
-      {
-        targetAttachment: 'bottom right',
-        attachment: 'bottom right',
-      },
-      attachTo: "svg",
-      buttons: [
-        {
-          text: 'Next'
-        }
-      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom center',
+        attachment: 'bottom center',
+    },
+        attachTo: "svg",
+        buttons: [
+    {
+      text: 'Complete'
+    }
+    ],
     });
 
     function checkBlockBeforeProgress(req, cat) {
@@ -149,16 +155,16 @@ $(window).load(function() {
       var category = cat;
 
       var currentBlocks = JSON.parse($.ajax({
-            url: '/blocks',
-            type: 'GET',
-            async: false // required before UI stream starts
-        }).responseText);
+        url: '/blocks',
+          type: 'GET',
+          async: false // required before UI stream starts
+      }).responseText);
 
       if (category == "type") {
         $.each(currentBlocks, function(k, v) {
           if (this.Type == required) {
             Shepherd.activeTour.next();
-            return false;
+            return true;
           }
         });
       } else if (category == "endpoint") {
@@ -166,22 +172,23 @@ $(window).load(function() {
           console.log(this.Rule.Endpoint)
           if (this.Rule.Endpoint == required) {
             Shepherd.activeTour.next();
-            return false;
+            return true;
           }
         });
       }
+      return false;
     }
 
     function checkConnectionsBeforeProgress(bF, bT) {
       var currentConnections = JSON.parse($.ajax({
-            url: '/connections',
-            type: 'GET',
-            async: false // required before UI stream starts
-        }).responseText);
+        url: '/connections',
+          type: 'GET',
+          async: false // required before UI stream starts
+      }).responseText);
 
-        if (currentConnections.length == 0) {
-          return false;
-        }
+      if (currentConnections.length == 0) {
+        return false;
+      }
 
       var blockFrom = bF;
       var blockTo = bT;
@@ -190,12 +197,12 @@ $(window).load(function() {
       var idTo;
 
       var currentBlocks = JSON.parse($.ajax({
-            url: '/blocks',
-            type: 'GET',
-            async: false // required before UI stream starts
-        }).responseText);
+        url: '/blocks',
+          type: 'GET',
+          async: false // required before UI stream starts
+      }).responseText);
 
-        $.each(currentBlocks, function(k, v) {
+      $.each(currentBlocks, function(k, v) {
         if (this.Type == blockFrom) {
           idFrom = this.Id;
         }
@@ -204,12 +211,12 @@ $(window).load(function() {
         }
       });
 
-        $.each(currentConnections, function(key, val) {
-          if (this.FromId == idFrom && this.ToId == idTo) {
+      $.each(currentConnections, function(key, val) {
+        if (this.FromId == idFrom && this.ToId == idTo) {
           Shepherd.activeTour.next();
-          return false;
-          }
-        });
+          return true;
+        }
+      });
     }
 
     $(document).on("click", ".shepherd-button", function() {
@@ -220,6 +227,10 @@ $(window).load(function() {
         Shepherd.activeTour.next();
       }
       else if (addFromHTTP.isOpen()) {
+        var b = $("text").text("fromhttpstream").prev();
+        httpBlock = "rect[data-id='" + b.attr('data-id') + "']";
+
+        tour.getById("edit-fromhttp")["options"]["attachTo"] = httpBlock;
         checkBlockBeforeProgress("fromhttpstream", "type");
       } 
       else if (editFromHTTP.isOpen()) {
@@ -235,7 +246,7 @@ $(window).load(function() {
         Shepherd.activeTour.complete();	
       }
     });
-
     tour.start();
+
   }
 });
