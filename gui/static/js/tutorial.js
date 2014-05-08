@@ -3,7 +3,7 @@ $(window).load(function() {
   // until we figure out a better/different way to trigger tutorials
   // i'm gonna go with query string params (linkable, easy to do)
   // this function parses the url after ? into key/value pairs
-  var queryParams = function() {
+  function queryParams() {
     var result = {}, keyValuePairs = location.search.slice(1).split('&');
 
     keyValuePairs.forEach(function(keyValuePair) {
@@ -20,6 +20,12 @@ $(window).load(function() {
   // does the url have params that include 'tutorial'? if so, load up the... tutorial.
   // otherwise just skip all this, streamtools as usual.
   if (params && params["tutorial"]) {
+
+    // hide the intro text if it's on the page
+    if ( $(".intro-text").length > 0) {
+      $(".intro-text").remove();
+    }
+
     var tour;
     var httpBlock;
 
@@ -247,6 +253,6 @@ $(window).load(function() {
       }
     });
     tour.start();
-
   }
+
 });
