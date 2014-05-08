@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -36,16 +37,25 @@ func (b *ToHTTPGetRequest) Run() {
 
 	var respTree, msgTree *jee.TokenTree
 	var err error
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
 			respPath, err = util.ParseString(ruleI, "RespPath")
+			if err != nil {
+				b.Error(err)
+				break
+			}
 			respTree, err = util.BuildTokenTree(respPath)
 			if err != nil {
 				b.Error(err)
 				break
 			}
 			msgPath, err = util.ParseString(ruleI, "MsgPath")
+			if err != nil {
+				b.Error(err)
+				break
+			}
 			msgTree, err = util.BuildTokenTree(msgPath)
 			if err != nil {
 				b.Error(err)

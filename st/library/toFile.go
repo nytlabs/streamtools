@@ -4,16 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"os"
 )
 
 // specify those channels we're going to use to communicate with streamtools
 type ToFile struct {
 	blocks.Block
-	file      *os.File
-	filename  string
 	queryrule chan blocks.MsgChan
 	inrule    blocks.MsgChan
 	in        blocks.MsgChan
@@ -39,40 +38,44 @@ func (b *ToFile) Setup() {
 
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *ToFile) Run() {
+	var err error
+	var file *os.File
+	var filename string
+
 	for {
 		select {
 		case msgI := <-b.inrule:
-			// set a parameter of the block
-			filename, _ := util.ParseString(msgI, "Filename")
-
-			fo, err := os.Create(filename)
+			filename, err = util.ParseString(msgI, "Filename")
 			if err != nil {
 				b.Error(err)
 			}
-			// set the new file
-			b.file = fo
-			// record the filename
-			b.filename = filename
+
+			file, err = os.Create(filename)
+			if err != nil {
+				b.Error(err)
+			}
+
 		case <-b.quit:
 			// quit the block
-			if b.file != nil {
-				b.file.Close()
+			if file != nil {
+				file.Close()
 			}
 			return
 		case msg := <-b.in:
 			// deal with inbound data
-			w := bufio.NewWriter(b.file)
+			writer := bufio.NewWriter(file)
 			msgStr, err := json.Marshal(msg)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			fmt.Fprintln(w, string(msgStr))
-			w.Flush()
+			fmt.Fprintln(writer, string(msgStr))
+			writer.Flush()
+
 		case MsgChan := <-b.queryrule:
 			// deal with a query request
 			MsgChan <- map[string]interface{}{
-				"Filename": b.filename,
+				"Filename": filename,
 			}
 		}
 	}

@@ -2,22 +2,21 @@ package library
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/bitly/go-nsq"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
 type ToNSQMulti struct {
 	blocks.Block
-	queryrule    chan blocks.MsgChan
-	inrule       blocks.MsgChan
-	in           blocks.MsgChan
-	out          blocks.MsgChan
-	quit         blocks.MsgChan
-	nsqdTCPAddrs string
-	topic        string
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -36,6 +35,9 @@ func (b *ToNSQMulti) Setup() {
 
 // connects to an NSQ topic and emits each message into streamtools.
 func (b *ToNSQMulti) Run() {
+	var err error
+	var nsqdTCPAddrs string
+	var topic string
 	var writer *nsq.Writer
 	var batch [][]byte
 	interval := time.Duration(1 * time.Second)
@@ -48,7 +50,7 @@ func (b *ToNSQMulti) Run() {
 			if writer == nil || len(batch) == 0 {
 				break
 			}
-			_, _, err := writer.MultiPublish(b.topic, batch)
+			_, _, err = writer.MultiPublish(topic, batch)
 			if err != nil {
 				b.Error(err.Error())
 			}
@@ -57,13 +59,13 @@ func (b *ToNSQMulti) Run() {
 		case ruleI := <-b.inrule:
 			//rule := ruleI.(map[string]interface{})
 
-			topic, err := util.ParseString(ruleI, "Topic")
+			topic, err = util.ParseString(ruleI, "Topic")
 			if err != nil {
 				b.Error(err)
 				break
 			}
 
-			nsqdTCPAddrs, err := util.ParseString(ruleI, "NsqdTCPAddrs")
+			nsqdTCPAddrs, err = util.ParseString(ruleI, "NsqdTCPAddrs")
 			if err != nil {
 				b.Error(err)
 				break
@@ -102,8 +104,8 @@ func (b *ToNSQMulti) Run() {
 			dump.Stop()
 			dump = time.NewTicker(interval)
 			writer = nsq.NewWriter(nsqdTCPAddrs)
-			b.topic = topic
-			b.nsqdTCPAddrs = nsqdTCPAddrs
+			topic = topic
+			nsqdTCPAddrs = nsqdTCPAddrs
 		case msg := <-b.in:
 			if writer == nil {
 				break
@@ -116,7 +118,7 @@ func (b *ToNSQMulti) Run() {
 			batch = append(batch, msgByte)
 
 			if len(batch) > maxBatch {
-				_, _, err := writer.MultiPublish(b.topic, batch)
+				_, _, err := writer.MultiPublish(topic, batch)
 				if err != nil {
 					b.Error(err.Error())
 					break
@@ -131,8 +133,8 @@ func (b *ToNSQMulti) Run() {
 			return
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
-				"Topic":        b.topic,
-				"NsqdTCPAddrs": b.nsqdTCPAddrs,
+				"Topic":        topic,
+				"NsqdTCPAddrs": nsqdTCPAddrs,
 				"MaxBatch":     maxBatch,
 				"Interval":     interval.String(),
 			}
