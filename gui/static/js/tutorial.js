@@ -1,5 +1,6 @@
 $(window).load(function() {
 	var tour;
+	var httpBlock;
 
 	tour = new Shepherd.Tour({
 		defaults: {
@@ -10,6 +11,11 @@ $(window).load(function() {
 
 	var welcome = tour.addStep('welcome', {
 		text: 'Welcome to Streamtools!',
+		attachTo: 'svg',
+		tetherOptions: {
+			targetAttachment: 'middle center',
+			attachment: 'middle center',
+		},
 		buttons: [
 			{
 				text: 'Next',
@@ -19,6 +25,11 @@ $(window).load(function() {
 
 	var goal = tour.addStep('goal', {
 		text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
+		attachTo: 'svg',
+		tetherOptions: {
+			targetAttachment: 'middle center',
+			attachment: 'middle center',
+		},
 		buttons: [
 			{
 				text: 'Next',
@@ -31,10 +42,6 @@ $(window).load(function() {
 		attachTo: '#ui-ref-toggle',
 		buttons: false
 	});
-
-
-	console.log(welcome);
-	console.log(clickRef);
 
 	var addFromHTTP = tour.addStep('add-fromhttp', {
 		text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
@@ -59,10 +66,10 @@ $(window).load(function() {
 			],
 		tetherOptions:
 		{
-			targetAttachment: 'top right',
+			targetAttachment: 'top left',
 			attachment: 'top right',
 		},
-		attachTo: 'body',
+		attachTo: httpBlock,
 		buttons: [
 			{
 				text: 'Next'
@@ -78,8 +85,8 @@ $(window).load(function() {
 			],
 		tetherOptions:
 		{
-			targetAttachment: 'top right',
-			attachment: 'top right',
+			targetAttachment: 'bottom right',
+			attachment: 'bottom right',
 		},
 		attachTo: 'svg',
 		buttons: [
@@ -96,8 +103,8 @@ $(window).load(function() {
 			],
 		tetherOptions:
 		{
-			targetAttachment: 'top right',
-			attachment: 'top right',
+			targetAttachment: 'bottom right',
+			attachment: 'bottom right',
 		},
 		attachTo: 'svg',
 		buttons: [
@@ -111,13 +118,13 @@ $(window).load(function() {
 		text: 'Now click the log (this black bar) to view your data!',
 		tetherOptions:
 		{
-			targetAttachment: 'bottom right',
-			attachment: 'bottom right',
+			targetAttachment: 'bottom center',
+			attachment: 'bottom center',
 		},
 		attachTo: "svg",
 		buttons: [
 			{
-				text: 'Next'
+				text: 'Complete'
 			}
 		],
 	});
@@ -136,7 +143,7 @@ $(window).load(function() {
 			$.each(currentBlocks, function(k, v) {
 				if (this.Type == required) {
 					Shepherd.activeTour.next();
-					return false;
+					return true;
 				}
 			});
 		} else if (category == "endpoint") {
@@ -144,10 +151,11 @@ $(window).load(function() {
 				console.log(this.Rule.Endpoint)
 				if (this.Rule.Endpoint == required) {
 					Shepherd.activeTour.next();
-					return false;
+					return true;
 				}
 			});
 		}
+		return false;
 	}
 
 	function checkConnectionsBeforeProgress(bF, bT) {
@@ -185,7 +193,7 @@ $(window).load(function() {
 	    $.each(currentConnections, function(key, val) {
 	    	if (this.FromId == idFrom && this.ToId == idTo) {
 				Shepherd.activeTour.next();
-				return false;
+				return true;
 	    	}
 	    });
 	}
@@ -198,6 +206,10 @@ $(window).load(function() {
 			Shepherd.activeTour.next();
 		}
 		else if (addFromHTTP.isOpen()) {
+			var b = $("text").text("fromhttpstream").prev();
+			httpBlock = "rect[data-id='" + b.attr('data-id') + "']";
+
+			tour.getById("edit-fromhttp")["options"]["attachTo"] = httpBlock;
 			checkBlockBeforeProgress("fromhttpstream", "type");
 		} 
 		else if (editFromHTTP.isOpen()) {

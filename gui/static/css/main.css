@@ -430,20 +430,3 @@ div.blockMsg {
 .intro-text.clicked {
   opacity:0;
 }
-
-.shepherd-step {
-  font-family:'helvetica', 'arial';
-}
-
-.tutorial-blockname {
-  font-family: Monaco, "Courier New", Courier, monospace;
-  font-size:12px!important;
-  padding:2px;
-  background-color:lightgray;
-}
-
-.tutorial-url {
-  font-family: Monaco, "Courier New", Courier, monospace;
-  font-size:12px!important;
-  color:darkgray;
-}
