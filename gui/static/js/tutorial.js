@@ -21,6 +21,7 @@ $(window).load(function() {
   // otherwise just skip all this, streamtools as usual.
   if (params && params["tutorial"]) {
 
+    // TODO: figure out a better way to do this so it doesn't flash on the screen
     // hide the intro text if it's on the page
     if ( $(".intro-text").length > 0) {
       $(".intro-text").remove();
