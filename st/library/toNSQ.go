@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+
 	"github.com/bitly/go-nsq"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
@@ -10,13 +11,11 @@ import (
 // specify those channels we're going to use to communicate with streamtools
 type ToNSQ struct {
 	blocks.Block
-	queryrule    chan blocks.MsgChan
-	inrule       blocks.MsgChan
-	in           blocks.MsgChan
-	out          blocks.MsgChan
-	quit         blocks.MsgChan
-	nsqdTCPAddrs string
-	topic        string
+	queryrule chan blocks.MsgChan
+	inrule    blocks.MsgChan
+	in        blocks.MsgChan
+	out       blocks.MsgChan
+	quit      blocks.MsgChan
 }
 
 // a bit of boilerplate for streamtools
@@ -35,20 +34,21 @@ func (b *ToNSQ) Setup() {
 
 // connects to an NSQ topic and emits each message into streamtools.
 func (b *ToNSQ) Run() {
+	var err error
+	var nsqdTCPAddrs string
+	var topic string
 	var writer *nsq.Writer
 
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			//rule := ruleI.(map[string]interface{})
-
-			topic, err := util.ParseString(ruleI, "Topic")
+			topic, err = util.ParseString(ruleI, "Topic")
 			if err != nil {
 				b.Error(err)
 				break
 			}
 
-			nsqdTCPAddrs, err := util.ParseString(ruleI, "NsqdTCPAddrs")
+			nsqdTCPAddrs, err = util.ParseString(ruleI, "NsqdTCPAddrs")
 			if err != nil {
 				b.Error(err)
 				break
@@ -59,9 +59,6 @@ func (b *ToNSQ) Run() {
 			}
 
 			writer = nsq.NewWriter(nsqdTCPAddrs)
-
-			b.topic = topic
-			b.nsqdTCPAddrs = nsqdTCPAddrs
 
 		case msg := <-b.in:
 			if writer == nil {
@@ -74,7 +71,7 @@ func (b *ToNSQ) Run() {
 			if len(msgBytes) == 0 {
 				continue
 			}
-			_, _, err = writer.Publish(b.topic, msgBytes)
+			_, _, err = writer.Publish(topic, msgBytes)
 			if err != nil {
 				b.Error(err)
 			}
@@ -86,8 +83,8 @@ func (b *ToNSQ) Run() {
 			return
 		case c := <-b.queryrule:
 			c <- map[string]interface{}{
-				"Topic":        b.topic,
-				"NsqdTCPAddrs": b.nsqdTCPAddrs,
+				"Topic":        topic,
+				"NsqdTCPAddrs": nsqdTCPAddrs,
 			}
 		}
 	}
