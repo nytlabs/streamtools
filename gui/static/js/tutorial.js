@@ -28,7 +28,8 @@ $(window).load(function() {
     }
 
     var tour;
-    var httpBlock;
+    var tickerBlock;
+    var mapBlock;
 
     tour = new Shepherd.Tour({
       defaults: {
@@ -38,7 +39,7 @@ $(window).load(function() {
     });
 
     var welcome = tour.addStep('welcome', {
-      text: 'Welcome to Streamtools!',
+      text: 'Welcome to Streamtools.',
         attachTo: 'svg',
         tetherOptions: {
           targetAttachment: 'middle center',
@@ -52,7 +53,7 @@ $(window).load(function() {
     });
 
     var goal = tour.addStep('goal', {
-      text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
+      text: 'In this demo, we\'ll use streamtools to get a live stream of Citibike availability--specifically, the station outside the NYT headquarters in Midtown Manhattan.',
         attachTo: 'svg',
         tetherOptions: {
           targetAttachment: 'middle center',
@@ -66,14 +67,16 @@ $(window).load(function() {
     });
 
     var clickRef = tour.addStep('intro-to-ref', {
-      text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
+      text: [
+        'We\'ll want to query our data source on regular intervals. We can use a <span class="tutorial-blockname">ticker</span> to do this.', 
+        ' Click the hamburger button to see the list of every block in streamtools.'],
         attachTo: '#ui-ref-toggle',
         buttons: false
     });
 
-    var addFromHTTP = tour.addStep('add-fromhttp', {
-      text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
-        attachTo: 'li[data-block-type="fromhttpstream"]',
+    var addTicker = tour.addStep('add-ticker', {
+      text: 'Click <span class="tutorial-blockname">ticker</span> to add that block, then click Next.',
+        attachTo: 'li[data-block-type="ticker"]',
         buttons: [
     {
       text: 'Next'
@@ -87,17 +90,18 @@ $(window).load(function() {
       }
     });
 
-    var editFromHTTP = tour.addStep('edit-fromhttp', {
+    var editTicker = tour.addStep('edit-ticker', {
       text: [
-      'Double-click the block to edit its rules.', 
-        'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'
+      'Double-click the block to edit its parameters.', 
+      'Let\'s set our interval to 10 seconds. Type <span class="tutorial-url">10s</span> into the Interval box and click Update.',
+      'After that, click Next.'
       ],
         tetherOptions:
     {
       targetAttachment: 'top left',
         attachment: 'top right',
     },
-        attachTo: httpBlock,
+        attachTo: tickerBlock,
         buttons: [
     {
       text: 'Next'
@@ -105,11 +109,12 @@ $(window).load(function() {
     ],
     });
 
-    var addTolog = tour.addStep('add-tolog', {
+    var addMap = tour.addStep('add-map', {
       text: [
-      'Now let\'s add a block to log our data.', 
-        'Double-click anywhere on screen to add a block.',
-        'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.'
+      'Before we can start making GET requests, we need to specify the URL from which we\'re getting the data.',
+      'We\'ll use a <span class="tutorial-blockname">map</span> block for this, mapping the key "url" to our url.', 
+      'Double-click anywhere on screen to add a block.',
+      'Type in <span class="tutorial-blockname">map</span> and hit Enter.'
       ],
         tetherOptions:
     {
@@ -122,12 +127,36 @@ $(window).load(function() {
       text: 'Next'
     }
     ]
+    });
+
+    var editMap = tour.addStep('edit-map', {
+      text: [
+        'Double-click the map to edit its parameters.',
+        'The <span class="tutorial-blockname">map</span> block takes <a href="https://github.com/nytlabs/gojee">gojee</a> expression. Our map will look like this:',
+        '<span class="tutorial-url">{</span>',
+        '<span class="tutorial-url">\"url\": \"\'http://citibikenyc.com/stations/json\'\"</span>',
+        '<span class="tutorial-url">}</span>',
+        'Put that in the Map parameter, then click Next.'
+      ],
+      tetherOptions:
+    {
+      targetAttachment: 'top left',
+        attachment: 'top right',
+    },
+        attachTo: mapBlock,
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+
     });
 
     var makeConnection1 = tour.addStep('make-connection1', {
       text: [
-      'Let\'s connect the two, so we have data streaming into our log.', 
-        'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).'
+      'Let\'s connect the two, so every 10s, we map this URL.', 
+      'Click the OUT box on your <span class="tutorial-blockname">ticker</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">map</span> (the top black box).',
+      'You can also click and drag blocks to move them around on screen.'
       ],
         tetherOptions:
     {
@@ -142,19 +171,63 @@ $(window).load(function() {
     ]
     });
 
-    var viewLog = tour.addStep('view-log', {
-      text: 'Now click the log (this black bar) to view your data!',
+    var addHTTP = tour.addStep('add-HTTP', {
+      text: [
+      'Now we need to actually get our data. We\'ll make this GET request with a <span class="tutorial-blockname">gethttp</span> block.', 
+      'Double-click anywhere on screen to add a block.',
+      'Type in <span class="tutorial-blockname">gethttp</span> and hit Enter.'
+      ],
         tetherOptions:
     {
-      targetAttachment: 'bottom center',
-        attachment: 'bottom center',
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
     },
-        attachTo: "svg",
+        attachTo: 'svg',
         buttons: [
     {
-      text: 'Complete'
+      text: 'Next'
     }
-    ],
+    ]
+    });
+
+    var editHTTP = tour.addStep('edit-http', {
+      text: [
+        'Double-click on your <span class="tutorial-blockname">gethttp</span> block to edit it.',
+        'Our URL is mapped to the path <span class="tutorial-url">.url</span>.',
+        'Put that in the Path parameter, then click Next.'
+      ],
+      tetherOptions:
+    {
+      targetAttachment: 'top left',
+        attachment: 'top right',
+    },
+        attachTo: mapBlock,
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+
+    });
+
+    var makeConnection2 = tour.addStep('make-connection2', {
+      text: [
+      'Now let\s connect our <span class="tutorial-blockname">map</span> block to our <span class="tutorial-blockname">gethttp</span> block.', 
+      'That way, we\'ll make a GET request to that URL every 10s.',
+      'Click the OUT box on your <span class="tutorial-blockname">ticker</span> box (the bottom black box). ',
+      'Connect it to the IN on your <span class="tutorial-blockname">gethttp</span> (the top black box).'
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
     });
 
     function checkBlockBeforeProgress(req, cat) {
@@ -167,6 +240,8 @@ $(window).load(function() {
           async: false // required before UI stream starts
       }).responseText);
 
+      console.log(currentBlocks);
+
       if (category == "type") {
         $.each(currentBlocks, function(k, v) {
           if (this.Type == required) {
@@ -176,11 +251,37 @@ $(window).load(function() {
         });
       } else if (category == "endpoint") {
         $.each(currentBlocks, function(k, v) {
-          console.log(this.Rule.Endpoint)
+          console.log(this.Rule.Endpoint);
           if (this.Rule.Endpoint == required) {
             Shepherd.activeTour.next();
             return true;
           }
+        });
+      } else if (category == "interval") {
+        $.each(currentBlocks, function(k, v) {
+          console.log(this.Rule.Interval);
+          if (this.Rule.Interval == required) {
+            Shepherd.activeTour.next();
+            return true;
+          }
+        });
+      } else if (category == "map") {
+          $.each(currentBlocks, function(k, v) {
+            if (this.Type == "map") {
+              if (this.Rule.Map.url == required) {
+                Shepherd.activeTour.next();
+                return true;
+              }
+            }
+        });
+      } else if (category == "path") {
+          $.each(currentBlocks, function(k, v) {
+            if (this.Type == "gethttp") {
+              if (this.Rule.Path == required) {
+                Shepherd.activeTour.next();
+                return true;
+              }
+            }
         });
       }
       return false;
@@ -233,24 +334,37 @@ $(window).load(function() {
       else if (goal.isOpen()) {
         Shepherd.activeTour.next();
       }
-      else if (addFromHTTP.isOpen()) {
-        var b = $("text").text("fromhttpstream").prev();
-        httpBlock = "rect[data-id='" + b.attr('data-id') + "']";
+      else if (addTicker.isOpen()) {
+        var b = $("text:contains('ticker')").prev();
+        tickerBlock = "rect[data-id='" + b.attr('data-id') + "']";
+        tour.getById("edit-ticker")["options"]["attachTo"] = tickerBlock;
 
-        tour.getById("edit-fromhttp")["options"]["attachTo"] = httpBlock;
-        checkBlockBeforeProgress("fromhttpstream", "type");
+        checkBlockBeforeProgress("ticker", "type");
       } 
-      else if (editFromHTTP.isOpen()) {
-        checkBlockBeforeProgress("http://developer.usa.gov/1usagov", "endpoint");
-      } 
-      else if (addTolog.isOpen()) {
-        checkBlockBeforeProgress("tolog", "type");
+      else if (editTicker.isOpen()) {
+        checkBlockBeforeProgress("10s", "interval");
+      }
+      else if (addMap.isOpen()) {
+        var b = $("text:contains('map')").prev();
+        tickerBlock = "rect[data-id='" + b.attr('data-id') + "']";
+        tour.getById("edit-map")["options"]["attachTo"] = mapBlock;
+
+        checkBlockBeforeProgress("map", "type");
+      }
+      else if (editMap.isOpen()) {
+        checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
       }
       else if (makeConnection1.isOpen()) {
-        checkConnectionsBeforeProgress("fromhttpstream", "tolog");
+        checkConnectionsBeforeProgress("ticker", "map");
       }
-      else if (viewLog.isOpen()) {
-        Shepherd.activeTour.complete();	
+      else if (addHTTP.isOpen()) {
+        checkBlockBeforeProgress("gethttp", "type");
+      } 
+      else if (editHTTP.isOpen()) {
+        checkBlockBeforeProgress(".url", "path");
+      } 
+      else if (makeConnection2.isOpen()) {
+        checkConnectionsBeforeProgress("map", "gethttp");
       }
     });
     tour.start();
