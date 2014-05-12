@@ -436,7 +436,7 @@ citibikeTour.addStep('make-connection4', {
   buttons: [
     {
       text: "Next",
-      action: checkConnectionsBeforeProgress("unpack", "filter");
+      action: checkConnectionsBeforeProgress("unpack", "filter")
     }
   ]
 });
