@@ -233,7 +233,13 @@ citibikeTour.addStep('edit-map', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map")
+    }
+  ]
 });
 
 citibikeTour.addStep('make-connection1', {
@@ -246,7 +252,13 @@ citibikeTour.addStep('make-connection1', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkConnectionsBeforeProgress("ticker", "map")
+    }
+  ]
 });
 
 citibikeTour.addStep('add-HTTP', {
@@ -260,7 +272,13 @@ citibikeTour.addStep('add-HTTP', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("gethttp", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('edit-http', {
@@ -274,7 +292,13 @@ citibikeTour.addStep('edit-http', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkBlockBeforeProgress(".url", "path")
+    }
+  ]
 });
 
 citibikeTour.addStep('make-connection2', {
@@ -289,7 +313,13 @@ citibikeTour.addStep('make-connection2', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkConnectionsBeforeProgress("map", "gethttp")
+    }
+  ]
 });
 
 citibikeTour.addStep('add-unpack', {
@@ -304,7 +334,13 @@ citibikeTour.addStep('add-unpack', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkBlockBeforeProgress("unpack", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('edit-unpack', {
@@ -317,7 +353,13 @@ citibikeTour.addStep('edit-unpack', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkBlockBeforeProgress(".stationBeanList", "path")
+    }
+  ]
 });
 
 citibikeTour.addStep('make-connection3', {
@@ -330,7 +372,14 @@ citibikeTour.addStep('make-connection3', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkConnectionsBeforeProgress("gethttp", "unpack")
+  
+    }
+  ]
 });
 
 citibikeTour.addStep('add-filter', {
@@ -344,7 +393,13 @@ citibikeTour.addStep('add-filter', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action:  checkBlockBeforeProgress("filter", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('edit-filter', {
@@ -358,7 +413,14 @@ citibikeTour.addStep('edit-filter', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress(".stationName == 'W 41 St & 8 Ave'", "filter")
+  
+    }
+  ]
 });
 
 citibikeTour.addStep('make-connection4', {
@@ -370,7 +432,13 @@ citibikeTour.addStep('make-connection4', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkConnectionsBeforeProgress("unpack", "filter");
+    }
+  ]
 });
 
 citibikeTour.addStep('add-tolog', {
@@ -384,7 +452,13 @@ citibikeTour.addStep('add-tolog', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("tolog", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('make-connection5', {
@@ -396,7 +470,13 @@ citibikeTour.addStep('make-connection5', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkConnectionsBeforeProgress("filter", "tolog")
+    }
+  ]
 });
 
 citibikeTour.addStep('finished', {
@@ -408,7 +488,7 @@ citibikeTour.addStep('finished', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
 },
-    buttons: [ { text: 'Complete' } ],
+buttons: [ { text: 'Complete', action: Shepherd.activeTour.complete() } ],
     attachTo: 'svg'
 });
 
@@ -470,48 +550,6 @@ govTour.addStep("welcome", {
 
 // move these functions to buttons [{}] on each step
 //$(document).on("click", ".shepherd-button", function() {
-//  else if (citibikeTour.getById("edit-map").isOpen()) {
-//    checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
-//  }
-//  else if (citibikeTour.getById("make-connection1").isOpen()) {
-//    checkConnectionsBeforeProgress("ticker", "map");
-//  }
-//  else if (citibikeTour.getById("add-HTTP").isOpen()) {
-//    checkBlockBeforeProgress("gethttp", "type");
-//  } 
-//  else if (citibikeTour.getById("edit-http").isOpen()) {
-//    checkBlockBeforeProgress(".url", "path");
-//  } 
-//  else if (citibikeTour.getById("make-connection2").isOpen()) {
-//    checkConnectionsBeforeProgress("map", "gethttp");
-//  }
-//  else if (citibikeTour.getById("add-unpack").isOpen()) {
-//    checkBlockBeforeProgress("unpack", "type");
-//  }
-//  else if (citibikeTour.getById("edit-unpack").isOpen()) {
-//    checkBlockBeforeProgress(".stationBeanList", "path");
-//  }
-//  else if (citibikeTour.getById("make-connection3").isOpen()) {
-//    checkConnectionsBeforeProgress("gethttp", "unpack");
-//  }
-//  else if (citibikeTour.getById("add-filter").isOpen()) {
-//    checkBlockBeforeProgress("filter", "type");
-//  }
-//  else if (citibikeTour.getById("edit-filter").isOpen()) {
-//    checkBlockBeforeProgress(".stationName == 'W 41 St & 8 Ave'", "filter")
-//  }
-//  else if (citibikeTour.getById("make-connection4").isOpen()) {
-//    checkConnectionsBeforeProgress("unpack", "filter");
-//  }
-//  else if (citibikeTour.getById("add-tolog").isOpen()) {
-//    checkBlockBeforeProgress("tolog", "type");
-//  }
-//  else if (citibikeTour.getById("make-connection5").isOpen()) {
-//    checkConnectionsBeforeProgress("filter", "tolog");
-//  }
-//  else if (citibikeTour.getById("finished").isOpen()) {
-//    Shepherd.activeTour.complete();
-//  }
 //  else if ( govTour.getById('welcome').isOpen() || govTour.getById('goal').isOpen() || govTour.getById('intro-to-ref').isOpen() ) {
 //    Shepherd.activeTour.next();
 //  }
