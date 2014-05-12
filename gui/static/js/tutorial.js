@@ -20,7 +20,7 @@ $(window).load(function() {
   // does the url have params that include 'tutorial'? if so, load up the... tutorial.
   // otherwise just skip all this, streamtools as usual.
   if (params && params["tutorial"]) {
-    var tour;
+    var tour, citibikeTour, govTour;
 
     // TODO: figure out a better way to do this so it doesn't flash on the screen
     // hide the intro text if it's on the page
@@ -182,7 +182,8 @@ citibikeTour.addStep('edit-ticker', {
 {
     targetAttachment: 'bottom left',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('add-map', {
@@ -196,7 +197,8 @@ citibikeTour.addStep('add-map', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('edit-map', {
@@ -212,7 +214,8 @@ citibikeTour.addStep('edit-map', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('make-connection1', {
@@ -224,7 +227,8 @@ citibikeTour.addStep('make-connection1', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('add-HTTP', {
@@ -237,7 +241,8 @@ citibikeTour.addStep('add-HTTP', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('edit-http', {
@@ -250,7 +255,8 @@ citibikeTour.addStep('edit-http', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('make-connection2', {
@@ -264,7 +270,8 @@ citibikeTour.addStep('make-connection2', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('add-unpack', {
@@ -278,7 +285,8 @@ citibikeTour.addStep('add-unpack', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('edit-unpack', {
@@ -290,7 +298,8 @@ citibikeTour.addStep('edit-unpack', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('make-connection3', {
@@ -302,7 +311,8 @@ citibikeTour.addStep('make-connection3', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('add-filter', {
@@ -315,7 +325,8 @@ citibikeTour.addStep('add-filter', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('edit-filter', {
@@ -328,7 +339,8 @@ citibikeTour.addStep('edit-filter', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('make-connection4', {
@@ -339,7 +351,8 @@ citibikeTour.addStep('make-connection4', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('add-tolog', {
@@ -352,7 +365,8 @@ citibikeTour.addStep('add-tolog', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('make-connection5', {
@@ -363,7 +377,8 @@ citibikeTour.addStep('make-connection5', {
 {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
-}
+  },
+    attachTo: 'svg'
 });
 
 citibikeTour.addStep('finished', {
@@ -375,7 +390,8 @@ citibikeTour.addStep('finished', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
 },
-    buttons: [ { text: 'Complete' } ]
+    buttons: [ { text: 'Complete' } ],
+    attachTo: 'svg'
 });
 
 govTour = new Shepherd.Tour({
@@ -387,11 +403,13 @@ govTour = new Shepherd.Tour({
 
 govTour.addStep("welcome", {
   text: "Welcome to Streamtools!",
-  tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" }
+  tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" },
+    attachTo: 'svg'
 });
 govTour.addStep("goal", { 
   text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
-  tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" }
+  tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" },
+    attachTo: 'svg'
 });
 govTour.addStep("intro-to-ref", {
   text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
@@ -402,20 +420,24 @@ govTour.addStep("add-fromhttp", {
   attachTo: 'li[data-block-type="fromhttpstream"]'
 });
 govTour.addStep("edit-fromhttp", { 
-  text: ['Double-click the block to edit its rules.', 'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.']
+  text: ['Double-click the block to edit its rules.', 'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'],
+    attachTo: 'svg'
 });
 govTour.addStep("add-tolog", { 
   text: [ 'Now let\'s add a block to log our data.', 'Double-click anywhere on screen to add a block.', 'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.' ],
-  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' }
+  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
+    attachTo: 'svg'
 });
 govTour.addStep("make-connection1", { 
   text: [ 'Let\'s connect the two, so we have data streaming into our log.', 'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).' ],
-  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' }
+  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
+    attachTo: 'svg'
 });
 govTour.addStep("view-log", { 
   text: 'Now click the log (this black bar) to view your data!',
   tetherOptions: { 'targetAttachment': 'bottom center', 'attachment': 'bottom center' },
-  buttons: [{ 'text': 'Complete' } ]
+  buttons: [{ 'text': 'Complete' } ],
+    attachTo: 'svg'
 });
 
     tours = { 
@@ -428,7 +450,6 @@ govTour.addStep("view-log", {
       tour.start();
     }
 $(document).on("click", ".shepherd-button", function() {
-  console.log(citibikeTour);
   if ( citibikeTour.getById('welcome').isOpen() || citibikeTour.getById('goal').isOpen() || citibikeTour.getById('intro-to-ref').isOpen()) {
     Shepherd.activeTour.next();
   }
