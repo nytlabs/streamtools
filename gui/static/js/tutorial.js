@@ -488,7 +488,7 @@ citibikeTour.addStep('finished', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
 },
-buttons: [ { text: 'Complete', action: Shepherd.activeTour.complete() } ],
+buttons: [ { text: 'Complete', action: citibikeTour.complete() } ],
     attachTo: 'svg'
 });
 
