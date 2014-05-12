@@ -38,9 +38,14 @@ $(window).load(function() {
           async: false // required before UI stream starts
         }).responseText);
 
+      console.log(currentBlocks);
       if (category == "type") {
+        console.log("checking for a block with type == '" + category + "' with required set to '" + required + "'");
         $.each(currentBlocks, function(k, v) {
+          console.log(k);
+          console.log(v);
           if (this.Type == required) {
+            console.log("Found it! Go next!");
             Shepherd.activeTour.next();
             return true;
           }
