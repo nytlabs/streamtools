@@ -168,7 +168,13 @@ citibikeTour.addStep('intro-to-ref', {
 
 citibikeTour.addStep('add-ticker', {
   text: 'Click <span class="tutorial-blockname">ticker</span> to add that block, then click Next.',
-    attachTo: '#ui-ref-toggle'
+  attachTo: '#ui-ref-toggle',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("ticker", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('edit-ticker', {
@@ -183,7 +189,13 @@ citibikeTour.addStep('edit-ticker', {
     targetAttachment: 'bottom left',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("10s", "interval")
+    }
+  ]
 });
 
 citibikeTour.addStep('add-map', {
@@ -198,7 +210,13 @@ citibikeTour.addStep('add-map', {
   targetAttachment: 'bottom right',
     attachment: 'bottom right',
   },
-    attachTo: 'svg'
+    attachTo: 'svg',
+  buttons: [
+    {
+      text: "Next",
+      action: checkBlockBeforeProgress("map", "type")
+    }
+  ]
 });
 
 citibikeTour.addStep('edit-map', {
@@ -406,39 +424,39 @@ govTour.addStep("welcome", {
   tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" },
     attachTo: 'svg'
 });
-govTour.addStep("goal", { 
-  text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
-  tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" },
-    attachTo: 'svg'
-});
-govTour.addStep("intro-to-ref", {
-  text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
-  attachTo: '#ui-ref-toggle'
-});
-govTour.addStep("add-fromhttp", { 
-  text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
-  attachTo: 'li[data-block-type="fromhttpstream"]'
-});
-govTour.addStep("edit-fromhttp", { 
-  text: ['Double-click the block to edit its rules.', 'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'],
-    attachTo: 'svg'
-});
-govTour.addStep("add-tolog", { 
-  text: [ 'Now let\'s add a block to log our data.', 'Double-click anywhere on screen to add a block.', 'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.' ],
-  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
-    attachTo: 'svg'
-});
-govTour.addStep("make-connection1", { 
-  text: [ 'Let\'s connect the two, so we have data streaming into our log.', 'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).' ],
-  tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
-    attachTo: 'svg'
-});
-govTour.addStep("view-log", { 
-  text: 'Now click the log (this black bar) to view your data!',
-  tetherOptions: { 'targetAttachment': 'bottom center', 'attachment': 'bottom center' },
-  buttons: [{ 'text': 'Complete' } ],
-    attachTo: 'svg'
-});
+ govTour.addStep("goal", { 
+   text: 'In this demo, we\'ll use streamtools to see live clicks on the US government short links.',
+   tetherOptions: { "targetAttachment": "middle center", "attachment": "middle center" },
+     attachTo: 'svg'
+ });
+ govTour.addStep("intro-to-ref", {
+   text: ['First, we need a <span class="tutorial-blockname">fromhttpstream</span> block.' , ' Click the hamburger button to see the reference.'],
+   attachTo: '#ui-ref-toggle'
+ });
+ govTour.addStep("add-fromhttp", { 
+   text: 'Click <span class="tutorial-blockname">fromhttpstream</span> to add that block, then click Next.',
+   attachTo: 'li[data-block-type="fromhttpstream"]'
+ });
+ govTour.addStep("edit-fromhttp", { 
+   text: ['Double-click the block to edit its rules.', 'Paste <span class="tutorial-url">http://developer.usa.gov/1usagov</span> into the endpoint, then click Next.'],
+     attachTo: 'svg'
+ });
+ govTour.addStep("add-tolog", { 
+   text: [ 'Now let\'s add a block to log our data.', 'Double-click anywhere on screen to add a block.', 'Type in <span class="tutorial-blockname">tolog</span> and hit Enter.' ],
+   tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
+     attachTo: 'svg'
+ });
+ govTour.addStep("make-connection1", { 
+   text: [ 'Let\'s connect the two, so we have data streaming into our log.', 'Click the OUT box on your <span class="tutorial-blockname">fromhttpstream</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">tolog</span> (the top black box).' ],
+   tetherOptions: { 'targetAttachment': 'bottom right', 'attachment': 'bottom right' },
+     attachTo: 'svg'
+ });
+ govTour.addStep("view-log", { 
+   text: 'Now click the log (this black bar) to view your data!',
+   tetherOptions: { 'targetAttachment': 'bottom center', 'attachment': 'bottom center' },
+   buttons: [{ 'text': 'Complete' } ],
+     attachTo: 'svg'
+ });
 
     tours = { 
       'citibike': citibikeTour,
@@ -449,85 +467,75 @@ govTour.addStep("view-log", {
     if (tour) {
       tour.start();
     }
-$(document).on("click", ".shepherd-button", function() {
-  if ( citibikeTour.getById('welcome').isOpen() || citibikeTour.getById('goal').isOpen() || citibikeTour.getById('intro-to-ref').isOpen()) {
-    Shepherd.activeTour.next();
-  }
-  else if (citibikeTour.getById("add-ticker").isOpen()) {
-    checkBlockBeforeProgress("ticker", "type");
-  } 
-  else if (citibikeTour.getById("edit-ticker").isOpen()) {
-    checkBlockBeforeProgress("10s", "interval");
-  }
-  else if (citibikeTour.getById("add-map").isOpen()) {
-    checkBlockBeforeProgress("map", "type");
-  }
-  else if (citibikeTour.getById("edit-map").isOpen()) {
-    checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
-  }
-  else if (citibikeTour.getById("make-connection1").isOpen()) {
-    checkConnectionsBeforeProgress("ticker", "map");
-  }
-  else if (citibikeTour.getById("add-HTTP").isOpen()) {
-    checkBlockBeforeProgress("gethttp", "type");
-  } 
-  else if (citibikeTour.getById("edit-http").isOpen()) {
-    checkBlockBeforeProgress(".url", "path");
-  } 
-  else if (citibikeTour.getById("make-connection2").isOpen()) {
-    checkConnectionsBeforeProgress("map", "gethttp");
-  }
-  else if (citibikeTour.getById("add-unpack").isOpen()) {
-    checkBlockBeforeProgress("unpack", "type");
-  }
-  else if (citibikeTour.getById("edit-unpack").isOpen()) {
-    checkBlockBeforeProgress(".stationBeanList", "path");
-  }
-  else if (citibikeTour.getById("make-connection3").isOpen()) {
-    checkConnectionsBeforeProgress("gethttp", "unpack");
-  }
-  else if (citibikeTour.getById("add-filter").isOpen()) {
-    checkBlockBeforeProgress("filter", "type");
-  }
-  else if (citibikeTour.getById("edit-filter").isOpen()) {
-    checkBlockBeforeProgress(".stationName == 'W 41 St & 8 Ave'", "filter")
-  }
-  else if (citibikeTour.getById("make-connection4").isOpen()) {
-    checkConnectionsBeforeProgress("unpack", "filter");
-  }
-  else if (citibikeTour.getById("add-tolog").isOpen()) {
-    checkBlockBeforeProgress("tolog", "type");
-  }
-  else if (citibikeTour.getById("make-connection5").isOpen()) {
-    checkConnectionsBeforeProgress("filter", "tolog");
-  }
-  else if (citibikeTour.getById("finished").isOpen()) {
-    Shepherd.activeTour.complete();
-  }
-  else if ( govTour.getById('welcome').isOpen() || govTour.getById('goal').isOpen() || govTour.getById('intro-to-ref').isOpen() ) {
-    Shepherd.activeTour.next();
-  }
-  else if ( govTour.getById('add-fromhttp').isOpen() ) {
-    var b = $("text:contains('fromhttpstream')").prev();
-    httpBlock = "rect[data-id='" + b.attr('data-id') + "']";
 
-    govTour.getById("edit-fromhttp")["options"]["attachTo"] = httpBlock;
-    checkBlockBeforeProgress("fromhttpstream", "type");
-
-  } 
-  else if ( govTour.getById('edit-fromhttp').isOpen() ) {
-    checkBlockBeforeProgress("http://developer.usa.gov/1usagov", "endpoint");
-  } 
-  else if ( govTour.getById('add-tolog').isOpen() ) {
-    checkBlockBeforeProgress("tolog", "type");
-  }
-  else if (govTour.getById('make-connection1').isOpen()) {
-    checkConnectionsBeforeProgress("fromhttpstream", "tolog");
-  }
-  else if (govTour.getById('view-log').isOpen()) {
-    Shepherd.activeTour.complete();	
-  }
-});
+// move these functions to buttons [{}] on each step
+//$(document).on("click", ".shepherd-button", function() {
+//  else if (citibikeTour.getById("edit-map").isOpen()) {
+//    checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
+//  }
+//  else if (citibikeTour.getById("make-connection1").isOpen()) {
+//    checkConnectionsBeforeProgress("ticker", "map");
+//  }
+//  else if (citibikeTour.getById("add-HTTP").isOpen()) {
+//    checkBlockBeforeProgress("gethttp", "type");
+//  } 
+//  else if (citibikeTour.getById("edit-http").isOpen()) {
+//    checkBlockBeforeProgress(".url", "path");
+//  } 
+//  else if (citibikeTour.getById("make-connection2").isOpen()) {
+//    checkConnectionsBeforeProgress("map", "gethttp");
+//  }
+//  else if (citibikeTour.getById("add-unpack").isOpen()) {
+//    checkBlockBeforeProgress("unpack", "type");
+//  }
+//  else if (citibikeTour.getById("edit-unpack").isOpen()) {
+//    checkBlockBeforeProgress(".stationBeanList", "path");
+//  }
+//  else if (citibikeTour.getById("make-connection3").isOpen()) {
+//    checkConnectionsBeforeProgress("gethttp", "unpack");
+//  }
+//  else if (citibikeTour.getById("add-filter").isOpen()) {
+//    checkBlockBeforeProgress("filter", "type");
+//  }
+//  else if (citibikeTour.getById("edit-filter").isOpen()) {
+//    checkBlockBeforeProgress(".stationName == 'W 41 St & 8 Ave'", "filter")
+//  }
+//  else if (citibikeTour.getById("make-connection4").isOpen()) {
+//    checkConnectionsBeforeProgress("unpack", "filter");
+//  }
+//  else if (citibikeTour.getById("add-tolog").isOpen()) {
+//    checkBlockBeforeProgress("tolog", "type");
+//  }
+//  else if (citibikeTour.getById("make-connection5").isOpen()) {
+//    checkConnectionsBeforeProgress("filter", "tolog");
+//  }
+//  else if (citibikeTour.getById("finished").isOpen()) {
+//    Shepherd.activeTour.complete();
+//  }
+//  else if ( govTour.getById('welcome').isOpen() || govTour.getById('goal').isOpen() || govTour.getById('intro-to-ref').isOpen() ) {
+//    Shepherd.activeTour.next();
+//  }
+//  else if ( govTour.getById('add-fromhttp').isOpen() ) {
+//    var b = $("text:contains('fromhttpstream')").prev();
+//    httpBlock = "rect[data-id='" + b.attr('data-id') + "']";
+//
+//    govTour.getById("edit-fromhttp")["options"]["attachTo"] = httpBlock;
+//    checkBlockBeforeProgress("fromhttpstream", "type");
+//
+//  } 
+//  else if ( govTour.getById('edit-fromhttp').isOpen() ) {
+//    checkBlockBeforeProgress("http://developer.usa.gov/1usagov", "endpoint");
+//  } 
+//  else if ( govTour.getById('add-tolog').isOpen() ) {
+//    checkBlockBeforeProgress("tolog", "type");
+//  }
+//  else if (govTour.getById('make-connection1').isOpen()) {
+//    checkConnectionsBeforeProgress("fromhttpstream", "tolog");
+//  }
+//  else if (govTour.getById('view-log').isOpen()) {
+//    Shepherd.activeTour.complete();	
+//  }
+//});
     
   }
 
