@@ -1,6 +1,16 @@
 .shepherd-step {
   font-family:'helvetica', 'arial';
   max-width:350px!important;
+  opacity:.8;
+  pointer-events:none!important;
+}
+
+.shepherd-button {
+  pointer-events:auto!important;
+}
+
+.shepherd-step a {
+  pointer-events:auto!important;
 }
 
 .tutorial-blockname {

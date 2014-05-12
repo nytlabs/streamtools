@@ -30,6 +30,7 @@ $(window).load(function() {
     var tour;
     var tickerBlock;
     var mapBlock;
+    var gethttpBlock;
 
     tour = new Shepherd.Tour({
       defaults: {
@@ -69,14 +70,15 @@ $(window).load(function() {
     var clickRef = tour.addStep('intro-to-ref', {
       text: [
         'We\'ll want to query our data source on regular intervals. We can use a <span class="tutorial-blockname">ticker</span> to do this.', 
-        ' Click the hamburger button to see the list of every block in streamtools.'],
+        ' Click the hamburger button to see the list of every block in streamtools.'
+        ],
         attachTo: '#ui-ref-toggle',
         buttons: false
     });
 
     var addTicker = tour.addStep('add-ticker', {
       text: 'Click <span class="tutorial-blockname">ticker</span> to add that block, then click Next.',
-        attachTo: 'li[data-block-type="ticker"]',
+        attachTo: '#ui-ref-toggle',
         buttons: [
     {
       text: 'Next'
@@ -92,16 +94,17 @@ $(window).load(function() {
 
     var editTicker = tour.addStep('edit-ticker', {
       text: [
+      'You can click and drag blocks to move them around on screen.',
       'Double-click the block to edit its parameters.', 
       'Let\'s set our interval to 10 seconds. Type <span class="tutorial-url">10s</span> into the Interval box and click Update.',
       'After that, click Next.'
       ],
         tetherOptions:
     {
-      targetAttachment: 'top left',
-        attachment: 'top right',
+        targetAttachment: 'bottom left',
+        attachment: 'bottom right',
     },
-        attachTo: tickerBlock,
+        attachTo: 'svg',
         buttons: [
     {
       text: 'Next'
@@ -132,7 +135,7 @@ $(window).load(function() {
     var editMap = tour.addStep('edit-map', {
       text: [
         'Double-click the map to edit its parameters.',
-        'The <span class="tutorial-blockname">map</span> block takes <a href="https://github.com/nytlabs/gojee">gojee</a> expression. Our map will look like this:',
+        'The <span class="tutorial-blockname">map</span> block takes <a href="https://github.com/nytlabs/gojee" target="_new">gojee</a> expression. Our map will look like this:',
         '<span class="tutorial-url">{</span>',
         '<span class="tutorial-url">\"url\": \"\'http://citibikenyc.com/stations/json\'\"</span>',
         '<span class="tutorial-url">}</span>',
@@ -140,10 +143,10 @@ $(window).load(function() {
       ],
       tetherOptions:
     {
-      targetAttachment: 'top left',
-        attachment: 'top right',
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
     },
-        attachTo: mapBlock,
+        attachTo: 'svg',
         buttons: [
     {
       text: 'Next'
@@ -155,8 +158,7 @@ $(window).load(function() {
     var makeConnection1 = tour.addStep('make-connection1', {
       text: [
       'Let\'s connect the two, so every 10s, we map this URL.', 
-      'Click the OUT box on your <span class="tutorial-blockname">ticker</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">map</span> (the top black box).',
-      'You can also click and drag blocks to move them around on screen.'
+      'Click the OUT box on your <span class="tutorial-blockname">ticker</span> box (the bottom black box). ' ,'Connect it to the IN on your <span class="tutorial-blockname">map</span> (the top black box).'
       ],
         tetherOptions:
     {
@@ -198,10 +200,10 @@ $(window).load(function() {
       ],
       tetherOptions:
     {
-      targetAttachment: 'top left',
-        attachment: 'top right',
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
     },
-        attachTo: mapBlock,
+        attachTo: 'svg',
         buttons: [
     {
       text: 'Next'
@@ -229,6 +231,171 @@ $(window).load(function() {
     }
     ]
     });
+
+    var addUnpack = tour.addStep('add-unpack', {
+      text: [
+      'If you view the <a href="http://citibikenyc.com/stations/json" target="_new">JSON data</a> in your browser, you\'ll see that all the data is in a big array.', 
+      'The key wrapping up all the data about individual stations is <span class="tutorial-url">stationBeanList</span>.',
+      'In order to be able to manipulate and filter this data, we need to unpack it first.',
+      'That\'s where the <span class="tutorial-blockname">unpack</span> block comes in handy. Double-click and create it anywhere on-screen.'
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var editUnpack = tour.addStep('edit-unpack', {
+      text: [
+      'Double-click on the <span class="tutorial-blockname">unpack</span> block to edit its rule.', 
+      'Set its Path to <span class="tutorial-url">.stationBeanList</span> and click Next.',
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var makeConnection3 = tour.addStep('make-connection3', {
+      text: [
+      'Now let\'s connect our <span class="tutorial-blockname">gethttp</span> (the thing giving us the JSON) to our <span class="tutorial-blockname">unpack</span> (the thing iterating over that JSON).', 
+      'Connect the two and click Next.',
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var addFilter = tour.addStep('add-filter', {
+      text: [
+      'Right now we\'re getting data about every station. Let\'s filter out every station other than the one outside the NYT headquarters.', 
+      'For this, we\'ll use a <span class="tutorial-blockname">filter</span> block.',
+      'Click Next once you\'ve made it.',
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var editFilter = tour.addStep('edit-filter', {
+      text: [
+      'The station nearest the NYT HQ is <span class="tutorial-url">\'W 41st St & 8 Ave\'</span>.', 
+      'Our <span class="tutorial-blockname">filter</span> rule will look like this:',
+      '<span class="tutorial-url">.stationName == \'W 41 St & 8 Ave\'</span>',
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var makeConnection4 = tour.addStep('make-connection4', {
+      text: [
+      'Connect your <span class="tutorial-blockname">unpack</span> and <span class="tutorial-blockname">filter</span> blocks.', 
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var addTolog = tour.addStep('add-tolog', {
+      text: [
+      'A quick and easy way to see your data stream is to log it using a <span class="tutorial-blockname">tolog</span> block.', 
+      'The <span class="tutorial-blockname">tolog</span> block logs your data to the console and the log built into streamtools.',
+      'Add it and click Next.',
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var makeConnection5 = tour.addStep('make-connection5', {
+      text: [
+      'Finally, connect your <span class="tutorial-blockname">filter</span> and <span class="tutorial-blockname">tolog</span> blocks.', 
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Next'
+    }
+    ]
+    });
+
+    var finished = tour.addStep('finished', {
+      text: [
+      'Now, every 10s, your log will be updated with your newest filtered live data.', 
+      ],
+        tetherOptions:
+    {
+      targetAttachment: 'bottom right',
+        attachment: 'bottom right',
+    },
+        attachTo: 'svg',
+        buttons: [
+    {
+      text: 'Complete'
+    }
+    ]
+    });
+
 
     function checkBlockBeforeProgress(req, cat) {
       var required = req;
@@ -276,8 +443,17 @@ $(window).load(function() {
         });
       } else if (category == "path") {
           $.each(currentBlocks, function(k, v) {
-            if (this.Type == "gethttp") {
+            if (this.Type == "gethttp" || this.Type == "unpack") {
               if (this.Rule.Path == required) {
+                Shepherd.activeTour.next();
+                return true;
+              }
+            }
+        });
+      } else if (category == "filter") {
+          $.each(currentBlocks, function(k, v) {
+            if (this.Type == "filter") {
+              if (this.Rule.Filter == required) {
                 Shepherd.activeTour.next();
                 return true;
               }
@@ -335,9 +511,9 @@ $(window).load(function() {
         Shepherd.activeTour.next();
       }
       else if (addTicker.isOpen()) {
-        var b = $("text:contains('ticker')").prev();
-        tickerBlock = "rect[data-id='" + b.attr('data-id') + "']";
-        tour.getById("edit-ticker")["options"]["attachTo"] = tickerBlock;
+        // var b = $("text:contains('ticker')").prev();
+        // tickerBlock = 'rect[data-id="' + b.attr('data-id') + '"]';
+        // tour.getById("edit-ticker")["options"]["attachTo"] = tickerBlock;
 
         checkBlockBeforeProgress("ticker", "type");
       } 
@@ -345,9 +521,9 @@ $(window).load(function() {
         checkBlockBeforeProgress("10s", "interval");
       }
       else if (addMap.isOpen()) {
-        var b = $("text:contains('map')").prev();
-        tickerBlock = "rect[data-id='" + b.attr('data-id') + "']";
-        tour.getById("edit-map")["options"]["attachTo"] = mapBlock;
+        // var b = $("text:contains('map')").prev();
+        // mapBlock = 'rect[data-id="' + b.attr('data-id') + '"]';
+        // tour.getById("edit-map")["options"]["attachTo"] = mapBlock;
 
         checkBlockBeforeProgress("map", "type");
       }
@@ -358,6 +534,10 @@ $(window).load(function() {
         checkConnectionsBeforeProgress("ticker", "map");
       }
       else if (addHTTP.isOpen()) {
+        // var b = $("text:contains('gethttp')").prev();
+        // gethttpBlock = 'rect[data-id="' + b.attr('data-id') + '"]';
+        // tour.getById("edit-http")["options"]["attachTo"] = gethttpBlock;
+
         checkBlockBeforeProgress("gethttp", "type");
       } 
       else if (editHTTP.isOpen()) {
@@ -365,6 +545,33 @@ $(window).load(function() {
       } 
       else if (makeConnection2.isOpen()) {
         checkConnectionsBeforeProgress("map", "gethttp");
+      }
+      else if (addUnpack.isOpen()) {
+        checkBlockBeforeProgress("unpack", "type");
+      }
+      else if (editUnpack.isOpen()) {
+        checkBlockBeforeProgress(".stationBeanList", "path");
+      }
+      else if (makeConnection3.isOpen()) {
+        checkConnectionsBeforeProgress("gethttp", "unpack");
+      }
+      else if (addFilter.isOpen()) {
+        checkBlockBeforeProgress("filter", "type");
+      }
+      else if (editFilter.isOpen()) {
+        checkBlockBeforeProgress(".stationName == 'W 41 St & 8 Ave'", "filter")
+      }
+      else if (makeConnection4.isOpen()) {
+        checkConnectionsBeforeProgress("unpack", "filter");
+      }
+      else if (addTolog.isOpen()) {
+        checkBlockBeforeProgress("tolog", "type");
+      }
+      else if (makeConnection5.isOpen()) {
+        checkConnectionsBeforeProgress("filter", "tolog");
+      }
+      else if (finished().isOpen()) {
+        Shepherd.activeTour.complete();
       }
     });
     tour.start();
