@@ -1,16 +1,31 @@
-.shepherd-step {
+.hopscotch-bubble {
   font-family:'helvetica', 'arial';
-  max-width:350px!important;
-  opacity:.8;
+  font-size:16px!important;
+  opacity:.8!important;
   pointer-events:none!important;
+  border:0px!important;
 }
 
-.shepherd-button {
+.hopscotch-content {
+  font-family:'helvetica', 'arial';
+  font-size:16px!important;
+  line-height:20px!important;
+}
+
+.hopscotch-nav-button {
+  pointer-events:auto!important;
+  text-shadow:none!important;
+  border:0px!important;
+  background-image:none!important;
+  font-family:'helvetica', 'arial';
+}
+
+.hopscotch-bubble a {
   pointer-events:auto!important;
 }
 
-.shepherd-step a {
-  pointer-events:auto!important;
+p {
+  margin-bottom:12px;
 }
 
 .tutorial-blockname {
@@ -23,5 +38,5 @@
 .tutorial-url {
   font-family: Monaco, "Courier New", Courier, monospace;
   font-size:12px!important;
-  color:darkgray;
+  color:gray;
 }
