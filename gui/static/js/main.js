@@ -332,7 +332,7 @@ $(function() {
             .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
-        introText.attr('x', window.innerWidth/2)
+        d3.select('intro-text').attr('x', window.innerWidth/2)
             .attr('y', window.innerHeight/2);
     });
 
