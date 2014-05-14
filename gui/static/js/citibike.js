@@ -126,7 +126,7 @@
     },
 
     {
-      content: "<p>In this tutorial, we'll use streamtools to get live data on the availability of Citibikes at the station outside the NYT headquarters in Midtown Manhattan.</p>",
+      content: "<p>In this tutorial, we'll use streamtools to get live data on the availability of Citibikes at a particular station in NYC--namely, the station outside the NYT headquarters in Midtown Manhattan.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -140,7 +140,7 @@
     },
 
     {
-      content: "<p>We will want to query our data source on regular intervals, to make sure our data is always up-to-date. We can use a <span class=\"tutorial-blockname\">ticker</span> to do this.</p><p>Click the hamburger button to see a list of every block in streamtools.</p>",
+      content: "<p>To make sure our data is always up-to-date, we need some way to emit a message on a regular interval. We can do this with <b>emitter</b> blocks--in this case, a <span class=\"tutorial-blockname\">ticker</span> block.</p><p>Click the hamburger button to see a list of every block in streamtools.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -153,7 +153,7 @@
     },
 
     {
-      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block, then click Next.</p>",
+      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block.</p><p>You can click and drag blocks to move them around on screen.</p><p>Click Next when you're ready.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -166,7 +166,7 @@
     },
 
     {
-      content: "<p>You can click and drag blocks to move them around on screen.</p><p>Double-click the block to edit its parameters.</p><p>Let's set our interval to 10 seconds. Type <span class=\"tutorial-url\">10s</span> into the Interval box and click Update.</p><p>After that, click Next.</p>",
+      content: "<p>Most blocks have <b>rules</b>, which define that block's behavior. You can double-click a block to edit its rules.</p><p>Double-click your <span class=\"tutorial-blockname\">ticker</span> block.</p><p>Let's set our interval to 10 seconds. Type <span class=\"tutorial-url\">10s</span> into the Interval box and click Update.</p><p>After that, click Next.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -179,7 +179,7 @@
     },
 
     {
-      content: "<p>Before we can start making GET requests, we need to specify the URL from which we are getting the data.</p><p>We will use a <span class='tutorial-blockname'>map</span> block for this, mapping the key 'url' to our URL.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>map</span> and hit Enter.</p>",
+      content: "<p>Before we can start making GET requests, we need to specify the URL from which we are getting the data.</p><p>We will use a <span class='tutorial-blockname'>map</span> block for this, mapping the key 'url' to our URL. This is a <b>flow block</b>: one that transforms or manipulates the stream.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>map</span> and hit Enter.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -205,7 +205,7 @@
     },
 
     {
-      content: "<p>Let's connect the two, so every 10s, we map this URL.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">map</span> (the top black box).</p> ",
+      content: "<p>Each block also has a set of <b>routes</b>, which can receive data, emit data, or respond to queries. Routes can be connected, allowing data to flow between blocks.</p><p>Let's connect the two, so every 10s, we map this URL.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">map</span> (the top black box).</p> ",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -231,7 +231,7 @@
     },
 
     {
-      content: "<p>Double-click on your <span class=\"tutorial-blockname\">gethttp</span> block to edit it.</p><p>Our URL is mapped to the path <span class=\"tutorial-url\">.url</span>.</p><p>Put that in the Path parameter, then click Next.</p> ",
+      content: "<p>Double-click on your <span class=\"tutorial-blockname\">gethttp</span> block to edit it.</p><p>Remember how we mapped our URL? In <a href=\"https://github.com/nytlabs/gojee\" target=\"_new\">gojee syntax</a>, our \"url\" key becomes the path <span class=\"tutorial-url\">.url</span>.</p><p>Put that in the Path parameter, click Update, then click Next.</p> ",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -257,7 +257,7 @@
     },
 
     {
-      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The key wrapping up all the data about individual stations is <span class=\"tutorial-url\">stationBeanList</span>.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy. Double-click and create it anywhere on-screen.</p>",
+      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The key wrapping up all the data about individual stations is <span class=\"tutorial-url\">stationBeanList</span>.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy: it takes an array of objects and emits each object as a separate message. Double-click and create it anywhere on-screen.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -309,7 +309,7 @@
     },
 
     {
-      content: "<p>The station nearest the NYT HQ is <span class=\"tutorial-url\">\'W 41st St & 8 Ave\'</span>.</p><p>Our <span class=\"tutorial-blockname\">filter</span> rule will look like this:</p><p><span class=\"tutorial-url\">.stationName == \'W 41 St & 8 Ave\'</span></p>",
+      content: "<p>The <span class=\"tutorial-blockname\">filter</span> block contains a rule, and emits/discards incoming messages based on whether the rule evaluates to true.</p><p>The station nearest the NYT HQ is <span class=\"tutorial-url\">\'W 41st St & 8 Ave\'</span>.</p><p>Our <span class=\"tutorial-blockname\">filter</span> rule will look like this:</p><p><span class=\"tutorial-url\">.stationName == \'W 41 St & 8 Ave\'</span></p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -335,7 +335,7 @@
     },
 
     {
-      content: "<p>A quick and easy way to see your data stream is to log it using a <span class=\"tutorial-blockname\">tolog</span> block.</p><p>The <span class=\"tutorial-blockname\">tolog</span> block logs your data to the console and the log built into streamtools.</p><p>Add it and click Next.</p>",
+      content: "<p>Usually, we'll want to send our data to an external system, such as a file or our console. <b>Sink blocks</b> allow us to do that. In our case, we'll send our data to the log.</p><p>The <span class=\"tutorial-blockname\">tolog</span> block logs your data to the console and the log built into streamtools.</p><p>Add it and click Next.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -365,7 +365,17 @@
       target: "#log",
       placement: "top",
       yOffset: -20,
-            xOffset: "center",
+      xOffset: "center",
+      showCTAButton: false,
+      showNextButton: true,
+    },
+
+    {
+      content: "<p>Now that you've finished this example, try building on it by incorporating more of streamtools' features.</p><p>Check out <a href=\"http://nytlabs.github.io/streamtools\" target=\"_new\">detailed block descriptions</a>, or play with some <a href=\"http://nytlabs.github.io/streamtools/demos/\">pre-built demos</a>.",
+      target: "#log",
+      placement: "top",
+      yOffset: -20,
+      xOffset: "center",
       showCTAButton: false,
       showNextButton: true,
     },
