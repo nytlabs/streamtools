@@ -153,7 +153,7 @@
     },
 
     {
-      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block.</p><p>You can click and drag blocks to move them around on screen.</p><p>Click Next when you're ready.</p>",
+      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block.</p><p>You can click and drag blocks to move them around on screen. You can delete a block by clicking it (to select it) and pressing the Delete key.</p><p>Click Next when you're ready.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -244,7 +244,7 @@
     },
 
     {
-      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">map</span> block to our <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">gethttp</span> (the top black box).</p>",
+      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">map</span> block to our <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">map</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">gethttp</span> (the top black box).</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,

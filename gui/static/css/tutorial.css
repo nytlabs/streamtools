@@ -37,6 +37,7 @@ p {
 
 .tutorial-url {
   font-family: Monaco, "Courier New", Courier, monospace;
+    pointer-events:auto!important;
   font-size:12px!important;
   color:gray;
 }
