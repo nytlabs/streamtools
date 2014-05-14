@@ -15,8 +15,7 @@ $(function() {
     params = queryParams();
 
     yepnope({
-        test:   params["tutorial"] == "gov" || 
-                params["tutorial"] == "citibike",
+        test: params["tutorial"] == "citibike",
 
         yep: [ 
             'static/lib/hopscotch.js',
