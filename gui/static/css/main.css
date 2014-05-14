@@ -34,7 +34,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 120px;
+  width: 28px;
 }
 
 #ui-ref-contents {
@@ -47,6 +47,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   width: 140px;
+  background-color: rgba(240,240,240,1);
 }
 
 #ui-ref hr {
