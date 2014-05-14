@@ -109,6 +109,7 @@
     id: "citibike",
     bubbleWidth: 350,
     showNextButton: false,
+    showPrevButton: true,
     smoothScroll: false,
     
     steps: [
@@ -192,7 +193,7 @@
     },
 
     {
-      content: "<p>Double-click the <span class='tutorial-blockname'>map</span> block to edit its parameters.</p> <p>The <span class='tutorial-blockname'>map</span> block takes a <a href='https://github.com/nytlabs/gojee' target='_new'>gojee</a> expresion.</p> <p>Our map will look like this:<br/><span class='tutorial-url'>{ \"url\": \"\'http://citibikenyc.com/stations/json\'\" }</span></p>",
+      content: "<p>Double-click the <span class='tutorial-blockname'>map</span> block to edit its parameters.</p> <p>The <span class='tutorial-blockname'>map</span> block takes a <a href='https://github.com/nytlabs/gojee' target='_new'>gojee</a> expression.</p> <p>Our map will look like this:<br/><span class='tutorial-url'>{ \"url\": \"\'http://citibikenyc.com/stations/json\'\" }</span></p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
