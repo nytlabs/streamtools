@@ -1,5 +1,32 @@
 $(function() {
 
+    // tutorial test
+    function queryParams() {
+        var result = {}, keyValuePairs = location.search.slice(1).split('&');
+
+        keyValuePairs.forEach(function(keyValuePair) {
+          keyValuePair = keyValuePair.split('=');
+          result[keyValuePair[0]] = keyValuePair[1] || '';
+        });
+        return result;
+    }
+  
+    // grab the query string params
+    params = queryParams();
+
+    yepnope({
+        test:   params["tutorial"] == "gov" || 
+                params["tutorial"] == "citibike",
+
+        yep: [ 
+            'static/lib/hopscotch.js',
+            'static/css/hopscotch.min.css',
+            'static/css/tutorial.css',
+            'static/js/' + params["tutorial"] + '.js'
+            ],
+    });
+
+
     // before anything, we need to load the library.
     var library = JSON.parse($.ajax({
         url: '/library',
@@ -332,7 +359,7 @@ $(function() {
             .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
-        introText.attr('x', window.innerWidth/2)
+        d3.select('intro-text').attr('x', window.innerWidth/2)
             .attr('y', window.innerHeight/2);
     });
 
