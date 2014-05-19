@@ -39,6 +39,7 @@ func (s *ParseCSVSuite) TestParseCSV(c *C) {
 	Jacqui Maher, jacqui@example.com, 555-5550
 	Mike Dewar, mike@example.com, 555-5551
 	Nik Hanselmann, nik@example.com, 555-5552
+	Jane Friedoff, jane@example.com, 555-5553, Extra
 	`
 
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
@@ -56,12 +57,15 @@ func (s *ParseCSVSuite) TestParseCSV(c *C) {
 	time.AfterFunc(time.Duration(1)*time.Second, func() {
 		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
 	})
+	time.AfterFunc(time.Duration(1)*time.Second, func() {
+		ch.InChan <- &blocks.Msg{Msg: map[string]interface{}{}, Route: "poll"}
+	})
 
 	time.AfterFunc(time.Duration(6)*time.Second, func() {
 		ch.QuitChan <- true
 	})
 
-	var expectedNames = []string{"Jacqui Maher", "Nik Hanselmann", "Mike Dewar"}
+	var expectedNames = []string{"Jacqui Maher", "Nik Hanselmann", "Mike Dewar", "Jane Friedoff"}
 
 	for {
 		select {
@@ -79,6 +83,7 @@ func (s *ParseCSVSuite) TestParseCSV(c *C) {
 		case messageI := <-outChan:
 			message := messageI.Msg.(map[string]interface{})
 
+			log.Println(message)
 			nameReceived := message["name"].(string)
 			if !test_utils.StringInSlice(expectedNames, nameReceived) {
 				log.Println("failed finding", nameReceived, "in expected names list")

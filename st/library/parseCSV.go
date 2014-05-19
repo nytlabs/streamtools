@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/csv"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/nytlabs/gojee"
@@ -117,16 +118,13 @@ func (b *ParseCSV) Run() {
 			}
 			row := make(map[string]interface{})
 			for fieldIndex, field := range record {
-				if fieldIndex > len(headers) {
-					row[string(fieldIndex)] = field
+				if fieldIndex >= len(headers) {
+					row[strconv.Itoa(fieldIndex)] = field
 				} else {
 					header := headers[fieldIndex]
 					row[header] = field
 				}
 			}
-			// 			for headerIndex, header := range headers {
-			// 				row[n] = record[i]
-			// 			}
 
 			b.out <- row
 
