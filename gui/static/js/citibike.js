@@ -19,7 +19,6 @@
       });
     } else if (category == "endpoint") {
       $.each(currentBlocks, function(k, v) {
-        console.log(this.Rule.Endpoint);
         if (this.Rule.Endpoint == required) {
           hopscotch.nextStep();
           return true;
@@ -27,9 +26,7 @@
       });
     } else if (category == "interval") {
       $.each(currentBlocks, function(k, v) {
-        console.log(this.Rule.Interval);
         if (this.Rule.Interval == required) {
-          console.log("interval matches");
           hopscotch.nextStep();
           return true;
         }
