@@ -28,11 +28,21 @@ p {
   margin-bottom:12px;
 }
 
+p.alert {
+  display:none;
+}
+
+p.alert-visible {
+  display:block;
+  color:red;
+}
+
 .tutorial-blockname {
   font-family: Monaco, "Courier New", Courier, monospace;
   font-size:12px!important;
   padding:2px;
   background-color:lightgray;
+  color:black !important;
 }
 
 .tutorial-url {
