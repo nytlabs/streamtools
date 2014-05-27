@@ -7,6 +7,8 @@ import (
 	"github.com/nytlabs/streamtools/st/util"
 )
 
+// TODO update NSQ https://github.com/bitly/go-nsq/pull/30
+
 // specify those channels we're going to use to communicate with streamtools
 type FromNSQ struct {
 	blocks.Block
