@@ -14,21 +14,21 @@
       $.each(currentBlocks, function(k, v) {
         if (this.Type == required) {
           hopscotch.nextStep();
-          return true;
+          return false;
         }
       });
     } else if (category == "endpoint") {
       $.each(currentBlocks, function(k, v) {
         if (this.Rule.Endpoint == required) {
           hopscotch.nextStep();
-          return true;
+          return false;
         }
       });
     } else if (category == "interval") {
       $.each(currentBlocks, function(k, v) {
         if (this.Rule.Interval == required) {
           hopscotch.nextStep();
-          return true;
+          return false;
         }
       });
     } else if (category == "map") {
@@ -36,7 +36,7 @@
         if (this.Type == "map") {
           if (this.Rule.Map.url == required) {
             hopscotch.nextStep();
-            return true;
+            return false;
           }
         }
       });
@@ -45,7 +45,7 @@
         if (this.Type == "gethttp" || this.Type == "unpack") {
           if (this.Rule.Path == required) {
             hopscotch.nextStep();
-            return true;
+            return false;
           }
         }
       });
@@ -54,7 +54,7 @@
         if (this.Type == "filter") {
           if (this.Rule.Filter == required) {
             hopscotch.nextStep();
-            return true;
+            return false;
           }
         }
       });
@@ -97,7 +97,7 @@
     $.each(currentConnections, function(key, val) {
       if (this.FromId == idFrom && this.ToId == idTo) {
         hopscotch.nextStep();
-        return true;
+        return false;
       }
     });
   }
