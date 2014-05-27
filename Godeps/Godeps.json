@@ -1,0 +1,103 @@
+{
+	"ImportPath": "github.com/nytlabs/streamtools",
+	"GoVersion": "go1.2.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "code.google.com/p/snappy-go/snappy",
+			"Comment": "null-15",
+			"Rev": "12e4b4183793ac4b061921e7980845e750679fd0"
+		},
+		{
+			"ImportPath": "github.com/bitly/go-nsq",
+			"Comment": "v0.3.7 - last stable version",
+			"Rev": "1de91317e5356b30730f558ca60cffc42be7620f"
+		},
+		{
+			"ImportPath": "github.com/bitly/go-simplejson",
+			"Comment": "v0.4.3-12-g408ce0b",
+			"Rev": "408ce0b284fa7ad36e3856fcde50022e885474b2"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "8f6bca66c46849e514ac5abfc71ac9b063c01409"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "a08edd30ad9e104612741163dc087a613829a23c"
+		},
+		{
+			"ImportPath": "github.com/gorilla/mux",
+			"Rev": "9ede152210fa25c1377d33e867cb828c19316445"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "03206ef31ebe44a6db9e66f3b466e05a31790631"
+		},
+		{
+			"ImportPath": "github.com/jasoncapehart/go-sgd",
+			"Rev": "a7e66bc0f279ada654e9a927ba1347ee8510585d"
+		},
+		{
+			"ImportPath": "github.com/mattbaird/elastigo/api",
+			"Rev": "99b8b36bcd656db996da4e9fbfddd40b81957780"
+		},
+		{
+			"ImportPath": "github.com/mattbaird/elastigo/core",
+			"Rev": "99b8b36bcd656db996da4e9fbfddd40b81957780"
+		},
+		{
+			"ImportPath": "github.com/mikedewar/aws4",
+			"Rev": "b90e57a1351df5db60fcdc35fbc1f25a410481a7"
+		},
+		{
+			"ImportPath": "github.com/mjibson/go-dsp/dsputils",
+			"Rev": "77c645803c98b47a8ec5ea9c425993ea9382a709"
+		},
+		{
+			"ImportPath": "github.com/mjibson/go-dsp/fft",
+			"Rev": "77c645803c98b47a8ec5ea9c425993ea9382a709"
+		},
+		{
+			"ImportPath": "github.com/mreiferson/go-snappystream",
+			"Comment": "v0.1.1",
+			"Rev": "97c96e6648e99c2ce4fe7d169aa3f7368204e04d"
+		},
+		{
+			"ImportPath": "github.com/mxk/go-imap/imap",
+			"Rev": "727b31c5615d5f6a7ac1e32235fb93d14b62df3d"
+		},
+		{
+			"ImportPath": "github.com/nutrun/lentil",
+			"Rev": "86d2066a9bd4bc437d716b9ddb3d5b4ddcb1f779"
+		},
+		{
+			"ImportPath": "github.com/nytlabs/gojee",
+			"Rev": "5a79a1542dc01b7bae102027f6a8d159ea28a57f"
+		},
+		{
+			"ImportPath": "github.com/nytlabs/mxj",
+			"Rev": "70c0faeef2e65d0a784584a209adfcd5b2619d47"
+		},
+		{
+			"ImportPath": "github.com/robertkrimen/otto",
+			"Rev": "6d506b4b2f09ce5646c0633ec8408dbc35521727"
+		},
+		{
+			"ImportPath": "github.com/streadway/amqp",
+			"Rev": "989f76903dbe3b7855b6e57e4048f87d03b5ac95"
+		},
+		{
+			"ImportPath": "labix.org/v2/mgo",
+			"Comment": "273",
+			"Rev": "gustavo@niemeyer.net-20140312230639-09nxw5qqax6dlcqh"
+		},
+		{
+			"ImportPath": "launchpad.net/gocheck",
+			"Comment": "86",
+			"Rev": "gustavo@niemeyer.net-20140127131816-zshobk1qqme626xw"
+		}
+	]
+}
