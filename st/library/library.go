@@ -38,6 +38,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"packbyvalue":        NewPackByValue,
 	"packbycount":        NewPackByCount,
 	"parsexml":           NewParseXML,
+	"parsecsv":           NewParseCSV,
 	"set":                NewSet,
 	"cache":              NewCache,
 	"join":               NewJoin,
@@ -61,6 +62,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"fft":                NewFFT,
 	"postHTTP":           NewPostHTTP,
 	"putHTTP":            NewPutHTTP,
+	"webRequest":         NewWebRequest,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}

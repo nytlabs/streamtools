@@ -86,7 +86,7 @@ func (b *FromFile) Run() {
 			// if the json parsing fails, store data unparsed as "data"
 			if err != nil {
 				outMsg = map[string]interface{}{
-					"data": line,
+					"data": string(line),
 				}
 			}
 

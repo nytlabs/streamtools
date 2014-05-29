@@ -104,7 +104,7 @@ func ParseArrayString(ruleI interface{}, key string) ([]string, error) {
 		if !ok {
 			return val, errors.New("Supplied value was not an array of interfaces")
 		}
-		//val = make([]string, len(valI))
+		val = make([]string, len(valI))
 		for i, vi := range valI {
 			v, ok := vi.(string)
 			if !ok {
