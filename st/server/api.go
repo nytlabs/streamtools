@@ -358,7 +358,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 							v,
 							s.Id,
 						})
-						c.send <- out
+						if err := c.write(websocket.TextMessage, out); err != nil {
+							return
+						}
 					}
 					for _, v := range s.manager.ListConnections() {
 						out, _ := json.Marshal(struct {
@@ -370,7 +372,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 							v,
 							s.Id,
 						})
-						c.send <- out
+						if err := c.write(websocket.TextMessage, out); err != nil {
+							return
+						}
 					}
 					s.manager.Mu.Unlock()
 				case "rule":
@@ -394,7 +398,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						b,
 						s.Id,
 					})
-					c.send <- out
+					if err := c.write(websocket.TextMessage, out); err != nil {
+						return
+					}
 				}
 			}
 		}
