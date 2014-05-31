@@ -36,8 +36,10 @@ func (h *hub) run() {
 				select {
 				case c.send <- m:
 				default:
-					close(c.send)
-					delete(h.connections, c)
+					if _, ok := h.connections[c]; ok {
+						delete(h.connections, c)
+						close(c.send)
+					}
 				}
 			}
 		}
