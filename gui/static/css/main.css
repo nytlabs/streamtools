@@ -431,3 +431,8 @@ div.blockMsg {
 .intro-text.clicked {
   opacity:0;
 }
+
+.rename-input {
+  width: 180px;
+  margin-top: 2px;
+}

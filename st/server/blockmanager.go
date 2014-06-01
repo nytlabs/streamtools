@@ -122,6 +122,7 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 		AddChan:        make(chan *blocks.AddChanMsg),
 		DelChan:        make(chan *blocks.Msg),
 		ErrChan:        make(chan error),
+		IdChan:         make(chan string),
 		QuitChan:       make(chan bool),
 	}
 
@@ -145,7 +146,7 @@ func (b *BlockManager) Create(blockInfo *BlockInfo) (*BlockInfo, error) {
 	return blockInfo, nil
 }
 
-func (b *BlockManager) UpdateBlock(id string, coord *Coords) (*BlockInfo, error) {
+func (b *BlockManager) UpdateBlockPosition(id string, coord *Coords) (*BlockInfo, error) {
 	block, ok := b.blockMap[id]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("Cannot update block %s: does not exist", id))
@@ -444,6 +445,49 @@ func (b *BlockManager) StatusBlocks() []string {
 		responses[i] = <-MsgChan
 	}
 	return responses
+}
+
+func (b *BlockManager) UpdateBlockId(fromId string, toId string) (*BlockInfo, []*ConnectionInfo, error) {
+	_, ok := b.blockMap[fromId]
+	if !ok {
+		return nil, nil, errors.New("from block Id does not exist")
+	}
+
+	if !b.IdSafe(toId) {
+		return nil, nil, errors.New(fmt.Sprintf("Cannot create block %s: invalid id", toId))
+	}
+
+	// make sure ID doesn't already exist
+	if b.IdExists(toId) {
+		return nil, nil, errors.New(fmt.Sprintf("Cannot create block %s: id already exists", toId))
+	}
+
+	select {
+	case b.blockMap[fromId].chans.IdChan <- toId:
+	default:
+		return nil, nil, errors.New(fmt.Sprintf("Could not set Id for block %s: timeout", fromId))
+	}
+
+	b.blockMap[toId] = b.blockMap[fromId]
+	b.blockMap[toId].Id = toId
+
+	delete(b.blockMap, fromId)
+
+	var updatedConns []*ConnectionInfo
+
+	for _, c := range b.connMap {
+		if c.FromId == fromId || c.ToId == fromId {
+			updatedConns = append(updatedConns, c)
+			if c.FromId == fromId {
+				c.FromId = toId
+			}
+			if c.ToId == fromId {
+				c.ToId = toId
+			}
+		}
+	}
+
+	return b.blockMap[toId], updatedConns, nil
 }
 
 func (b *BlockManager) ListBlocks() []*BlockInfo {
