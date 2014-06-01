@@ -409,22 +409,22 @@ func (s *Server) optionsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) ImportFile(filename string) {
 	b, err := ioutil.ReadFile(filename)
-    if err != nil {
+	if err != nil {
 		loghub.Log <- &loghub.LogMsg{
 			Type: loghub.ERROR,
 			Data: err.Error(),
 			Id:   s.Id,
 		}
-    }
+	}
 
-    err = s.importJSON(b)
-    if err != nil {
+	err = s.importJSON(b)
+	if err != nil {
 		loghub.Log <- &loghub.LogMsg{
 			Type: loghub.ERROR,
 			Data: err.Error(),
 			Id:   s.Id,
 		}
-    }
+	}
 }
 
 func (s *Server) importJSON(body []byte) error {
