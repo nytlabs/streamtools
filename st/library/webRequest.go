@@ -139,11 +139,23 @@ func (b *WebRequest) Run() {
 				break
 			}
 
-			b.out <- map[string]interface{}{
-				"Response": string(body),
+			var responseBody interface{}
+			err = json.Unmarshal(body, &responseBody)
+			if err != nil {
+				responseBody = string(body)
+			}
+
+			// always return body/headers/status even if it's nasty xml
+			outMsg := map[string]interface{}{
+				"body":    responseBody,
+				"headers": resp.Header,
+				"status":  resp.Status,
 			}
 
 			resp.Body.Close()
+
+			b.out <- outMsg
+
 		case resp := <-b.queryrule:
 			resp <- map[string]interface{}{
 				"Url":     url,
