@@ -413,9 +413,27 @@ func (s *Server) optionsHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
-// importHandler accepts a JSON through POST that updats the state of ST
-// It handles naming collisions by modifying the incoming block pattern.
-func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ImportFile(filename string) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
+			Data: err.Error(),
+			Id:   s.Id,
+		}
+	}
+
+	err = s.importJSON(b)
+	if err != nil {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
+			Data: err.Error(),
+			Id:   s.Id,
+		}
+	}
+}
+
+func (s *Server) importJSON(body []byte) error {
 	s.manager.Mu.Lock()
 	defer s.manager.Mu.Unlock()
 
@@ -423,18 +441,12 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
 	}
+
 	corrected := make(map[string]string)
 
-	body, err := ioutil.ReadAll(r.Body)
+	err := json.Unmarshal(body, &export)
 	if err != nil {
-		s.apiWrap(w, r, 500, s.response(err.Error()))
-		return
-	}
-
-	err = json.Unmarshal(body, &export)
-	if err != nil {
-		s.apiWrap(w, r, 500, s.response(err.Error()))
-		return
+		return err
 	}
 
 	for _, block := range export.Blocks {
@@ -455,8 +467,7 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		block.Id = corrected[block.Id]
 		eblock, err := s.manager.Create(block)
 		if err != nil {
-			s.apiWrap(w, r, 500, s.response(err.Error()))
-			return
+			return err
 		}
 
 		loghub.UI <- &loghub.LogMsg{
@@ -478,8 +489,7 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		conn.ToId = corrected[conn.ToId]
 		econn, err := s.manager.Connect(conn)
 		if err != nil {
-			s.apiWrap(w, r, 500, s.response(err.Error()))
-			return
+			return err
 		}
 
 		loghub.Log <- &loghub.LogMsg{
@@ -499,6 +509,23 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		Type: loghub.INFO,
 		Data: "Import OK",
 		Id:   s.Id,
+	}
+	return nil
+}
+
+// importHandler accepts a JSON through POST that updats the state of ST
+// It handles naming collisions by modifying the incoming block pattern.
+func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	err = s.importJSON(body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
 	}
 
 	s.apiWrap(w, r, 200, s.response("OK"))

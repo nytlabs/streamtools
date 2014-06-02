@@ -32,6 +32,10 @@ func main() {
 
 	s := server.NewServer()
 
+	for _, file := range flag.Args() {
+		s.ImportFile(file)
+	}
+
 	s.Id = "SERVER"
 	s.Port = *port
 	s.Domain = *domain
