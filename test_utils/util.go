@@ -20,6 +20,7 @@ func NewBlock(id, kind string) (blocks.BlockInterface, blocks.BlockChans) {
 		QueryParamChan: make(chan *blocks.QueryParamMsg),
 		AddChan:        make(chan *blocks.AddChanMsg),
 		DelChan:        make(chan *blocks.Msg),
+		IdChan:         make(chan string),
 		ErrChan:        make(chan error),
 		QuitChan:       make(chan bool),
 	}

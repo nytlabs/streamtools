@@ -626,8 +626,10 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	s.manager.Mu.Lock()
 	defer s.manager.Mu.Unlock()
 
-	var coord *Coords
+	var update map[string]interface{}
+
 	vars := mux.Vars(r)
+	blockId := vars["id"]
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -635,35 +637,92 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.Unmarshal(body, &coord)
+	err = json.Unmarshal(body, &update)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	mblock, err := s.manager.UpdateBlock(vars["id"], coord)
+	if _, ok := update["X"]; ok {
+		c := &Coords{
+			X: update["X"].(float64),
+			Y: update["Y"].(float64),
+		}
 
+		mblock, err := s.manager.UpdateBlockPosition(blockId, c)
+
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
+
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.UPDATE,
+			Data: fmt.Sprintf("Block %s", mblock.Id),
+			Id:   s.Id,
+		}
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.UPDATE_POSITION,
+			Data: mblock,
+			Id:   s.Id,
+		}
+	}
+
+	if _, ok := update["Id"]; ok {
+		mblock, mconnections, err := s.manager.UpdateBlockId(blockId, update["Id"].(string))
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
+
+		blockId = mblock.Id
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.DELETE,
+			Data: struct {
+				Id string
+			}{
+				vars["id"],
+			},
+			Id: s.Id,
+		}
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.CREATE,
+			Data: mblock,
+			Id:   s.Id,
+		}
+
+		for _, c := range mconnections {
+			loghub.UI <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: struct {
+					Id string
+				}{
+					c.Id,
+				},
+				Id: s.Id,
+			}
+
+			loghub.UI <- &loghub.LogMsg{
+				Type: loghub.CREATE,
+				Data: c,
+				Id:   s.Id,
+			}
+		}
+	}
+
+	block, err := s.manager.GetBlock(blockId)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	jblock, err := json.Marshal(mblock)
+	jblock, err := json.Marshal(block)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
-	}
-
-	loghub.Log <- &loghub.LogMsg{
-		Type: loghub.UPDATE,
-		Data: fmt.Sprintf("Block %s", mblock.Id),
-		Id:   s.Id,
-	}
-
-	loghub.UI <- &loghub.LogMsg{
-		Type: loghub.UPDATE_POSITION,
-		Data: mblock,
-		Id:   s.Id,
 	}
 
 	s.apiWrap(w, r, 200, jblock)
