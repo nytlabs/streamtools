@@ -315,8 +315,10 @@ func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string, error
 }
 
 func (b *BlockManager) DeleteSocket(blockId string, connId string) error {
-	b.blockMap[blockId].chans.DelChan <- &blocks.Msg{
-		Route: connId,
+	if _, ok := b.blockMap[blockId]; ok {
+		b.blockMap[blockId].chans.DelChan <- &blocks.Msg{
+			Route: connId,
+		}
 	}
 	return nil
 }

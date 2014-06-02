@@ -27,15 +27,19 @@ func (h *hub) run() {
 		case c := <-h.register:
 			h.connections[c] = true
 		case c := <-h.unregister:
-			delete(h.connections, c)
-			close(c.send)
+			if _, ok := h.connections[c]; ok {
+				delete(h.connections, c)
+				close(c.send)
+			}
 		case m := <-h.Broadcast:
 			for c := range h.connections {
 				select {
 				case c.send <- m:
 				default:
-					close(c.send)
-					delete(h.connections, c)
+					if _, ok := h.connections[c]; ok {
+						delete(h.connections, c)
+						close(c.send)
+					}
 				}
 			}
 		}
