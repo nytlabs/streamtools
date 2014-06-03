@@ -17,11 +17,19 @@
     <div id="ui-ref-blockdefs">
       <ul>
         <%
-          _.each(data, function(block, i){ 
+          categories = _.uniq(_.pluck(data, "category").sort());
+          _.each(categories, function(category, i){ 
         %>
-            <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
+            <li class="ref-block-cat"><%= category %></li>
         <%
-        });
+
+            var blocks = _.where(data, { "category": category });
+            _.each(blocks, function(block, i) {
+        %>
+                <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
+        <%
+            });
+          });
         %>
       </ul>
     </div>

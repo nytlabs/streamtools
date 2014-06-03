@@ -72,6 +72,21 @@
   color:#C32148;
 }
 
+#ui-ref .ref-block-cat {
+  font-weight: bolder;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+#ui-ref .ref-block-cat:not(:first-child) {
+  margin-top: 10px;
+}
+
+#ui-ref .ref-add-block {
+  margin-left: 5px;
+  font-weight: normal;
+}
+
 #ui-ref-blockdefs {
   overflow: hidden;
 }

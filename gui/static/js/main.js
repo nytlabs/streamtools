@@ -620,10 +620,13 @@ $(function() {
             d3.entries(library).forEach(function(key, value) {
                 blocks.push({
                     type: key.key,
+                    category: key.value.Type,
                     desc: key.value.Desc
                 })
             });
             var refTemplate = $('#ui-ref-item-template').html();
+            window.blocks = blocks;
+
             var refTmpl = _.template(refTemplate, {
                 data: blocks
             });
