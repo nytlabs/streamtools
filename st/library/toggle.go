@@ -17,7 +17,7 @@ func NewToggle() blocks.BlockInterface {
 }
 
 func (b *Toggle) Setup() {
-	b.Kind = "Toggle"
+	b.Kind = "Core"
 	b.Desc = "emits a 'state' boolean value, toggling true/false on each hit"
 	b.in = b.InRoute("in")
 	b.quit = b.Quit()

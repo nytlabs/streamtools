@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -24,7 +25,7 @@ func NewLinearModel() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *LinearModel) Setup() {
-	b.Kind = "LinearModel"
+	b.Kind = "Stats"
 	b.Desc = "Emits the linear combination of paramters and features"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

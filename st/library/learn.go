@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/jasoncapehart/go-sgd"          //sgd
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
@@ -24,7 +25,7 @@ func NewLearn() blocks.BlockInterface {
 }
 
 func (b *Learn) Setup() {
-	b.Kind = "Learn"
+	b.Kind = "Stats"
 	b.Desc = "applies stochastic gradient descent to learn the relationship between features and response"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

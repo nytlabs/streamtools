@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/mikedewar/aws4"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/mikedewar/aws4"
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	//"reflect"
 	//"strings"
 	"sync"
@@ -180,7 +181,7 @@ func NewFromSQS() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromSQS) Setup() {
-	b.Kind = "fromSQS"
+	b.Kind = "Queues"
 	b.Desc = "reads from Amazon's SQS, emitting each line of JSON as a separate message"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

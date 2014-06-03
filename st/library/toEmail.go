@@ -41,7 +41,7 @@ func NewToEmail() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (e *ToEmail) Setup() {
-	e.Kind = "ToEmail"
+	e.Kind = "Network I/O"
 	e.in = e.InRoute("in")
 	e.inrule = e.InRoute("rule")
 	e.queryrule = e.QueryRoute("rule")

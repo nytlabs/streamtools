@@ -4,11 +4,12 @@ package library
 
 import (
 	"errors"
+	"log"
+
 	"github.com/mrmorphic/hwio"                // hwio
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"log"
 )
 
 type ToDigitalPin struct {
@@ -25,7 +26,7 @@ func NewToDigitalPin() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToDigitalPin) Setup() {
-	b.Kind = "ToDigitalPin"
+	b.Kind = "Hardware I/O"
 	b.Desc = "(embedded applications) sets the state of a digital pin"
 	b.inrule = b.InRoute("rule")
 	b.in = b.InRoute("in")

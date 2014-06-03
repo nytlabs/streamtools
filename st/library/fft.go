@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/mjibson/go-dsp/fft"            // fft
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
@@ -39,7 +40,7 @@ func NewFFT() blocks.BlockInterface {
 }
 
 func (b *FFT) Setup() {
-	b.Kind = "FFT"
+	b.Kind = "Stats"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

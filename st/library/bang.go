@@ -19,7 +19,7 @@ func NewBang() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Bang) Setup() {
-	b.Kind = "Bang"
+	b.Kind = "Core"
 	b.Desc = "sends a 'bang' request to blocks connected to it, triggered by clicking the query endpoint"
 	b.query = b.QueryRoute("query")
 	b.quit = b.Quit()

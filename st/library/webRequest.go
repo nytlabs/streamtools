@@ -45,7 +45,7 @@ func NewWebRequest() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *WebRequest) Setup() {
-	b.Kind = "WebRequest"
+	b.Kind = "Network I/O"
 	b.Desc = "Makes requests to a given URL with specified HTTP method."
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

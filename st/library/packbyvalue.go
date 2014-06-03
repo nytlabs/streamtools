@@ -3,10 +3,11 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -26,7 +27,7 @@ func NewPackByValue() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *PackByValue) Setup() {
-	b.Kind = "PackByValue"
+	b.Kind = "Core"
 	b.Desc = "groups messages together based on a common value, similar to 'group-by' in other languages"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

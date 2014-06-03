@@ -3,11 +3,12 @@ package library
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -26,7 +27,7 @@ func NewFromHTTPStream() blocks.BlockInterface {
 }
 
 func (b *FromHTTPStream) Setup() {
-	b.Kind = "FromHTTPStream"
+	b.Kind = "Network I/O"
 	b.Desc = "emits new data appearing on a long-lived http stream as new messages in streamtools"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

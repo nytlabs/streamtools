@@ -3,10 +3,11 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -50,7 +51,7 @@ func buildHistogram(histogram map[string]*PriorityQueue) interface{} {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Histogram) Setup() {
-	b.Kind = "Histogram"
+	b.Kind = "Stats"
 	b.Desc = "builds a non-stationary histogram of inbound messages for a specified path"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

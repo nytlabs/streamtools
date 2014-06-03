@@ -2,11 +2,12 @@ package library
 
 import (
 	"encoding/json"
+	"net/http"
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"net/http"
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -27,7 +28,7 @@ func NewFromWebsocket() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromWebsocket) Setup() {
-	b.Kind = "FromWebsocket"
+	b.Kind = "Network I/O"
 	b.Desc = "connects to an existing websocket, emitting each message heard from the websocket"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

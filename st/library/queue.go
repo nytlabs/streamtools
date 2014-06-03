@@ -2,8 +2,9 @@ package library
 
 import (
 	"container/heap"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"time"
+
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -24,7 +25,7 @@ func NewQueue() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Queue) Setup() {
-	b.Kind = "Queue"
+	b.Kind = "Queues"
 	b.Desc = "FIFO queue allowing push & pop on streams plus popping from a query"
 	b.inPush = b.InRoute("push")
 	b.inPop = b.InRoute("pop")

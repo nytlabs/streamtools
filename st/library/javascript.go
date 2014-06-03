@@ -25,7 +25,7 @@ func NewJavascript() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Javascript) Setup() {
-	b.Kind = "javascript"
+	b.Kind = "Core"
 	b.Desc = "transform messages with javascript (includes underscore.js)"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

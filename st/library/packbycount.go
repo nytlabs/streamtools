@@ -24,7 +24,7 @@ func NewPackByCount() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *PackByCount) Setup() {
-	b.Kind = "PackByCount"
+	b.Kind = "Core"
 	b.Desc = "Packs incoming messages into array. When the array is filled, it is emitted."
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

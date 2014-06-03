@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/util"
 	"github.com/streadway/amqp"
@@ -22,7 +23,7 @@ func NewToAMQP() blocks.BlockInterface {
 }
 
 func (b *ToAMQP) Setup() {
-	b.Kind = "ToAMQP"
+	b.Kind = "Queues"
 	b.Desc = "send messages to an exchange on an AMQP broker"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

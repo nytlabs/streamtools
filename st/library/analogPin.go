@@ -25,7 +25,7 @@ func NewAnalogPin() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *AnalogPin) Setup() {
-	b.Kind = "AnalogPin"
+	b.Kind = "Hardware I/O"
 	b.Desc = "(embedded applications) returns current state of the pin"
 	b.inrule = b.InRoute("rule")
 	b.inpoll = b.InRoute("poll")

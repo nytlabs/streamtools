@@ -2,9 +2,10 @@ package library
 
 import (
 	"errors"
+	"math/rand"
+
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"math/rand"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -24,7 +25,7 @@ func NewGaussian() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Gaussian) Setup() {
-	b.Kind = "Gaussian"
+	b.Kind = "Stats"
 	b.Desc = "draws a random number from the Gaussian distribution when polled"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

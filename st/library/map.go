@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
@@ -97,7 +98,7 @@ func NewMap() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Map) Setup() {
-	b.Kind = "Map"
+	b.Kind = "Core"
 	b.Desc = "maps inbound data onto outbound data, providing a way to restructure or rename elements"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
