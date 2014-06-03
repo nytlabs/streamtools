@@ -65,17 +65,15 @@
 #ui-ref ul li {
   font-weight: bold;
   margin-top: 2px;
-  cursor:pointer;
 }
 
-#ui-ref li:hover {
+#ui-ref .ref-add-block:hover {
   color:#C32148;
 }
 
 #ui-ref .ref-block-cat {
-  font-weight: bolder;
   font-size: 14px;
-  text-transform: uppercase;
+  color:gray;
 }
 
 #ui-ref .ref-block-cat:not(:first-child) {
@@ -83,8 +81,9 @@
 }
 
 #ui-ref .ref-add-block {
-  margin-left: 5px;
+  margin-left: 15px;
   font-weight: normal;
+  cursor:pointer;
 }
 
 #ui-ref-blockdefs {

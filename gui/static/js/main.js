@@ -93,7 +93,7 @@ $(function() {
     });
 
     // Click-to-add blocks from reference panel
-    $("body").on("click", "#ui-ref-blockdefs ul li", function() {
+    $("body").on("click", "#ui-ref-blockdefs .ref-add-block", function() {
         var blockType = $(this).attr('data-block-type');
         $.ajax({
             url: '/blocks',
