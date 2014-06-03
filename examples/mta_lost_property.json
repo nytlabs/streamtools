@@ -2,33 +2,21 @@
   "Connections": [
     {
       "ToRoute": "in",
-      "ToId": "2",
-      "FromId": "1",
+      "ToId": "20",
+      "FromId": "12",
       "Id": "14"
     },
     {
       "ToRoute": "in",
-      "ToId": "3",
-      "FromId": "2",
-      "Id": "13"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "26",
+      "ToId": "12",
       "FromId": "24",
-      "Id": "27"
+      "Id": "13"
     },
     {
       "ToRoute": "in",
       "ToId": "7",
       "FromId": "4",
       "Id": "10"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "4",
-      "FromId": "3",
-      "Id": "12"
     },
     {
       "ToRoute": "in",
@@ -44,81 +32,28 @@
     },
     {
       "ToRoute": "in",
-      "ToId": "21",
-      "FromId": "4",
-      "Id": "22"
+      "ToId": "1",
+      "FromId": "1_2",
+      "Id": "3"
     },
     {
       "ToRoute": "in",
-      "ToId": "20",
-      "FromId": "26",
-      "Id": "28"
+      "ToId": "1",
+      "FromId": "9",
+      "Id": "11"
+    },
+    {
+      "ToRoute": "in",
+      "ToId": "4",
+      "FromId": "1",
+      "Id": "5"
     }
   ],
   "Blocks": [
     {
       "Position": {
-        "Y": 73,
-        "X": 57
-      },
-      "Rule": {
-        "Map": {
-          "url": "'http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx'"
-        },
-        "Additive": true
-      },
-      "Type": "map",
-      "Id": "2"
-    },
-    {
-      "Position": {
-        "Y": 139,
-        "X": 94
-      },
-      "Rule": {
-        "Path": ".url"
-      },
-      "Type": "gethttp",
-      "Id": "3"
-    },
-    {
-      "Position": {
-        "Y": 307,
-        "X": 34
-      },
-      "Rule": {
-        "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
-        "NumSamples": 2
-      },
-      "Type": "timeseries",
-      "Id": "8"
-    },
-    {
-      "Position": {
-        "Y": 259,
-        "X": 322
-      },
-      "Rule": {
-        "Path": ".LostProperty.Category"
-      },
-      "Type": "unpack",
-      "Id": "24"
-    },
-    {
-      "Position": {
-        "Y": 5,
-        "X": 38
-      },
-      "Rule": {
-        "Interval": "15m0s"
-      },
-      "Type": "ticker",
-      "Id": "1"
-    },
-    {
-      "Position": {
-        "Y": 401,
-        "X": 126
+        "Y": 368,
+        "X": 26
       },
       "Rule": {
         "Path": "$num(.LostProperty.NumberOfLostArticles)",
@@ -129,42 +64,88 @@
     },
     {
       "Position": {
-        "Y": 330,
-        "X": 372
+        "Y": 233,
+        "X": 196
       },
       "Rule": {
-        "Path": ".SubCategory"
+        "Path": ".LostProperty.Category"
       },
       "Type": "unpack",
-      "Id": "26"
+      "Id": "24"
     },
     {
       "Position": {
-        "Y": 207,
-        "X": 129
+        "Y": 167,
+        "X": 30
       },
       "Rule": {
-        "Path": ".data"
+        "Path": ".body"
       },
       "Type": "parsexml",
       "Id": "4"
     },
     {
       "Position": {
-        "Y": 379,
-        "X": 247
+        "Y": 97,
+        "X": 119
       },
       "Rule": {
-        "Map": {},
-        "Additive": true
+        "UrlPath": "",
+        "Url": "http://advisory.mtanyct.info/LPUWebServices/CurrentLostProperty.aspx",
+        "Method": "GET",
+        "Headers": {},
+        "BodyPath": "."
       },
-      "Type": "map",
-      "Id": "21"
+      "Type": "webRequest",
+      "Id": "1"
     },
     {
       "Position": {
-        "Y": 403,
-        "X": 371
+        "Y": 8,
+        "X": 209
+      },
+      "Rule": null,
+      "Type": "bang",
+      "Id": "9"
+    },
+    {
+      "Position": {
+        "Y": 301,
+        "X": 260
+      },
+      "Rule": {
+        "Path": ".SubCategory"
+      },
+      "Type": "unpack",
+      "Id": "12"
+    },
+    {
+      "Position": {
+        "Y": 309,
+        "X": 83
+      },
+      "Rule": {
+        "Path": "$num(.LostProperty.NumberOfItemsclaimed)",
+        "NumSamples": 2
+      },
+      "Type": "timeseries",
+      "Id": "8"
+    },
+    {
+      "Position": {
+        "Y": 5,
+        "X": 38
+      },
+      "Rule": {
+        "Interval": "15m0s"
+      },
+      "Type": "ticker",
+      "Id": "1_2"
+    },
+    {
+      "Position": {
+        "Y": 367,
+        "X": 310
       },
       "Rule": {
         "ValuePath": ".count",
