@@ -23,7 +23,7 @@
             <li class="ref-block-cat"><%= category %></li>
         <%
 
-            var blocks = _.where(data, { "category": category });
+            var blocks = _.sortBy(_.where(data, { "category": category }), "type");
             _.each(blocks, function(block, i) {
         %>
                 <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
