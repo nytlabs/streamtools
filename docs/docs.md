@@ -1,11 +1,11 @@
-## intro
+## Intro
 Streamtools is a graphical toolkit for dealing with streams of data. Streamtools makes it easy to explore, analyse, modify and learn from streams of data.
 
 You'll primarily interact with streamtools in the browser. However, since all functionality is exposed over HTTP, you can use tools like curl to send commands and even treat any part of streamtools as an API endpoint. More about that later.
 
 
-## install
-### binary
+## Install
+### Binary
 
 Download the appropriate version of the latest streamtools for your operating system from our [releases on github](https://github.com/nytlabs/streamtools/tags).
 
@@ -21,7 +21,7 @@ You should see streamtools start up, telling you it's running on port 7070.
 Now, open a browser window and point it at [localhost:7070](http://localhost:7070/). You should see a (nearly) blank page. At the bottom you should see a status bar that says `client: connected to Streamtools` followed by a version number. Congratulations! You're in.
 
 
-### source
+### Source
 
 Make sure you have go, git, hg, and bzr installed. You can download go for [Mac OS X](http://golang.org/doc/install#osx), [Linux and FreeBSD](http://golang.org/doc/install#tarball) and [Windows](http://golang.org/doc/install#windows) from the [golang.org](http://golang.org/) website. Git, hg and bzr are simple enough to install using homebrew, apt or your OS package manager of choice.
 
@@ -45,7 +45,7 @@ Apr 30 19:44:36 [ SERVER ][ INFO ] "Starting Streamtools 0.2.5 on port 7070"
 You should see a message similar to the one above letting you know streamtools is running at port 7070.
 
 
-## getting started
+## Getting Started
 
 Streamtools is a binary that can run on your local machine or a remote server. We usually run it using upstart on an ubuntu ec2 server in Amazon's cloud. To begin with, though, we'll assume that you're running streamtools locally, on a machine you can touch. We're also going to assume you're running OSX or Linux. If you're a Windows user, we do provide binaries, but don't know much about how to interact with a Windows machine - you will need to translate these instructions to Windows yourself.
 
@@ -57,7 +57,7 @@ Now, open a browser window and point it at [localhost:7070](http://localhost:707
 
 As a "Hello World", try double-clicking anywhere on the page above the status bar, type `fromhttpstream` and hit enter. This will bring up your first block. Double-click on the block and enter `http://developer.usa.gov/1usagov` in the `Endpoint` text-box. Hit the update button. Now double-click on the page and make a `tolog` block. Finally, connect the two blocks together by first clicking on the `fromhttpstream` block's OUT route (a litle black square on the bottom of the block) to the `tolog` block's IN route (which is the little black square on the top of the block). Click on the status bar. After a moment, you should start to see JSON scroll through the log - these are live clicks on the US government short links! Click anywhere on the log to make it go away again. 
 
-## how it works
+### How It Works
 
 Streamtools' basic paradigm is straightforward: data flows from *blocks* through *connections* to other blocks. 
 
@@ -70,11 +70,9 @@ Streamtools' basic paradigm is straightforward: data flows from *blocks* through
 Together, these 5 concepts--blocks, rules, connections, routes and patterns--form the basic vocabulary we use to talk about streamtools, and about streaming data systems.
 
 
-## reference
+## Blocks
 
-### blocks
-
-Each block is briefly detailed below, along with the rules that define each block. To make a block in streamtools, double-click anywhere on the page and type the name of the block as it appears below. For programmatic access, see the [[API]] docs.
+Each block is briefly detailed below, along with the rules that define each block. To make a block in streamtools, double-click anywhere on the page and type the name of the block as it appears below. For programmatic access, see the [API](#api) docs.
 
 Blocks rely on some general concepts:
 
@@ -95,25 +93,20 @@ and you'd like to refer to the username, the gojee path would be `.user.username
 * _duration string_: We use Go's duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So `10ms` is 10 milliseconds; `5h` is 5 hours and so on. 
 * _route_: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.
 
-#### Core Blocks
+### Core
+
 These blocks affect data once it's in streamtools. 
 
-* **ticker**. This block emits the time regularly. It's useful for polling other blocks, like `webRequest` or `count`. The time between emitting messages is specified by the `Interval`.
+* **ticker**. This block emits the time regularly. It's useful for polling other blocks, like ```webRequest``` or ```count```. The time between emitting messages is specified by the `Interval`.
     * Rules:
         * `Interval`: duration string (`1s`)
 
-* **bang**. Sometimes you just want to kick another block into action once, without waiting for some duration of time for the `ticker` block to kick it into action. The `bang` block is here for you.
+* **bang**. Sometimes you just want to kick another block into action once, without waiting for some duration of time for the ```ticker``` block to kick it into action. The bang block is here for you.
 	* Rules: none.
 
-Connect the `bang`'s OUT endpoint to another block's IN endpoint. When you want to bang the connected block, click the `bang` block's query endpoint, i.e. the red square at its upper right corner.
+Connect the bang block's OUT endpoint to another block's IN endpoint. When you want to bang the connected block, click the bang block's query endpoint, i.e. the red square at its upper right corner.
 
-You'll hopefully see data start to flow further down the pattern of blocks, along with a confirmation message:
-
-```
-{
-    "Bang": "!"
-}
-```
+You should see data start to flow further down the pattern of blocks.
 
 * **javascript**. This block creates a Javascript VM and runs a bit of Javascript once per message. In order to get data in and out of Javascript, the block creates a global variable specified by `MessageIn` that contains the incoming message. Once the script is finished executing, the block takes the value from the global variable specified by `MessageOut`.
     * Rules:
@@ -158,9 +151,11 @@ You'll hopefully see data start to flow further down the pattern of blocks, alon
 * **unpack**. The unpack block takes an array of objects and emits each object as a separate message. See the [citibike example](https://github.com/nytlabs/streamtools/blob/master/examples/citibike.json#L77), where we unpack a big array of citibike stations into individual messages we can filter.  
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path
+
 * **sync**. The sync block takes a disordered stream and creates a properly timed, ordered stream at the expense of introducing a lag. To explain this block, imagine you have a stream that looks like
 
         {"val":"a", "time":23 } ... {"val":"b", "time":14} ... {"val":"c", "time":10}
+
     Ideally you'd like the stream to be ordered by the timestamp in the message, so the `c` message comes first, the `b` message comes second and the `a` message comes third. In addition, you'd like the time between the messages to respect the timestamp inside the message. 
 
     The sync block achieves this by storing the stream for a fixed amount time (the `Lag`) and then emitting at the time inside the inbound messages plus the lag. This means we have to wait for a while to get our messages, but when we do get them, they're in a stream whose dynamics reflect the timestamp inside the message. 
@@ -183,15 +178,15 @@ You'll hopefully see data start to flow further down the pattern of blocks, alon
 
 * **tolog**. Send messages to the log. This is a quick way to look at the data in your stream.
 
-##### Grouping messages
+#### Pack
 
-The pack blocks group messages together in different ways. They operate similarly to an online "group-by" operation, but care needs to be taken in the stream setting as we have to decide when to emit the "packed" message. 
+The three pack blocks group messages together in different ways. They operate similarly to an online "group-by" operation, but care needs to be taken in the stream setting as we have to decide when to emit the "packed" message. 
 
 * **packbycount**. Groups messages into an array, emitting collected messages once specified MaxCount is reached.
     * Rules:
         * `MaxCount`: number of messages to group and emit at a time
 
-* **packbyinterval**. Groups messages into an array, emitting collected messages once specified MaxCount is reached.
+* **packbyinterval**. Groups messages into an array, emitting collected messages at each specified interval.
     * Rules:
         * `Interval`: duration string (`1s`)
         
@@ -203,19 +198,18 @@ The pack blocks group messages together in different ways. They operate similarl
      Our main use case for this at the NYT is to create per-reader reading sessions. So we set the `Path` to our user-id and we emit after 20 minutes of not hearing anything from that reader's user-id. Every page-view our readers generate get packed into a per-reader message, generating a stream of reading sessions. 
 
 
-
-#### Data Store Blocks
+### Data Stores
 
 These blocks send and retrieve data from various data stores.
 
-* **toelasticsearch**. Send JSON to an [elasticsearch](http://www.elasticsearch.org/) instance.
+* **toElasticsearch**. Send JSON to an [elasticsearch](http://www.elasticsearch.org/) instance.
     * Rules:
         * `Index`: 
         * `Host`: 
         * `IndexType`: 
         * `Port`: 
 
-* **tofile**. Writes a message as JSON to a file. Each message becomes a new line of JSON. 
+* **toFile**. Writes a message as JSON to a file. Each message becomes a new line of JSON. 
     * Rules:
         * `Filename`: file to write to
 
@@ -235,18 +229,18 @@ These blocks send and retrieve data from various data stores.
 
 ```
 {
-Arguments: [
-"'foo'",
-"'bar'",
-"'baz'"
-],
-Command: "SADD",
-Password: "",
-Server: "localhost:6379"
+  Arguments: [
+    "'foo'",
+    "'bar'",
+    "'baz'"
+  ],
+  Command: "SADD",
+  Password: "",
+  Server: "localhost:6379"
 }
 ```
 
-#### Network I/O Blocks
+### Network I/O
 
 * **webRequest**. This blocks aspires to be curl inside streamtools. You can use the webRequest block to make custom requests to either a specific URL, or to a URL found in incoming messages in streamtools. You can also specify custom headers and scope the body of incoming messages for POST and PUT requests.
     * Rules:
@@ -258,41 +252,39 @@ Server: "localhost:6379"
 		* `BodyPath`: used only in POST and PUT requests, defaults to `.` (the entire incoming message), this data is sent with the request as the request body.
 
 ```
-Rule: {
-	BodyPath: ".",
-	Headers: {
-		Content-Type: "application/json",
-		User-Agent: "I am not a robot"
+{
+	"BodyPath": ".",
+	"Headers": {
+		"Content-Type": "application/json",
+		"User-Agent": "I am not a robot"
 	},
-	Method: "GET",
-	Url: "http://localhost:7070/library",
-	UrlPath: ""
+	"Method": "GET",
+	"Url": "http://localhost:7070/library",
+	"UrlPath": ""
 }
 ```
 
-* **gethttp**. The getHTTP block makes an HTTP GET request to a URL you specify in the inbound message. It is necessary for the HTTP endpoint to serve JSON. This block forms the backbone for any sort of polling pattern.
-    * Rules:
-        * `Path`: [gojee](https://github.com/nytlabs/gojee) path to a fully formed URL. 
-
-* **fromhttpstream**. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at ` http://developer.usa.gov/1usagov`. 
-    * Rules:
-        * `Endpoint`: endpoint string
-        * `Auth`: authorisation string
-
-* **frompost**. This block emits any message that is POSTed to its IN route. This block isn't strictly needed as you can POST JSON to any inbound route on any block. Having said that, sometimes it's a bit clearer to have a dedicated block that listens for data.
-
-* **fromudp**. Listens for messages sent over UDP. Each message is emitted into streamtools.
-    * Rules:
-        * `ConnectionString`: 
-* **fromwebsocket**. Connects to an existing websocket. Each message it hears from the websocket is emitted into streamtools. 
-    * Rules:
-        * `url`: address of the websocket.
-* **fromemail**. This block connects to the given IMAP server with the given credentials. Once connected, it idles on that connection and emits any unread emails into streamtools. Once messages have been pulled, the block marks them as read. All email messages will contain the `from`, `to`, `subject`, `internal_date` and `body` fields.
+* **fromEmail**. This block connects to the given IMAP server with the given credentials. Once connected, it idles on that connection and emits any unread emails into streamtools. Once messages have been pulled, the block marks them as read. All email messages will contain the `from`, `to`, `subject`, `internal_date` and `body` fields.
     * Rules:
         * `Host`: hostname of the IMAP server. Defaults to Gmail (imap.gmail.com)
         * `Username`: user for the email account.
         * `Password`: password for the email account.
         * `Mailbox`: the mailbox to pull email from. Defaults to 'INBOX' which is the main mailbox for Gmail.
+
+* **fromUDP**. Listens for messages sent over UDP. Each message is emitted into streamtools.
+    * Rules:
+        * `ConnectionString`: host and port to connect to. Example: 127.0.0.1:0
+
+* **fromHTTPStream**. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at ` http://developer.usa.gov/1usagov`. 
+    * Rules:
+        * `Endpoint`: endpoint string
+        * `Auth`: authorisation string
+
+* **fromPost**. This block emits any message that is POSTed to its IN route. This block isn't strictly needed as you can POST JSON to any inbound route on any block. Having said that, sometimes it's a bit clearer to have a dedicated block that listens for data.
+
+* **fromWebsocket**. Connects to an existing websocket. Each message it hears from the websocket is emitted into streamtools. 
+    * Rules:
+        * `url`: address of the websocket.
 
 * **fromHTTPGetRequest**. This block, when a GET request is made to the block's QUERY endpoint, emits that request into streamtools. The request can be handled by the ```toHTTPGetRequest``` block. 
 
@@ -301,7 +293,21 @@ Rule: {
         * `RespPath`: path to the HTTP request.
         * `MsgPath`: path to the message you want to respond with on the HTTP request.
 
-#### Parser Blocks
+* **getHTTP**. The getHTTP block makes an HTTP GET request to a URL you specify in the inbound message. It is necessary for the HTTP endpoint to serve JSON. This block forms the backbone for any sort of polling pattern.
+    * Rules:
+        * `Path`: [gojee](https://github.com/nytlabs/gojee) path to a fully formed URL. 
+
+* **postHTTP**. Shortcut block for doing POST requests to a URL
+    * Rules:
+      * `Url`: a fully formed URL. 
+      * `ContentType`: MIME type of the request body. Example: application/json
+
+* **putHTTP**. Shortcut block for doing PUT requests to a URL
+    * Rules:
+      * `Url`: a fully formed URL. 
+      * `ContentType`: MIME type of the request body. Example: application/json
+
+### Parsers
 
 These blocks turn icky data into lovely json.
 
@@ -309,8 +315,9 @@ These blocks turn icky data into lovely json.
 * **parsexml**
 
 
-#### Queue Blocks
-These blocks hook into another system and collect messages to be emitted into streamtools.
+### Queues
+
+These blocks read from or write into external queue systems.
 
 * **fromnsq**. This block implements an NSQ reader. For more details on how to specify the rule for this block check out the [NSQ docs](http://bitly.github.io/nsq/). 
     * Rules:
@@ -319,25 +326,25 @@ These blocks hook into another system and collect messages to be emitted into st
         * `ReadChannel`: name of the channel 
         * `MaxInFlight`: how many messages to take from the queue at a time. (`0`)
 
-* **tonsq**. Send messages to an existing [NSQ](http://bitly.github.io/nsq/) system.
+* **toNSQ**. Send messages to an existing [NSQ](http://bitly.github.io/nsq/) system.
     * Rules:
         * `Topic`: topic you will write to
         * `NsqdTCPAddrs`: address of the NSQ daemon.
         
-* **tonsqmulti**. Send messages to an NSQ system in batches. This is useful if you have a fast (>1KHz) stream of data you need to send to NSQ. This block gathers messages for `Interval` time and then sends. It emits immediately if the block gets more than `MaxBatch` messages.
+* **toNSQMulti**. Send messages to an NSQ system in batches. This is useful if you have a fast (>1KHz) stream of data you need to send to NSQ. This block gathers messages for `Interval` time and then sends. It emits immediately if the block gets more than `MaxBatch` messages.
     * Rules:
         * `Topic`: topic you will write to
         * `Interval`: duration string (`1s`)
         * `NsqdTCPAddrs`: address of the NSQ daemon.
         * `MaxBatch`: size of largest batch (`100`)
 
-* **tobeanstalkd**. Send jobs to an existing [beanstalkd](https://github.com/kr/beanstalkd/) server.
+* **toBeanstalkd**. Send jobs to an existing [beanstalkd](https://github.com/kr/beanstalkd/) server.
     * Rules:
         * `Host`: the Host and port of the beanstalkd server e.g. ```127.0.0.1:11300```
         * `TTR`: Time to Run. is an integer number of seconds to allow a worker to run this job. This time is counted from the moment a worker reserves a job. If the worker does not delete, release, or bury the job within <TTR> seconds, the job will time out and the server will release the job.
         * `Tube` : beanstalkd tube to send jobs to. if left blank, jobs are sent to the default tube.
         
-* **fromsqs**. This block connects to an [Amazon Simple Queueing System](http://aws.amazon.com/sqs/) queue. Messages from SQS are XML; this block extracts the message string from this XML, which it assumes is newline separated JSON. Each JSON is emitted into streamtools as a separate message. See the [SQS docs](http://aws.amazon.com/documentation/sqs/) for more information about the rules of this block.
+* **fromSQS**. This block connects to an [Amazon Simple Queueing System](http://aws.amazon.com/sqs/) queue. Messages from SQS are XML; this block extracts the message string from this XML, which it assumes is newline separated JSON. Each JSON is emitted into streamtools as a separate message. See the [SQS docs](http://aws.amazon.com/documentation/sqs/) for more information about the rules of this block.
     * Rules:
         * `SignatureVersion`: the version number of the signature hash Amazon is expecting for this queue (`4`)
         * `AccessKey`: your access key
@@ -347,7 +354,7 @@ These blocks hook into another system and collect messages to be emitted into st
         * `WaitTimeSeconds`: how long to wait between polling (`0`)
         * `AccessSecret`: your access secret
 
-#### Stats Blocks
+### Stats
 
 * **count**. This block counts the number of messages it has seen over the specified `Window`. 
     * Rules:
@@ -378,65 +385,64 @@ These blocks hook into another system and collect messages to be emitted into st
         * `s`: (`2`)
         * `v`: (`5`)
         * `N`: (`99`)
+
 * **gaussian**. This block draws a random number from the [Gaussian](http://en.wikipedia.org/wiki/Gaussian_distribution) distribution when polled.
     * Rules:
         * `StdDev`: (`1`)
         * `Mean`: (`0`)
+
 * **poisson**. This block draws a random number from a [Poisson](http://en.wikipedia.org/wiki/Poisson_distribution) distribution when polled.
     * Rules:
         * `Rate`: (`1`)
+
 * **categorical**. This block draws a random number from a [Categorical](http://en.wikipedia.org/wiki/Categorical_distribution) distribution when polled.
     * Rules:
         * `Weights`: (`[1]`) - a list of weighting parameters. The number drawn from this distribution corresponds to the index of this list. These weights are automatically normalised to sum to one. 
         
-### interface
+## Interface
 
 Streamtool's GUI aims to be responsive and informative, meaning that you can both create and interrogate a live streaming system. At the same time, it aims to be as minimal as possible - the GUI posses a very tight relationship with the underlying streamtools architecture, enabling users of streamtools to see and understand the execution of the system.
 
-#### make a block
+### Blocks
 
 To make a block, double click anywhere on the background. Type the name of the block you'd like and press enter.
 
 ![create](https://f.cloud.github.com/assets/597897/2443728/161a3708-ae3e-11e3-9ac7-7e3062720bd7.gif)
 
-#### connect two blocks
-
-To connect two blocks together, first click on an outbound route on the *bottom* of the block you want to connect from. Almost always this route will be labelled `OUT` when you mouse over it. Then click on an inbound route on the *top* of another block. There can be a few inbound routes; common ones are `IN`, `RULE`, and `POLL`. This will create a connection between the blocks.
-
-![connect_2](https://f.cloud.github.com/assets/597897/2443787/8070125c-ae3f-11e3-92ba-8a69f3ef24dc.gif)
-
-#### set the rule of a block
-
-To set a block's rules, double click it. This will open a window where you can enter rules. When you're done entering rules, hit the update button.
-
-![update_rule](https://f.cloud.github.com/assets/597897/2443884/f2fa3e62-ae42-11e3-8b25-486e8f034677.gif)
-
-#### query a block
-
-You can query a block's rules, or any other queryable route a block has, by clicking on the red squares on the right of the block. These will open a window that shows a JSON representation of that information. An example of a queryable route is `COUNT` for the count block. If you click on the little red square associated with the `COUNT` route, then you'll get a JSON representation of that block's current count.
-
-![query](https://f.cloud.github.com/assets/597897/2444136/d4178984-ae4a-11e3-8861-869e6dd472b3.gif)
-
-#### delete a block
-
 To delete a block you don't like anymore, click on it and press the delete (backspace) button on your keyboard.
 
 ![delete](https://f.cloud.github.com/assets/597897/2444176/d2a457ca-ae4b-11e3-81a0-beb016f58bb6.gif)
-
-#### move a block
 
 To move a block around, simply drag it about the place.
 
 ![drag_2](https://f.cloud.github.com/assets/597897/2443683/7d8d0cbe-ae3c-11e3-91ad-852e830dbeb8.gif)
 
-#### see the last message that passed through a connection
+### Connections
 
-To see the last message that passed through a connection, click and drag the connection's rate estiamte. This creates a window containing the JSON representation of the last message to pass through that connection.
+To connect two blocks together, first click on an outbound route on the *bottom* of the block you want to connect from. Almost always this route will be labelled `OUT` when you mouse over it. Then click on an inbound route on the *top* of another block. There can be a few inbound routes; common ones are `IN`, `RULE`, and `POLL`. This will create a connection between the blocks.
+
+![connect_2](https://f.cloud.github.com/assets/597897/2443787/8070125c-ae3f-11e3-92ba-8a69f3ef24dc.gif)
+
+### Rules
+
+To set a block's rules, double click it. This will open a window where you can enter rules. When you're done entering rules, hit the update button.
+
+![update_rule](https://f.cloud.github.com/assets/597897/2443884/f2fa3e62-ae42-11e3-8b25-486e8f034677.gif)
+
+### Queries
+
+You can query a block's rules, or any other queryable route a block has, by clicking on the red squares on the right of the block. These will open a window that shows a JSON representation of that information. An example of a queryable route is `COUNT` for the count block. If you click on the little red square associated with the `COUNT` route, then you'll get a JSON representation of that block's current count.
+
+![query](https://f.cloud.github.com/assets/597897/2444136/d4178984-ae4a-11e3-8861-869e6dd472b3.gif)
+
+### Messages
+
+To see the last message that passed through a connection, click and drag the connection's rate estimate. This creates a window containing the JSON representation of the last message to pass through that connection.
 
 ![last_message](https://f.cloud.github.com/assets/597897/2443597/b1c2411e-ae39-11e3-9fb4-429e39548620.gif)
 
 
-### api
+## API
 
 Streamtools provides a full RESTful HTTP API allowing the developer to programatically control all aspects of streamtools. The API can be broken up into three parts: those endpoints that general aspects of streamtools, those that control blocks, and those that control connections.
 
@@ -453,7 +459,7 @@ The POST endpoints are expecting you to send data. To use these you'll need to u
 This POSTs the JSON `{"Type":"tofile","Rule":{"Filename":"test.json"}}` to the `/blocks` endpoint.
 
 
-### streamtools
+### General
 
 GET `/library`
 
@@ -471,19 +477,7 @@ POST `/import`
 
 Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it's useful.
 
-### data
-
-Every block that as an `OUT` route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.
-
-WEBSOCKET `/ws/{id}`
-
-a websocket emitting every message sent on the block's `OUT` route.
-
-GET `/stream/{id}`
-
-a long-lived HTTP stream of every message sent on the block's `OUT` route.
-
-### blocks
+### Blocks
 
 A block's JSON representation uses the following schema:
 
@@ -512,7 +506,7 @@ Only `Type` is required, everything will be automatically generated if you don't
 * GET `/blocks/{id}/{route}`
 	* Recieve data from a block. Use this endpoint to query block routes that return data. The only default route is `rule` which, in response to a GET query, will return the block's current rule.
 
-### connections
+### Connections
 
 A connection's JSON representation uses the following schema:
 ```
@@ -536,7 +530,19 @@ Here, only `Id` is optional. `Id` is used to uniquely refer to the connection in
 * GET `/connections/{id}/{route}`
 	* Query a connection via its routes. Each connection has a `rate` route which will return an estimate of the rate of messages coming through it and a `last` route which will return the last message it saw.
 
-### command line
+### Messages
+
+Every block that as an `OUT` route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.
+
+WEBSOCKET `/ws/{id}`
+
+a websocket emitting every message sent on the block's `OUT` route.
+
+GET `/stream/{id}`
+
+a long-lived HTTP stream of every message sent on the block's `OUT` route.
+
+## Command Line
 
 The streamtools server is completely contained in a single binary called `st`. It has a number of options:
 
