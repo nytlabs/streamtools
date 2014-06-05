@@ -3,10 +3,11 @@ package library
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -27,7 +28,7 @@ func NewPostHTTP() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *PostHTTP) Setup() {
-	b.Kind = "PostHTTP"
+	b.Kind = "Network I/O"
 	b.Desc = "POSTs messages to a given URL."
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

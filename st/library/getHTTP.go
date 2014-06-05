@@ -3,11 +3,12 @@ package library
 import (
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"io/ioutil"
-	"net/http"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -27,7 +28,7 @@ func NewGetHTTP() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *GetHTTP) Setup() {
-	b.Kind = "GetHTTP"
+	b.Kind = "Network I/O"
 	b.Desc = "makes an HTTP GET request to a URL you specify in the inbound message"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
