@@ -78,6 +78,8 @@ Each block is briefly detailed below, along with the rules that define each bloc
 
 Blocks rely on some general concepts:
 * _gojee path_: The path rules all use [gojee](https://github.com/nytlabs/gojee) syntax to specify which value you'd like to use in the block. Paths always start with the period, which indicates the top-level of the message. So if you want to refer to the whole message use `.`. If you want to refer to a specific value then they follow the first period. So if you have a message that looks like
+
+```
         
         {
             "user":{
@@ -85,21 +87,33 @@ Blocks rely on some general concepts:
                 "id": 1234
             }
         }
-    and you'd like to refer to the username then the gojee path would be `.user.username`.
+```
+
+and you'd like to refer to the username then the gojee path would be `.user.username`.
+
 * _gojee expression_: [gojee](https://github.com/nytlabs/gojee) also allows for expressions. So we can write expressions like `.user.id > 1230`, which are especially useful in the filter and map blocks.  
 * _duration string_: We use Go's duration strings to specify time periods. They are a number followed by a unit and are pretty intuitive. So `10ms` is 10 milliseconds; `5h` is 5 hours and so on. 
 * _route_: every block has a set of routes. Routes can either be inbound, query, or outbound routes. Inbound routes receive data from somewhere and send it to the block. Query routes are two-way: they accept an inbound query and return information back to the requester. Outbound routes send data from a block to a connection.
 
-#### generator blocks
-These blocks emit messages on their own. 
+#### Core Blocks
+These blocks affect data once it's in streamtools. 
 
-* **ticker**. This block emits the time regularly. The time between emissions is specified by the `Interval`.
+* **ticker**. This block emits the time regularly. It's useful for polling other blocks, like `webRequest` or `count`. The time between emitting messages is specified by the `Interval`.
     * Rules:
         * `Interval`: duration string (`1s`)
 
-#### flow blocks
+* **bang**. Sometimes you just want to kick another block into action once, without waiting for some duration of time for the `ticker` block to kick it into action. The `bang` block is here for you.
+	* Rules: none.
 
-These blocks are useful for shaping (transforming or manipulating) the stream in one way or another.
+Connect the `bang`'s OUT endpoint to another block's IN endpoint. When you want to bang the connected block, click the `bang` block's query endpoint, aka the red square at its upper right corner.
+
+You'll hopefully see data start to flow further down the pattern of blocks, along with a confirmation message:
+
+```
+{
+    "Bang": "!"
+}
+```
 
 * **javascript** This block creates a Javascript VM and runs a bit of Javascript once per message. In order to get data in and out of Javascript, the block creates a global variable specified by `MessageIn` that contains the incoming message. Once the script is finished executing, the block takes the value from the global variable specified by `MessageOut`.
     * Rules:
@@ -128,6 +142,7 @@ These blocks are useful for shaping (transforming or manipulating) the stream in
     You can supply any valid JSON to the Mask block. If you specify an empty JSON `{}` then all values will pass.
     * Rules:
         * `Mask`: mask JSON
+        
 * **filter**. The filter block applies the provided rule to incoming messages. If the rule evaluates to `true` then the messages is emitted. If the rule evaluates to `false` the messages is discarded. The `Filter` rule can be any valid [gojee](https://github.com/nytlabs/gojee) expression. So, for example, if the inbound message looks like
 
         {
@@ -139,21 +154,7 @@ These blocks are useful for shaping (transforming or manipulating) the stream in
 
     * Rules:
         * `Filter`:[gojee](https://github.com/nytlabs/gojee) expression (`. != null`)
-* **pack**. The pack block groups blocks together based on a common value. This is almost like an online "group-by" operation, but care needs to be taken in the stream setting as we have to decide when to emit the "packed" message. Imagine you have messages like
 
-        {
-             "option": "a"
-        } 
-    where `option` can be `a`, `b` or `c`. We would like to make a stream that packs together all the `a`s together into a single message, and similarly for the `b`s and `c`s. We only emit the packed message for a particular value of `option` when we haven't seen any messages with that value for 20 seconds, at which point we emit the bunch all at once. Here we would specify `20s` for the `EmitAfter` rule  and `.option` as the `Path` rule. If we saw three `a` messages in that 20s the output of the pack block looks like
-
-        {
-             "pack":[{"option": "a"},{"option": "a"},{"option": "a"}]
-        }
-
-     Our main use case for this at the NYT is to create per-reader reading sessions. So we set the `Path` to our user-id and we emit after 20 minutes of not hearing anything from that reader's user-id. Every page-view our readers generate get packed into a per-reader message, generating a stream of reading sessions. 
-    * Rules:
-        * `EmitAfter`: duration string
-        * `Path`: [gojee](https://github.com/nytlabs/gojee) path
 * **unpack**. The unpack block takes an array of objects and emits each object as a separate message. See the [citibike example](https://github.com/nytlabs/streamtools/blob/master/examples/citibike.json#L77), where we unpack a big array of citibike stations into individual messages we can filter.  
     * Rules:
         * `Path`:[gojee](https://github.com/nytlabs/gojee) path
@@ -168,37 +169,118 @@ These blocks are useful for shaping (transforming or manipulating) the stream in
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path. This must point at a UNIX epoch time in milliseconds,
         * `Lag`: duration string
+
+* **set**. This stores a [set](http://en.wikipedia.org/wiki/Set_(mathematics)) of values as specified by the block's `Path`. Add new members through the (idempotent) ADD route. If you send a message through the ISMEMBER route, the block will emit true or false. You can also query the cardinality of the set. 
+    * Rules:
+        * `Path`: [gojee](https://github.com/nytlabs/gojee) path 
+
+* **cache**. Stores string values against keys. Send a key to the `lookup` route and the value against that key will be emitted.
+    * Rules:
+        * `KeyPath`: [gojee](https://github.com/nytlabs/gojee) path to the element of the inbound message to use as key
+        * `ValuePath`: [gojee](https://github.com/nytlabs/gojee) path to the element to store in the cache
+
+* **queue**. This block represents a FIFO queue. You can push new messages onto the queue via the PUSH in route. You can pop messages off the queue either by hitting the POP inbound route, causing the block to emit the next message on its OUT route, or you can make a GET request to the POP query route and the block will respond with the next message. You can also peek at the next message using the PEEK query route. 
+
+* **tolog**. Send messages to the log. This is a quick way to look at the data in your stream.
+
+##### Grouping messages
+
+The pack blocks group messages together in different ways. They operate similarly to an online "group-by" operation, but care needs to be taken in the stream setting as we have to decide when to emit the "packed" message. 
+
+* **packbycount**. groups messages into an array, emitting collected messages once specified MaxCount is reached.
+    * Rules:
+        * `MaxCount`: number of messages to group and emit at a time
+
+* **packbyinterval**. groups messages into an array, emitting collected messages once specified MaxCount is reached.
+    * Rules:
+        * `Interval`: duration string (`1s`)
+        
+* **packbyvalue**. groups messages with common value for a given key. Once we haven't seen any messages iwth that value for the given duration, emits the collection.
+    * Rules:
+        * `EmitAfter`: duration string (`1s`)
+        * `Path`: [gojee](https://github.com/nytlabs/gojee) path
+
+     Our main use case for this at the NYT is to create per-reader reading sessions. So we set the `Path` to our user-id and we emit after 20 minutes of not hearing anything from that reader's user-id. Every page-view our readers generate get packed into a per-reader message, generating a stream of reading sessions. 
+
+
+
+#### Data Store Blocks
+
+These blocks send and retrieve data from various data stores.
+
+* **toelasticsearch**. Send JSON to an [elasticsearch](http://www.elasticsearch.org/) instance.
+    * Rules:
+        * `Index`: 
+        * `Host`: 
+        * `IndexType`: 
+        * `Port`: 
+
+* **tofile**. Writes a message as JSON to a file. Each message becomes a new line of JSON. 
+    * Rules:
+        * `Filename`: file to write to
+
+* **toMongoDB**. Saves messages to a [MongoDB](https://www.mongodb.org/) instance or a cluster. The messages can be saved as they come or in bulk depending on the user's needs.
+    * Rules:
+        * `Host`: The host string for the an instance e.g. ```localhost:27107``` or a replicaset or a cluster e.g. ```mongohost1.example.com:27017,mongohost2.example.com:27017,mongoarbiter1.example.com```
+        * `Database`: Database to which the documents should be written to.
+        * `Collection` : Collection to which the documents should be written to under the specified database.
+        * `BatchSize`: the number of documents to be written together at any time in bulk. if value is set to <= 1, the documents will be written one at a time. 
+
+* **redis**. Sends arbitrary commands to redis. You can add or retrieve data from redis with this block.
+    * Rules:
+        * `Server`: The host string including port, defaults to ```localhost:6379```  
+        * `Command`: Just the command, without arguments, to send to redis. Examples below.
+        * `Arguments`: (optional) Array of options to send along with the command.
+        * `Password`: (optional) specify if your redis instance requires a password to connect.
+
+```
+{
+Arguments: [
+"'foo'",
+"'bar'",
+"'baz'"
+],
+Command: "SADD",
+Password: "",
+Server: "localhost:6379"
+}
+```
+
+#### Network I/O Blocks
+
+* **webRequest**. This blocks aspires to be curl inside streamtools. You can use the webRequest block to make custom requests to either a specific URL or to a URL found in incoming messages in streamtools. You can also specify custom headers and scope the body of incoming messages for POST and PUT requests.
+    * Rules:
+    	* Use either Url **or** UrlPath. You can't use both :)
+          * `Url`: a fully formed URL. 
+          * `UrlPath`: [gojee](https://github.com/nytlabs/gojee) path to a fully formed URL found in an incoming message.
+		* `Headers`: any http headers you wish to send in the request, represented in JSON. Example below.
+		* `Method`: defaults to GET, select from a list that includes commonly used HTTP methods.
+		* `BodyPath`: used only in POST and PUT requests, defaults to `.` (the entire incoming message), this data is sent with the request as the request body.
+
+```
+Rule: {
+	BodyPath: ".",
+	Headers: {
+		Content-Type: "application/json",
+		User-Agent: "I am not a robot"
+	},
+	Method: "GET",
+	Url: "http://localhost:7070/library",
+	UrlPath: ""
+}
+```
+
 * **gethttp**. The getHTTP block makes an HTTP GET request to a URL you specify in the inbound message. It is necessary for the HTTP endpoint to serve JSON. This block forms the backbone for any sort of polling pattern.
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path to a fully formed URL. 
-* **kullbackleibler**. Calculates the [Kullback Leibler divergence](http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence) between two distributions p and q. The two distributions must mimic the output from the **histogram** block.
-    * Rules:
-        * `QPath`: [gojee](https://github.com/nytlabs/gojee) path to the q distribution. 
-        * `PPath`: [gojee](https://github.com/nytlabs/gojee) path to the p distribution. 
-
-#### source blocks
-These blocks hook into another system and collect messages to be emitted into streamtools.
 
 * **fromhttpstream**. This block allows you to listen to a long-lived http stream. Each new JSON that appears on the stream is emitted into streamtools. Try using the 1.usa.gov endpoint, available at ` http://developer.usa.gov/1usagov`. 
     * Rules:
         * `Endpoint`: endpoint string
         * `Auth`: authorisation string
-* **fromnsq**. This block implements an NSQ reader. For more details on how to specify the rule for this block check out the [NSQ docs](http://bitly.github.io/nsq/). 
-    * Rules:
-        * `ReadTopic`: topic to read from.
-        * `LookupdAddr`: nsqlookupd addresss
-        * `ReadChannel`: name of the channel 
-        * `MaxInFlight`: how many messages to take from the queue at a time. (`0`)
+
 * **frompost**. This block emits any message that is POSTed to its IN route. This block isn't strictly needed as you can POST JSON to any inbound route on any block. Having said that, sometimes it's a bit clearer to have a dedicated block that listens for data.
-* **fromsqs**. This block connects to an [Amazon Simple Queueing System](http://aws.amazon.com/sqs/) queue. Messages from SQS are XML; this block extracts the message string from this XML, which it assumes is newline separated JSON. Each JSON is emitted into streamtools as a separate message. See the SQS docs for more information about the rules of this block.
-    * Rules:
-        * `SignatureVersion`: the version number of the signature hash Amazon is expecting for this queue (`4`)
-        * `AccessKey`: your access key
-        * `MaxNumberOfMessages`: how many messages to pull off the queue at a time (`10`)
-        * `APIVersion`: what version of the API are you using (`2012-11-05`)
-        * `SQSEndpoint`: the endpoint (ARM) of the SQS queue you are reading
-        * `WaitTimeSeconds`: how long to wait between polling (`0`)
-        * `AccessSecret`: your access secret
+
 * **fromudp**. Listens for messages sent over UDP. Each message is emitted into streamtools.
     * Rules:
         * `ConnectionString`: 
@@ -211,93 +293,85 @@ These blocks hook into another system and collect messages to be emitted into st
         * `Username`: user for the email account.
         * `Password`: password for the email account.
         * `Mailbox`: the mailbox to pull email from. Defaults to 'INBOX' which is the main mailbox for Gmail.
+
 * **fromHTTPGetRequest**. This block, when a GET request is made to the block's QUERY endpoint, emits that request into streamtools. The request can be handled by the **toHTTPGetRequest** block. 
-* **toHTTPGetRequest**. This block, while deceptively simple, allows the creation of an API that can use streamtools as a backend. The request, should it ever be marshalled into JSON, is represented as `{"channel":"1"}` which indicates that the request is a channel with capacity 1.
 
-#### sink blocks
-
-These blocks send data to external systems.
-
-* **toelasticsearch**. Send JSON to an [elasticsearch](http://www.elasticsearch.org/) instance.
+* **toHTTPGetRequest**. This block responds to an HTTP GET request that has been generated by **fromHTTPGetRequest**. The inbound message needs to contain both the original request and the message you want to respond with.
     * Rules:
-        * `Index`: 
-        * `Host`: 
-        * `IndexType`: 
-        * `Port`: 
-* **tofile**. Writes a message as JSON to a file. Each message becomes a new line of JSON. 
+        * `RespPath`: path to the HTTP request.
+        * `MsgPath`: path to the message you want to respond with on the HTTP request.
+
+#### Parser Blocks
+
+These blocks turn icky data into lovely json.
+
+* **parsecsv**
+* **parsexml**
+
+
+#### Queue Blocks
+These blocks hook into another system and collect messages to be emitted into streamtools.
+
+* **fromnsq**. This block implements an NSQ reader. For more details on how to specify the rule for this block check out the [NSQ docs](http://bitly.github.io/nsq/). 
     * Rules:
-        * `Filename`: file to write to
-* **tolog**. Send messages to the log. This is a quick way to look at the data in your stream.
+        * `ReadTopic`: topic to read from.
+        * `LookupdAddr`: nsqlookupd addresss
+        * `ReadChannel`: name of the channel 
+        * `MaxInFlight`: how many messages to take from the queue at a time. (`0`)
+
 * **tonsq**. Send messages to an existing [NSQ](http://bitly.github.io/nsq/) system.
     * Rules:
         * `Topic`: topic you will write to
         * `NsqdTCPAddrs`: address of the NSQ daemon.
-* **tobeanstalkd**. Send jobs to an existing [beanstalkd](https://github.com/kr/beanstalkd/) server.
-    * Rules:
-        * `Host`: the Host and port of the beanstalkd server e.g. 127.0.0.1:11300
-        * `TTR`: Time to Run. is an integer number of seconds to allow a worker to run this job. This time is counted from the moment a worker reserves a job. If the worker does not delete, release, or bury the job within <TTR> seconds, the job will time out and the server will release the job.
-        * `Tube` : beanstalkd tube to send jobs to. if left blank, jobs are sent to the default tube.
-* **toMongoDB**. Saves messages to a [MongoDB](https://www.mongodb.org/) instance or a cluster. The messages can be saved as they come or in bulk depending on the user's needs.
-    * Rules:
-        * `Host`: The host string for the an instance e.g. ```localhost:27107``` or a replicaset or a cluster e.g. ```mongohost1.example.com:27017,mongohost2.example.com:27017,mongoarbiter1.example.com```
-        * `Database`: Database to which the documents should be written to.
-        * `Collection` : Collection to which the documents should be written to under the specified database.
-        * `BatchSize`: the number of documents to be written together at any time in bulk. if value is set to <= 1, the documents will be written one at a time. 
+        
 * **tonsqmulti**. Send messages to an NSQ system in batches. This is useful if you have a fast (>1KHz) stream of data you need to send to NSQ. This block gathers messages for `Interval` time and then sends. It emits immediately if the block gets more than `MaxBatch` messages.
     * Rules:
         * `Topic`: topic you will write to
         * `Interval`: duration string (`1s`)
         * `NsqdTCPAddrs`: address of the NSQ daemon.
         * `MaxBatch`: size of largest batch (`100`)
-* **toemail**. Send messages to an email account. Useful if you want to send out an alert after some kind of event.
-    * Rules:
-        * `Host`: hostname of the SMTP server. Defaults to `smtp.gmail.com` for Gmail.
-        * `Port`: port number for connection to SMTP server. Defaults to `587` for Gmail.
-        * `Username`: user name of the email account.
-        * `Password`: password of the email account.
-        * `toPath`: the path of the email's `to` field within the received message.
-        * `fromPath`: the path of the email's `from` field within the received message.
-        * `subjectPath`: the path of the email's `subject` field within the received message.
-        * `bodyPath`: the path of the email's `body` within the received message.
-* **toHTTPGetRequest**. This block responds to an HTTP GET request that has been generated by **fromHTTPGetRequest**. The inbound message needs to contain both the original request and the message you want to respond with.
-    * Rules:
-        * `RespPath`: path to the HTTP request.
-        * `MsgPath`: path to the message you want to respond with on the HTTP request.
 
-#### state blocks
+* **tobeanstalkd**. Send jobs to an existing [beanstalkd](https://github.com/kr/beanstalkd/) server.
+    * Rules:
+        * `Host`: the Host and port of the beanstalkd server e.g. 127.0.0.1:11300
+        * `TTR`: Time to Run. is an integer number of seconds to allow a worker to run this job. This time is counted from the moment a worker reserves a job. If the worker does not delete, release, or bury the job within <TTR> seconds, the job will time out and the server will release the job.
+        * `Tube` : beanstalkd tube to send jobs to. if left blank, jobs are sent to the default tube.
+        
+* **fromsqs**. This block connects to an [Amazon Simple Queueing System](http://aws.amazon.com/sqs/) queue. Messages from SQS are XML; this block extracts the message string from this XML, which it assumes is newline separated JSON. Each JSON is emitted into streamtools as a separate message. See the SQS docs for more information about the rules of this block.
+    * Rules:
+        * `SignatureVersion`: the version number of the signature hash Amazon is expecting for this queue (`4`)
+        * `AccessKey`: your access key
+        * `MaxNumberOfMessages`: how many messages to pull off the queue at a time (`10`)
+        * `APIVersion`: what version of the API are you using (`2012-11-05`)
+        * `SQSEndpoint`: the endpoint (ARM) of the SQS queue you are reading
+        * `WaitTimeSeconds`: how long to wait between polling (`0`)
+        * `AccessSecret`: your access secret
 
-These blocks maintain a state, storing something about the stream of data.
+#### Stats Blocks
+
+* **count**. This block counts the number of messages it has seen over the specified `Window`. 
+    * Rules:
+        * `Window`: duration string (`0`)
 
 * **histogram**. Build a non-staionary histogram of the inbound messages. Currently this only works with discrete values.
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path to the value over which you'd like to build a histogram.
         * `Window`: duration string specifying how long to retain messages in the histogram (`0`)
-* **count**. This block counts the number of messages it has seen over the specified `Window`. 
-    * Rules:
-        * `Window`: duration string (`0`)
+
 * **timeseries**. This block stores an array of the value specified by `Path` along with the timestamp at the time the message arrived.
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path
         * `NumSamples`: how many samples to store (`0`)
-* **set**. This stores a [set](http://en.wikipedia.org/wiki/Set_(mathematics)) of values as specified by the block's `Path`. Add new members through the (idempotent) ADD route. If you send a message through the ISMEMBER route, the block will emit true or false. You can also query the cardinality of the set. 
+
+* **kullbackleibler**. Calculates the [Kullback Leibler divergence](http://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence) between two distributions p and q. The two distributions must mimic the output from the **histogram** block.
     * Rules:
-        * `Path`: [gojee](https://github.com/nytlabs/gojee) path 
+        * `QPath`: [gojee](https://github.com/nytlabs/gojee) path to the q distribution. 
+        * `PPath`: [gojee](https://github.com/nytlabs/gojee) path to the p distribution. 
+
 * **movingaverage**. Performs a [moving average](http://en.wikipedia.org/wiki/Moving_average) of the values specified by the `Path` over the duration of the `Window`.
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path
         * `Window`: duration string
-* **cache**. Stores string values against keys. Send a key to the `lookup` route and the value against that key will be emitted.
-    * Rules:
-        * `KeyPath`: [gojee](https://github.com/nytlabs/gojee) path to the element of the inbound message to use as key
-        * `ValuePath`: [gojee](https://github.com/nytlabs/gojee) path to the element to store in the cache
-* **queue**. This block represents a FIFO queue. You can push new messages onto the queue via the PUSH in route. You can pop messages off the queue either by hitting the POP inbound route, causing the block to emit the next message on its OUT route, or you can make a GET request to the POP query route and the block will respond with the next message. You can also peek at the next message using the PEEK query route. 
-
-#### random number blocks
-These blocks emit random numbers when polled. So to generate a stream of random numbers, connect a generator block (like a ticker) to a random number block's POLL endpoint. Each of these blocks emits JSON of the form:
-
-    {
-        "sample": 1234
-    }
     
 * **zipf**. This block draws a random number from a [Zipf-Mandelbrot](http://en.wikipedia.org/wiki/Zipf%E2%80%93Mandelbrot_law) distribution when polled.
     * Rules:
