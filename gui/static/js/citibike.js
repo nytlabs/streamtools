@@ -66,6 +66,16 @@
           }
         }
       });
+    } else if (category == "url") {
+      $.each(currentBlocks, function(k, v) {
+        if (this.Type == "webRequest") {
+          if (this.Rule.Url == required) {
+            hopscotch.nextStep();
+            found = true;
+            return false;
+          }
+        }
+      });
     }
 
     if (found == false) {
@@ -110,8 +120,6 @@
       }
     });
 
-    console.log('hi');
-
     $.each(currentConnections, function(key, val) {
       if (this.FromId == idFrom && this.ToId == idTo) {
         hopscotch.nextStep();
@@ -120,13 +128,9 @@
       }
     });
 
-    console.log('hello');
-
     if (found == false) {
       $(".alert").addClass("alert-visible").removeClass("alert");
     }
-
-    console.log('sup');
 
     return false;
   }
@@ -206,7 +210,7 @@
     },
 
     {
-      content: "<p>Before we can start making GET requests, we need to specify the URL from which we are getting the data.</p><p>We will use a <span class='tutorial-blockname'>map</span> block for this, mapping the key 'url' to our URL. This is a <b>flow block</b>: one that transforms or manipulates the stream.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>map</span> and hit Enter.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">map</span> block first.</p>",
+      content: "<p>To make our web request, we'll use the <span class='tutorial-blockname'>webRequest</span> block, mapping the key 'url' to our URL. This is a <b>Network IO block</b>.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>webRequest</span> and hit Enter.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">webRequest</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -214,12 +218,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress("map", "type");
+        checkBlockBeforeProgress("webRequest", "type");
       }
     },
 
     {
-      content: "<p>Double-click the <span class='tutorial-blockname'>map</span> block to edit its parameters.</p> <p>The <span class='tutorial-blockname'>map</span> block takes a <a href='https://github.com/nytlabs/gojee' target='_new'>gojee</a> expression.</p> <p>Our map will look like this:<br/><span class='tutorial-url'>{ \"url\": \"\'http://citibikenyc.com/stations/json\'\" }</span></p><p class=\"alert\">Please check your gojee expression and make sure you've included all quotation marks properly.</p>",
+      content: "<p>Double-click the <span class='tutorial-blockname'>webRequest</span> block to edit its parameters.</p><p>Type the following URL into the URL field:<br/><span class='tutorial-url'>http://citibikenyc.com/stations/json</span></p><p class=\"alert\">Please make sure you've put the correct URL in the URL rule.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -227,25 +231,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
+        checkBlockBeforeProgress("http://citibikenyc.com/stations/json", "url");
       }
     },
 
     {
-      content: "<p>Each block also has a set of <b>routes</b>, which can receive data, emit data, or respond to queries. Routes can be connected, allowing data to flow between blocks.</p><p>Let's connect the two, so every 10s, we map this URL.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">map</span> (the top black box).</p><p class=\"alert\">Please check your block connections.</p>",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-      xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkConnectionsBeforeProgress("ticker", "map");
-      }
-    },
-
-    {
-      content: "<p>Now we need to actually get our data. We'll make this GET request with a <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class=\"tutorial-blockname\">gethttp</span> and hit Enter.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">gethttp</span> block first.</p>",
+      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">webRequest</span> block to our <span class=\"tutorial-blockname\">ticker</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">webRequest</span> (the top black box).</p><p class=\"alert\">Please make sure you've connected the blocks properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -253,38 +244,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress("gethttp", "type");
+        checkConnectionsBeforeProgress("ticker", "webRequest");
       }
     },
 
     {
-      content: "<p>Double-click on your <span class=\"tutorial-blockname\">gethttp</span> block to edit it.</p><p>Remember how we mapped our URL? In <a href=\"https://github.com/nytlabs/gojee\" target=\"_new\">gojee syntax</a>, our \"url\" key becomes the path <span class=\"tutorial-url\">.url</span>.</p><p>Put that in the Path parameter, click Update, then click Next.</p><p class=\"alert\">Please check your path and make sure you've copied the gojee syntax properly.</p>",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-            xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkBlockBeforeProgress(".url", "path");
-      }
-    },
-
-    {
-      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">map</span> block to our <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">map</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">gethttp</span> (the top black box).</p><p class=\"alert\">Please make sure you've connected the blocks properly.</p>",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-            xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkConnectionsBeforeProgress("map", "gethttp");
-      }
-    },
-
-    {
-      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The key wrapping up all the data about individual stations is <span class=\"tutorial-url\">stationBeanList</span>.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy: it takes an array of objects and emits each object as a separate message. Double-click and create it anywhere on-screen.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">unpack</span> block first.</p>",
+      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The data about individual stations is within the <span class=\"tutorial-url\">body</span> and <span class=\"tutorial-url\">stationBeanList</span> keys.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy: it takes an array of objects and emits each object as a separate message. Double-click and create it anywhere on-screen.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">unpack</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -297,7 +262,7 @@
     },
 
     {
-      content: "<p>Double-click on the <span class=\"tutorial-blockname\">unpack</span> block to edit its rule.</p><p>Set its Path to <span class=\"tutorial-url\">.stationBeanList</span> and click Next.</p><p class=\"alert\">Please check your Path and make sure it has the proper gojee syntax.</p>",
+      content: "<p>Double-click on the <span class=\"tutorial-blockname\">unpack</span> block to edit its rule.</p><p>Set its Path to <span class=\"tutorial-url\">.body.stationBeanList</span> and click Next.</p><p class=\"alert\">Please check your Path and make sure it has the proper gojee syntax.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -305,12 +270,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress(".stationBeanList", "path");
+        checkBlockBeforeProgress(".body.stationBeanList", "path");
       }
     },
 
     {
-      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">gethttp</span> (the thing giving us the JSON) to our <span class=\"tutorial-blockname\">unpack</span> (the thing iterating over that JSON).</p><p>Connect the two and click Next.</p><p class=\"alert\">Please make sure the blocks are connected properly.</p>",
+      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">webRequest</span> (the thing giving us the JSON) to our <span class=\"tutorial-blockname\">unpack</span> (the thing iterating over that JSON).</p><p>Connect the two and click Next.</p><p class=\"alert\">Please make sure the blocks are connected properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -318,7 +283,7 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkConnectionsBeforeProgress("gethttp", "unpack");
+        checkConnectionsBeforeProgress("webRequest", "unpack");
       }
     },
 
