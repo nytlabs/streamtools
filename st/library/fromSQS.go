@@ -88,8 +88,9 @@ func (b *FromSQS) listener() {
 			resp, err := sqsclient.Get(queryurl)
 
 			if err != nil {
-				b.Error("could not connect to SQS endpoint")
+				b.Error("could not connect to SQS endpoint. waiting 1s")
 				b.Error(err)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 
@@ -111,8 +112,8 @@ func (b *FromSQS) listener() {
 
 			if len(m.Body) == 0 {
 				// no messages on queue
+				b.Error("no messages on queue. waiting 1s")
 				time.Sleep(1 * time.Second)
-				//log.Println("sleeping for a second")
 				continue
 			}
 
@@ -122,14 +123,14 @@ func (b *FromSQS) listener() {
 				default:
 					log.Println("discarding messages")
 					log.Println(len(b.fromListener))
-					return
+					continue
 				}
 			}
 
 			parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
 			if err != nil {
 				b.Error(err)
-				return
+				continue
 			}
 
 			delquery := url.Values{}
@@ -148,8 +149,9 @@ func (b *FromSQS) listener() {
 
 			resp, err = sqsclient.Get(delurl)
 			if err != nil {
-				b.Error("could not delete messages")
+				b.Error("could not delete messages. waiting 1s")
 				b.Error(err)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 
@@ -200,6 +202,7 @@ func (b *FromSQS) Setup() {
 }
 
 func (b *FromSQS) stopListening() {
+	log.Println("attempting to stop SQS reader")
 	if b.listening {
 		b.stop <- true
 		b.listening = false
