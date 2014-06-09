@@ -3,10 +3,11 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -26,7 +27,7 @@ func NewSync() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Sync) Setup() {
-	b.Kind = "Sync"
+	b.Kind = "Core"
 	b.Desc = "takes an disordered stream and creates a properly timed, ordered stream at the expense of introducing a lag"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

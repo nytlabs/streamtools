@@ -2,10 +2,11 @@ package library
 
 import (
 	"errors"
+	"math"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"math"
 )
 
 type KullbackLeibler struct {
@@ -22,7 +23,7 @@ func NewKullbackLeibler() blocks.BlockInterface {
 }
 
 func (b *KullbackLeibler) Setup() {
-	b.Kind = "KullbackLeibler"
+	b.Kind = "Stats"
 	b.inrule = b.InRoute("rule")
 	b.in = b.InRoute("in")
 	b.queryrule = b.QueryRoute("rule")

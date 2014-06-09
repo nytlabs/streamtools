@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
 	"labix.org/v2/mgo"
@@ -23,7 +24,7 @@ func NewToMongoDB() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToMongoDB) Setup() {
-	b.Kind = "ToMongoDB"
+	b.Kind = "Data Stores"
 	b.Desc = "sends messages to MongoDB, optionally in batches"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

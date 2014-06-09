@@ -23,7 +23,7 @@ func NewToHTTPGetRequest() blocks.BlockInterface {
 }
 
 func (b *ToHTTPGetRequest) Setup() {
-	b.Kind = "ToHTTPGetRequest"
+	b.Kind = "Network I/O"
 	b.Desc = "responds to a Get requets's response channel"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

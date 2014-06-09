@@ -3,10 +3,11 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -28,7 +29,7 @@ func NewMovingAverage() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *MovingAverage) Setup() {
-	b.Kind = "MovingAverage"
+	b.Kind = "Stats"
 	b.Desc = "performs a moving average of the values specified by the Path over the duration of the Window"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

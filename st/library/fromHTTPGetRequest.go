@@ -19,7 +19,7 @@ func NewFromHTTPGetRequest() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromHTTPGetRequest) Setup() {
-	b.Kind = "FromHTTPGetRequest"
+	b.Kind = "Network I/O"
 	b.Desc = "emits a query route that must be responded to using another block"
 	b.query = b.QueryRoute("query")
 	b.quit = b.Quit()

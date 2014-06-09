@@ -93,7 +93,7 @@ $(function() {
     });
 
     // Click-to-add blocks from reference panel
-    $("body").on("click", "#ui-ref-blockdefs ul li", function() {
+    $("body").on("click", "#ui-ref-blockdefs .ref-add-block", function() {
         var blockType = $(this).attr('data-block-type');
         $.ajax({
             url: '/blocks',
@@ -620,10 +620,13 @@ $(function() {
             d3.entries(library).forEach(function(key, value) {
                 blocks.push({
                     type: key.key,
+                    category: key.value.Type,
                     desc: key.value.Desc
                 })
             });
             var refTemplate = $('#ui-ref-item-template').html();
+            window.blocks = blocks;
+
             var refTmpl = _.template(refTemplate, {
                 data: blocks
             });

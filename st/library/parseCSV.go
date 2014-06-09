@@ -30,7 +30,7 @@ func NewParseCSV() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ParseCSV) Setup() {
-	b.Kind = "ParseCSV"
+	b.Kind = "Parsers"
 	b.Desc = "converts incoming CSV messages to JSON for use in streamtools"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

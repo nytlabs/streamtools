@@ -2,9 +2,10 @@ package library
 
 import (
 	"container/heap"
+	"time"
+
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	"time"
 )
 
 type Count struct {
@@ -25,7 +26,7 @@ func NewCount() blocks.BlockInterface {
 }
 
 func (b *Count) Setup() {
-	b.Kind = "Count"
+	b.Kind = "Stats"
 	b.Desc = "counts the number of messages seen over a specified Window"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
@@ -24,7 +25,7 @@ func NewUnpack() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Unpack) Setup() {
-	b.Kind = "Unpack"
+	b.Kind = "Core"
 	b.Desc = "splits an array of objects from incoming data, emitting each element as a separate message"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

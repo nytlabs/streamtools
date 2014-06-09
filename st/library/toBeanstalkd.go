@@ -3,6 +3,7 @@ package library
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/nutrun/lentil"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
@@ -24,7 +25,7 @@ func NewToBeanstalkd() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToBeanstalkd) Setup() {
-	b.Kind = "ToBeanstalkd"
+	b.Kind = "Queues"
 	b.Desc = "sends jobs to beanstalkd tube"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -26,7 +27,7 @@ func NewSet() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Set) Setup() {
-	b.Kind = "Set"
+	b.Kind = "Core"
 	b.Desc = "add, ismember and cardinality routes on a stored set of values"
 
 	// set operations
