@@ -297,16 +297,6 @@ These blocks send and retrieve data from various data stores.
     * Rules:
         * `Path`: [gojee](https://github.com/nytlabs/gojee) path to a fully formed URL. 
 
-* **postHTTP**. Shortcut block for doing POST requests to a URL
-    * Rules:
-      * `Url`: a fully formed URL. 
-      * `ContentType`: MIME type of the request body. Example: application/json
-
-* **putHTTP**. Shortcut block for doing PUT requests to a URL
-    * Rules:
-      * `Url`: a fully formed URL. 
-      * `ContentType`: MIME type of the request body. Example: application/json
-
 ### Parsers
 
 These blocks turn icky data into lovely json.
