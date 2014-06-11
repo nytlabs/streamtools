@@ -47,6 +47,7 @@ type BlockChans struct {
 	QueryParamChan chan *QueryParamMsg
 	AddChan        chan *AddChanMsg
 	DelChan        chan *Msg
+	IdChan         chan string
 	ErrChan        chan error
 	QuitChan       chan bool
 }
@@ -105,6 +106,7 @@ func (b *Block) Build(c BlockChans) {
 	b.DelChan = c.DelChan
 	b.ErrChan = c.ErrChan
 	b.QuitChan = c.QuitChan
+	b.IdChan = c.IdChan
 
 	// route maps
 	b.inRoutes = make(map[string]MsgChan) // necessary to stop locking...
@@ -203,6 +205,7 @@ func (b *Block) CleanUp() {
 	defer close(b.ErrChan)
 	defer close(b.QuitChan)
 	defer close(b.broadcast)
+	defer close(b.IdChan)
 
 	go func(id string) {
 		loghub.Log <- &loghub.LogMsg{
@@ -334,7 +337,8 @@ func BlockRoutine(bi BlockInterface) {
 					b.queryParamRoutes[msg.Route] <- q
 				}()
 			}
-
+		case id := <-b.IdChan:
+			b.SetId(id)
 		case msg := <-b.AddChan:
 			outChans[msg.Route] = msg.Channel
 		case msg := <-b.DelChan:

@@ -2,10 +2,11 @@ package library
 
 import (
 	"encoding/json"
-	"github.com/nytlabs/streamtools/st/blocks"
-	"github.com/nytlabs/streamtools/st/util"
 	"net"
 	"sync"
+
+	"github.com/nytlabs/streamtools/st/blocks"
+	"github.com/nytlabs/streamtools/st/util"
 )
 
 const (
@@ -101,7 +102,7 @@ func NewFromUDP() blocks.BlockInterface {
 // Setup is called once before running the block. We build up the channels and
 // specify what kind of block this is.
 func (u *FromUDP) Setup() {
-	u.Kind = "fromUDP"
+	u.Kind = "Network I/O"
 	u.Desc = "listens for messages sent over UDP, emitting each into streamtools"
 	u.inrule = u.InRoute("rule")
 	u.queryrule = u.QueryRoute("rule")

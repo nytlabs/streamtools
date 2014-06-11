@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
@@ -24,7 +25,7 @@ func NewDeDupe() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *DeDupe) Setup() {
-	b.Kind = "DeDupe"
+	b.Kind = "Core"
 	b.Desc = "stores a set of messages as specified by Path, emiting only those it hasn't seen before."
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

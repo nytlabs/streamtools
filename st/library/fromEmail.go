@@ -244,7 +244,7 @@ func findUnreadEmails(conn *imap.Client) (*imap.Command, error) {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (e *FromEmail) Setup() {
-	e.Kind = "FromEmail"
+	e.Kind = "Network I/O"
 	e.out = e.Broadcast()
 	e.inrule = e.InRoute("rule")
 	e.queryrule = e.QueryRoute("rule")

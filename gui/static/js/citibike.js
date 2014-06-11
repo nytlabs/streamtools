@@ -1,8 +1,10 @@
 (function() {
 
   function checkBlockBeforeProgress(req, cat) {
+    $(".alert-visible").addClass("alert").removeClass("alert-visible");
     var required = req;
     var category = cat;
+    var found = false;
 
     var currentBlocks = JSON.parse($.ajax({
       url: '/blocks',
@@ -14,6 +16,7 @@
       $.each(currentBlocks, function(k, v) {
         if (this.Type == required) {
           hopscotch.nextStep();
+          found = true;
           return false;
         }
       });
@@ -21,6 +24,7 @@
       $.each(currentBlocks, function(k, v) {
         if (this.Rule.Endpoint == required) {
           hopscotch.nextStep();
+          found = true;
           return false;
         }
       });
@@ -28,6 +32,7 @@
       $.each(currentBlocks, function(k, v) {
         if (this.Rule.Interval == required) {
           hopscotch.nextStep();
+          found = true;
           return false;
         }
       });
@@ -36,6 +41,7 @@
         if (this.Type == "map") {
           if (this.Rule.Map.url == required) {
             hopscotch.nextStep();
+            found = true;
             return false;
           }
         }
@@ -45,6 +51,7 @@
         if (this.Type == "gethttp" || this.Type == "unpack") {
           if (this.Rule.Path == required) {
             hopscotch.nextStep();
+            found = true;
             return false;
           }
         }
@@ -54,15 +61,31 @@
         if (this.Type == "filter") {
           if (this.Rule.Filter == required) {
             hopscotch.nextStep();
+            found = true;
+            return false;
+          }
+        }
+      });
+    } else if (category == "url") {
+      $.each(currentBlocks, function(k, v) {
+        if (this.Type == "webRequest") {
+          if (this.Rule.Url == required) {
+            hopscotch.nextStep();
+            found = true;
             return false;
           }
         }
       });
     }
+
+    if (found == false) {
+      $(".alert").addClass("alert-visible").removeClass("alert");
+    }
     return false;
   }
 
   function checkConnectionsBeforeProgress(bF, bT) {
+    $(".alert-visible").addClass("alert").removeClass("alert-visible");
     var currentConnections = JSON.parse($.ajax({
       url: '/connections',
       type: 'GET',
@@ -70,6 +93,7 @@
     }).responseText);
 
     if (currentConnections.length == 0) {
+      $(".alert").addClass("alert-visible").removeClass("alert");
       return false;
     }
 
@@ -78,6 +102,8 @@
 
     var idFrom;
     var idTo;
+
+    var found = false;
 
     var currentBlocks = JSON.parse($.ajax({
       url: '/blocks',
@@ -97,9 +123,16 @@
     $.each(currentConnections, function(key, val) {
       if (this.FromId == idFrom && this.ToId == idTo) {
         hopscotch.nextStep();
+        found = true;
         return false;
       }
     });
+
+    if (found == false) {
+      $(".alert").addClass("alert-visible").removeClass("alert");
+    }
+
+    return false;
   }
 
   var tour = {
@@ -151,7 +184,7 @@
     },
 
     {
-      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block.</p><p>You can click and drag blocks to move them around on screen. You can delete a block by clicking it (to select it) and pressing the Delete key.</p><p>Click Next when you're ready.</p>",
+      content: "<p>Click <span class=\"tutorial-blockname\">ticker</span> to add that block.</p><p>You can click and drag blocks to move them around on screen. You can delete a block by clicking it (to select it) and pressing the Delete key.</p><p>Click Next when you're ready.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">ticker</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -164,7 +197,7 @@
     },
 
     {
-      content: "<p>Most blocks have <b>rules</b>, which define that block's behavior. You can double-click a block to edit its rules.</p><p>Double-click your <span class=\"tutorial-blockname\">ticker</span> block.</p><p>Let's set our interval to 10 seconds. Type <span class=\"tutorial-url\">10s</span> into the Interval box and click Update.</p><p>After that, click Next.</p>",
+      content: "<p>Most blocks have <b>rules</b>, which define that block's behavior. You can double-click a block to edit its rules.</p><p>Double-click your <span class=\"tutorial-blockname\">ticker</span> block.</p><p>Let's set our interval to 10 seconds. Type <span class=\"tutorial-url\">10s</span> into the Interval box and click Update.</p><p>After that, click Next.</p><p class=\"alert\">Please make sure your <span class=\"tutorial-blockname\">ticker</span> block has an interval of <span class=\"tutorial-url\">10s</span>, and remember to click Update.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -177,7 +210,7 @@
     },
 
     {
-      content: "<p>Before we can start making GET requests, we need to specify the URL from which we are getting the data.</p><p>We will use a <span class='tutorial-blockname'>map</span> block for this, mapping the key 'url' to our URL. This is a <b>flow block</b>: one that transforms or manipulates the stream.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>map</span> and hit Enter.</p>",
+      content: "<p>To make our web request, we'll use the <span class='tutorial-blockname'>webRequest</span> block, mapping the key 'url' to our URL. This is a <b>Network IO block</b>.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class='tutorial-blockname'>webRequest</span> and hit Enter.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">webRequest</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -185,12 +218,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress("map", "type");
+        checkBlockBeforeProgress("webRequest", "type");
       }
     },
 
     {
-      content: "<p>Double-click the <span class='tutorial-blockname'>map</span> block to edit its parameters.</p> <p>The <span class='tutorial-blockname'>map</span> block takes a <a href='https://github.com/nytlabs/gojee' target='_new'>gojee</a> expression.</p> <p>Our map will look like this:<br/><span class='tutorial-url'>{ \"url\": \"\'http://citibikenyc.com/stations/json\'\" }</span></p>",
+      content: "<p>Double-click the <span class='tutorial-blockname'>webRequest</span> block to edit its parameters.</p><p>Type the following URL into the URL field:<br/><span class='tutorial-url'>http://citibikenyc.com/stations/json</span></p><p class=\"alert\">Please make sure you've put the correct URL in the URL rule.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -198,12 +231,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress("\'http://citibikenyc.com/stations/json\'", "map");
+        checkBlockBeforeProgress("http://citibikenyc.com/stations/json", "url");
       }
     },
 
     {
-      content: "<p>Each block also has a set of <b>routes</b>, which can receive data, emit data, or respond to queries. Routes can be connected, allowing data to flow between blocks.</p><p>Let's connect the two, so every 10s, we map this URL.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">map</span> (the top black box).</p> ",
+      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">webRequest</span> block to our <span class=\"tutorial-blockname\">ticker</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">ticker</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">webRequest</span> (the top black box).</p><p class=\"alert\">Please make sure you've connected the blocks properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -211,51 +244,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkConnectionsBeforeProgress("ticker", "map");
+        checkConnectionsBeforeProgress("ticker", "webRequest");
       }
     },
 
     {
-      content: "<p>Now we need to actually get our data. We'll make this GET request with a <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>Double-click anywhere on screen to add a block.</p><p>Type in <span class=\"tutorial-blockname\">gethttp</span> and hit Enter.</p> ",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-            xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkBlockBeforeProgress("gethttp", "type");
-      }
-    },
-
-    {
-      content: "<p>Double-click on your <span class=\"tutorial-blockname\">gethttp</span> block to edit it.</p><p>Remember how we mapped our URL? In <a href=\"https://github.com/nytlabs/gojee\" target=\"_new\">gojee syntax</a>, our \"url\" key becomes the path <span class=\"tutorial-url\">.url</span>.</p><p>Put that in the Path parameter, click Update, then click Next.</p> ",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-            xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkBlockBeforeProgress(".url", "path");
-      }
-    },
-
-    {
-      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">map</span> block to our <span class=\"tutorial-blockname\">gethttp</span> block.</p><p>That way, we'll make a GET request to that URL every 10s.</p><p>Click the OUT box on your <span class=\"tutorial-blockname\">map</span> box (the bottom black box).</p><p>Connect it to the IN on your <span class=\"tutorial-blockname\">gethttp</span> (the top black box).</p>",
-      target: "#log",
-      placement: "top",
-      yOffset: -20,
-            xOffset: "center",
-      showCTAButton: true,
-      ctaLabel:"Next",
-      onCTA: function() {
-        checkConnectionsBeforeProgress("map", "gethttp");
-      }
-    },
-
-    {
-      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The key wrapping up all the data about individual stations is <span class=\"tutorial-url\">stationBeanList</span>.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy: it takes an array of objects and emits each object as a separate message. Double-click and create it anywhere on-screen.</p>",
+      content: "<p>If you view the <a href=\"http://citibikenyc.com/stations/json\" target=\"_new\">JSON data</a> in your browser, you'll see that all the data is in a big array.</p><p>The data about individual stations is within the <span class=\"tutorial-url\">body</span> and <span class=\"tutorial-url\">stationBeanList</span> keys.</p><p>In order to be able to manipulate and filter this data, we need to unpack it first.</p><p>That\'s where the <span class=\"tutorial-blockname\">unpack</span> block comes in handy: it takes an array of objects and emits each object as a separate message. Double-click and create it anywhere on-screen.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">unpack</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -268,7 +262,7 @@
     },
 
     {
-      content: "<p>Double-click on the <span class=\"tutorial-blockname\">unpack</span> block to edit its rule.</p><p>Set its Path to <span class=\"tutorial-url\">.stationBeanList</span> and click Next.</p>",
+      content: "<p>Double-click on the <span class=\"tutorial-blockname\">unpack</span> block to edit its rule.</p><p>Set its Path to <span class=\"tutorial-url\">.body.stationBeanList</span> and click Next.</p><p class=\"alert\">Please check your Path and make sure it has the proper gojee syntax.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -276,12 +270,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkBlockBeforeProgress(".stationBeanList", "path");
+        checkBlockBeforeProgress(".body.stationBeanList", "path");
       }
     },
 
     {
-      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">gethttp</span> (the thing giving us the JSON) to our <span class=\"tutorial-blockname\">unpack</span> (the thing iterating over that JSON).</p><p>Connect the two and click Next.</p>",
+      content: "<p>Now let's connect our <span class=\"tutorial-blockname\">webRequest</span> (the thing giving us the JSON) to our <span class=\"tutorial-blockname\">unpack</span> (the thing iterating over that JSON).</p><p>Connect the two and click Next.</p><p class=\"alert\">Please make sure the blocks are connected properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -289,12 +283,12 @@
       showCTAButton: true,
       ctaLabel:"Next",
       onCTA: function() {
-        checkConnectionsBeforeProgress("gethttp", "unpack");
+        checkConnectionsBeforeProgress("webRequest", "unpack");
       }
     },
 
     {
-      content: "<p>Right now we're getting data about every station. Let's filter out every station other than the one outside the NYT headquarters.</p><p>For this, we'll use a <span class=\"tutorial-blockname\">filter</span> block.</p><p>Click Next once you've made it.</p>",
+      content: "<p>Right now we're getting data about every station. Let's filter out every station other than the one outside the NYT headquarters.</p><p>For this, we'll use a <span class=\"tutorial-blockname\">filter</span> block.</p><p>Click Next once you've made it.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">filter</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -307,7 +301,7 @@
     },
 
     {
-      content: "<p>The <span class=\"tutorial-blockname\">filter</span> block contains a rule, and emits/discards incoming messages based on whether the rule evaluates to true.</p><p>The station nearest the NYT HQ is <span class=\"tutorial-url\">\'W 41st St & 8 Ave\'</span>.</p><p>Our <span class=\"tutorial-blockname\">filter</span> rule will look like this:</p><p><span class=\"tutorial-url\">.stationName == \'W 41 St & 8 Ave\'</span></p>",
+      content: "<p>The <span class=\"tutorial-blockname\">filter</span> block contains a rule, and emits/discards incoming messages based on whether the rule evaluates to true.</p><p>The station nearest the NYT HQ is <span class=\"tutorial-url\">\'W 41st St & 8 Ave\'</span>.</p><p>Our <span class=\"tutorial-blockname\">filter</span> rule will look like this:</p><p><span class=\"tutorial-url\">.stationName == \'W 41 St & 8 Ave\'</span></p><p class=\"alert\">Please make sure you've copied the Rule correctly, including all punctuation marks.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -320,7 +314,7 @@
     },
 
     {
-      content: "<p>Connect your <span class=\"tutorial-blockname\">unpack</span> and <span class=\"tutorial-blockname\">filter</span> blocks.</p>",
+      content: "<p>Connect your <span class=\"tutorial-blockname\">unpack</span> and <span class=\"tutorial-blockname\">filter</span> blocks.</p><p class=\"alert\">Please make sure you've connected your blocks properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -333,7 +327,7 @@
     },
 
     {
-      content: "<p>Usually, we'll want to send our data to an external system, such as a file or our console. <b>Sink blocks</b> allow us to do that. In our case, we'll send our data to the log.</p><p>The <span class=\"tutorial-blockname\">tolog</span> block logs your data to the console and the log built into streamtools.</p><p>Add it and click Next.</p>",
+      content: "<p>Usually, we'll want to send our data to an external system, such as a file or our console. <b>Sink blocks</b> allow us to do that. In our case, we'll send our data to the log.</p><p>The <span class=\"tutorial-blockname\">tolog</span> block logs your data to the console and the log built into streamtools.</p><p>Add it and click Next.</p><p class=\"alert\">Please make sure you've added a <span class=\"tutorial-blockname\">tolog</span> block first.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -346,7 +340,7 @@
     },
 
     {
-      content: "<p>Finally, connect your <span class=\"tutorial-blockname\">filter</span> and <span class=\"tutorial-blockname\">tolog</span> blocks.</p>",
+      content: "<p>Finally, connect your <span class=\"tutorial-blockname\">filter</span> and <span class=\"tutorial-blockname\">tolog</span> blocks.</p><p class=\"alert\">Please make sure you've connected the blocks properly.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,
@@ -359,7 +353,7 @@
     },
 
     {
-      content: "<p>Now, every 10s, your log will be updated with your newest filtered live data.</p>",
+      content: "<p>Now, every 10s, your log will be updated with your newest filtered live data.</p><p>Click the black bar below to see your data logged in streamtools.</p>",
       target: "#log",
       placement: "top",
       yOffset: -20,

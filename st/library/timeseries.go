@@ -2,10 +2,11 @@ package library
 
 import (
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -36,7 +37,7 @@ func NewTimeseries() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Timeseries) Setup() {
-	b.Kind = "Timeseries"
+	b.Kind = "Stats"
 	b.Desc = "stores an array of values for a specified Path along with timestamps"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

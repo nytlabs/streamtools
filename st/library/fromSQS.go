@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
-	"github.com/mikedewar/aws4"
-	"github.com/nytlabs/streamtools/st/blocks" // blocks
-	"github.com/nytlabs/streamtools/st/util"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
+
+	"github.com/mikedewar/aws4"
+	"github.com/nytlabs/streamtools/st/blocks" // blocks
+	"github.com/nytlabs/streamtools/st/util"
 	//"reflect"
 	//"strings"
 	"sync"
@@ -88,8 +89,9 @@ func (b *FromSQS) listener() {
 			resp, err := sqsclient.Get(queryurl)
 
 			if err != nil {
-				b.Error("could not connect to SQS endpoint")
+				b.Error("could not connect to SQS endpoint. waiting 1s")
 				b.Error(err)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 
@@ -111,8 +113,8 @@ func (b *FromSQS) listener() {
 
 			if len(m.Body) == 0 {
 				// no messages on queue
+				b.Error("no messages on queue. waiting 1s")
 				time.Sleep(1 * time.Second)
-				//log.Println("sleeping for a second")
 				continue
 			}
 
@@ -122,14 +124,14 @@ func (b *FromSQS) listener() {
 				default:
 					log.Println("discarding messages")
 					log.Println(len(b.fromListener))
-					return
+					continue
 				}
 			}
 
 			parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
 			if err != nil {
 				b.Error(err)
-				return
+				continue
 			}
 
 			delquery := url.Values{}
@@ -148,8 +150,9 @@ func (b *FromSQS) listener() {
 
 			resp, err = sqsclient.Get(delurl)
 			if err != nil {
-				b.Error("could not delete messages")
+				b.Error("could not delete messages. waiting 1s")
 				b.Error(err)
+				time.Sleep(1 * time.Second)
 				continue
 			}
 
@@ -180,7 +183,7 @@ func NewFromSQS() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *FromSQS) Setup() {
-	b.Kind = "fromSQS"
+	b.Kind = "Queues"
 	b.Desc = "reads from Amazon's SQS, emitting each line of JSON as a separate message"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
@@ -200,6 +203,7 @@ func (b *FromSQS) Setup() {
 }
 
 func (b *FromSQS) stopListening() {
+	log.Println("attempting to stop SQS reader")
 	if b.listening {
 		b.stop <- true
 		b.listening = false

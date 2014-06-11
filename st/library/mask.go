@@ -20,7 +20,7 @@ func NewMask() blocks.BlockInterface {
 }
 
 func (b *Mask) Setup() {
-	b.Kind = "Mask"
+	b.Kind = "Core"
 	b.Desc = "emits a subset of the inbound message by specifying the desired JSON output structure in this block's rule"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

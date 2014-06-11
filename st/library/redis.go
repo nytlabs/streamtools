@@ -74,7 +74,7 @@ func formatReply(reply interface{}) (interface{}, error) {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Redis) Setup() {
-	b.Kind = "Redis"
+	b.Kind = "Data Stores"
 	b.Desc = "sends arbitrary commands to redis"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

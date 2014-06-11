@@ -5,25 +5,25 @@ $(function() {
         var result = {}, keyValuePairs = location.search.slice(1).split('&');
 
         keyValuePairs.forEach(function(keyValuePair) {
-          keyValuePair = keyValuePair.split('=');
-          result[keyValuePair[0]] = keyValuePair[1] || '';
+            keyValuePair = keyValuePair.split('=');
+            result[keyValuePair[0]] = keyValuePair[1] || '';
         });
         return result;
     }
-  
+
     // grab the query string params
     params = queryParams();
 
     yepnope({
-        test:   params["tutorial"] == "gov" || 
-                params["tutorial"] == "citibike",
+        test: params["tutorial"] == "gov" ||
+            params["tutorial"] == "citibike",
 
-        yep: [ 
+        yep: [
             'static/lib/hopscotch.js',
             'static/css/hopscotch.min.css',
             'static/css/tutorial.css',
             'static/js/' + params["tutorial"] + '.js'
-            ],
+        ],
     });
 
 
@@ -88,12 +88,12 @@ $(function() {
 
     // Shows and hides the reference panel
     $('#ui-ref-control').click(function() {
-      $('#ui-ref-contents').fadeToggle();
+        $('#ui-ref-contents').fadeToggle();
         resizeReference();
     });
 
     // Click-to-add blocks from reference panel
-    $("body").on("click", "#ui-ref-blockdefs ul li", function() {
+    $("body").on("click", "#ui-ref-blockdefs .ref-add-block", function() {
         var blockType = $(this).attr('data-block-type');
         $.ajax({
             url: '/blocks',
@@ -359,8 +359,8 @@ $(function() {
             .attr('height', window.innerHeight);
         bg.attr('width', window.innerWidth)
             .attr('height', window.innerHeight);
-        d3.select('intro-text').attr('x', window.innerWidth/2)
-            .attr('y', window.innerHeight/2);
+        d3.select('intro-text').attr('x', window.innerWidth / 2)
+            .attr('y', window.innerHeight / 2);
     });
 
     $(window).resize(resizeReference);
@@ -401,19 +401,19 @@ $(function() {
             url: '/status',
             type: 'GET',
             async: false // required before UI stream starts
-        }).responseText)); 
-        
+        }).responseText));
+
         if (numBlocks["Blocks"].length == 0) {
             var introText = svg.append('text')
-                .attr('x', width/2)
-                .attr('y', height/2)
+                .attr('x', width / 2)
+                .attr('y', height / 2)
                 .text('Double-click to create a block, or click the ☰ icon to see all blocks.')
                 .attr('class', 'intro-text');
-        }   
+        }
 
         $(".intro-text").on('transitionend webkitTransitionEnd oTransitionEnd otransitionend MSTransitionEnd', function() {
             $(".intro-text").remove();
-        }); 
+        });
     }
 
     function createStaticPanel(titleTxt, data) {
@@ -445,7 +445,6 @@ $(function() {
             .classed('info-text', true)
             .text(data);
     }
-
 
     function createImportPanel(titleTxt, data) {
         var info = d3.select('body').append('div')
@@ -621,10 +620,13 @@ $(function() {
             d3.entries(library).forEach(function(key, value) {
                 blocks.push({
                     type: key.key,
+                    category: key.value.Type,
                     desc: key.value.Desc
                 })
             });
             var refTemplate = $('#ui-ref-item-template').html();
+            window.blocks = blocks;
+
             var refTmpl = _.template(refTemplate, {
                 data: blocks
             });
@@ -757,7 +759,42 @@ $(function() {
             .classed('name', true)
             .html(function(d) {
                 return d.Id + ' (' + d.Type + ')';
-            });
+            })
+            .on('dblclick', function(d) {
+                var _this = this;
+
+                d3.select(_this.parentNode).on('mousedown.drag', null)
+
+                var input = d3.select(this)
+                    .html('')
+                    .append('input')
+                    .classed('rename-input', true)
+                    .attr('value', d.Id)
+                    .on('keyup', function() {
+                        var newId = $(this).val();
+                        if (d3.event.keyCode == 13 && newId != d.Id) {
+                            $.ajax({
+                                url: '/blocks/' + d.Id,
+                                type: 'PUT',
+                                data: JSON.stringify({
+                                    "Id": newId
+                                }),
+                                success: function(result) {}
+                            });
+                        } else if (d3.event.keyCode == 13 && newId == d.Id) {
+                            $(this).blur();
+                        }
+                    })
+                    .on('blur', function() {
+                        d3.select(_this)
+                            .html(function(d) {
+                                return d.Id + ' (' + d.Type + ')';
+                            })
+                        d3.select(_this.parentNode).call(dragTitle);
+                    })
+
+                input.node().focus();
+            })
 
         titles.append('div')
             .classed('close', true)

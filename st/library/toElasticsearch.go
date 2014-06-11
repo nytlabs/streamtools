@@ -24,7 +24,7 @@ func NewToElasticsearch() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToElasticsearch) Setup() {
-	b.Kind = "ToElasticsearch"
+	b.Kind = "Data Stores"
 	b.Desc = "sends messages as JSON to a specified index and type in Elasticsearch"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

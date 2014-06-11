@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/nytlabs/gojee"
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
 )
@@ -44,7 +45,7 @@ func NewWebRequest() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *WebRequest) Setup() {
-	b.Kind = "WebRequest"
+	b.Kind = "Network I/O"
 	b.Desc = "Makes requests to a given URL with specified HTTP method."
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")
@@ -56,7 +57,25 @@ func (b *WebRequest) Setup() {
 // Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *WebRequest) Run() {
 	var err error
-	var url string
+	var ok bool
+
+	url := ""
+	var urlPath string
+	var urlTree *jee.TokenTree
+
+	bodyPath := "."
+	var bodyTree *jee.TokenTree
+
+	token, err := jee.Lexer(bodyPath)
+	if err != nil {
+		b.Error(err)
+	}
+
+	bodyTree, err = jee.Parser(token)
+	if err != nil {
+		b.Error(err)
+	}
+
 	var httpMethod string
 	headerRule := map[string]interface{}{}
 	headers, _ := parseHeaders(headerRule)
@@ -72,12 +91,56 @@ func (b *WebRequest) Run() {
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			url, err = util.ParseString(ruleI, "Url")
-
 			httpMethod, err = util.ParseString(ruleI, "Method")
 			if err != nil {
 				b.Error(err)
 				break
+			}
+
+			url, err = util.ParseString(ruleI, "Url")
+			if err != nil {
+				b.Error(err)
+			}
+
+			urlPath, err = util.ParseString(ruleI, "UrlPath")
+			if err != nil {
+				b.Error(err)
+			}
+
+			if len(url) != 0 && len(urlPath) != 0 {
+				b.Error(errors.New("Specify either a url or a path to a url"))
+				continue
+			}
+
+			if len(url) == 0 {
+				token, err := jee.Lexer(urlPath)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+
+				urlTree, err = jee.Parser(token)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+			}
+
+			bodyPath, err = util.ParseString(ruleI, "BodyPath")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+			token, err := jee.Lexer(bodyPath)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			bodyTree, err = jee.Parser(token)
+			if err != nil {
+				b.Error(err)
+				continue
 			}
 
 			rule := ruleI.(map[string]interface{})
@@ -98,11 +161,29 @@ func (b *WebRequest) Run() {
 		case msg := <-b.in:
 			var req *http.Request
 
-			if httpMethod != "GET" {
-				requestBody, err := json.Marshal(msg)
+			if urlTree != nil {
+				urlInterface, err := jee.Eval(urlTree, msg)
 				if err != nil {
 					b.Error(err)
-					break
+					continue
+				}
+				url, ok = urlInterface.(string)
+				if !ok {
+					b.Error(errors.New("couldn't assert url to a string"))
+					continue
+				}
+			}
+
+			if httpMethod == "POST" || httpMethod == "PUT" {
+				bodyInterface, err := jee.Eval(bodyTree, msg)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+				requestBody, err := json.Marshal(bodyInterface)
+				if err != nil {
+					b.Error(errors.New("couldn't marshal body"))
+					continue
 				}
 
 				req, err = http.NewRequest(httpMethod, url, bytes.NewReader(requestBody))
@@ -139,16 +220,30 @@ func (b *WebRequest) Run() {
 				break
 			}
 
-			b.out <- map[string]interface{}{
-				"Response": string(body),
+			var responseBody interface{}
+			err = json.Unmarshal(body, &responseBody)
+			if err != nil {
+				responseBody = string(body)
+			}
+
+			// always return body/headers/status even if it's nasty xml
+			outMsg := map[string]interface{}{
+				"body":    responseBody,
+				"headers": resp.Header,
+				"status":  resp.Status,
 			}
 
 			resp.Body.Close()
+
+			b.out <- outMsg
+
 		case resp := <-b.queryrule:
 			resp <- map[string]interface{}{
-				"Url":     url,
-				"Method":  httpMethod,
-				"Headers": headerRule,
+				"Url":      url,
+				"UrlPath":  urlPath,
+				"BodyPath": bodyPath,
+				"Method":   httpMethod,
+				"Headers":  headerRule,
 			}
 		}
 	}

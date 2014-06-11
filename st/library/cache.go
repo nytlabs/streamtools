@@ -4,10 +4,11 @@ import (
 	"container/heap"
 	"encoding/json"
 	"errors"
+	"time"
+
 	"github.com/nytlabs/gojee"                 // jee
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"   // util
-	"time"
 )
 
 // specify those channels we're going to use to communicate with streamtools
@@ -41,7 +42,7 @@ func (i item) MarshalJSON() ([]byte, error) {
 
 // Cacheup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Cache) Setup() {
-	b.Kind = "Cache"
+	b.Kind = "Core"
 	b.Desc = "stores a set of dictionary values queryable on key"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")

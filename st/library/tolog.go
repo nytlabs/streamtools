@@ -18,7 +18,7 @@ func NewToLog() blocks.BlockInterface {
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *ToLog) Setup() {
-	b.Kind = "ToLog"
+	b.Kind = "Core"
 	b.Desc = "quick way to view data in your streams; logs both to STDOUT and the GUI"
 	b.in = b.InRoute("in")
 	b.quit = b.Quit()

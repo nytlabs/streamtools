@@ -358,7 +358,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 							v,
 							s.Id,
 						})
-						c.send <- out
+						if err := c.write(websocket.TextMessage, out); err != nil {
+							return
+						}
 					}
 					for _, v := range s.manager.ListConnections() {
 						out, _ := json.Marshal(struct {
@@ -370,7 +372,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 							v,
 							s.Id,
 						})
-						c.send <- out
+						if err := c.write(websocket.TextMessage, out); err != nil {
+							return
+						}
 					}
 					s.manager.Mu.Unlock()
 				case "rule":
@@ -394,7 +398,9 @@ func (s *Server) serveUIStream(w http.ResponseWriter, r *http.Request) {
 						b,
 						s.Id,
 					})
-					c.send <- out
+					if err := c.write(websocket.TextMessage, out); err != nil {
+						return
+					}
 				}
 			}
 		}
@@ -407,9 +413,27 @@ func (s *Server) optionsHandler(w http.ResponseWriter, r *http.Request) {
 	s.apiWrap(w, r, 200, s.response("OK"))
 }
 
-// importHandler accepts a JSON through POST that updats the state of ST
-// It handles naming collisions by modifying the incoming block pattern.
-func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) ImportFile(filename string) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
+			Data: err.Error(),
+			Id:   s.Id,
+		}
+	}
+
+	err = s.importJSON(b)
+	if err != nil {
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.ERROR,
+			Data: err.Error(),
+			Id:   s.Id,
+		}
+	}
+}
+
+func (s *Server) importJSON(body []byte) error {
 	s.manager.Mu.Lock()
 	defer s.manager.Mu.Unlock()
 
@@ -417,18 +441,12 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		Blocks      []*BlockInfo
 		Connections []*ConnectionInfo
 	}
+
 	corrected := make(map[string]string)
 
-	body, err := ioutil.ReadAll(r.Body)
+	err := json.Unmarshal(body, &export)
 	if err != nil {
-		s.apiWrap(w, r, 500, s.response(err.Error()))
-		return
-	}
-
-	err = json.Unmarshal(body, &export)
-	if err != nil {
-		s.apiWrap(w, r, 500, s.response(err.Error()))
-		return
+		return err
 	}
 
 	for _, block := range export.Blocks {
@@ -449,8 +467,7 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		block.Id = corrected[block.Id]
 		eblock, err := s.manager.Create(block)
 		if err != nil {
-			s.apiWrap(w, r, 500, s.response(err.Error()))
-			return
+			return err
 		}
 
 		loghub.UI <- &loghub.LogMsg{
@@ -472,8 +489,7 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		conn.ToId = corrected[conn.ToId]
 		econn, err := s.manager.Connect(conn)
 		if err != nil {
-			s.apiWrap(w, r, 500, s.response(err.Error()))
-			return
+			return err
 		}
 
 		loghub.Log <- &loghub.LogMsg{
@@ -493,6 +509,23 @@ func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
 		Type: loghub.INFO,
 		Data: "Import OK",
 		Id:   s.Id,
+	}
+	return nil
+}
+
+// importHandler accepts a JSON through POST that updats the state of ST
+// It handles naming collisions by modifying the incoming block pattern.
+func (s *Server) importHandler(w http.ResponseWriter, r *http.Request) {
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
+	}
+
+	err = s.importJSON(body)
+	if err != nil {
+		s.apiWrap(w, r, 500, s.response(err.Error()))
+		return
 	}
 
 	s.apiWrap(w, r, 200, s.response("OK"))
@@ -593,8 +626,10 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 	s.manager.Mu.Lock()
 	defer s.manager.Mu.Unlock()
 
-	var coord *Coords
+	var update map[string]interface{}
+
 	vars := mux.Vars(r)
+	blockId := vars["id"]
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -602,35 +637,92 @@ func (s *Server) updateBlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.Unmarshal(body, &coord)
+	err = json.Unmarshal(body, &update)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	mblock, err := s.manager.UpdateBlock(vars["id"], coord)
+	if _, ok := update["X"]; ok {
+		c := &Coords{
+			X: update["X"].(float64),
+			Y: update["Y"].(float64),
+		}
 
+		mblock, err := s.manager.UpdateBlockPosition(blockId, c)
+
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
+
+		loghub.Log <- &loghub.LogMsg{
+			Type: loghub.UPDATE,
+			Data: fmt.Sprintf("Block %s", mblock.Id),
+			Id:   s.Id,
+		}
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.UPDATE_POSITION,
+			Data: mblock,
+			Id:   s.Id,
+		}
+	}
+
+	if _, ok := update["Id"]; ok {
+		mblock, mconnections, err := s.manager.UpdateBlockId(blockId, update["Id"].(string))
+		if err != nil {
+			s.apiWrap(w, r, 500, s.response(err.Error()))
+			return
+		}
+
+		blockId = mblock.Id
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.DELETE,
+			Data: struct {
+				Id string
+			}{
+				vars["id"],
+			},
+			Id: s.Id,
+		}
+
+		loghub.UI <- &loghub.LogMsg{
+			Type: loghub.CREATE,
+			Data: mblock,
+			Id:   s.Id,
+		}
+
+		for _, c := range mconnections {
+			loghub.UI <- &loghub.LogMsg{
+				Type: loghub.DELETE,
+				Data: struct {
+					Id string
+				}{
+					c.Id,
+				},
+				Id: s.Id,
+			}
+
+			loghub.UI <- &loghub.LogMsg{
+				Type: loghub.CREATE,
+				Data: c,
+				Id:   s.Id,
+			}
+		}
+	}
+
+	block, err := s.manager.GetBlock(blockId)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
 	}
 
-	jblock, err := json.Marshal(mblock)
+	jblock, err := json.Marshal(block)
 	if err != nil {
 		s.apiWrap(w, r, 500, s.response(err.Error()))
 		return
-	}
-
-	loghub.Log <- &loghub.LogMsg{
-		Type: loghub.UPDATE,
-		Data: fmt.Sprintf("Block %s", mblock.Id),
-		Id:   s.Id,
-	}
-
-	loghub.UI <- &loghub.LogMsg{
-		Type: loghub.UPDATE_POSITION,
-		Data: mblock,
-		Id:   s.Id,
 	}
 
 	s.apiWrap(w, r, 200, jblock)

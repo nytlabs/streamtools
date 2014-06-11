@@ -2,6 +2,7 @@ package library
 
 import (
 	"encoding/json"
+
 	"github.com/bitly/go-nsq"
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/util"
@@ -24,7 +25,7 @@ func NewFromNSQ() blocks.BlockInterface {
 }
 
 func (b *FromNSQ) Setup() {
-	b.Kind = "FromNSQ"
+	b.Kind = "Queues"
 	b.Desc = "reads from a topic in NSQ as specified in this block's rule"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
