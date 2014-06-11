@@ -92,6 +92,20 @@ $(function() {
         resizeReference();
     });
 
+    $('#ui-ref').on('click', '#ui-ref-sort a', function() {
+        $('#ui-ref-sort a').removeClass('ui-ref-btn-active');
+        $('#ui-ref-blockdefs ul').removeClass('ui-ref-active');
+
+        $(this).addClass('ui-ref-btn-active');
+        
+        if ($(this).hasClass('ui-ref-category-btn')) {
+            $("#ui-ref-category").addClass('ui-ref-active');
+        }
+        else if ($(this).hasClass('ui-ref-alphabetical-btn')) {
+            $("#ui-ref-alphabetical").addClass('ui-ref-active');
+        }
+    })
+
     // Click-to-add blocks from reference panel
     $("body").on("click", "#ui-ref-blockdefs .ref-add-block", function() {
         var blockType = $(this).attr('data-block-type');
