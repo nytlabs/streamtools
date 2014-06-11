@@ -183,36 +183,25 @@ $(document).ready(function() {
   }
 
   function kickOff() {
-    $.ajax({
-      type: "POST",
-      url: "http://localhost:7070/blocks/2/in", 
-      data: JSON.stringify({}),
-      contentType: "application/json; charset=utf-8",
-      dataType: "json",
-      success: function(data) {
-        $("#streamtools").show();
-        $("#leadPara").hide();
-        $("#buttonPara").hide();
-        $("#leadPara").html("Streamtools is now polling the MTA's lost property endpoint every 15 minutes. This page will update with new data as it comes in. ");
-        $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+    $.getJSON("http://localhost:7070/blocks/9/query", function(data) {
+      $("#streamtools").show();
+      $("#leadPara").hide();
+      $("#buttonPara").hide();
+      $("#leadPara").html("Streamtools is now polling the MTA's lost property endpoint every 15 minutes. This page will update with new data as it comes in. ");
+      $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
 
-        $("#leadPara").fadeIn("slow");
-        $("#buttonPara").fadeIn("slow");
-        setTimeout(getTotalLost, 5000);
-        setTimeout(getTotalClaimed, 5000);
-        setTimeout(grabKeys, 5000);
-        setTimeout(showCredits, 6000);
+      $("#leadPara").fadeIn("slow");
+      $("#buttonPara").fadeIn("slow");
+      setTimeout(getTotalLost, 5000);
+      setTimeout(getTotalClaimed, 5000);
+      setTimeout(grabKeys, 5000);
+      setTimeout(showCredits, 6000);
 
-        setInterval(getTotalLost, 30000);
-        setInterval(getTotalClaimed, 30000);
+      setInterval(getTotalLost, 30000);
+      setInterval(getTotalClaimed, 30000);
 
-        setInterval(grabKeys, 30000);
-        setInterval(randomCategory, 10000);
-
-      },
-      failure: function(err) {
-        console.log("failed kicking off the demo because: " + err);
-      }
+      setInterval(grabKeys, 30000);
+      setInterval(randomCategory, 10000);
     });
 }
 
