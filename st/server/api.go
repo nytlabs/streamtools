@@ -247,7 +247,7 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 				default:
 					loghub.Log <- &loghub.LogMsg{
 						Type: loghub.ERROR,
-						Data: "websocket send is blocked!",
+						Data: "websocket send is blocked! Exiting.",
 						Id:   s.Id,
 					}
 					return
