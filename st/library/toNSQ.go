@@ -37,7 +37,9 @@ func (b *ToNSQ) Run() {
 	var err error
 	var nsqdTCPAddrs string
 	var topic string
-	var writer *nsq.Writer
+	var writer *nsq.Producer
+
+	conf := nsq.NewConfig()
 
 	for {
 		select {
@@ -58,7 +60,11 @@ func (b *ToNSQ) Run() {
 				writer.Stop()
 			}
 
-			writer = nsq.NewWriter(nsqdTCPAddrs)
+			writer, err = nsq.NewProducer(nsqdTCPAddrs, conf)
+			if err != nil {
+				b.Error(err)
+				break
+			}
 
 		case msg := <-b.in:
 			if writer == nil {
@@ -67,13 +73,15 @@ func (b *ToNSQ) Run() {
 			msgBytes, err := json.Marshal(msg)
 			if err != nil {
 				b.Error(err)
+				break
 			}
 			if len(msgBytes) == 0 {
 				continue
 			}
-			_, _, err = writer.Publish(topic, msgBytes)
+			err = writer.Publish(topic, msgBytes)
 			if err != nil {
 				b.Error(err)
+				break
 			}
 
 		case <-b.quit:
