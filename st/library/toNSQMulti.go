@@ -38,10 +38,12 @@ func (b *ToNSQMulti) Run() {
 	var err error
 	var nsqdTCPAddrs string
 	var topic string
-	var writer *nsq.Writer
+	var writer *nsq.Producer
 	var batch [][]byte
 	interval := time.Duration(1 * time.Second)
 	maxBatch := 100
+
+	conf := nsq.NewConfig()
 
 	dump := time.NewTicker(interval)
 	for {
@@ -50,7 +52,7 @@ func (b *ToNSQMulti) Run() {
 			if writer == nil || len(batch) == 0 {
 				break
 			}
-			_, _, err = writer.MultiPublish(topic, batch)
+			err = writer.MultiPublish(topic, batch)
 			if err != nil {
 				b.Error(err.Error())
 			}
@@ -103,7 +105,11 @@ func (b *ToNSQMulti) Run() {
 
 			dump.Stop()
 			dump = time.NewTicker(interval)
-			writer = nsq.NewWriter(nsqdTCPAddrs)
+			writer, err = nsq.NewProducer(nsqdTCPAddrs, conf)
+			if err != nil {
+				b.Error(err)
+				break
+			}
 			topic = topic
 			nsqdTCPAddrs = nsqdTCPAddrs
 		case msg := <-b.in:
@@ -118,9 +124,9 @@ func (b *ToNSQMulti) Run() {
 			batch = append(batch, msgByte)
 
 			if len(batch) > maxBatch {
-				_, _, err := writer.MultiPublish(topic, batch)
+				err := writer.MultiPublish(topic, batch)
 				if err != nil {
-					b.Error(err.Error())
+					b.Error(err)
 					break
 				}
 				batch = nil
