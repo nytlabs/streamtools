@@ -13,7 +13,7 @@ type NSQSuite struct{}
 
 var nsqSuite = Suite(&NSQSuite{})
 
-func (s *NSQSuite) TestToFromNSQ(c *C) {
+func (s *NSQSuite) TestToNSQ(c *C) {
 	log.Println("testing toNSQ")
 
 	toB, toC := test_utils.NewBlock("testingToNSQ", "tonsq")
@@ -28,6 +28,9 @@ func (s *NSQSuite) TestToFromNSQ(c *C) {
 		toC.QueryChan <- &blocks.QueryMsg{MsgChan: toQueryChan, Route: "rule"}
 	})
 
+	outChan := make(chan *blocks.Msg)
+	toC.AddChan <- &blocks.AddChanMsg{Route: "1", Channel: outChan}
+
 	time.AfterFunc(time.Duration(2)*time.Second, func() {
 		nsqMsg := map[string]interface{}{"Foo": "Bar"}
 		postData := &blocks.Msg{Msg: nsqMsg, Route: "in"}
@@ -38,6 +41,25 @@ func (s *NSQSuite) TestToFromNSQ(c *C) {
 		toC.QuitChan <- true
 	})
 
+	for {
+		select {
+		case messageI := <-toQueryChan:
+			c.Assert(messageI, DeepEquals, ruleMsg)
+
+		case message := <-outChan:
+			log.Println("printing message from outChan:", message)
+
+		case err := <-toC.ErrChan:
+			if err != nil {
+				c.Errorf(err.Error())
+			} else {
+				return
+			}
+		}
+	}
+}
+
+func (s *NSQSuite) TestFromNSQ(c *C) {
 	log.Println("testing fromNSQ")
 
 	fromB, fromC := test_utils.NewBlock("testingfromNSQ", "fromnsq")
@@ -65,18 +87,9 @@ func (s *NSQSuite) TestToFromNSQ(c *C) {
 		case messageI := <-fromQueryChan:
 			c.Assert(messageI, DeepEquals, nsqSetup)
 
-		case messageI := <-toQueryChan:
-			c.Assert(messageI, DeepEquals, ruleMsg)
-
 		case message := <-outChan:
 			log.Println("printing message from outChan:", message)
 
-		case err := <-toC.ErrChan:
-			if err != nil {
-				c.Errorf(err.Error())
-			} else {
-				return
-			}
 		case err := <-fromC.ErrChan:
 			if err != nil {
 				c.Errorf(err.Error())
