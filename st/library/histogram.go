@@ -3,6 +3,7 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -72,6 +73,7 @@ func (b *Histogram) Run() {
 
 	histogram := map[string]*PriorityQueue{}
 	emptyByte := make([]byte, 0)
+MainLoop:
 	for {
 		select {
 		case ruleI := <-b.inrule:
@@ -105,22 +107,19 @@ func (b *Histogram) Run() {
 			}
 
 			var valueString string
+
 			switch v := v.(type) {
 			default:
 				b.Error(errors.New("unexpected value type"))
-				break
+				continue MainLoop
 			case string:
 				valueString = v
 			case int:
 				valueString = strconv.Itoa(v)
 			case bool:
 				valueString = strconv.FormatBool(v)
-			}
-
-			valueString, ok := v.(string)
-			if !ok {
-				b.Error(errors.New("nil value against" + path + " - ignoring"))
-				break
+			case float64:
+				valueString = strconv.FormatFloat(v, 'g', -1, 64)
 			}
 
 			if pq, ok := histogram[valueString]; ok {
