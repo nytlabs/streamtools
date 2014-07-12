@@ -3,6 +3,7 @@ package library
 import (
 	"container/heap"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/nytlabs/gojee"                 // jee
@@ -102,6 +103,20 @@ func (b *Histogram) Run() {
 				b.Error(err)
 				break
 			}
+
+			var valueString string
+			switch v := v.(type) {
+			default:
+				b.Error(errors.New("unexpected value type"))
+				break
+			case string:
+				valueString = v
+			case int:
+				valueString = strconv.Itoa(v)
+			case bool:
+				valueString = strconv.FormatBool(v)
+			}
+
 			valueString, ok := v.(string)
 			if !ok {
 				b.Error(errors.New("nil value against" + path + " - ignoring"))
