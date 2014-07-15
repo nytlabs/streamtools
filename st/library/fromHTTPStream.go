@@ -3,10 +3,10 @@ package library
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
@@ -35,68 +35,40 @@ func (b *FromHTTPStream) Setup() {
 	b.out = b.Broadcast()
 }
 
-// creates a persistent HTTP connection, emitting all messages from
-// the stream into streamtools
-func (b *FromHTTPStream) Run() {
-	var endpoint string
-	var ok bool
-	var auth string
+func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan interface{}, quitChan chan bool) {
+	transport := http.Transport{
+		Dial: dialTimeout,
+	}
+
+	client := &http.Client{
+		Transport: &transport,
+	}
+	var res *http.Response
 	var body bytes.Buffer
 	// these are the possible delimiters
 	d1 := []byte{125, 10} // this is }\n
 	d2 := []byte{13, 10}  // this is CRLF
-
-	client := &http.Client{}
-	var res *http.Response
-
+	req, err := http.NewRequest("GET", endpoint, nil)
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	if len(auth) > 0 {
+		req.SetBasicAuth(strings.Split(auth, ":")[0], strings.Split(auth, ":")[1])
+	}
+	log.Print("getting new response")
+	res, err = client.Do(req)
+	if err != nil {
+		b.Error(err)
+		return
+	}
+	defer res.Body.Close()
 	for {
 		select {
-		case ruleI := <-b.inrule:
-			rule := ruleI.(map[string]interface{})
-			endpoint, ok = rule["Endpoint"].(string)
-			if !ok {
-				b.Error("bad endpoint")
-				break
-			}
-			tauth, ok := rule["Auth"]
-			if !ok {
-				tauth = ""
-			}
-			auth, ok = tauth.(string)
-			if !ok {
-				b.Error("bad auth")
-				break
-			}
-
-			req, err := http.NewRequest("GET", endpoint, nil)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			if len(auth) > 0 {
-				req.SetBasicAuth(strings.Split(auth, ":")[0], strings.Split(auth, ":")[1])
-			}
-			res, err = client.Do(req)
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-			defer res.Body.Close()
-
-		case c := <-b.queryrule:
-			c <- map[string]interface{}{
-				"Endpoint": endpoint,
-				"Auth":     auth,
-			}
-		case <-b.quit:
-			// quit the block
+		case <-quitChan:
+			res.Body.Close()
 			return
-
 		default:
-			if res == nil {
-				time.Sleep(500 * time.Millisecond)
-				break
-			}
 			buffer := make([]byte, 5*1024)
 			p, err := res.Body.Read(buffer)
 
@@ -115,7 +87,7 @@ func (b *FromHTTPStream) Run() {
 				break
 			}
 			body.Write(buffer[:p])
-			if bytes.Equal(d1, buffer[p-2:p]) { // ended with }\n
+			if bytes.Equal(d1, buffer[p-2:p]) || bytes.Equal(d2, buffer[p-2:p]) { // ended with }\n
 				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
 					if len(blob) > 0 {
 						var outMsg interface{}
@@ -126,13 +98,71 @@ func (b *FromHTTPStream) Run() {
 								"data": blob,
 							}
 						}
-						b.out <- outMsg
+						select {
+						case dataChan <- outMsg:
+						default:
+							b.Error(errors.New("Discarding " + string(len(dataChan)) + "messages"))
+							continue
+						}
 					}
 				}
 				body.Reset()
-			} else if bytes.Equal(d2, buffer[p-2:p]) { // ended with CRLF which we don't care about
+			} else { // ended with CRLF which we don't care about
 				body.Reset()
 			}
+		}
+	}
+}
+
+// creates a persistent HTTP connection, emitting all messages from
+// the stream into streamtools
+func (b *FromHTTPStream) Run() {
+	var endpoint string
+	var ok bool
+	var auth string
+	// channels for the listener
+	dataChan := make(chan interface{}, 1000)
+	var quitChan chan bool
+
+	for {
+		select {
+		case ruleI := <-b.inrule:
+
+			if quitChan != nil {
+				quitChan <- true
+			}
+
+			rule := ruleI.(map[string]interface{})
+			endpoint, ok = rule["Endpoint"].(string)
+			if !ok {
+				b.Error("bad endpoint")
+				break
+			}
+			tauth, ok := rule["Auth"]
+			if !ok {
+				tauth = ""
+			}
+			auth, ok = tauth.(string)
+			if !ok {
+				b.Error("bad auth")
+				break
+			}
+
+			quitChan = make(chan bool)
+			go listen(b, endpoint, auth, dataChan, quitChan)
+
+		case c := <-b.queryrule:
+			c <- map[string]interface{}{
+				"Endpoint": endpoint,
+				"Auth":     auth,
+			}
+		case <-b.quit:
+			if quitChan != nil {
+				quitChan <- true
+			}
+			return
+		case msg := <-dataChan:
+			b.out <- msg
 		}
 	}
 }
