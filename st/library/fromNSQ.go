@@ -106,7 +106,7 @@ func (b *FromNSQ) Run() {
 			}
 
 			h := readWriteHandler{toOut, toError}
-			reader.SetHandler(h)
+			reader.AddHandler(h)
 
 			err = reader.ConnectToNSQLookupd(lookupdAddr)
 			if err != nil {
