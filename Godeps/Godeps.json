@@ -1,9 +1,6 @@
 {
-	"ImportPath": "github.com/nytlabs/streamtools",
+	"ImportPath": "github.com/nytlabs/streamtools/st/library",
 	"GoVersion": "go1.2.1",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "code.google.com/p/snappy-go/snappy",
@@ -12,13 +9,13 @@
 		},
 		{
 			"ImportPath": "github.com/bitly/go-nsq",
-			"Comment": "v0.3.7 - last stable version",
-			"Rev": "1de91317e5356b30730f558ca60cffc42be7620f"
+			"Comment": "v0.3.7-77-gb2198ed",
+			"Rev": "b2198ed17a69d00832430a59f927f3499775b01c"
 		},
 		{
 			"ImportPath": "github.com/bitly/go-simplejson",
-			"Comment": "v0.4.3-12-g408ce0b",
-			"Rev": "408ce0b284fa7ad36e3856fcde50022e885474b2"
+			"Comment": "v0.4.3-28-g3378bdc",
+			"Rev": "3378bdcb5cebedcbf8b5750edee28010f128fe24"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/redis",
@@ -91,12 +88,12 @@
 		},
 		{
 			"ImportPath": "labix.org/v2/mgo",
-			"Comment": "273",
+			"Comment": "274",
 			"Rev": "gustavo@niemeyer.net-20140312230639-09nxw5qqax6dlcqh"
 		},
 		{
 			"ImportPath": "launchpad.net/gocheck",
-			"Comment": "86",
+			"Comment": "87",
 			"Rev": "gustavo@niemeyer.net-20140127131816-zshobk1qqme626xw"
 		}
 	]

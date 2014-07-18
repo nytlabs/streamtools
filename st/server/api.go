@@ -230,15 +230,26 @@ func (s *Server) websocketHandler(w http.ResponseWriter, r *http.Request) {
 			ticker.Stop()
 			c.ws.Close()
 		}()
+
+		// start the writePump
+		go c.writePump()
+
 		for {
 			select {
 			case msg := <-bChan:
-				message, _ := json.Marshal(msg.Msg)
-				if err := c.write(websocket.TextMessage, message); err != nil {
+				message, err := json.Marshal(msg.Msg)
+				if err != nil {
+					s.apiWrap(w, r, 500, s.response("Attempted to send non JSON encoded message on websocket"))
 					return
 				}
-			case <-ticker.C:
-				if err := c.write(websocket.PingMessage, []byte{}); err != nil {
+				select {
+				case c.send <- message:
+				default:
+					loghub.Log <- &loghub.LogMsg{
+						Type: loghub.ERROR,
+						Data: "websocket send is blocked! Exiting.",
+						Id:   s.Id,
+					}
 					return
 				}
 			}

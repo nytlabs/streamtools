@@ -44,3 +44,9 @@ static_*
 # private examples
 examples/*s3*
 examples/*S3*
+
+# maybe godep thing?
+_workspace
+
+#releases
+release/

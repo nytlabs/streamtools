@@ -52,12 +52,14 @@ func (self readWriteHandler) HandleMessage(message *nsq.Message) error {
 
 // connects to an NSQ topic and emits each message into streamtools.
 func (b *FromNSQ) Run() {
-	var reader *nsq.Reader
+	var reader *nsq.Consumer
 	var topic, channel, lookupdAddr string
 	var maxInFlight float64
 	var err error
 	toOut := make(blocks.MsgChan)
 	toError := make(chan error)
+
+	conf := nsq.NewConfig()
 
 	for {
 		select {
@@ -96,17 +98,17 @@ func (b *FromNSQ) Run() {
 				reader.Stop()
 			}
 
-			reader, err = nsq.NewReader(topic, channel)
+			conf.Set("maxInFlight", maxInFlight)
+			reader, err = nsq.NewConsumer(topic, channel, conf)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			reader.SetMaxInFlight(int(maxInFlight))
 
 			h := readWriteHandler{toOut, toError}
 			reader.AddHandler(h)
 
-			err = reader.ConnectToLookupd(lookupdAddr)
+			err = reader.ConnectToNSQLookupd(lookupdAddr)
 			if err != nil {
 				b.Error(err)
 				continue
