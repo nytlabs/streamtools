@@ -39,11 +39,13 @@
 		},
 		{
 			"ImportPath": "github.com/mattbaird/elastigo/api",
-			"Rev": "99b8b36bcd656db996da4e9fbfddd40b81957780"
+			"Comment": "v1.0",
+			"Rev": "0c98885a2b2575c99882263dfc4bf6aae9079a63"
 		},
 		{
 			"ImportPath": "github.com/mattbaird/elastigo/core",
-			"Rev": "99b8b36bcd656db996da4e9fbfddd40b81957780"
+			"Comment": "v1.0",
+			"Rev": "0c98885a2b2575c99882263dfc4bf6aae9079a63"
 		},
 		{
 			"ImportPath": "github.com/mikedewar/aws4",
