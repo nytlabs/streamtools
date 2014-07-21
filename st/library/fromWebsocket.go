@@ -83,7 +83,7 @@ func (b *FromWebsocket) Run() {
 		case ruleI := <-b.inrule:
 			var err error
 			// set a parameter of the block
-			url, err := util.ParseString(ruleI, "url")
+			url, err = util.ParseString(ruleI, "url")
 			if err != nil {
 				b.Error(err)
 				continue
