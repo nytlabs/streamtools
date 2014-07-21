@@ -3,7 +3,6 @@ package library
 import (
 	"container/heap"
 	"errors"
-	"fmt"
 	"strconv"
 	"time"
 
