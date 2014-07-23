@@ -60,8 +60,6 @@ func (e *ToEmail) initClient() error {
 	var err error
 	e.client, err = newSMTPClient(e.username, e.password, e.host, e.port)
 	if err != nil {
-		// set the client to nil if we were unable to connect with it
-		e.client = nil
 		return err
 	}
 
@@ -87,13 +85,14 @@ func (e *ToEmail) closeClient() error {
 	if e.client == nil {
 		return nil
 	}
+
 	err = e.client.Quit()
+	// clear the client once we've quit the connection.
+	e.client = nil
 	if err != nil {
 		e.Error(fmt.Sprint("Unable to quit current SMTP connection: ", err))
 		return err
 	}
-	// clear the client once we've quit the connection.
-	e.client = nil
 	return nil
 }
 
@@ -102,18 +101,18 @@ func newSMTPClient(username, password, host string, port int) (*smtp.Client, err
 	addr := fmt.Sprintf("%s:%d", host, port)
 	client, err := smtp.Dial(addr)
 	if err != nil {
-		return client, err
+		return nil, err
 	}
 
 	// just saying HELO!
 	if err = client.Hello("localhost"); err != nil {
-		return client, err
+		return nil, err
 	}
 
 	// if the server can handle TLS, use it
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		if err = client.StartTLS(nil); err != nil {
-			return client, err
+			return nil, err
 		}
 	}
 
@@ -121,7 +120,7 @@ func newSMTPClient(username, password, host string, port int) (*smtp.Client, err
 	if ok, _ := client.Extension("AUTH"); ok {
 		auth := smtp.PlainAuth("", username, password, host)
 		if err = client.Auth(auth); err != nil {
-			return client, err
+			return nil, err
 		}
 	}
 
