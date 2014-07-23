@@ -36,7 +36,14 @@ type ToEmail struct {
 // NewToEmail is a simple factory for streamtools to make new blocks of this kind.
 // By default, the block is configured for Gmail.
 func NewToEmail() blocks.BlockInterface {
-	return &ToEmail{host: "smtp.gmail.com", port: 587, toPath: "to", fromPath: "from", subjectPath: "subject", msgPath: "msg"}
+	return &ToEmail{
+		host:        "smtp.gmail.com",
+		port:        587,
+		toPath:      "to",
+		fromPath:    "from",
+		subjectPath: "subject",
+		msgPath:     "msg",
+	}
 }
 
 // Setup is called once before running the block. We build up the channels and specify what kind of block this is.
@@ -53,6 +60,8 @@ func (e *ToEmail) initClient() error {
 	var err error
 	e.client, err = newSMTPClient(e.username, e.password, e.host, e.port)
 	if err != nil {
+		// set the client to nil if we were unable to connect with it
+		e.client = nil
 		return err
 	}
 
@@ -63,7 +72,7 @@ func (e *ToEmail) initClient() error {
 func (e *ToEmail) reconnect(wait time.Duration) error {
 	err := e.closeClient()
 	if err != nil {
-		e.Error(fmt.Sprintf("Problems closing SMTP client: %s", err.Error()))
+		e.Error(fmt.Sprintf("Problems closing SMTP client: %s", err))
 	}
 	// wait a moment before reconnecting
 	time.Sleep(wait)
@@ -80,10 +89,12 @@ func (e *ToEmail) closeClient() error {
 	}
 	err = e.client.Quit()
 	if err != nil {
-		// quit failed. try a simple close
-		err = e.client.Close()
+		e.Error(fmt.Sprint("Unable to quit current SMTP connection: ", err))
+		return err
 	}
-	return err
+	// clear the client once we've quit the connection.
+	e.client = nil
+	return nil
 }
 
 // newSMTPClient will connect, auth, say helo to the SMTP server and return the client.
@@ -268,13 +279,13 @@ func (e *ToEmail) Run() {
 		case msgI := <-e.inrule:
 			// get id/pw/host/port for SMTP
 			if err = e.parseAuthRules(msgI); err != nil {
-				e.Error(fmt.Sprint("Unable to parse SMTP credentials: %s", err.Error()))
+				e.Error(fmt.Sprint("Unable to parse SMTP credentials: ", err))
 				continue
 			}
 
 			// get the to,from,subject for email
 			if err = e.parseEmailRules(msgI); err != nil {
-				e.Error(fmt.Sprintf("Unable to parse email component path rules: %s", err.Error()))
+				e.Error(fmt.Sprint("Unable to parse email component path rules: ", err))
 				continue
 			}
 
@@ -291,7 +302,7 @@ func (e *ToEmail) Run() {
 		case <-e.quit:
 			if e.client != nil {
 				if err = e.closeClient(); err != nil {
-					e.Error(fmt.Sprintf("Unable to close SMTP connection: %s", err.Error()))
+					e.Error(fmt.Sprint("Unable to close SMTP connection: ", err))
 				}
 			}
 			return
@@ -307,7 +318,7 @@ func (e *ToEmail) Run() {
 			var from, to string
 			from, to, email, err = e.buildEmail(msg)
 			if err != nil {
-				e.Error(fmt.Sprintf("Unable to parse message for emailing: %s", err.Error()))
+				e.Error(fmt.Sprint("Unable to parse message for emailing: ", err))
 				continue
 			}
 
@@ -331,7 +342,7 @@ func (e *ToEmail) Run() {
 				time.Sleep(time.Duration(retries*errWait) * time.Second)
 			}
 			if !emlSent {
-				e.Error(fmt.Sprintf("Unable to send email: %s", err.Error()))
+				e.Error(fmt.Sprint("Unable to send email: ", err))
 			}
 
 			// reset the connection and the counter every 50 msgs or if theres been a send error.
