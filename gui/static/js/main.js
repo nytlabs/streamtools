@@ -110,22 +110,22 @@ $(function() {
     });
 
     // Displays exported pattern in a copy-able window pane
-    $("body").on("click", "#ui-ref-export", function(e) {
-        e.preventDefault;
+    $("body").on("click", "#button-export", function(e) {
+        e.preventDefault();
         $.getJSON('/export', function(pattern) {
             createStaticPanel('export', JSON.stringify(pattern));
         });
     });
 
     // Displays a panel with textarea you can paste a pattern into
-    $("body").on("click", "#ui-ref-import", function(e) {
-        e.preventDefault;
+    $("body").on("click", "#button-import a", function(e) {
+        e.preventDefault();
         createImportPanel('enter a pattern', '');
     });
 
     // Import the pattern into streamtools
     $("body").on("click", ".import", function(e) {
-        e.preventDefault;
+        e.preventDefault();
         pattern = $(this).parent().find(".import-pattern").val();
         $.ajax({
             url: '/import',
@@ -138,14 +138,14 @@ $(function() {
     });
 
     // "Are you sure?" you want to clear streamtools yes/no
-    $("body").on("click", "#ui-ref-clear", function(e) {
-        e.preventDefault;
+    $("body").on("click", "#button-clear", function(e) {
+        e.preventDefault();
         $(this).parent().append("<div class='confirm'>Are you sure?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
     });
 
     // clears streamtools upon confirmation
     $("body").on("click", ".confirm-yes", function(e) {
-        e.preventDefault;
+        e.preventDefault();
         $.ajax({
             url: '/clear',
             type: 'GET',
@@ -155,7 +155,7 @@ $(function() {
         });
     });
     $("body").on("click", ".confirm-no", function(e) {
-        e.preventDefault;
+        e.preventDefault();
         $("div.confirm").remove();
     });
 
