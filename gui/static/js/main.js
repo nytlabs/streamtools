@@ -140,7 +140,9 @@ $(function() {
     // "Are you sure?" you want to clear streamtools yes/no
     $("body").on("click", "#button-clear", function(e) {
         e.preventDefault();
-        $(this).parent().append("<div class='confirm'>Are you sure?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
+        if ($(".confirm").length === 0) {
+            $(this).parent().append("<div class='confirm'>Clear all?<br><span class='confirm-yes'>yes</span> <span class='confirm-no'>no</span></div>");
+        }
     });
 
     // clears streamtools upon confirmation
@@ -914,7 +916,7 @@ $(function() {
         // the click events for nodes and idRects are exactly the same
         // and should not be duplicated in future versions.
         // both of them allow selection on single click and the opening
-        // of the contoller on a double cick. 
+        // of the contoller on a double cick.
 
         idRects
             .attr('x', 0)
