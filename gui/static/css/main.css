@@ -91,14 +91,14 @@
 }
 
 #ui-ref-toggle {
-  width: 28px;
+  cursor:pointer;
+  width:28px;
+  height:37px;
+  font-size:12px;
   border-right: 1px solid #999;
   border-bottom: 1px solid #999;
   border-left: none;
   border-top: none;
-  font-family: 'entypo';
-  font-size: 3em;
-  line-height: 1;
   color: #000;
   background-color: transparent;
 }
@@ -109,10 +109,9 @@
 
 .ui-ref-buttons a {
   width: 28px;
-  height:36px;
-  font-family: 'entypo';
-  font-size: 28px;
-  line-height: 1.25;
+  height: 27px;
+  padding-top:9px;
+  font-size:18px;
   color: #000;
   border-right: 1px solid #999;
   border-bottom: 1px solid #999;
