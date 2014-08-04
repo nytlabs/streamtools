@@ -23,7 +23,7 @@ func NewToAMQP() blocks.BlockInterface {
 }
 
 func (b *ToAMQP) Setup() {
-	b.Kind = "Queues"
+	b.Kind = "Queue I/O"
 	b.Desc = "send messages to an exchange on an AMQP broker"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

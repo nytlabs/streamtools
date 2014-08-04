@@ -23,7 +23,7 @@ func NewFromAMQP() blocks.BlockInterface {
 }
 
 func (b *FromAMQP) Setup() {
-	b.Kind = "Queues"
+	b.Kind = "Queue I/O"
 	b.Desc = "reads from a topic on AMQP broker as specified in this block's rules"
 	b.inrule = b.InRoute("rule")
 	b.queryrule = b.QueryRoute("rule")
