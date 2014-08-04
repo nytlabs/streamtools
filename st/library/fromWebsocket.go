@@ -65,8 +65,10 @@ func (self recvHandler) recv(ws *websocket.Conn, out blocks.MsgChan) {
 func (b *FromWebsocket) Run() {
 	var ws *websocket.Conn
 	var url string
+	to, _ := time.ParseDuration("10s")
 	var handshakeDialer = &websocket.Dialer{
-		Subprotocols: []string{"p1", "p2"},
+		Subprotocols:     []string{"p1", "p2"},
+		HandshakeTimeout: to,
 	}
 	listenWS := make(blocks.MsgChan)
 	wsHeader := http.Header{"Origin": {"http://localhost/"}}
