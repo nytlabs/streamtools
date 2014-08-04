@@ -56,7 +56,6 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 	if len(auth) > 0 {
 		req.SetBasicAuth(strings.Split(auth, ":")[0], strings.Split(auth, ":")[1])
 	}
-	log.Print("getting new response")
 	res, err = client.Do(req)
 	if err != nil {
 		b.Error(err)
@@ -87,6 +86,7 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 				break
 			}
 			body.Write(buffer[:p])
+
 			if bytes.Equal(d1, buffer[p-2:p]) || bytes.Equal(d2, buffer[p-2:p]) { // ended with }\n
 				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
 					if len(blob) > 0 {
@@ -106,8 +106,6 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 						}
 					}
 				}
-				body.Reset()
-			} else { // ended with CRLF which we don't care about
 				body.Reset()
 			}
 		}
