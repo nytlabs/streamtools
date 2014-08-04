@@ -3,6 +3,7 @@ package tests
 import (
 	"log"
 	"time"
+	"sort"
 
 	"github.com/nytlabs/streamtools/st/blocks"
 	"github.com/nytlabs/streamtools/st/loghub"
@@ -69,7 +70,8 @@ func (s *CacheSuite) TestCache(c *C) {
 		case messageI := <-keysChan:
 			message := messageI.(map[string]interface{})
 			keys := message["keys"].([]string)
-			c.Assert(keys, DeepEquals, []string{"The New York Times", "Hacks/Hackers"})
+			sort.Strings(keys)
+			c.Assert(keys, DeepEquals, []string{"Hacks/Hackers", "The New York Times"})
 
 		case messageI := <-valuesChan:
 			message := messageI.(map[string]interface{})
