@@ -60,6 +60,7 @@ func (b *WebRequest) Run() {
 	var ok bool
 
 	url := ""
+	requestUrl := ""
 	var urlPath string
 	var urlTree *jee.TokenTree
 
@@ -110,6 +111,10 @@ func (b *WebRequest) Run() {
 			if len(url) != 0 && len(urlPath) != 0 {
 				b.Error(errors.New("Specify either a url or a path to a url"))
 				continue
+			}
+
+			if len(urlPath) == 0 {
+				urlTree = nil
 			}
 
 			if len(url) == 0 {
@@ -167,11 +172,17 @@ func (b *WebRequest) Run() {
 					b.Error(err)
 					continue
 				}
-				url, ok = urlInterface.(string)
+				// use the url found via rule.UrlPath in the request
+				requestUrl, ok = urlInterface.(string)
 				if !ok {
 					b.Error(errors.New("couldn't assert url to a string"))
 					continue
 				}
+			}
+
+			// use the rule.Url in the request
+			if len(url) != 0 {
+				requestUrl = url
 			}
 
 			if httpMethod == "POST" || httpMethod == "PUT" {
@@ -186,14 +197,14 @@ func (b *WebRequest) Run() {
 					continue
 				}
 
-				req, err = http.NewRequest(httpMethod, url, bytes.NewReader(requestBody))
+				req, err = http.NewRequest(httpMethod, requestUrl, bytes.NewReader(requestBody))
 				if err != nil {
 					b.Error(err)
 					break
 				}
 
 			} else {
-				req, err = http.NewRequest(httpMethod, url, nil)
+				req, err = http.NewRequest(httpMethod, requestUrl, nil)
 				if err != nil {
 					b.Error(err)
 					break
