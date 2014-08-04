@@ -25,7 +25,7 @@ type sqsMessage struct {
 }
 
 func dialTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, time.Duration(2*time.Second))
+	return net.DialTimeout(network, addr, time.Duration(10*time.Second))
 }
 
 func (b *FromSQS) listener() {
