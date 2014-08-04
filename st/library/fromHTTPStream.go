@@ -87,8 +87,13 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 				break
 			}
 			body.Write(buffer[:p])
+			log.Println("BUFFER", string(buffer))
+			log.Println("BUFFER UP TO P", string(buffer[:p]))
+
 			if bytes.Equal(d1, buffer[p-2:p]) || bytes.Equal(d2, buffer[p-2:p]) { // ended with }\n
 				for _, blob := range bytes.Split(body.Bytes(), []byte{10}) { // split on new line in case there are multuple messages per buffer
+					log.Println("BLOB", string(blob))
+					log.Println("BODY", string(body.Bytes()))
 					if len(blob) > 0 {
 						var outMsg interface{}
 						err := json.Unmarshal(blob, &outMsg)
@@ -106,8 +111,6 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 						}
 					}
 				}
-				body.Reset()
-			} else { // ended with CRLF which we don't care about
 				body.Reset()
 			}
 		}
