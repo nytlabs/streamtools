@@ -2,7 +2,6 @@ package tests
 
 import (
 	"log"
-	"reflect"
 	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks"
@@ -36,10 +35,7 @@ func (s *FilterSuite) TestFilter(c *C) {
 	for {
 		select {
 		case messageI := <-queryOutChan:
-			if !reflect.DeepEqual(messageI, ruleMsg) {
-				c.Fail()
-			}
-
+			c.Assert(messageI, DeepEquals, ruleMsg)
 		case message := <-outChan:
 			log.Println(message)
 
