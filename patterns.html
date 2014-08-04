@@ -1,0 +1,57 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>streamtools - patterns library</title>
+  <script src="js/jquery-2.1.0.min.js"></script>
+  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap-theme.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="js/bootstrap.min.js"></script>
+  <script src="js/main.js"></script>
+
+  <script type="text/javascript">
+  function foo(response) {
+    var data = response.data;
+    // filter out everything but json files
+    var files = data.filter(function(item) { return item.type == "file" && item.path.indexOf(".json") >= 0 }); 
+    $.each(files, function(i, pattern) {
+      splitPath = pattern.path.split("/");
+      row = "<tr><td><a href=\"http://github.com/nytlabs/streamtools/blob/master/" + pattern.path + "\">" + splitPath[1] + "</a></td></tr>";
+      $("#patterns-list").append(row);
+    });
+  }
+
+  var script = document.createElement('script');
+  script.src = 'https://api.github.com/repos/nytlabs/streamtools/contents/examples?callback=foo';
+
+  document.getElementsByTagName('head')[0].appendChild(script);
+  </script>
+</head>
+<body>
+  <div class="jumbotron">
+    <div class="container">
+      <img class="logo-header" src="img/logo.png">
+      <h1>streamtools</h1>
+      <p>a graphical toolkit for working with streams of data</p>
+      <a href="https://github.com/nytlabs/streamtools/releases" class="btn btn-download">download</a>
+      <a href="demos" class="btn btn-demos">view demos</a>
+      <a href="docs" class="btn btn-learn">documentation</a>
+    </div>
+  </div> <!--/jumbotron-->
+
+  <div class="container-fluid intro">
+    <div class="container">
+      <div class="row">
+        <h2>Explore, analyse, modify, and learn from streams of data.</h2>
+        <table class="table">
+          <tbody id="patterns-list">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <br>
+</div>
+</body>
+</html>
