@@ -25,7 +25,7 @@ func NewToNSQMulti() blocks.BlockInterface {
 }
 
 func (b *ToNSQMulti) Setup() {
-	b.Kind = "Queues"
+	b.Kind = "Queue I/O"
 	b.Desc = "sends messages to an NSQ topic in batches"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

@@ -1,181 +1,198 @@
 {
-  "Connections": [
-    {
-      "ToRoute": "in",
-      "ToId": "20",
-      "FromId": "8",
-      "Id": "21"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "13",
-      "FromId": "20",
-      "Id": "23"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "5",
-      "FromId": "20",
-      "Id": "6"
-    },
-    {
-      "ToRoute": "poll",
-      "ToId": "13",
-      "FromId": "15",
-      "Id": "16"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "12",
-      "FromId": "5",
-      "Id": "9"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "7",
-      "FromId": "20",
-      "Id": "22"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "1",
-      "FromId": "35",
-      "Id": "36"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "8",
-      "FromId": "1",
-      "Id": "4"
-    },
-    {
-      "ToRoute": "in",
-      "ToId": "1",
-      "FromId": "2",
-      "Id": "3"
-    }
-  ],
   "Blocks": [
     {
-      "Position": {
-        "Y": 207,
-        "X": 142
-      },
-      "Rule": {
-        "Path": ".id"
-      },
-      "Type": "dedupe",
-      "Id": "20"
-    },
-    {
-      "Position": {
-        "Y": 10,
-        "X": 145
-      },
-      "Rule": null,
+      "Id": "35",
       "Type": "bang",
-      "Id": "35"
+      "Rule": null,
+      "Position": {
+        "X": 145,
+        "Y": 10
+      }
     },
     {
-      "Position": {
-        "Y": 318,
-        "X": 125
-      },
-      "Rule": {
-        "Interval": "10s"
-      },
-      "Type": "ticker",
-      "Id": "15"
-    },
-    {
-      "Position": {
-        "Y": 397,
-        "X": 27
-      },
-      "Rule": {
-        "Window": "1m0s"
-      },
-      "Type": "count",
-      "Id": "13"
-    },
-    {
-      "Position": {
-        "Y": 80,
-        "X": 46
-      },
-      "Rule": {
-        "UrlPath": "",
-        "Url": "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
-        "Method": "GET",
-        "Headers": {},
-        "BodyPath": "."
-      },
+      "Id": "1",
       "Type": "webRequest",
-      "Id": "1"
+      "Rule": {
+        "BodyPath": ".",
+        "Headers": {},
+        "Method": "GET",
+        "Url": "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
+        "UrlPath": ""
+      },
+      "Position": {
+        "X": 46,
+        "Y": 80
+      }
     },
     {
-      "Position": {
-        "Y": 147,
-        "X": 77
+      "Id": "2",
+      "Type": "ticker",
+      "Rule": {
+        "Interval": "15m0s"
       },
+      "Position": {
+        "X": 59,
+        "Y": 4
+      }
+    },
+    {
+      "Id": "8",
+      "Type": "unpack",
       "Rule": {
         "Path": ".body.features"
       },
-      "Type": "unpack",
-      "Id": "8"
+      "Position": {
+        "X": 77,
+        "Y": 147
+      }
     },
     {
-      "Position": {
-        "Y": 268,
-        "X": 199
-      },
-      "Rule": {
-        "UrlPath": ".properties.detail",
-        "Url": "http://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/pr14148004.geojson",
-        "Method": "GET",
-        "Headers": {},
-        "BodyPath": "."
-      },
+      "Id": "5",
       "Type": "webRequest",
-      "Id": "5"
+      "Rule": {
+        "BodyPath": ".",
+        "Headers": {},
+        "Method": "GET",
+        "Url": "",
+        "UrlPath": ".properties.detail"
+      },
+      "Position": {
+        "X": 232,
+        "Y": 315
+      }
     },
     {
-      "Position": {
-        "Y": 336,
-        "X": 239
-      },
+      "Id": "12",
+      "Type": "map",
       "Rule": {
+        "Additive": false,
         "Map": {
-          "map": ".body.properties.products.shakemap[0].contents['download/tvmap.jpg']",
-          "id": ".body.id"
-        },
-        "Additive": false
+          "id": ".body.id",
+          "map": ".body.properties.products.shakemap[0].contents['download/tvmap.jpg']"
+        }
       },
-      "Type": "map",
-      "Id": "12"
+      "Position": {
+        "X": 164,
+        "Y": 393
+      }
     },
     {
-      "Position": {
-        "Y": 264.9962158203125,
-        "X": 20.976715087890625
-      },
-      "Rule": {
-        "Map": {},
-        "Additive": true
-      },
-      "Type": "map",
-      "Id": "7"
-    },
-    {
-      "Position": {
-        "Y": 13,
-        "X": 48
-      },
-      "Rule": {
-        "Interval": "1m0s"
-      },
+      "Id": "15",
       "Type": "ticker",
-      "Id": "2"
+      "Rule": {
+        "Interval": "10s"
+      },
+      "Position": {
+        "X": 125,
+        "Y": 318
+      }
+    },
+    {
+      "Id": "13",
+      "Type": "count",
+      "Rule": {
+        "Window": "1m0s"
+      },
+      "Position": {
+        "X": 27,
+        "Y": 397
+      }
+    },
+    {
+      "Id": "20",
+      "Type": "dedupe",
+      "Rule": {
+        "Path": ".id"
+      },
+      "Position": {
+        "X": 134,
+        "Y": 208
+      }
+    },
+    {
+      "Id": "14",
+      "Type": "filter",
+      "Rule": {
+        "Filter": "$exists(.properties, 'detail')"
+      },
+      "Position": {
+        "X": 205,
+        "Y": 262
+      }
+    },
+    {
+      "Id": "7",
+      "Type": "map",
+      "Rule": {
+        "Additive": true,
+        "Map": {}
+      },
+      "Position": {
+        "X": 20.976715087890625,
+        "Y": 264.9962158203125
+      }
+    }
+  ],
+  "Connections": [
+    {
+      "Id": "36",
+      "FromId": "35",
+      "ToId": "1",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "23",
+      "FromId": "20",
+      "ToId": "13",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "10",
+      "FromId": "2",
+      "ToId": "1",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "4",
+      "FromId": "1",
+      "ToId": "8",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "22",
+      "FromId": "20",
+      "ToId": "7",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "16",
+      "FromId": "15",
+      "ToId": "13",
+      "ToRoute": "poll"
+    },
+    {
+      "Id": "18",
+      "FromId": "14",
+      "ToId": "5",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "21",
+      "FromId": "8",
+      "ToId": "20",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "9",
+      "FromId": "5",
+      "ToId": "12",
+      "ToRoute": "in"
+    },
+    {
+      "Id": "17",
+      "FromId": "20",
+      "ToId": "14",
+      "ToRoute": "in"
     }
   ]
 }

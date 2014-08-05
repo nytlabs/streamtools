@@ -24,7 +24,7 @@ func NewToNSQ() blocks.BlockInterface {
 }
 
 func (b *ToNSQ) Setup() {
-	b.Kind = "Queues"
+	b.Kind = "Queue I/O"
 	b.Desc = "send messages to an NSQ topic"
 	b.in = b.InRoute("in")
 	b.inrule = b.InRoute("rule")

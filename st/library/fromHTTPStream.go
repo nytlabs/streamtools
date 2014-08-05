@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -51,7 +50,7 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		b.Error(err)
-		return
+		goto WaitForDeath
 	}
 	if len(auth) > 0 {
 		req.SetBasicAuth(strings.Split(auth, ":")[0], strings.Split(auth, ":")[1])
@@ -59,9 +58,10 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 	res, err = client.Do(req)
 	if err != nil {
 		b.Error(err)
-		return
+		goto WaitForDeath
 	}
 	defer res.Body.Close()
+Loop:
 	for {
 		select {
 		case <-quitChan:
@@ -72,9 +72,8 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 			p, err := res.Body.Read(buffer)
 
 			if err != nil && err.Error() == "EOF" {
-				log.Println("End of stream reached!")
-				res = nil
-				continue
+				b.Error(err)
+				break Loop
 			}
 
 			if err != nil {
@@ -110,6 +109,8 @@ func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan inter
 			}
 		}
 	}
+WaitForDeath:
+	<-quitChan
 }
 
 // creates a persistent HTTP connection, emitting all messages from
