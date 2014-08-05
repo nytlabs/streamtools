@@ -91,16 +91,47 @@
 }
 
 #ui-ref-toggle {
-  width: 28px;
+  cursor:pointer;
+  width:28px;
+  height:37px;
+  font-size:12px;
   border-right: 1px solid #999;
   border-bottom: 1px solid #999;
   border-left: none;
   border-top: none;
-  font-family: 'entypo';
-  font-size: 3em;
-  line-height: 1;
   color: #000;
   background-color: transparent;
+}
+
+.ui-ref-buttons {
+  margin-left:28px;
+}
+
+.ui-ref-buttons a {
+  width: 28px;
+  height: 27px;
+  padding-top:9px;
+  font-size:18px;
+  color: #000;
+  border-right: 1px solid #999;
+  border-bottom: 1px solid #999;
+  text-align:center;
+  display:inline-block;
+}
+
+.ui-ref-buttons ul {
+  padding: 0;
+  margin: 0;
+  font-size:0;
+  list-style-type: none;
+}
+
+.confirm {
+  font-size:12px;
+}
+
+.ui-ref-buttons li {
+  display:inline;
 }
 
 #ui-ref .ui-ref-action {
@@ -186,7 +217,7 @@ div.blockMsg {
 }
 
 .unselectable {
-    -webkit-user-select: none; /* Chrome/Safari */        
+    -webkit-user-select: none; /* Chrome/Safari */
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+ */
     -o-user-select: none;
@@ -291,7 +322,7 @@ div.blockMsg {
     position: absolute;
     background: rgba(175,170,175,1);
     border: 1px solid black;
-    display: none; 
+    display: none;
 }
 
 
@@ -334,7 +365,7 @@ div.blockMsg {
 .rule, .info-text{
     font-family: Monaco, "Courier New", Courier, monospace;
     font-size: 10px;
-    white-space: pre; 
+    white-space: pre;
     padding: 5px;
     overflow: auto;
 }
@@ -360,7 +391,7 @@ div.blockMsg {
     margin-top: 5px;
 }
 
-.controller .update:hover {
+.controller .update:hover, .import:hover {
     background: rgba(96,152,222,1);
     cursor: pointer;
 }
@@ -435,7 +466,7 @@ div.blockMsg {
   fill:#a3a3a3;
   font-size:1.25em;
   transition: all .75s ease;
-  -webkit-user-select: none; /* Chrome/Safari */        
+  -webkit-user-select: none; /* Chrome/Safari */
   -moz-user-select: none; /* Firefox */
   -ms-user-select: none; /* IE10+ */
   -o-user-select: none;

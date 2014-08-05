@@ -5,6 +5,7 @@
 <meta name="google" content="notranslate">
 <meta http-equiv="Content-Language" content="en" />
 <link rel="stylesheet" type="text/css" href="static/css/main.css">
+<link rel="stylesheet" type="text/css" href="static/css/picol.css">
 <script src="static/lib/d3.v3.min.js"></script>
 <script src="static/lib/jquery-2.1.0.min.js"></script>
 <script src="static/lib/underscore-min.js"></script>
@@ -18,7 +19,7 @@
       <ul>
         <%
           categories = _.uniq(_.pluck(data, "category").sort());
-          _.each(categories, function(category, i){ 
+          _.each(categories, function(category, i){
         %>
             <li class="ref-block-cat"><%= category %></li>
         <%
@@ -48,7 +49,7 @@
 
 <script type="text/template" id="controller-template">
     <%
-    _.each(data.Rule, function(v, k){ 
+    _.each(data.Rule, function(v, k){
     %>
         <div class="name"><%= k %></div>
     <%
@@ -72,7 +73,7 @@
                 } else {
     %>
          <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="script" value="<%= v %>">
-    <%             
+    <%
                 }
                 break;
                 case 'number':
@@ -80,7 +81,7 @@
         <input class="rule" type="text" id="<%= 'c_' + data.Id + '_' + k %>" data-type="number" value="<%= v %>">
     <%
                 break;
-                case 'boolean': 
+                case 'boolean':
     %>
         <select id="<%= 'c_' + data.Id + '_' + k %>" data-type="boolean" >
             <option value="false" <%= !v ? 'selected' : '' %> >false</option>
@@ -95,18 +96,25 @@
     <%
                 break;
             }
-    }) 
+    })
     %>
 </script>
 
 </head>
 <body>
 <div id="ui-ref">
-  <div id="ui-ref-control">
-    <button id="ui-ref-toggle">&#9776;</button>
-  </div>
-  <div id="ui-ref-contents">
-  </div>
+    <div class="ui-ref-buttons">
+        <ul>
+            <li id="button-import"><a href="/import" title="import"><i class="picol_cut"></i></a></li>
+            <li id="button-export"><a href="/export" title="export" target="_new"><i class="picol_paste"></i></a></li>
+            <li id="button-clear"><a href="/clear" title="clear"><i class="picol_cancel"></i></a></li>
+        </ul>
+    </div>
+    <div id="ui-ref-control">
+        <button id="ui-ref-toggle"><i class="picol_controls_stop"></i></button>
+    </div>
+    <div id="ui-ref-contents">
+    </div>
 </div>
 
 <div id="log"></div>
