@@ -126,7 +126,7 @@ $(function() {
     // Import the pattern into streamtools
     $("body").on("click", ".import", function(e) {
         e.preventDefault();
-        pattern = $(this).parent().find(".import-pattern").val();
+        pattern = $(this).parent().prev().find(".import-pattern").val();
         $.ajax({
             url: '/import',
             type: 'POST',
@@ -473,12 +473,15 @@ $(function() {
         body = info.append('div')
             .classed('body', true);
 
+        var bottom = info.append('div')
+            .classed('bottom', true)
+
         body.append('textarea')
             .classed('info-text', true)
             .classed('import-pattern', true)
             .text(data);
 
-        body.append('div')
+        bottom.append('div')
             .classed('import', true)
             .text('import');
     }

@@ -391,7 +391,7 @@ div.blockMsg {
     margin-top: 5px;
 }
 
-.controller .update:hover {
+.controller .update:hover, .import:hover {
     background: rgba(96,152,222,1);
     cursor: pointer;
 }
