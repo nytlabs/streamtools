@@ -63,6 +63,7 @@ var Blocks = map[string]func() blocks.BlockInterface{
 	"unpack":             NewUnpack,
 	"webRequest":         NewWebRequest,
 	"zipf":               NewZipf,
+	"exponential":        NewExponential,
 }
 
 var BlockDefs = map[string]*blocks.BlockDef{}
