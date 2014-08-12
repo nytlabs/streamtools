@@ -128,7 +128,7 @@ func (b *Timeseries) Run() {
 			}
 
 			//t := float64(time.Now().Add(-lag).Unix())
-			t := float64(time.Now().Unix())
+			t := float64(time.Now().UnixNano() / 1000000)
 
 			d := tsDataPoint{
 				Timestamp: t,
