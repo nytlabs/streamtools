@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+	"log"
 	"math"
 
 	"github.com/nytlabs/gojee"                 // jee
@@ -65,13 +66,21 @@ func newHistogram(hI interface{}) (histogram, bool) {
 		}
 		k, ok := kI.(string)
 		if !ok {
+			log.Println("could not assert key to string")
 			return nil, ok
 		}
-		v, ok := vI.(int)
-		if !ok {
+
+		var v float64
+		switch vI := vI.(type) {
+		default:
+			log.Println("could not understand histogram bucket value")
 			return nil, ok
+		case int:
+			v = float64(vI)
+		case float64:
+			v = vI
 		}
-		if v == 0 {
+		if v == 0.0 {
 			out[k] = eps
 		} else {
 			out[k] = float64(v)
