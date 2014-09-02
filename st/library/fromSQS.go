@@ -2,161 +2,85 @@ package library
 
 import (
 	"encoding/json"
-	"encoding/xml"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
 
-	"github.com/mikedewar/aws4"
+	"github.com/goamz/goamz/aws"
+	"github.com/goamz/goamz/sqs"
+
+	"strconv"
+	"sync"
+
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 	"github.com/nytlabs/streamtools/st/util"
-	//"reflect"
-	//"strings"
-	"sync"
-	"time"
 )
 
-type sqsMessage struct {
-	Body          []string `xml:"ReceiveMessageResult>Message>Body"`
-	ReceiptHandle []string `xml:"ReceiveMessageResult>Message>ReceiptHandle"`
-}
-
-func dialTimeout(network, addr string) (net.Conn, error) {
-	return net.DialTimeout(network, addr, time.Duration(10*time.Second))
-}
-
+// lots of this code stolen brazenly from JP https://github.com/jprobinson
 func (b *FromSQS) listener() {
-	log.Println("Starting new SQS listener")
 	b.lock.Lock()
-	lAuth := map[string]string{}
-	var err error
-	for k, _ := range b.auth {
-		lAuth[k], err = util.ParseString(b.auth, k)
-		if err != nil {
-			b.Error(err)
-			break
-		}
+	accessKey, ok := b.auth["AccessKey"].(string)
+	if !ok {
+		b.Error("could not assert AccessKey to a string")
+		return
 	}
-	b.listening = true
-	b.lock.Unlock()
-
-	transport := http.Transport{
-		Dial: dialTimeout,
+	accessSecret, ok := b.auth["AccessSecret"].(string)
+	if !ok {
+		b.Error("could not assert AccessSecret to a string")
+		return
 	}
-
-	httpclient := &http.Client{
-		Transport: &transport,
+	queueName, ok := b.auth["QueueName"].(string)
+	if !ok {
+		b.Error("could not assert queue name to a string")
+		return
 	}
-
-	keys := &aws4.Keys{
-		AccessKey: lAuth["AccessKey"],
-		SecretKey: lAuth["AccessSecret"],
+	maxNstring, ok := b.auth["MaxNumberOfMessages"].(string)
+	if !ok {
+		b.Error("could not assert MaxNumberOfMessages to a string")
+		return
 	}
-
-	sqsclient := &aws4.Client{Keys: keys, Client: httpclient}
-
-	parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
+	auth := aws.Auth{AccessKey: accessKey, SecretKey: accessSecret}
+	sqsClient := sqs.New(auth, aws.USEast)
+	queue, err := sqsClient.GetQueue(queueName)
 	if err != nil {
 		b.Error(err)
 		return
 	}
 
-	query := url.Values{}
-	query.Set("Action", "ReceiveMessage")
-	query.Set("AttributeName", "All")
-	query.Set("Version", lAuth["APIVersion"])
-	query.Set("SignatureVersion", lAuth["SignatureVersion"])
-	query.Set("WaitTimeSeconds", lAuth["WaitTimeSeconds"])
-	query.Set("MaxNumberOfMessages", lAuth["MaxNumberOfMessages"])
+	maxN, err := strconv.Atoi(maxNstring)
+	if err != nil {
+		b.Error(err)
+		return
+	}
 
-	parsedUrl.RawQuery = query.Encode()
+	b.listening = true
+	b.lock.Unlock()
 
-	queryurl := parsedUrl.String()
-
-	log.Println("Starting SQS read loop")
-
+	var resp *sqs.ReceiveMessageResponse
 	for {
 		select {
 		case <-b.stop:
 			log.Println("Exiting SQS read loop")
 			return
 		default:
-			var m sqsMessage
-
-			resp, err := sqsclient.Get(queryurl)
-
+			resp, err = queue.ReceiveMessage(maxN)
 			if err != nil {
-				b.Error("could not connect to SQS endpoint. waiting 1s")
 				b.Error(err)
-				time.Sleep(1 * time.Second)
-				continue
 			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				b.Error("could not read Body")
-				b.Error(err)
-				continue
+			if len(resp.Messages) == 0 {
+				break
 			}
-
-			resp.Body.Close()
-
-			err = xml.Unmarshal(body, &m)
-			if err != nil {
-				b.Error("could not unmarshal XML")
-				b.Error(err)
-				continue
-			}
-
-			if len(m.Body) == 0 {
-				// no messages on queue
-				b.Error("no messages on queue. waiting 1s")
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			for _, body := range m.Body {
+			for _, m := range resp.Messages {
 				select {
-				case b.fromListener <- []byte(body):
+				case b.fromListener <- []byte(m.Body):
 				default:
 					log.Println("discarding messages")
 					log.Println(len(b.fromListener))
 					continue
 				}
+
+				if _, err = queue.DeleteMessage(&m); err != nil {
+					b.Error(err)
+				}
 			}
-
-			parsedUrl, err := url.Parse(lAuth["SQSEndpoint"])
-			if err != nil {
-				b.Error(err)
-				continue
-			}
-
-			delquery := url.Values{}
-			delquery.Set("Action", "DeleteMessageBatch")
-			delquery.Set("Version", lAuth["APIVersion"])
-			delquery.Set("SignatureVersion", lAuth["SignatureVersion"])
-
-			for i, r := range m.ReceiptHandle {
-				id := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.Id", (i + 1))
-				receipt := fmt.Sprintf("DeleteMessageBatchRequestEntry.%d.ReceiptHandle", (i + 1))
-				delquery.Add(id, fmt.Sprintf("msg%d", (i+1)))
-				delquery.Add(receipt, r)
-			}
-			parsedUrl.RawQuery = delquery.Encode()
-			delurl := parsedUrl.String()
-
-			resp, err = sqsclient.Get(delurl)
-			if err != nil {
-				b.Error("could not delete messages. waiting 1s")
-				b.Error(err)
-				time.Sleep(1 * time.Second)
-				continue
-			}
-
-			resp.Body.Close()
 		}
 	}
 }
@@ -192,20 +116,20 @@ func (b *FromSQS) Setup() {
 	b.fromListener = make(chan []byte, 1000)
 	b.stop = make(chan bool)
 	b.auth = map[string]interface{}{
-		"SQSEndpoint":         "",
+		"QueueName":           "",
 		"AccessKey":           "",
 		"AccessSecret":        "",
-		"APIVersion":          "2012-11-05",
-		"SignatureVersion":    "4",
-		"WaitTimeSeconds":     "0",
 		"MaxNumberOfMessages": "10",
 	}
 }
 
 func (b *FromSQS) stopListening() {
 	log.Println("attempting to stop SQS reader")
+	log.Println(b.listening)
 	if b.listening {
+		log.Println("sending stop")
 		b.stop <- true
+		log.Println("sent stop")
 		b.listening = false
 	}
 }
