@@ -16,6 +16,7 @@ import (
 
 // lots of this code stolen brazenly from JP https://github.com/jprobinson
 func (b *FromSQS) listener() {
+	b.lock.Lock()
 	accessKey, ok := b.auth["AccessKey"].(string)
 	if !ok {
 		b.Error("could not assert AccessKey to a string")
@@ -31,20 +32,27 @@ func (b *FromSQS) listener() {
 		b.Error("could not assert queue name to a string")
 		return
 	}
-	auth := aws.Auth{AccessKey: accessKey, SecretKey: accessSecret}
-	sqsClient := sqs.New(auth, aws.USEast)
-	queue, err := sqsClient.GetQueue(queueName)
-
 	maxNstring, ok := b.auth["MaxNumberOfMessages"].(string)
 	if !ok {
 		b.Error("could not assert MaxNumberOfMessages to a string")
 		return
 	}
+	auth := aws.Auth{AccessKey: accessKey, SecretKey: accessSecret}
+	sqsClient := sqs.New(auth, aws.USEast)
+	queue, err := sqsClient.GetQueue(queueName)
+	if err != nil {
+		b.Error(err)
+		return
+	}
+
 	maxN, err := strconv.Atoi(maxNstring)
 	if err != nil {
 		b.Error(err)
 		return
 	}
+
+	b.listening = true
+	b.lock.Unlock()
 
 	var resp *sqs.ReceiveMessageResponse
 	for {
@@ -117,8 +125,11 @@ func (b *FromSQS) Setup() {
 
 func (b *FromSQS) stopListening() {
 	log.Println("attempting to stop SQS reader")
+	log.Println(b.listening)
 	if b.listening {
+		log.Println("sending stop")
 		b.stop <- true
+		log.Println("sent stop")
 		b.listening = false
 	}
 }
