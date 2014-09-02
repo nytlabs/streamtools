@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/nytlabs/streamtools/st/blocks" // blocks
 )
@@ -32,6 +34,10 @@ func (b *FromHTTPStream) Setup() {
 	b.queryrule = b.QueryRoute("rule")
 	b.quit = b.Quit()
 	b.out = b.Broadcast()
+}
+
+func dialTimeout(network, addr string) (net.Conn, error) {
+	return net.DialTimeout(network, addr, time.Duration(10*time.Second))
 }
 
 func listen(b *FromHTTPStream, endpoint string, auth string, dataChan chan interface{}, quitChan chan bool) {
