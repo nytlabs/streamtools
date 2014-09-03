@@ -1,4 +1,5 @@
 FROM google/golang
-WORKDIR /gopath/src/app
-ADD . /gopath/src/app/
-ENTRYPOINT /bin/bash
+WORKDIR /gopath/src/github.com/nytlabs/streamtools
+ADD . /gopath/src/github.com/nytlabs/streamtools
+RUN make clean
+RUN make
