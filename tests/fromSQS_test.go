@@ -45,7 +45,7 @@ func (s *FromSQSSuite) TestFromSQS(c *C) {
 	b, ch := test_utils.NewBlock("testingFromSQS", "fromsqs")
 	go blocks.BlockRoutine(b)
 
-	ruleMsg := map[string]interface{}{"SQSEndpoint": ts.URL, "AccessKey": "123access", "AccessSecret": "123secret", "APIVersion": "2012-11-05", "SignatureVersion": "4", "WaitTimeSeconds": "0", "MaxNumberOfMessages": "10"}
+	ruleMsg := map[string]interface{}{"QueueName": "queue2", "AccessKey": "123access", "AccessSecret": "123secret", "MaxNumberOfMessages": "10"}
 	toRule := &blocks.Msg{Msg: ruleMsg, Route: "rule"}
 	ch.InChan <- toRule
 
