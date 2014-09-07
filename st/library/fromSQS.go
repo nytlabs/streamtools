@@ -103,9 +103,10 @@ func (b *FromSQS) runReader(sem chan bool, outChan chan []byte, stopChan chan bo
 	err := listener(auth["AccessKey"], auth["AccessSecret"], auth["QueueName"], auth["MaxNumberOfMessages"], outChan, stopChan)
 	if err != nil {
 		b.Error(err)
+		log.Println("freeing reader")
+		<-sem
 	}
-	log.Println("freeing reader")
-	<-sem
+
 }
 
 func stopAllReaders(stopChans []chan bool) {
