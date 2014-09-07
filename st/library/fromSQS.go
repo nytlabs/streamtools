@@ -2,7 +2,9 @@ package library
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
+	"time"
 
 	"github.com/goamz/goamz/aws"
 	"github.com/goamz/goamz/sqs"
@@ -100,22 +102,25 @@ func (b *FromSQS) Setup() {
 
 func (b *FromSQS) runReader(sem chan bool, outChan chan []byte, stopChan chan bool, auth map[string]string) {
 	log.Println("starting new reader")
+	t := time.Now()
 	err := listener(auth["AccessKey"], auth["AccessSecret"], auth["QueueName"], auth["MaxNumberOfMessages"], outChan, stopChan)
 	if err != nil {
 		b.Error(err)
-		log.Println("freeing reader")
-		<-sem
+		if time.Since(t) < 1*time.Second {
+			log.Println("reader failed in less than one second")
+			b.Error(errors.New("reader died rapidly - check SQS reader parameters"))
+			// here we don't free up a seperate reader
+		} else {
+			log.Println("freeing reader")
+			<-sem
+		}
 	}
 
 }
 
 func stopAllReaders(stopChans []chan bool) {
 	for _, stopChan := range stopChans {
-		select {
-		case stopChan <- true:
-		default:
-			continue // someone has already tried to stop this reader
-		}
+		close(stopChan)
 	}
 }
 
@@ -138,6 +143,7 @@ func (b *FromSQS) Run() {
 			}
 
 			stopAllReaders(stopChans)
+			stopChans = make([]chan bool, 0)
 
 			go func() {
 				for {
