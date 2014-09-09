@@ -1,0 +1,207 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>streamtools - demos - earthquake tracker</title>
+        <script src="../js/jquery-2.1.0.min.js"></script>
+        <link rel="stylesheet" href="../css/bootstrap.min.css">
+        <link rel="stylesheet" href="../css/bootstrap-theme.min.css">
+        <script src="../js/bootstrap.min.js"></script>
+        <link rel="stylesheet" href="../css/demos.css">
+        <script src="../js/demos.js"></script>
+  </head>
+  <body id="demos">
+  <nav class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
+    <div class="container">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <img src="../img/logo.png" class="navbar-logo">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../">streamtools </a>
+      </div>
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="../demos">demos</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools/releases">download</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="../docs">docs</a></li>
+            <li class="divider"></li>
+
+          <li><a href="../docs/resources.html">data</a></li>
+            <li class="divider"></li>
+          
+          <li><a href="https://github.com/nytlabs/streamtools">source</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li><p class="navbar-text tagline-text">a graphical toolkit for working with streams of data</p></li>
+        </ul>
+      </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+  </nav>
+  
+
+      <div class="jumbotron">
+        <h1>Earthquake Tracker</h1>
+        <p id="leadPara" class="lead">
+        The USGS offers <a target="_new" href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of all earthquakes in the last hour, updated every minute, to build a simple earthquake tracker.
+        </p>
+        <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
+      </div>
+
+      <div id="staticDemo" class="container" style="display: none;">
+        <div class='alert alert-warning'>
+          <p>
+            Oops! Failed accessing <a target='_new' href='http://localhost:7070'>streamtools</a>. Need to download it? 
+            <a href='../#download'>Get the binary</a>, be setup in seconds.
+          </p>
+          <p>
+            What you see below is a screenshot of what the demo looks like. Once you install streamtools you can play with the live version. <a href='earthquake_tracker.html'>Reload</a> to see this demo in action once you're ready.</p>
+        </div>
+        <div class="row">
+          <img src="../img/staticQuake.png"/>
+        </div>
+      </div>
+
+      <div id="reportContainer" class="container">
+        <div class="row">
+          <div id="results" class="col-md-12" style="display: none;">
+            <h3 class="text-muted">Earthquakes: <span id="totalCount"></span></h3>
+            <div class="panel panel-info panel-template" style="display: none;">
+              <div class="panel-heading">
+                <h3 class="panel-title"></h3>
+              </div>
+              <div class="panel-body">
+                <div class="col-md-12 quake-details">
+                  <b>When:</b> <span class="quake-time"></span><br>
+                  <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
+                  <b>Significance:</b> <span class="quake-significance"></span><br>
+                  <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
+                  <span class="quake-alert-level"></span>
+                  <b>Status:</b> <span class="quake-status"></span><br>
+                  <b>More info:</b> <span class="quake-more-info-link"></span><br>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <script>
+    $(document).ready(function() {
+        checkForStreamtools();
+
+        var pattern = '';
+        var total = 0;
+        var events = [];
+
+        function getTotal() {
+          $.getJSON("http://localhost:7070/blocks/13/count", function(countData) {
+            total = countData.Count;
+            $("#totalCount").text(total);
+          });
+        }
+
+        function kickOff() {
+          $.getJSON("http://localhost:7070/blocks/35/query", function(data) {
+            $("#leadPara").hide();
+            $("#blocks-exist-warning").hide();
+            $("#buttonPara").hide();
+            $("#leadPara").html("Streamtools is now polling the USGS every 15 minutes. The list of earthquakes will update as new data comes in. ");
+            $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
+
+            $("#leadPara").fadeIn("slow");
+            $("#buttonPara").fadeIn("slow");
+          });
+        }
+
+        $("#getStarted").click(function(e) {
+          e.preventDefault;
+          $("#staticDemo").fadeOut();
+
+          $.getJSON("http://localhost:7070/clear", function(data) {
+            if (data.daemon != "OK") {
+              alert("Sorry, I couldn't clear out your streamtools. The response I got is: " + JSON.stringify(data));
+            } else {
+              $.getJSON("http://localhost:7070/examples/earthquake_tracker.json", function(data) {
+                pattern = JSON.stringify(data);
+                $.ajax({
+                  type: "POST",
+                  crossDomain: true,
+                  url: "http://localhost:7070/import", 
+                  data: pattern,
+                  contentType: "application/json; charset=utf-8",
+                  dataType: "json",
+                  success: function(data) {
+                    kickOff();
+                    polledTotal = false;
+                    var socket = new WebSocket('ws://localhost:7070/ws/7');
+
+                    var dateOptions = {weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", timeZone: "America/New_York"};
+                    socket.onmessage = function(event) {
+                      if (!polledTotal) {
+                        setTimeout(getTotal, 1000);
+                        setInterval(getTotal, 15000);
+                        polledTotal = true;
+                      }
+                      quake = JSON.parse(event.data);
+                      var quakePanel = $("#" + quake.id);
+
+                      if ( $("body").has("#" + quake.id).length <= 0 ) {
+                        quakePanel = $(".panel-template").clone();
+                        $(quakePanel).attr("id", quake.id);
+                        $(quakePanel).removeClass("panel-template");
+                      }
+
+                      $(quakePanel).find(".panel-title").text(quake.properties.title);
+                      quakeTime = new Date(quake.properties.time);
+                      $(quakePanel).find(".quake-time").text(quakeTime.toLocaleDateString("en-US", dateOptions));
+
+                      $(quakePanel).find(".quake-magnitude").text(quake.properties.mag);
+                      $(quakePanel).find(".quake-significance").text(quake.properties.sig);
+                      $(quakePanel).find(".quake-location").text(quake.properties.place);
+                      $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
+
+                      if (quake.properties.alert != "" && quake.properties.alert != "null" && quake.properties.alert != null) {
+                        $(quakePanel).find(".quake-alert-level").html("<b>Alert level:</b> " + quake.properties.alert + "<br>");
+                      }
+
+                      if ( quake.properties.url != "") {
+                        $(quakePanel).find(".quake-more-info-link").html("<a href='" + quake.properties.url + "'>USGS event page</a>");
+                      }
+
+                      $(quakePanel).find(".quake-status").text(quake.properties.status);
+
+                      $(quakePanel).appendTo("#results");
+                      $(quakePanel).show();
+                      $("#results").show();
+                    }
+                    var detailSocket = new WebSocket('ws://localhost:7070/ws/12');
+                    detailSocket.onmessage = function(event) {
+                      detail = JSON.parse(event.data);
+                      mapUrl = detail.map.url;
+                      $("#" + detail.id + " div.quake-details").removeClass("col-md-12").addClass("col-md-5");
+                      $("#" + detail.id).prepend(".quake-map").html("<div class='pull-left col-md-5 quake-map'><img class='quake-map-image' src='" + mapUrl + "'></div>");
+                    }
+                  },
+                  failure: function(errMsg) {
+                    console.log("Uh oh. We just tried to import the pattern into streamtools, but something went wrong: " + errMsg);
+                  }
+                });
+              });
+            }
+          });
+        });
+      });
+  </script>
+
+  </body>
+</html>
