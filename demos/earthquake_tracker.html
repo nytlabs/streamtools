@@ -52,7 +52,7 @@
       <div class="jumbotron">
         <h1>Earthquake Tracker</h1>
         <p id="leadPara" class="lead">
-        The USGS offers <a target="_new" href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of significant earthquakes from the past week, updated every minute, to build a simple earthquake tracker.
+        The USGS offers <a target="_new" href="http://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php">real-time data feeds tracking earthquakes</a>, with options to filter by significance and recency. This information is available in a few formats, but for this example we'll use the GeoJSON feed of all earthquakes in the last hour, updated every minute, to build a simple earthquake tracker.
         </p>
         <p id="buttonPara"><a id="getStarted" class="btn btn-lg btn-success" role="button">Get Started!</a></p>
       </div>
@@ -77,27 +77,28 @@
             <iframe src="http://localhost:7070" height="500px" width="100%"></iframe>
           </div>
           <div id="results" class="col-md-6" style="display: none;">
-            <h3 class="text-muted">Significant Quakes: <span id="totalCount"></span></h3>
+            <h3 class="text-muted">Earthquakes: <span id="totalCount"></span></h3>
             <div class="panel panel-info panel-template" style="display: none;">
               <div class="panel-heading">
                 <h3 class="panel-title"></h3>
               </div>
               <div class="panel-body">
-                <div class="pull-left col-md-5 quake-map"></div>
-                <div class="col-md-5">
+                <div class="col-md-12 quake-details">
                   <b>When:</b> <span class="quake-time"></span><br>
                   <b>Magnitude:</b> <span class="quake-magnitude"></span><br>
                   <b>Significance:</b> <span class="quake-significance"></span><br>
                   <b>Location:</b> <span class="quake-location"></span> (<span class="quake-coordinates"></span>)<br>
-                  <b>Alert level:</b> <span class="quake-alert-level"></span><br>
+                  <span class="quake-alert-level"></span>
                   <b>Status:</b> <span class="quake-status"></span><br>
+                  <b>More info:</b> <span class="quake-more-info-link"></span><br>
                 </div>
               </div>
             </div>
           </div>
+        </div>
       </div>
-  
-  <script>
+
+    <script>
     $(document).ready(function() {
         checkForStreamtools();
 
@@ -116,8 +117,9 @@
           $.getJSON("http://localhost:7070/blocks/35/query", function(data) {
             $("#streamtools").show();
             $("#leadPara").hide();
+            $("#blocks-exist-warning").hide();
             $("#buttonPara").hide();
-            $("#leadPara").html("Streamtools is now polling the USGS endpoint every minute. This page will update with new data as it comes in. ");
+            $("#leadPara").html("Streamtools is now polling the hourly endpoint every 15 minutes (to avoid inundating the kind folks at the USGS). The list of earthquakes will update as new data comes in. Want to bump up the frequency? Double click on that top ticker block and change '15m0s' to something shorter, like '1m' to poll every minute.");
             $("#buttonPara").html("<a class='btn btn-lg btn-info' target='streamtools' href='http://localhost:7070' role='button'>Open Streamtools</a>");
 
             $("#leadPara").fadeIn("slow");
@@ -151,7 +153,7 @@
                     socket.onmessage = function(event) {
                       if (!polledTotal) {
                         setTimeout(getTotal, 1000);
-                        setInterval(getTotal, 5000);
+                        setInterval(getTotal, 15000);
                         polledTotal = true;
                       }
                       quake = JSON.parse(event.data);
@@ -166,12 +168,22 @@
                       $(quakePanel).find(".panel-title").text(quake.properties.title);
                       quakeTime = new Date(quake.properties.time);
                       $(quakePanel).find(".quake-time").text(quakeTime.toLocaleDateString("en-US", dateOptions));
-                      $(quakePanel).find(".quake-alert-level").text(quake.properties.alert);
-                      $(quakePanel).find(".quake-status").text(quake.properties.status);
-                      $(quakePanel).find(".quake-location").text(quake.properties.place);
-                      $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
+
                       $(quakePanel).find(".quake-magnitude").text(quake.properties.mag);
                       $(quakePanel).find(".quake-significance").text(quake.properties.sig);
+                      $(quakePanel).find(".quake-location").text(quake.properties.place);
+                      $(quakePanel).find(".quake-coordinates").text(quake.geometry.coordinates);
+
+                      if (quake.properties.alert != "" && quake.properties.alert != "null" && quake.properties.alert != null) {
+                        $(quakePanel).find(".quake-alert-level").html("<b>Alert level:</b> " + quake.properties.alert + "<br>");
+                      }
+
+                      if ( quake.properties.url != "") {
+                        $(quakePanel).find(".quake-more-info-link").html("<a href='" + quake.properties.url + "'>USGS event page</a>");
+                      }
+
+                      $(quakePanel).find(".quake-status").text(quake.properties.status);
+
                       $(quakePanel).appendTo("#results");
                       $(quakePanel).show();
                       $("#results").show();
@@ -180,7 +192,8 @@
                     detailSocket.onmessage = function(event) {
                       detail = JSON.parse(event.data);
                       mapUrl = detail.map.url;
-                      $("#" + detail.id).find(".quake-map").html("<img class='quake-map-image' src='" + mapUrl + "'>");
+                      $("#" + detail.id + " div.quake-details").removeClass("col-md-12").addClass("col-md-5");
+                      $("#" + detail.id).prepend(".quake-map").html("<div class='pull-left col-md-5 quake-map'><img class='quake-map-image' src='" + mapUrl + "'></div>");
                     }
                   },
                   failure: function(errMsg) {
