@@ -1,198 +1,198 @@
 {
-  "Blocks": [
-    {
-      "Id": "35",
-      "Type": "bang",
-      "Rule": null,
-      "Position": {
-        "X": 145,
-        "Y": 10
-      }
-    },
-    {
-      "Id": "1",
-      "Type": "webRequest",
-      "Rule": {
-        "BodyPath": ".",
-        "Headers": {},
-        "Method": "GET",
-        "Url": "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson",
-        "UrlPath": ""
-      },
-      "Position": {
-        "X": 46,
-        "Y": 80
-      }
-    },
-    {
-      "Id": "2",
-      "Type": "ticker",
-      "Rule": {
-        "Interval": "15m0s"
-      },
-      "Position": {
-        "X": 59,
-        "Y": 4
-      }
-    },
-    {
-      "Id": "8",
-      "Type": "unpack",
-      "Rule": {
-        "Path": ".body.features"
-      },
-      "Position": {
-        "X": 77,
-        "Y": 147
-      }
-    },
-    {
-      "Id": "5",
-      "Type": "webRequest",
-      "Rule": {
-        "BodyPath": ".",
-        "Headers": {},
-        "Method": "GET",
-        "Url": "",
-        "UrlPath": ".properties.detail"
-      },
-      "Position": {
-        "X": 232,
-        "Y": 315
-      }
-    },
-    {
-      "Id": "12",
-      "Type": "map",
-      "Rule": {
-        "Additive": false,
-        "Map": {
-          "id": ".body.id",
-          "map": ".body.properties.products.shakemap[0].contents['download/tvmap.jpg']"
+    "Blocks": [
+        {
+            "Id": "35",
+            "Type": "bang",
+            "Rule": null,
+            "Position": {
+                "X": 242,
+                "Y": 14
+            }
+        },
+        {
+            "Id": "12",
+            "Type": "map",
+            "Rule": {
+                "Additive": false,
+                "Map": {
+                    "id": ".body.id",
+                    "map": ".body.properties.products.shakemap[0].contents['download/tvmap.jpg']"
+                }
+            },
+            "Position": {
+                "X": 319,
+                "Y": 363
+            }
+        },
+        {
+            "Id": "7",
+            "Type": "map",
+            "Rule": {
+                "Additive": true,
+                "Map": {}
+            },
+            "Position": {
+                "X": 37.976715087890625,
+                "Y": 249.9962158203125
+            }
+        },
+        {
+            "Id": "2",
+            "Type": "ticker",
+            "Rule": {
+                "Interval": "15m0s"
+            },
+            "Position": {
+                "X": 157,
+                "Y": 14
+            }
+        },
+        {
+            "Id": "13",
+            "Type": "count",
+            "Rule": {
+                "Window": "15m0s"
+            },
+            "Position": {
+                "X": 119,
+                "Y": 315
+            }
+        },
+        {
+            "Id": "14",
+            "Type": "filter",
+            "Rule": {
+                "Filter": "$exists(.properties, 'detail')"
+            },
+            "Position": {
+                "X": 295,
+                "Y": 135
+            }
+        },
+        {
+            "Id": "mapExists",
+            "Type": "filter",
+            "Rule": {
+                "Filter": "$exists(.body.properties.products, 'shakemap')"
+            },
+            "Position": {
+                "X": 267,
+                "Y": 295
+            }
+        },
+        {
+            "Id": "8",
+            "Type": "unpack",
+            "Rule": {
+                "Path": ".body.features"
+            },
+            "Position": {
+                "X": 92,
+                "Y": 147
+            }
+        },
+        {
+            "Id": "5",
+            "Type": "webRequest",
+            "Rule": {
+                "BodyPath": ".",
+                "Headers": {},
+                "Method": "GET",
+                "Url": "",
+                "UrlPath": ".properties.detail"
+            },
+            "Position": {
+                "X": 263,
+                "Y": 210
+            }
+        },
+        {
+            "Id": "15",
+            "Type": "ticker",
+            "Rule": {
+                "Interval": "10s"
+            },
+            "Position": {
+                "X": 167,
+                "Y": 234
+            }
+        },
+        {
+            "Id": "1",
+            "Type": "webRequest",
+            "Rule": {
+                "BodyPath": ".",
+                "Headers": {},
+                "Method": "GET",
+                "Url": "http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
+                "UrlPath": ""
+            },
+            "Position": {
+                "X": 172,
+                "Y": 81
+            }
         }
-      },
-      "Position": {
-        "X": 164,
-        "Y": 393
-      }
-    },
-    {
-      "Id": "15",
-      "Type": "ticker",
-      "Rule": {
-        "Interval": "10s"
-      },
-      "Position": {
-        "X": 125,
-        "Y": 318
-      }
-    },
-    {
-      "Id": "13",
-      "Type": "count",
-      "Rule": {
-        "Window": "1m0s"
-      },
-      "Position": {
-        "X": 27,
-        "Y": 397
-      }
-    },
-    {
-      "Id": "20",
-      "Type": "dedupe",
-      "Rule": {
-        "Path": ".id"
-      },
-      "Position": {
-        "X": 134,
-        "Y": 208
-      }
-    },
-    {
-      "Id": "14",
-      "Type": "filter",
-      "Rule": {
-        "Filter": "$exists(.properties, 'detail')"
-      },
-      "Position": {
-        "X": 205,
-        "Y": 262
-      }
-    },
-    {
-      "Id": "7",
-      "Type": "map",
-      "Rule": {
-        "Additive": true,
-        "Map": {}
-      },
-      "Position": {
-        "X": 20.976715087890625,
-        "Y": 264.9962158203125
-      }
-    }
-  ],
-  "Connections": [
-    {
-      "Id": "36",
-      "FromId": "35",
-      "ToId": "1",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "23",
-      "FromId": "20",
-      "ToId": "13",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "10",
-      "FromId": "2",
-      "ToId": "1",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "4",
-      "FromId": "1",
-      "ToId": "8",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "22",
-      "FromId": "20",
-      "ToId": "7",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "16",
-      "FromId": "15",
-      "ToId": "13",
-      "ToRoute": "poll"
-    },
-    {
-      "Id": "18",
-      "FromId": "14",
-      "ToId": "5",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "21",
-      "FromId": "8",
-      "ToId": "20",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "9",
-      "FromId": "5",
-      "ToId": "12",
-      "ToRoute": "in"
-    },
-    {
-      "Id": "17",
-      "FromId": "20",
-      "ToId": "14",
-      "ToRoute": "in"
-    }
-  ]
+    ],
+    "Connections": [
+        {
+            "Id": "36",
+            "FromId": "35",
+            "ToId": "1",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "44",
+            "FromId": "8",
+            "ToId": "13",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "16",
+            "FromId": "15",
+            "ToId": "13",
+            "ToRoute": "poll"
+        },
+        {
+            "Id": "10",
+            "FromId": "2",
+            "ToId": "1",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "4",
+            "FromId": "1",
+            "ToId": "8",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "43",
+            "FromId": "8",
+            "ToId": "7",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "9",
+            "FromId": "5",
+            "ToId": "mapExists",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "18",
+            "FromId": "14",
+            "ToId": "5",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "45",
+            "FromId": "8",
+            "ToId": "14",
+            "ToRoute": "in"
+        },
+        {
+            "Id": "37",
+            "FromId": "mapExists",
+            "ToId": "12",
+            "ToRoute": "in"
+        }
+    ]
 }
