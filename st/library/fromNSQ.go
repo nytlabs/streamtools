@@ -87,7 +87,10 @@ func (b *FromNSQ) Run() {
 			if err != nil {
 				b.Error(err)
 				continue
+			} else {
+				conf.MaxInFlight = int(maxInFlight)
 			}
+
 			channel, err = util.ParseString(rule, "ReadChannel")
 			if err != nil {
 				b.Error(err)
@@ -98,7 +101,6 @@ func (b *FromNSQ) Run() {
 				reader.Stop()
 			}
 
-			conf.Set("maxInFlight", maxInFlight)
 			reader, err = nsq.NewConsumer(topic, channel, conf)
 			if err != nil {
 				b.Error(err)
