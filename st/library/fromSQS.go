@@ -15,52 +15,6 @@ import (
 	"github.com/nytlabs/streamtools/st/util"
 )
 
-// lots of this code stolen brazenly from JP https://github.com/jprobinson
-func listener(key, secret, queueName, maxN string, outChan chan []byte, stopChan chan bool) error {
-	auth := aws.Auth{AccessKey: key, SecretKey: secret}
-	sqsClient := sqs.New(auth, aws.USEast)
-	log.Println("getting SQS queue")
-	queue, err := sqsClient.GetQueue(queueName)
-	if err != nil {
-		return err
-	}
-
-	params := map[string]string{
-		"WaitTimeSeconds":     "1",
-		"MaxNumberOfMessages": maxN,
-	}
-
-	var resp *sqs.ReceiveMessageResponse
-	log.Println("starting read loop")
-	for {
-		select {
-		case <-stopChan:
-			log.Println("Exiting SQS read loop")
-			return nil
-		default:
-			resp, err = queue.ReceiveMessageWithParameters(params)
-			if err != nil {
-				return err
-			}
-			if len(resp.Messages) == 0 {
-				break
-			}
-			for _, m := range resp.Messages {
-				select {
-				case outChan <- []byte(m.Body):
-				default:
-					log.Println("discarding messages")
-					log.Println(len(outChan))
-					continue
-				}
-				_, err = queue.DeleteMessage(&m)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-}
 
 // specify those channels we're going to use to communicate with streamtools
 type FromSQS struct {
@@ -121,6 +75,53 @@ func (b *FromSQS) runReader(sem chan bool, outChan chan []byte, stopChan chan bo
 func stopAllReaders(stopChans []chan bool) {
 	for _, stopChan := range stopChans {
 		close(stopChan)
+	}
+}
+
+// lots of this code stolen brazenly from JP https://github.com/jprobinson
+func listener(key, secret, queueName, maxN string, outChan chan []byte, stopChan chan bool) error {
+	auth := aws.Auth{AccessKey: key, SecretKey: secret}
+	sqsClient := sqs.New(auth, aws.USEast)
+	log.Println("getting SQS queue")
+	queue, err := sqsClient.GetQueue(queueName)
+	if err != nil {
+		return err
+	}
+
+	params := map[string]string{
+		"WaitTimeSeconds":     "1",
+		"MaxNumberOfMessages": maxN,
+	}
+
+	var resp *sqs.ReceiveMessageResponse
+	log.Println("starting read loop")
+	for {
+		select {
+		case <-stopChan:
+			log.Println("Exiting SQS read loop")
+			return nil
+		default:
+			resp, err = queue.ReceiveMessageWithParameters(params)
+			if err != nil {
+				return err
+			}
+			if len(resp.Messages) == 0 {
+				break
+			}
+			for _, m := range resp.Messages {
+				select {
+				case outChan <- []byte(m.Body):
+				default:
+					log.Println("discarding messages")
+					log.Println(len(outChan))
+					continue
+				}
+				_, err = queue.DeleteMessage(&m)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 }
 
