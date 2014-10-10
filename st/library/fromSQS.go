@@ -115,7 +115,6 @@ func (b *FromSQS) runReader(sem chan bool, outChan chan []byte, stopChan chan bo
 			<-sem
 		}
 	}
-
 }
 
 func stopAllReaders(stopChans []chan bool) {
