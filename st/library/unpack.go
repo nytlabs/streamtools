@@ -8,7 +8,6 @@ import (
 	"github.com/nytlabs/streamtools/st/util"
 )
 
-// specify those channels we're going to use to communicate with streamtools
 type Unpack struct {
 	blocks.Block
 	queryrule chan blocks.MsgChan
@@ -18,12 +17,10 @@ type Unpack struct {
 	quit      blocks.MsgChan
 }
 
-// we need to build a simple factory so that streamtools can make new blocks of this kind
 func NewUnpack() blocks.BlockInterface {
 	return &Unpack{}
 }
 
-// Setup is called once before running the block. We build up the channels and specify what kind of block this is.
 func (b *Unpack) Setup() {
 	b.Kind = "Core"
 	b.Desc = "splits an array of objects from incoming data, emitting each element as a separate message"
@@ -34,30 +31,56 @@ func (b *Unpack) Setup() {
 	b.out = b.Broadcast()
 }
 
-// Run is the block's main loop. Here we listen on the different channels we set up.
 func (b *Unpack) Run() {
-	var path string
+	var arrayPath, labelPath string
 	var err error
-	var tree *jee.TokenTree
+	var arrayTree, labelTree *jee.TokenTree
+	var label interface{}
+
 	for {
 		select {
 		case ruleI := <-b.inrule:
-			// set a parameter of the block
 			rule, ok := ruleI.(map[string]interface{})
 			if !ok {
 				b.Error(errors.New("cannot assert rule to map"))
 			}
-			path, err = util.ParseString(rule, "Path")
+
+			arrayPath, err = util.ParseString(rule, "ArrayPath")
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			token, err := jee.Lexer(path)
+
+			labelPath, err = util.ParseString(rule, "LabelPath")
 			if err != nil {
 				b.Error(err)
 				continue
 			}
-			tree, err = jee.Parser(token)
+
+			arrayToken, err := jee.Lexer(arrayPath)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			arrayTree, err = jee.Parser(arrayToken)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			if labelPath == arrayPath {
+				b.Error(errors.New("cannot label unpacked objects with the original array"))
+				continue
+			}
+
+			labelToken, err := jee.Lexer(labelPath)
+			if err != nil {
+				b.Error(err)
+				continue
+			}
+
+			labelTree, err = jee.Parser(labelToken)
 			if err != nil {
 				b.Error(err)
 				continue
@@ -67,26 +90,48 @@ func (b *Unpack) Run() {
 			// quit the block
 			return
 		case msg := <-b.in:
-			if tree == nil {
+			if arrayTree == nil {
 				continue
 			}
-			arrInterface, err := jee.Eval(tree, msg)
+
+			arrInterface, err := jee.Eval(arrayTree, msg)
 			if err != nil {
 				b.Error(err)
 				continue
 			}
+
 			arr, ok := arrInterface.([]interface{})
 			if !ok {
-				b.Error(errors.New("cannot assert " + path + " to array"))
+				b.Error(errors.New("cannot assert " + arrayPath + " to array"))
 				continue
 			}
+
+			if labelTree != nil {
+				label, err = jee.Eval(labelTree, msg)
+				if err != nil {
+					b.Error(err)
+					continue
+				}
+			}
+
 			for _, out := range arr {
+				if labelTree == nil {
+					b.out <- out
+					continue
+				}
+				outMap, ok := out.(map[string]interface{})
+				if !ok {
+					outMap := make(map[string]interface{})
+					outMap["Value"] = out
+				}
+				outMap["Label"] = label
 				b.out <- out
 			}
 		case c := <-b.queryrule:
 			// deal with a query request
 			out := map[string]interface{}{
-				"Path": path,
+				"ArrayPath": arrayPath,
+				"LabelPath": labelPath,
 			}
 			c <- out
 		}
