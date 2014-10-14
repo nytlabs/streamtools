@@ -334,10 +334,14 @@ func (e *ToEmail) Run() {
 					sent++
 					break
 				}
+				if err != nil {
+					e.Error(err)
+				}
 				// attempt to reset client after each failure.
 				connected = e.resetClient()
 				if !connected {
 					// if we cannot reconnect, dont retry sending.
+					e.Error("cannot recconet")
 					break
 				}
 				time.Sleep(time.Duration(retries*errWait) * time.Second)
