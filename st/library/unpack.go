@@ -115,17 +115,15 @@ func (b *Unpack) Run() {
 			}
 
 			for _, out := range arr {
-				if labelTree == nil {
+				if labelPath == "" {
 					b.out <- out
 					continue
 				}
-				outMap, ok := out.(map[string]interface{})
-				if !ok {
-					outMap := make(map[string]interface{})
-					outMap["Value"] = out
-				}
+
+				outMap := make(map[string]interface{})
+				outMap["Value"] = out
 				outMap["Label"] = label
-				b.out <- out
+				b.out <- outMap
 			}
 		case c := <-b.queryrule:
 			// deal with a query request
