@@ -227,6 +227,7 @@ func (b *WebRequest) Run() {
 				b.Error(err)
 				break
 			}
+			defer resp.Body.Close()
 
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -246,8 +247,6 @@ func (b *WebRequest) Run() {
 				"headers": resp.Header,
 				"status":  resp.Status,
 			}
-
-			resp.Body.Close()
 
 			b.out <- outMsg
 
