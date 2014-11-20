@@ -95,17 +95,19 @@ func (b *WebRequest) Run() {
 			httpMethod, err = util.ParseString(ruleI, "Method")
 			if err != nil {
 				b.Error(err)
-				break
+				continue
 			}
 
 			url, err = util.ParseString(ruleI, "Url")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 
 			urlPath, err = util.ParseString(ruleI, "UrlPath")
 			if err != nil {
 				b.Error(err)
+				continue
 			}
 
 			if len(url) != 0 && len(urlPath) != 0 {
@@ -159,6 +161,7 @@ func (b *WebRequest) Run() {
 				headers = p
 			} else {
 				b.Error(err)
+				continue
 			}
 		case <-b.quit:
 			return
@@ -224,6 +227,7 @@ func (b *WebRequest) Run() {
 				b.Error(err)
 				break
 			}
+			defer resp.Body.Close()
 
 			body, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
@@ -243,8 +247,6 @@ func (b *WebRequest) Run() {
 				"headers": resp.Header,
 				"status":  resp.Status,
 			}
-
-			resp.Body.Close()
 
 			b.out <- outMsg
 
