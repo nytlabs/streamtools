@@ -553,7 +553,7 @@ make</code></pre>
 <p>POST <code>/import</code></p>
 <p>Import accepts a JSON representation of a pattern, creating it in the running streamtools instance. Any block ID collissions are resolved automatically, meaning you can repeatedly import the same pattern if it&#39;s useful.</p>
 <h4>data</h4>
-<p>Every block that as an <code>OUT</code> route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.</p>
+<p>Every block that has an <code>OUT</code> route also has a websocket and a long-lived HTTP connection associated with it. These are super useful for getting data out of streamtools.</p>
 <p>WEBSOCKET <code>/ws/{id}</code></p>
 <p>a websocket emitting every message sent on the block&#39;s <code>OUT</code> route.</p>
 <p>GET <code>/stream/{id}</code></p>
