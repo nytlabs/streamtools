@@ -65,7 +65,7 @@ func (s *DeDupeSuite) TestDeDupe(c *C) {
 			value := message["a"].(string)
 			_, ok := emittedValues[value]
 			if ok {
-				c.Errorf("block emitted a dupe message", value)
+				c.Errorf("block emitted a dupe message %q", value)
 			} else {
 				emittedValues[value] = true
 			}
