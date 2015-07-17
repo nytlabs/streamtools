@@ -65,6 +65,7 @@ func (b *FromAMQP) Run() {
 	routingkey := "#"
 	exchange := "amq.topic"
 	exchange_type := "topic"
+	vhost := "/"
 
 	for {
 		select {
@@ -100,6 +101,11 @@ func (b *FromAMQP) Run() {
 				b.Error(err)
 				continue
 			}
+			vhost, err = util.ParseString(rule, "vhost")
+			if err != nil {
+				b.Error(err)
+				continue
+			}
 			username, err = util.ParseString(rule, "Username")
 			if err != nil {
 				b.Error(err)
@@ -111,7 +117,7 @@ func (b *FromAMQP) Run() {
 				continue
 			}
 
-			conn, err = amqp.Dial("amqp://" + username + ":" + password + "@" + host + ":" + port + "/")
+			conn, err = amqp.Dial("amqp://" + username + ":" + password + "@" + host + ":" + port + vhost)
 			if err != nil {
 				b.Error(err)
 				continue
@@ -191,6 +197,7 @@ func (b *FromAMQP) Run() {
 			c <- map[string]interface{}{
 				"Host":         host,
 				"Port":         port,
+				"vhost":	vhost,
 				"Username":     username,
 				"Password":     password,
 				"Exchange":     exchange,
