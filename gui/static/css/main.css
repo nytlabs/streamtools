@@ -29,6 +29,26 @@
   text-decoration: none;
 }
 
+.ui-ref-btn-active {
+  font-weight:bold;
+}
+
+#ui-ref-blockdefs ul {
+  display:none;
+}
+
+.ui-ref-active {
+  display:block!important;
+}
+
+#ui-ref-sort {
+  text-align:center;
+}
+
+#ui-ref-sort a {
+  font-size:10px;
+}
+
 #ui-ref-control {
   display: block;
   position: fixed;

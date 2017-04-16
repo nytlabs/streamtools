@@ -16,7 +16,11 @@
 
 <script type="text/template" id="ui-ref-item-template">
     <div id="ui-ref-blockdefs">
-      <ul>
+      <div id="ui-ref-sort">
+        <a href="#" class="ui-ref-category-btn ui-ref-btn-active">[category]</a> 
+        <a href="#" class="ui-ref-alphabetical-btn">[a to z]</a>
+      </div>
+      <ul id="ui-ref-category" class="ui-ref-active">
         <%
           categories = _.uniq(_.pluck(data, "category").sort());
           _.each(categories, function(category, i){
@@ -31,6 +35,15 @@
         <%
             });
           });
+        %>
+      </ul>
+      <ul id="ui-ref-alphabetical">
+        <%
+          _.each(data, function(block, i){ 
+        %>
+            <li class="ref-add-block" data-block-type="<%= block.type %>"><%= block.type %></li>
+        <%
+        });
         %>
       </ul>
     </div>
