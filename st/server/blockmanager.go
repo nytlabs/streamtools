@@ -301,7 +301,7 @@ func (b *BlockManager) Connect(connInfo *ConnectionInfo) (*ConnectionInfo, error
 func (b *BlockManager) GetSocket(fromId string) (chan *blocks.Msg, string, error) {
 	_, ok := b.blockMap[fromId]
 	if !ok {
-		return nil, "", errors.New(fmt.Sprintf("Cannot recieve from block %s: does not exist", fromId))
+		return nil, "", errors.New(fmt.Sprintf("Cannot receive from block %s: does not exist", fromId))
 	}
 
 	wsChan := make(chan *blocks.Msg)
